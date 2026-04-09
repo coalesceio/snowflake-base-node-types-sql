@@ -1,10 +1,5 @@
 # Coalesce SQL Base Node Types Package
 
-* [SQL Insert](#sql-stage)
-* [SQL Merge](#sql-stage)
-
----
-
 ## SQL Nodes Types
 The  SQL Node is a powerful transformation tool within Coalesce that allows developers to write custom, hand-coded SQL instead of using the standard graphical column-mapping interface. It is ideal for complex transformations, advanced window functions, or multi-step logic that is difficult to represent via the standard UI. While it provides maximum flexibility, it shifts the responsibility of column definition and logic maintenance to the SQL author.
 
@@ -19,7 +14,7 @@ The key differences between these nodes are outlined below.
 
 Before using this node, ensure the following requirements are met:
 
-* Feature Flag: The isSQLEditorEnabled feature flag must be enabled for your Coalesce organization. 
+* Feature Flag: The `isSQLEditorEnabled` feature flag must be enabled for your Coalesce organization. 
 
 * Database Permissions: The user role must have sufficient privileges to execute queries and create objects in the target environment.
 
@@ -144,6 +139,22 @@ WITH ALL_NATIONS AS (
 )
 
 SELECT * FROM ALL_NATIONS
+```
+
+```sql
+WITH ALL_NATIONS AS (
+
+    SELECT N_NATIONKEY, N_NAME, N_REGIONKEY, N_COMMENT, N_LOAD_TIMESTAMP
+    FROM {{ ref('SRC', 'NATION_COPY1') }}
+
+    UNION ALL
+
+    SELECT N_NATIONKEY, N_NAME, N_REGIONKEY, N_COMMENT, N_LOAD_TIMESTAMP
+    FROM {{ ref('SRC', 'NATION_COPY2') }}
+
+)
+
+SELECT * FROM ALL_NATIONS "NATIONS"
 ```
 
 ### Supported SQL functionality
