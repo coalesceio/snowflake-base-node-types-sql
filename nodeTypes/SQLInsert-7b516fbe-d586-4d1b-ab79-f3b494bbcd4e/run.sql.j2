@@ -1,0 +1,75 @@
+{#
+    Copyright (c) 2026 Coalesce. All rights reserved.
+This script and its associated documentation are confidential and proprietary to Coalesce.
+Unauthorized reproduction, distribution, or disclosure of this material is strictly prohibited.
+Coalesce permits you to copy and modify this script for the purposes of using with Coalesce but
+does not permit copying or modification for any other purpose.  
+#}
+{# == Node Type Name           : SQL Insert  == #}
+{# == Node Type Description    : Creates a table with custome SQL logic  == #}
+{#---------------------------------------------------------------------------------------------#}
+
+{%- if node.materializationType == 'table' %}
+
+    {% set preSQL = (
+                    config.preSQL.parameters[0] | string | trim
+                    if config.preSQL is defined
+                    and config.preSQL.parameters is defined
+                    and config.preSQL.parameters
+                    else '' 
+                    ) 
+    %}
+
+    {% set postSQL = (
+                    config.postSQL.parameters[0] | string | trim
+                    if config.postSQL is defined
+                    and config.postSQL.parameters is defined
+                    and config.postSQL.parameters
+                    else '' 
+                    ) 
+    %}
+
+    {# == Queries to be excuted before data insertion  == #}
+    {%- if preSQL | length > 0 %}
+        {{ stage('Pre-SQL') }}
+        {{ preSQL }}
+    {%- endif %}
+
+	{# == Truncate data before data insertion  == #}
+    {%- if config.truncateBefore %}
+        {{ stage('Truncate Table') }}
+        TRUNCATE IF EXISTS {{ ref_no_link(node.location.name, node.name) }}
+    {%- endif %}
+
+	{# == Insert data from sources into Work table  == #}
+	
+    {{ stage('Load Table Using Insert') }}
+    INSERT INTO {{ ref_no_link(node.location.name, node.name) }}
+    (
+        {%- for col in sources[0].columns %}
+            "{{ col.name }}"
+            {%- if not loop.last -%},{%- endif %}
+        {%- endfor %}
+    )
+    {{ sources[0].cteString }}
+    (
+        SELECT {%- if config.selectDistinct %} DISTINCT {%- endif %}
+        {%- for col in sources[0].columns %}
+            {{ get_source_transform(col) }} AS "{{ col.name }}"
+            {%- if not loop.last -%}, {%- endif %}
+        {%- endfor %}
+
+        {{ sources[0].join }}
+    )
+
+    {# == Queries to be excuted post data insertion  == #}
+    {%- if postSQL | length > 0 %}
+        {{ stage('Post-SQL') }}
+        {{ postSQL }}
+    {%- endif %}
+
+{%- else %}
+	{{ stage('Load Skipped for View') }}
+	-- The node {{node.name}} is materialized as View. Therefore, a Load operation is not supported.
+	SELECT 1 AS INFO_MESSAGE WHERE FALSE
+{%- endif %}

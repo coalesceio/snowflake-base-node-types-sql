@@ -1,0 +1,129 @@
+fileVersion: 1
+id: "1"
+macroString: |-
+  {%- macro get_default(dataType, defaultValue) -%}
+
+      {%- if dataType is not none %}
+
+          {%- set dtype = dataType | upper %}
+          {%- set default_str = defaultValue | string %}
+          {%- set is_function = default_str | upper in [
+              'CURRENT_DATE', 
+              'CURRENT_TIME', 
+              'CURRENT_TIMESTAMP', 
+              'SYSDATE()', 
+              'CURRENT_TIMESTAMP()'
+          ] %}
+
+          {%- set is_null = default_str | upper == 'NULL' %}
+          {%- set is_boolean = default_str | upper in ['TRUE', 'FALSE'] %}
+          {%- set is_number = default_str.replace('.', '', 1).isdigit() %}
+          {%- set is_quoted = default_str.startswith("'") and default_str.endswith("'") %}
+
+          {%- set quote_types = [
+              'VARCHAR', 'STRING', 'TEXT', 'CHAR', 'DATE', 'TIME', 'VARIANT', 'OBJECT', 'ARRAY'
+          ] %}
+
+          {%- if is_null %}
+              NULL
+
+          {%- elif is_function %}
+              {{ default_str }}
+
+          {%- elif is_boolean %}
+              {{ default_str | upper }}
+
+          {%- elif is_number and dtype not in quote_types %}
+              {{ default_str }}
+
+          {%- elif is_quoted %}
+              {{ default_str }}
+
+          {%- else %}
+              {%- for qt in quote_types %}
+                  {%- if dtype.startswith(qt) %}
+                      '{{ default_str }}'
+                  {%- endif %}
+              {%- endfor %}
+          {%- endif %}
+      {%- endif %}
+  {%- endmacro -%}
+
+  {#-- This macro will split the join clause into from and rest of the clauses like where,groupby,orderby ,qualify  #}
+  {#-- Input parmeters   - joinclause #}
+  {#-- Return            - from clause and other clauses #}
+
+  {%- macro get_clause( joinclause , ret_clause ) -%}
+
+      {#  STEP 1: Remove Block Comments /* ... */ #}
+      {#  We split by the start of the comment and only keep the part after the end of the comment #}
+      {%- set ns_block = namespace(text="") -%}
+      {%- set block_parts = joinclause.split('/*') -%}
+      {%- set ns_block.text = block_parts[0] -%} {# The text before the very first /* #}
+      
+      {%- for part in block_parts[1:] -%}
+          {%- if '*/' in part -%}
+              {# Split by the first occurrence of */ and take everything after it #}
+              {%- set after_comment = part.split('*/', 1)[1]  -%}
+              {%- set ns_block.text = ns_block.text ~ ' ' ~ after_comment  -%}
+          {%- endif -%}
+      {%- endfor -%}
+
+      {# STEP 2: Remove Line Comments #}
+      {%- set ns_line = namespace(clean_lines=[]) -%}
+      {%- for line in ns_block.text.split('\n') -%}
+          {%- set active_part = line.split('--')[0] -%}
+          {%- set ns_line.clean_lines = ns_line.clean_lines + [active_part] -%}
+      {%- endfor  -%}
+      
+      {# Rejoin everything and normalize whitespace for searching #}
+      {%- set cleaned_join_clause = ns_line.clean_lines | join(' ')  -%}
+      {%- set search_string = ' ' ~ cleaned_join_clause.lower().replace('\t', ' ').replace('\r', ' ') ~ ' '  -%}
+
+      {# STEP 3: Identify Keyword Split Point (Priority: WHERE > GROUP > QUALIFY > ORDER) #}
+      {%- set found_keyword = '' -%}
+      {%- set split_index = -1 -%}
+
+      {%- if ' where ' in search_string -%}
+          {%- set found_keyword = 'where'  -%}
+          {%- set split_index = search_string.find(' where ') -%}
+      {%- elif ' group by ' in search_string -%}
+          {%- set found_keyword = 'group by' -%}
+          {%- set split_index = search_string.find(' group by ') -%}
+      {%- elif ' qualify ' in search_string -%}
+          {%- set found_keyword = 'qualify' -%}
+          {%- set split_index = search_string.find(' qualify ') -%}
+      {%- elif ' order by ' in search_string -%}
+          {%- set found_keyword = 'order by' -%}
+          {%- set split_index = search_string.find(' order by ') -%}
+      {%- endif -%}
+
+      {# STEP 4: Perform the Split #}
+      {%- if split_index >= 0 -%}
+          {# split_index maps directly to cleaned_join_clause because we replaced chars 1-to-1 #}
+          {%- set from_part = cleaned_join_clause[:split_index] -%}
+          
+          {# offset = keyword length + 1 space #}
+          {%- set offset = found_keyword|length + 1 -%}
+          {%- set remainder = cleaned_join_clause[split_index + offset:] -%}
+
+          {%- if found_keyword == 'where' -%}
+              {%- set add_part = 'AND ' ~ remainder -%}
+          {%- else -%}
+              {%- set add_part = found_keyword ~ ' ' ~ remainder -%}
+          {%- endif -%}
+      {%- else -%}
+          {%- set from_part = cleaned_join_clause -%}
+          {%- set add_part = '' -%}
+      {%- endif -%}
+
+      {# STEP 5: Return Result #}
+      {%- if ret_clause == 'from' -%}
+          {{ from_part | trim }}
+      {%- else -%}
+          {{ add_part | trim }}
+      {%- endif  -%}
+
+  {%- endmacro -%}
+name: macro
+type: Macro
