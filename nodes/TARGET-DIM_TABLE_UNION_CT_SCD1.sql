@@ -18,7 +18,7 @@ WITH ALL_NATIONS AS (
 )
 
 SELECT
-     0 AS "{{ node.name }}_KEY" @isSurrogateKey,
+     0 AS "DIM_KEY" @isSurrogateKey,
      NATIONS."N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
      NATIONS."N_NAME" AS "N_NAME" @isChangeTracking,
      NATIONS."N_REGIONKEY" AS "N_REGIONKEY",

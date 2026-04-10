@@ -2,7 +2,7 @@
 @nodeType("e35d8015-545b-4150-942f-5168dcd2bea8")
 
 SELECT
-     0 AS "{{ node.name }}_KEY" @isSurrogateKey @nullable("false") @description("System generated value"),
+     0 AS "DIM_KEY" @isSurrogateKey @nullable("false") @description("System generated value"),
      NATION."N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
      NATION."N_NAME" AS "N_NAME" @isChangeTracking,
      NATION."N_REGIONKEY" AS "N_REGIONKEY",
