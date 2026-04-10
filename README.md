@@ -233,15 +233,6 @@ To ensure SQL Insert and SQL Merge behave as expected and remain aligned with Ve
 
 ## Guidelines for Creating Nodes from SQL Merge Node Type
 
-### Node-Specific Columns
-
-| Node Type           | Required Columns in SELECT |
-|--------------------|---------------------------|
-| **Fact**           | `SYSTEM_CREATE_DATE`<br/>`SYSTEM_UPDATE_DATE` |
-| **Dimension**<br/>**Persistent Stage**     | `{{ node.name }}_KEY`<br/>`SYSTEM_CREATE_DATE`<br/>`SYSTEM_UPDATE_DATE`<br/>`SYSTEM_END_DATE`<br/>`SYSTEM_CURRENT_FLAG`<br/>`SYSTEM_VERSION` |
-
----
-
 ### Standard System Columns
 
 | Column Name | Definition | Annotation |
@@ -255,12 +246,21 @@ To ensure SQL Insert and SQL Merge behave as expected and remain aligned with Ve
 
 ---
 
+### Node/Load Strategy-Specific System Columns
+
+| SCD Type 1(Fact)           | SCD Type 2(Dim and PStage) |
+|--------------------|---------------------------|
+SYSTEM_CREATE_DATE<br/>SYSTEM_UPDATE_DATE | {{ node.name }}_KEY<br/>SYSTEM_CREATE_DATE<br/>SYSTEM_UPDATE_DATE<br/>SYSTEM_END_DATE<br/>SYSTEM_CURRENT_FLAG<br/>SYSTEM_VERSION |
+
+---
+
 ### Notes
 
 - Use annotations to control behavior instead of external configuration.
 - Ensure consistent naming for all system columns.
 - These columns support SCD handling and audit tracking in MERGE-based nodes.
 - If **MERGE** is selected and a **business key** is defined, **Change Tracking (SCD1)** is applied by default
+- System column names can be customized as needed. However, the **annotations must remain unchanged**, as they control how the template interprets and processes the SQL.
 
 ---
 
