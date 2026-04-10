@@ -7,9 +7,9 @@
 SELECT
      0 AS "DIM_KEY" @isSurrogateKey @nullable("false") @description("System generated value"),
      NATION."N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
-     NATION."N_NAME" AS "N_NAME",
+     NATION."N_NAME" AS "N_NAME" @description("name of country"),
      NATION."N_REGIONKEY" AS "N_REGIONKEY" @isLastModifiedColumn,
-     NATION."N_COMMENT" AS "N_COMMENT",
+     NATION."N_COMMENT" AS "N_COMMENT" @defaultValue("NA"),
      NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" @isLastModifiedColumn,
      0 AS "SYSTEM_VERSION" @isSystemVersion @defaultValue("1"),
      '' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag @defaultValue("Y"),
