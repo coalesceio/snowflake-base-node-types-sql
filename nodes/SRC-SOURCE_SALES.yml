@@ -1,0 +1,118 @@
+fileVersion: 1
+id: 7972fd06-9e32-46fb-a2e6-e92e5c9e9338
+name: SOURCE_SALES
+operation:
+  database: ""
+  deployEnabled: true
+  description: ""
+  locationName: SRC
+  metadata:
+    columns:
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 097bd5cb-1298-4d8b-acfd-2a1a5642e083
+          stepCounter: 7972fd06-9e32-46fb-a2e6-e92e5c9e9338
+        config: {}
+        dataType: VARCHAR(16777216)
+        defaultValue: ""
+        description: ""
+        name: TRANSACTION_ID
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 754c33c0-13d8-4ae3-bc20-66d58dd775a1
+          stepCounter: 7972fd06-9e32-46fb-a2e6-e92e5c9e9338
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: STORE_ID
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 4986ddd3-a8e2-4b79-aa7a-2e8ab4a39135
+          stepCounter: 7972fd06-9e32-46fb-a2e6-e92e5c9e9338
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: PRODUCT_ID
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 59de5f49-db41-4e70-8a4e-ab1abd935aea
+          stepCounter: 7972fd06-9e32-46fb-a2e6-e92e5c9e9338
+        config: {}
+        dataType: TIMESTAMP_NTZ(9)
+        defaultValue: ""
+        description: ""
+        name: SALE_TIMESTAMP
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 1afe5f1d-a1e6-4674-a1b0-3a9136a4489f
+          stepCounter: 7972fd06-9e32-46fb-a2e6-e92e5c9e9338
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: QUANTITY
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 6c4d15ef-837f-4392-8b32-1a9ec5636c4f
+          stepCounter: 7972fd06-9e32-46fb-a2e6-e92e5c9e9338
+        config: {}
+        dataType: NUMBER(10,2)
+        defaultValue: ""
+        description: ""
+        name: DISCOUNT_AMOUNT
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+  name: SOURCE_SALES
+  schema: ""
+  sqlType: Source
+  type: sourceInput
+  version: 1
+type: Node

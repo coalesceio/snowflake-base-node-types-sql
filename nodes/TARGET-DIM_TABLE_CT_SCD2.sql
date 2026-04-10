@@ -1,5 +1,5 @@
-@id("25b74da8-74d8-49b8-b018-525dc86fe56e")
-@nodeType("230cba1d-908f-4198-b597-1cef53279d36")
+@id("aea489ce-712b-4843-a929-14325d158d88")
+@nodeType("e35d8015-545b-4150-942f-5168dcd2bea8")
 
 SELECT
      0 AS "{{ node.name }}_KEY" @isSurrogateKey @nullable("false") @description("System generated value"),

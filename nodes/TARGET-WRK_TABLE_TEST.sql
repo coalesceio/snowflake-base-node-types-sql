@@ -1,5 +1,5 @@
-@id("4f627343-c408-42fe-a13c-f145b79fdd94")
-@nodeType("7b516fbe-d586-4d1b-ab79-f3b494bbcd4e")
+@id("6a9f1c4d-2f76-429b-b6e0-b45748ac735f")
+@nodeType("6fda2820-4404-4b60-bad3-cf0edd7dab92")
 @preSQL("ALTER SESSION SET TIMEZONE = 'UTC'", "ALTER SESSION SET TIMEZONE = 'UTC'")
 @postSQL("ALTER SESSION SET TIMEZONE = 'UTC'", "ALTER SESSION SET TIMEZONE = 'UTC'")
 @preTests("continueOnFailure:SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "continuEOnFailure:SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1")

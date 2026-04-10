@@ -1,5 +1,7 @@
-@id("740512ba-8e6c-415a-a589-1077be34ec9e")
-@nodeType("230cba1d-908f-4198-b597-1cef53279d36")
+@id("70998834-f8bb-4d84-88d1-697ff758646b")
+@nodeType("e35d8015-545b-4150-942f-5168dcd2bea8")
+
+
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
      "N_NAME" AS "N_NAME",
