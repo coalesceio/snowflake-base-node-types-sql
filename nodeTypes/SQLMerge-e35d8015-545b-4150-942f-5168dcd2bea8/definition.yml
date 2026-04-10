@@ -1,0 +1,16 @@
+fileVersion: 2
+id: e35d8015-545b-4150-942f-5168dcd2bea8
+isDisabled: false
+metadata:
+  defaultStorageLocation: null
+  error: null
+  nodeMetadataSpec: |-
+    capitalized: SQL Merge
+    short: MRG
+    tagColor: '#1E339A'
+    plural: SQL Merges
+
+    enableCTESupport: true
+    inputMode: 'sql'
+name: SQL Merge
+type: NodeType

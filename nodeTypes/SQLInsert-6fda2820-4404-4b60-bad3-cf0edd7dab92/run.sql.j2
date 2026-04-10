@@ -73,8 +73,10 @@ does not permit copying or modification for any other purpose.
 {# --- Tests --- #}
 {%- if config.postTests is defined and config.postTests.parameters is defined -%}
     {%- for test in config.postTests.parameters -%}
-        {{ test_stage(node.name + ": Test " + loop.index|string) }}
-        {{ test }}
+        {% set testParts = test.split(':', 1) %}
+        {% set continueOnFailure = testParts[0] | lower == 'continueonfailure' %}
+        {{ test_stage(node.name + ": Test " + loop.index|string, continueOnFailure) }}
+        {{ testParts[-1] }}
     {%- endfor %}
 {%- endif %}
 
