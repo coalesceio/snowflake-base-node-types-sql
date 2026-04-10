@@ -204,8 +204,8 @@ To ensure SQL Insert and SQL Merge behave as expected and remain aligned with Ve
 | `@lastModifiedComparison` |  | ✓ | Enables last modified comparison logic |
 | `@treatNullAsCurrentTimestamp` |  | ✓ | Treats NULL as current timestamp for timestamp datatype, last modified comparison column if **@lastModifiedComparison** is enabled |
 | `@type2Dimension` |  | ✓ | Enables SCD Type 2 behavior if **@lastModifiedComparison** is enabled |
-| `@pretests("test1", "continueOnFailure:test2")` | ✓ | ✓ | Allow you to define validation checks that run before node execution<br/>**continueOnFailure** - Controls execution flow when a test fails<br/>*Default Behavior*<br/>continueOnFailure = **false**, If any test fails, execution stops immediately |
-| `@postTests("continueOnFailure:test1", "test2")` | ✓ | ✓ | Allow you to define validation checks that run after node execution<br/>**continueOnFailure** - Controls execution flow when a test fails<br/>*Default Behavior*<br/>continueOnFailure = **false**, If any test fails, execution stops immediately |
+| `@pretests("test1", "continueOnFailure:test2")` | ✓ | ✓ | Allows you to define validation checks that run before node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
+| `@postTests("continueOnFailure:test1", "test2")` | ✓ | ✓ | Allows you to define validation checks that run after node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
 
 ---
 
@@ -220,7 +220,7 @@ To ensure SQL Insert and SQL Merge behave as expected and remain aligned with Ve
 | `@isBusinessKey` |  | ✓ | Marks column as business key |
 | `@isLastModifiedColumn` |  | ✓ | Identifies last modified column if **@lastModifiedComparison** is enabled |
 | `@isChangeTracking` |  | ✓ | Identifies change tracking column |
-| `@tests("null", "unique")` |  | ✓ | Column tests are more restrictive and apply directly to individual columns.<br/>*Supported Tests*<br/> - **null** → Checks for NULL values<br/> - **unique** → Ensures all values are unique |
+| `@tests("null", "unique")` | ✓ | ✓ | Column tests are more restrictive and apply directly to individual columns.<br/>*Supported Tests*<br/> - **null** → Checks for NULL values<br/> - **unique** → Checks to ensure all values are unique<br/>*Valid Examples*<br/>@tests("null", "unique")<br/>@tests("null")<br/>@tests("unique") |
 
 ---
 
