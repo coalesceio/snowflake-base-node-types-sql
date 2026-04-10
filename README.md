@@ -198,12 +198,14 @@ To ensure SQL Insert and SQL Merge behave as expected and remain aligned with Ve
 | `@materializationType("view")` | ✓ | ✓ | Creates object as a view |
 | `@truncateBefore` | ✓ | ✓ | Truncates target before load |
 | `@selectDistinct` | ✓ | ✓ | Applies `DISTINCT` to SELECT |
-| `@PreSQL` | ✓ | ✓ | Executes SQL before main query |
-| `@PostSQL` | ✓ | ✓ | Executes SQL after main query |
+| `@PreSQL("sql1", "sql2")` | ✓ | ✓ | Executes SQL before main query |
+| `@PostSQL("sql1", "sql2")` | ✓ | ✓ | Executes SQL after main query |
 | `@groupByAll` | ✓ | ✓ | Applies `GROUP BY ALL` |
 | `@lastModifiedComparison` |  | ✓ | Enables last modified comparison logic |
 | `@treatNullAsCurrentTimestamp` |  | ✓ | Treats NULL as current timestamp for timestamp datatype, last modified comparison column if **@lastModifiedComparison** is enabled |
 | `@type2Dimension` |  | ✓ | Enables SCD Type 2 behavior if **@lastModifiedComparison** is enabled |
+| `@pretests("test1", "continueOnFailure:test2")` | ✓ | ✓ | Allow you to define validation checks that run before node execution<br/>**continueOnFailure** - Controls execution flow when a test fails<br/>*Default Behavior*<br/>continueOnFailure = **false**, If any test fails, execution stops immediately |
+| `@postTests("continueOnFailure:test1", "test2")` | ✓ | ✓ | Allow you to define validation checks that run after node execution<br/>**continueOnFailure** - Controls execution flow when a test fails<br/>*Default Behavior*<br/>continueOnFailure = **false**, If any test fails, execution stops immediately |
 
 ---
 
@@ -218,6 +220,7 @@ To ensure SQL Insert and SQL Merge behave as expected and remain aligned with Ve
 | `@isBusinessKey` |  | ✓ | Marks column as business key |
 | `@isLastModifiedColumn` |  | ✓ | Identifies last modified column if **@lastModifiedComparison** is enabled |
 | `@isChangeTracking` |  | ✓ | Identifies change tracking column |
+| `@tests("null", "unique")` |  | ✓ | Column tests are more restrictive and apply directly to individual columns.<br/>*Supported Tests*<br/> - **null** → Checks for NULL values<br/> - **unique** → Ensures all values are unique |
 
 ---
 
