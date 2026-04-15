@@ -263,13 +263,19 @@ SYSTEM_CREATE_DATE<br/>SYSTEM_UPDATE_DATE | {{ node.name }}_KEY<br/>SYSTEM_CREAT
 - Ensure consistent naming for all system columns.
 - These columns support SCD handling and audit tracking in MERGE-based nodes.
 - If **MERGE** is selected and a **business key** is defined, **Change Tracking (SCD1)** is applied by default
-- System column names can be customized as needed. However, the **annotations must remain unchanged**, as they control how the template interprets and processes the SQL.
+- System column names can be customized as needed. However, the **annotations must remain unchanged**, as they control how the template interprets and processes the SQL
+
+---
+
+### Branching Overview
+
+<img width="428" height="710" alt="image" src="https://github.com/user-attachments/assets/1b1e0709-06d5-48e8-9d82-bb744988811b" />
 
 ---
 
 ### Known Limitations
 
-Users should be aware of the following technical constraints when using  SQL:
+Users should be aware of the following technical constraints when using SQL:
 
 * **Parsable SQL Only**:
  The node only supports SQL that can be fully parsed by the platform’s engine. Non-standard SQL or vendor-specific "semantic views" that bypass standard parsing will not work.
@@ -321,3 +327,25 @@ This is executed in two stages:
 | **Stage** | **Description** |
 |-----------|----------------|
 | **Delete Table** | Coalesce Internal table is dropped |
+
+--------------
+
+## Code
+
+### SQL Insert Deploy Code
+
+| **Component** | **Link** |
+|--------------|-----------|
+| **Node definition** | [definition.yml]() |
+| **Create Template** | [create.sql.j2]() |
+| **Run Template** | [run.sql.j2]() |
+
+### SQL Merge Deploy Code
+
+| **Component** | **Link** |
+|--------------|-----------|
+| **Node definition** | [definition.yml]) |
+| **Create Template** | [create.sql.j2]() |
+| **Run Template** | [run.sql.j2]() |
+
+[Macros]()
