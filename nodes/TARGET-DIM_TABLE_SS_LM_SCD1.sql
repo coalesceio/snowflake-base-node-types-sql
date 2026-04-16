@@ -8,12 +8,9 @@ SELECT
      0 AS "DIM_KEY" @isSurrogateKey @nullable("false") @description("System generated value"),
      NATION."N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
      NATION."N_NAME" AS "N_NAME" @description("name of country"),
-     NATION."N_REGIONKEY" AS "N_REGIONKEY" @isLastModifiedColumn,
+     NATION."N_REGIONKEY" AS "N_REGIONKEY",
      NATION."N_COMMENT" AS "N_COMMENT" @defaultValue("NA"),
      NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" @isLastModifiedColumn,
-     0 AS "SYSTEM_VERSION" @isSystemVersion @defaultValue("1"),
-     '' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag @defaultValue("Y"),
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
-     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate,
-     CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
-FROM {{ ref('SRC', 'NATION') }} "NATION"
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
+FROM {{ ref('SRC', 'NATION_TEST') }} "NATION"

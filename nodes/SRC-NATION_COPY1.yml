@@ -84,7 +84,7 @@ operation:
           columnCounter: 5d2745cd-31d3-44ed-85c3-06cdbcdd3ed6
           stepCounter: 3f74a90b-fbdb-4eb2-863a-9cc7a6c5a899
         config: {}
-        dataType: TIMESTAMP_NTZ(9)
+        dataType: TIMESTAMP_LTZ(9)
         defaultValue: ""
         description: ""
         name: N_LOAD_TIMESTAMP

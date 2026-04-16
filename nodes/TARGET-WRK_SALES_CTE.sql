@@ -1,6 +1,8 @@
 @id("66d3ef09-d1ea-4f9c-9b14-fdf5d9340539")
 @nodeType("6fda2820-4404-4b60-bad3-cf0edd7dab92")
 
+@preSQL("ALTER SESSION SET TIMEZONE = 'UTC'"")
+
 WITH 
 -- CTE 1: Clean and prepare the Sales data
 PREP_SALES AS (

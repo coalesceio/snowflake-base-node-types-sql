@@ -1,6 +1,6 @@
 fileVersion: 1
-id: 294fcbe8-3a11-48bf-b9c4-1f9571c49943
-name: NATION_COPY2
+id: d809dfd8-9d43-4c92-b666-11a2f4c30633
+name: NATION_TEST
 operation:
   database: ""
   deployEnabled: true
@@ -13,8 +13,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 375cee4e-63b4-4337-a781-e5b2caf61c4f
-          stepCounter: 294fcbe8-3a11-48bf-b9c4-1f9571c49943
+          columnCounter: 6fc4fb85-c8ea-44e4-96c1-b37380d71da4
+          stepCounter: d809dfd8-9d43-4c92-b666-11a2f4c30633
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
@@ -30,8 +30,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 5ac6762c-fde4-4b2d-849b-c7663d923a18
-          stepCounter: 294fcbe8-3a11-48bf-b9c4-1f9571c49943
+          columnCounter: c67d8993-edb8-49eb-9e25-17470964b501
+          stepCounter: d809dfd8-9d43-4c92-b666-11a2f4c30633
         config: {}
         dataType: VARCHAR(25)
         defaultValue: ""
@@ -47,8 +47,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: d1af7e36-298d-4911-8a13-98778711684c
-          stepCounter: 294fcbe8-3a11-48bf-b9c4-1f9571c49943
+          columnCounter: 5c6bdbae-b71a-401d-b2d4-9ca91535b6c8
+          stepCounter: d809dfd8-9d43-4c92-b666-11a2f4c30633
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
@@ -64,8 +64,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: b6f512c8-f24b-4885-952f-f40c92c3ec86
-          stepCounter: 294fcbe8-3a11-48bf-b9c4-1f9571c49943
+          columnCounter: 31c84136-29ac-41d7-a997-ab63eaf7ca3f
+          stepCounter: d809dfd8-9d43-4c92-b666-11a2f4c30633
         config: {}
         dataType: VARCHAR(152)
         defaultValue: ""
@@ -81,8 +81,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 8f86c1e2-0e89-4c10-be71-9b09fe70e887
-          stepCounter: 294fcbe8-3a11-48bf-b9c4-1f9571c49943
+          columnCounter: f9efbbee-0123-49e2-8d50-9b7fed2874be
+          stepCounter: d809dfd8-9d43-4c92-b666-11a2f4c30633
         config: {}
         dataType: TIMESTAMP_LTZ(9)
         defaultValue: ""
@@ -93,7 +93,7 @@ operation:
           - columnReferences: []
             transform: ""
         transform: ""
-  name: NATION_COPY2
+  name: NATION_TEST
   schema: ""
   sqlType: Source
   type: sourceInput

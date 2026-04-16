@@ -135,6 +135,7 @@ does not permit copying or modification for any other purpose.
                     "DIM"."{{ col.name }}" IS NULL
                 {%- endfor %}
                 {{ get_clause(joinclause) }}
+                {% if config.groupByAll %} GROUP BY ALL {% endif %}
             )
 
             UNION ALL
@@ -226,6 +227,7 @@ does not permit copying or modification for any other purpose.
                     {%- endfor %}
                 {%- endif %}
                 {{  get_clause(joinclause)  }}
+                {% if config.groupByAll %} GROUP BY ALL {% endif %}
             )
 
             UNION ALL
@@ -242,8 +244,6 @@ does not permit copying or modification for any other purpose.
                         DATEADD(MILLISECONDS, -1, CAST(CURRENT_TIMESTAMP AS TIMESTAMP))
                     {%- elif col.isSystemCurrentFlag %}
                         'N'
-                    {%- elif col.name == lastModifiedColName and treatNullAsCurrentTimestamp %}
-                        COALESCE({{ get_source_transform(col) }}, CURRENT_TIMESTAMP())
                     {%- else %}
                         "DIM"."{{ col.name }}"
                     {%- endif %}
@@ -318,6 +318,7 @@ does not permit copying or modification for any other purpose.
                     {%- endfor %}
                 {%- endif %}
                 {{  get_clause(joinclause)  }}
+                {% if config.groupByAll %} GROUP BY ALL {% endif %}
             )
 
             {%- if not lastModifiedComparison %}
@@ -454,6 +455,7 @@ does not permit copying or modification for any other purpose.
                         {%- endfor %}
                         
                         {{  get_clause(joinclause)  }}
+                        {% if config.groupByAll %} GROUP BY ALL {% endif %}
                     ) 
                 {%- endif %}
             {%- endif %}
@@ -494,7 +496,7 @@ does not permit copying or modification for any other purpose.
                 {%- if clause %}
                     {{ ("WHERE " ~ clause.strip()[3:].strip()) if clause.strip().upper().startswith('AND') else clause }}
                 {%- endif %}
-                {%- if lastModifiedComparison %} GROUP BY ALL {%- endif %}
+                {%- if config.groupByAll or lastModifiedComparison %} GROUP BY ALL {%- endif %}
             )
         {%- endif %}
 

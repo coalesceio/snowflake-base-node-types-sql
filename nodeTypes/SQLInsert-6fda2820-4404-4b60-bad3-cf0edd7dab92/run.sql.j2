@@ -54,6 +54,7 @@ does not permit copying or modification for any other purpose.
         {%- endfor %}
 
         {{ sources[0].join }}
+        {% if config.groupByAll %} GROUP BY ALL {% endif %}
     )
 
     {# --- Post-SQL --- #}
