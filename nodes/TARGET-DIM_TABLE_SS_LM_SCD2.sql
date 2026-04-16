@@ -1,7 +1,6 @@
 @id("880c0f99-e956-4819-a330-65ce3cf1ab46")
 @nodeType("e35d8015-545b-4150-942f-5168dcd2bea8")
 
-@lastModifiedComparison
 @treatNullAsCurrentTimestamp
 @type2Dimension
 

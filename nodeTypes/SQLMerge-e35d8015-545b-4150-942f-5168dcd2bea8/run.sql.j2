@@ -23,7 +23,7 @@ does not permit copying or modification for any other purpose.
 
 {%- if hasBusinessKey %}
 
-    {%- set lastModifiedComparison = config.lastModifiedComparison | default(false) %}
+    {%- set lastModifiedComparison = columns | selectattr("isLastModifiedColumn") | list | length > 0 | default(false) %}
     {%- if lastModifiedComparison %}
         {%- if columns | selectattr("isLastModifiedColumn") | list | length == 1 %}
             {%- set lastModifiedCol = columns | selectattr('isLastModifiedColumn') | list | first %}
