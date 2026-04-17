@@ -201,9 +201,8 @@ To ensure SQL Insert and SQL Merge behave as expected and remain aligned with Ve
 | `@PreSQL("sql1", "sql2")` | ✓ | ✓ | Executes SQL before main query |
 | `@PostSQL("sql1", "sql2")` | ✓ | ✓ | Executes SQL after main query |
 | `@groupByAll` | ✓ | ✓ | Applies `GROUP BY ALL` |
-| `@lastModifiedComparison` |  | ✓ | Enables last modified comparison logic |
-| `@treatNullAsCurrentTimestamp` |  | ✓ | Treats NULL as current timestamp for timestamp datatype, last modified comparison column if **@lastModifiedComparison** is enabled |
-| `@type2Dimension` |  | ✓ | Enables SCD Type 2 behavior if **@lastModifiedComparison** is enabled |
+| `@treatNullAsCurrentTimestamp` |  | ✓ | Treats NULL as current timestamp for timestamp datatype, last modified comparison column if **@isLastModifiedColumn** is specified |
+| `@type2Dimension` |  | ✓ | Enables SCD Type 2 behavior if **@isLastModifiedColumn** is specified |
 | `@pretests("test1", "continueOnFailure:test2")` | ✓ | ✓ | Allows you to define validation checks that run before node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
 | `@postTests("continueOnFailure:test1", "test2")` | ✓ | ✓ | Allows you to define validation checks that run after node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
 
@@ -218,7 +217,7 @@ To ensure SQL Insert and SQL Merge behave as expected and remain aligned with Ve
 | `@defaultValue("text")` | ✓ | ✓ | Adds default value |
 | `@isSurrogateKey` |  | ✓ | System-generated surrogate key |
 | `@isBusinessKey` |  | ✓ | Marks column as business key |
-| `@isLastModifiedColumn` |  | ✓ | Identifies last modified column if **@lastModifiedComparison** is enabled |
+| `@isLastModifiedColumn` |  | ✓ | Identifies the last modified column and enables a last-modified-based approach instead of column-level change tracking |
 | `@isChangeTracking` |  | ✓ | Identifies change tracking column |
 | `@tests("null", "unique")` | ✓ | ✓ | Column tests are more restrictive and apply directly to individual columns.<br/>*Supported Tests*<br/> - **null** → Checks for NULL values<br/> - **unique** → Checks to ensure all values are unique<br/>*Valid Examples*<br/>@tests("null", "unique")<br/>@tests("null")<br/>@tests("unique") |
 
@@ -269,7 +268,7 @@ SYSTEM_CREATE_DATE<br/>SYSTEM_UPDATE_DATE | {{ node.name }}_KEY<br/>SYSTEM_CREAT
 
 ### Branching Overview
 
-<img width="428" height="710" alt="image" src="https://github.com/user-attachments/assets/1b1e0709-06d5-48e8-9d82-bb744988811b" />
+<img width="409" height="632" alt="image" src="https://github.com/user-attachments/assets/e216437b-2f45-4464-b878-08065378a285" />
 
 ---
 
