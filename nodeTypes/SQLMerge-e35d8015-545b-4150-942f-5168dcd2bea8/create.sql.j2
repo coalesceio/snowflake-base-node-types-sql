@@ -24,7 +24,7 @@ does not permit copying or modification for any other purpose.
 			"{{ col.name }}" {{ col.dataType }}
             {%- if col.isSurrogateKey %} identity {%- endif %}
 			{%- if nullParams and (nullParams[0] in ['false', false]) %} NOT NULL {%- endif %}
-			{%- if defaultValueParams and defaultValueParams[0] | length > 0 %} DEFAULT {{ get_default(col.dataType, defaultValueParams[0]) }} {%- endif %}
+			{%- if defaultValueParams and defaultValueParams[0] is not none %} DEFAULT {{ get_default(col.dataType, defaultValueParams[0]) }} {%- endif %}
 			{%- if descriptionParams and descriptionParams[0] | length > 0 %} COMMENT '{{ descriptionParams[0] | escape }}' {%- endif %}
 			{%- if not loop.last -%}, {%- endif %}
 		{%- endfor %}

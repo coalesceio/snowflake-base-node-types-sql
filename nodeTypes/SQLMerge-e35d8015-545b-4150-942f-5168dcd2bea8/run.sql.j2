@@ -18,37 +18,85 @@ does not permit copying or modification for any other purpose.
     {%- endfor %}
 {%- endif %}
 
-{# == Check if last modified comparison toggle is enabled  #}
-{%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) %}
+{%- if node.materializationType == 'table' %}
 
-{%- if hasBusinessKey %}
+    {# == Check if last modified comparison toggle is enabled  #}
+    {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) %}
 
-    {%- set lastModifiedComparison = columns | selectattr("isLastModifiedColumn") | list | length > 0 | default(false) %}
-    {%- if lastModifiedComparison %}
-        {%- if columns | selectattr("isLastModifiedColumn") | list | length == 1 %}
-            {%- set lastModifiedCol = columns | selectattr('isLastModifiedColumn') | list | first %}
-            {%- set lastModifiedColName = lastModifiedCol.name %}
-            {%- set isTimeStamp = lastModifiedCol 
-                and lastModifiedCol.dataType is defined 
-                and (lastModifiedCol.dataType | upper).startswith('TIME') | default(false) %}
-            {%- set treatNullAsCurrentTimestamp = isTimeStamp and config.treatNullAsCurrentTimestamp | default(false) %}
-            {%- set type2Dimension = config.type2Dimension | default(false) %}
+    {%- if hasBusinessKey %}
+
+        {%- set lastModifiedComparison = columns | selectattr("isLastModifiedColumn") | list | length > 0 | default(false) %}
+        {%- if lastModifiedComparison %}
+            {%- if columns | selectattr("isLastModifiedColumn") | list | length == 1 %}
+                {%- set lastModifiedCol = columns | selectattr('isLastModifiedColumn') | list | first %}
+                {%- set lastModifiedColName = lastModifiedCol.name %}
+                {%- set isTimeStamp = lastModifiedCol 
+                    and lastModifiedCol.dataType is defined 
+                    and (lastModifiedCol.dataType | upper).startswith('TIME') | default(false) %}
+                {%- set treatNullAsCurrentTimestamp = isTimeStamp and config.treatNullAsCurrentTimestamp | default(false) %}
+                {%- set type2Dimension = config.type2Dimension | default(false) %}
+            {%- else %}
+                {{ test_stage('Warning! Count mismatch for last comparison', false) }}
+                -- Only one last modified column is allowed. Multiple/No columns may lead to inconsistent results.
+                SELECT CAST('FAIL' AS INT)
+            {%- endif %}
         {%- else %}
-            {{ test_stage('Warning! Count mismatch for last comparison', false) }}
-            -- Only one last modified column is allowed. Multiple/No columns may lead to inconsistent results.
-            SELECT CAST('FAIL' AS INT)
+            {%- set type2Dimension = columns | selectattr("isChangeTracking") | list | length > 0 | default(false) %}
         {%- endif %}
     {%- else %}
-        {%- set type2Dimension = columns | selectattr("isChangeTracking") | list | length > 0 | default(false) %}
+        {{ test_stage('Warning! Merge requires a business key', false) }}
+        -- A business key must be provided for the MERGE statement to run successfully.
+        -- Please specify it using @isBusinessKey at the column level in SQL.
+        SELECT CAST('FAIL' AS INT)
     {%- endif %}
-{%- else %}
-    {{ test_stage('Warning! Merge requires a business key', false) }}
-    -- A business key must be provided for the MERGE statement to run successfully.
-    -- Please specify it using @isBusinessKey at the column level in SQL.
-    SELECT CAST('FAIL' AS INT)
-{%- endif %}
 
-{%- if node.materializationType == 'table' %}
+    {%- set createDate = get_value_by_column_attribute("isSystemCreateDate") %}
+    {%- set updateDate = get_value_by_column_attribute("isSystemUpdateDate") %}
+
+    {%- if 'ERR:' in createDate or 'ERR:' in updateDate %}
+        {{ test_stage('Warning! Missing audit columns', true) }}
+        -- It is recommended to also include columns with attributes @isSystemCreateDate and @isSystemUpdateDate for improved clarity and auditability.
+        -- Please specify it using @isSystemCreateDate and @isSystemUpdateDate at the column level in SQL.
+        -- Ex:      
+        -- CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
+        -- CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
+        SELECT CAST('FAIL' AS INT)
+    {%- endif %}
+
+    {%- if type2Dimension %}    
+
+        {%- set currentFlagCol = get_value_by_column_attribute("isSystemCurrentFlag") %}
+
+        {%- if 'ERR:' in currentFlagCol %}
+            {{ test_stage('Warning! Merge-SCD2 requires a @isSystemCurrentFlag attribute Column', false) }}
+            -- A column with attributename @isSystemCurrentFlag must be provided for the MERGE-SCD2 statement to run successfully.
+            -- Please specify it using @isSystemCurrentFlag at the column level in SQL.
+            -- Ex: '' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag
+            SELECT CAST('FAIL' AS INT)
+        {%- endif %}
+
+        {%- set versionCol = get_value_by_column_attribute("isSystemVersion") %}
+
+        {%- if 'ERR:' in versionCol %}
+            {{ test_stage('Warning! Merge-SCD2 requires a @isSystemVersion attribute Column', false) }}
+            -- A column with attributename @isSystemVersion must be provided for the MERGE-SCD2 statement to run successfully.
+            -- Please specify it using @isSystemVersion at the column level in SQL.
+            -- Ex: 1 AS "SYSTEM_VERSION" @isSystemVersion
+            SELECT CAST('FAIL' AS INT)
+        {%- endif %}
+
+        {%- set createDate = get_value_by_column_attribute("isSystemCreateDate") %}
+        {%- set updateDate = get_value_by_column_attribute("isSystemUpdateDate") %}
+        {%- set endDate = get_value_by_column_attribute("isSystemEndDate") %}
+
+        {%- if 'ERR:' in endDate %}
+            {{ test_stage('Warning! Missing audit columns', true) }}
+            -- It is recommended to also include columns with attribute @isSystemEndDate for improved clarity and auditability.
+            -- Please specify it using @isSystemEndDate at the column level in SQL.
+            -- Ex: CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
+            SELECT CAST('FAIL' AS INT)
+        {%- endif %}
+    {%- endif %}
 
     {% set preSQL = (
                     config.preSQL.parameters[0] | string | trim

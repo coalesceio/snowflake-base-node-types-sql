@@ -34,7 +34,7 @@ macroString: |-
               {{ default_str | upper }}
 
           {%- elif is_number and dtype not in quote_types %}
-              {{ default_str }}
+              {{ defaultValue }}
 
           {%- elif is_quoted %}
               {{ default_str }}
@@ -125,5 +125,57 @@ macroString: |-
       {%- endif  -%}
 
   {%- endmacro -%}
+
+  {# ========================================================================
+    Purpose          : Executes data quality tests associated with the node
+                       and its columns, based on the configured run order.
+                       Supports running tests either before or after data
+                       insertion, and respects the test continuation
+                       behavior on failure.
+    Input Parameters : runOrder (String)
+                       - Determines when the tests should be executed.
+                         Expected values: 'Before' or 'After'
+    Returns          : Rendered SQL statements for executing the applicable
+                       node-level and column-level data quality tests.
+                       No output is generated if tests are disabled.
+  ========================================================================= #}
+  {%- macro runTests(runOrder) %}
+
+      {%- if runOrder == 'Before' %}
+          {% set configTests = config.get('preTests', {}) %}
+      {% else %}
+          {% set configTests = config.get('postTests', {}) %}
+      {%- endif %}
+
+      {# --- Tests --- #}
+      {%- if configTests is defined and configTests.parameters is defined -%}
+          {%- for test in configTests.parameters -%}
+              {% set testParts = test.split(':', 1) %}
+              {% set continueOnFailure = testParts[0] | lower == 'continueonfailure' %}
+              {{ test_stage(node.name + ": Test " + loop.index|string, continueOnFailure) }}
+              {{ testParts[-1] }}
+          {%- endfor %}
+      {%- endif %}
+
+      {%- if runOrder == 'After' %}
+          {%- for column in columns %}
+              {%- if column.tests is mapping and column.tests.parameters is defined -%}
+                  {%- for test in column.tests.parameters %}
+                      {%- if test | lower == "null" %}
+                          {% set templateString = "SELECT 1 FROM " +  ref(node.location.name, node.name)  + " WHERE " + column.name + " IS NULL " %}                      
+                          {{ test_stage(column.name + ": " + test | lower) }}
+                          {{ templateString }}
+                      {%- endif %}
+                      {%- if test | lower == "unique" %}
+                          {% set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + " GROUP BY " + column.name +  " HAVING COUNT(*) > 1" %}                      
+                          {{ test_stage(column.name + ": " + test | lower) }}
+                          {{ templateString }}
+                      {%- endif %}
+                  {%- endfor %}
+              {%- endif %}
+          {%- endfor %}
+      {%- endif %}
+
+  {%- endmacro %}
 name: macro
 type: Macro
