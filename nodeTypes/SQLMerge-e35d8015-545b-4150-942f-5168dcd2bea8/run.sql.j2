@@ -8,15 +8,8 @@ does not permit copying or modification for any other purpose.
 {# == Node Type Name           : SQL Merge  == #}
 {# == Node Type Description    : This node loads data into work table using options distinct, groupby all, order by, multi-source  == #}
 
-{# --- Tests --- #}
-{%- if config.preTests is defined and config.preTests.parameters is defined -%}
-    {%- for test in config.preTests.parameters -%}
-        {% set testParts = test.split(':', 1) %}
-        {% set continueOnFailure = testParts[0] | lower == 'continueonfailure' %}
-        {{ test_stage(node.name + ": Test " + loop.index|string, continueOnFailure) }}
-        {{ testParts[-1] }}
-    {%- endfor %}
-{%- endif %}
+{# == To run data quality tests before data insertion == #}
+{{ runTests('Before') }}
 
 {%- if node.materializationType == 'table' %}
 
@@ -98,28 +91,12 @@ does not permit copying or modification for any other purpose.
         {%- endif %}
     {%- endif %}
 
-    {% set preSQL = (
-                    config.preSQL.parameters[0] | string | trim
-                    if config.preSQL is defined
-                    and config.preSQL.parameters is defined
-                    and config.preSQL.parameters
-                    else '' 
-                    ) 
-    %}
-
-    {% set postSQL = (
-                    config.postSQL.parameters[0] | string | trim
-                    if config.postSQL is defined
-                    and config.postSQL.parameters is defined
-                    and config.postSQL.parameters
-                    else '' 
-                    ) 
-    %}
-
-    {# == Queries to be excuted before data insertion  == #}
-    {%- if preSQL | length > 0 %}
-        {{ stage('Pre-SQL') }}
-        {{ preSQL }}
+    {# --- Pre-SQL --- #}
+    {%- if config.preSQL is defined and config.preSQL.parameters is defined -%}
+        {%- for sql in config.preSQL.parameters -%}
+            {{ stage('Pre-SQL ' + loop.index|string) }}
+            {{ sql }}
+        {%- endfor %}
     {%- endif %}
 
 	{# == Truncate data before data insertion  == #}
@@ -654,10 +631,12 @@ does not permit copying or modification for any other purpose.
         {%- endfor %}
     )
 
-    {# == Queries to be excuted post data insertion  == #}
-    {%- if postSQL | length > 0 %}
-        {{ stage('Post-SQL') }}
-        {{ postSQL }}
+    {# --- Post-SQL --- #}
+    {%- if config.postSQL is defined and config.postSQL.parameters is defined -%}
+        {%- for sql in config.postSQL.parameters -%}
+            {{ stage('Post-SQL ' + loop.index|string) }}
+            {{ sql }}
+        {%- endfor %}
     {%- endif %}
 
 {%- else %}
@@ -666,29 +645,5 @@ does not permit copying or modification for any other purpose.
 	SELECT 1 AS INFO_MESSAGE WHERE FALSE
 {%- endif %}
 
-{# --- Tests --- #}
-{%- if config.postTests is defined and config.postTests.parameters is defined -%}
-    {%- for test in config.postTests.parameters -%}
-        {% set testParts = test.split(':', 1) %}
-        {% set continueOnFailure = testParts[0] | lower == 'continueonfailure' %}
-        {{ test_stage(node.name + ": Test " + loop.index|string, continueOnFailure) }}
-        {{ testParts[-1] }}
-    {%- endfor %}
-{%- endif %}
-
-{%- for column in columns %}
-    {%- if column.tests is mapping and column.tests.parameters is defined -%}
-        {%- for test in column.tests.parameters %}
-            {%- if test | lower == "null" %}
-                {% set templateString = "SELECT 1 FROM " +  ref(node.location.name, node.name)  + " WHERE " + column.name + " IS NULL " %}                      
-                {{ test_stage(column.name + ": " + test | lower) }}
-                {{ templateString }}
-            {%- endif %}
-            {%- if test | lower == "unique" %}
-                {% set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + " GROUP BY " + column.name +  " HAVING COUNT(*) > 1" %}                      
-                {{ test_stage(column.name + ": " + test | lower) }}
-                {{ templateString }}
-            {%- endif %}
-        {%- endfor %}
-    {%- endif %}
-{%- endfor %}
+{# == To run data quality tests after data insertion == #}
+{{ runTests('After') }}

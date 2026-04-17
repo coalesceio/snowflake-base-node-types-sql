@@ -1,11 +1,11 @@
 @id("40bac29e-2e0a-4880-bf90-103dfc90b785")
 @nodeType("e35d8015-545b-4150-942f-5168dcd2bea8")
 
-@preTests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "continuEOnFailure:SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1")
-@postTests("continueOnFailure: SELECT * FROM {{ this }} WHERE N_NAME IS NULL", "SELECT * FROM {{ this }} WHERE N_REGIONKEY < 0")
+@preSQL("SELECT count(*) FROM {{ this }}", "SELECT count(*) FROM {{ this }}")
+@postSQL("BEGIN SELECT count(*) FROM {{ this }}; SELECT count(*) FROM {{ this }}; END", "SELECT count(*) FROM {{ this }}", "SELECT count(*) FROM {{ this }}")
 
 SELECT
-     NATION."N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
+     NATION."N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey @nullable("false") @description("Business Key") @defaultValue(0),
      NATION."N_NAME" AS "N_NAME"  @tests('NULL', 'unique'),
      NATION."N_REGIONKEY" AS "N_REGIONKEY",
      NATION."N_COMMENT" AS "N_COMMENT" @tests('unique'),

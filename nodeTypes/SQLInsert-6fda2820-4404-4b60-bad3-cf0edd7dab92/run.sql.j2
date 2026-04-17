@@ -9,15 +9,8 @@ does not permit copying or modification for any other purpose.
 {# == Node Type Description    : Creates a table with custome SQL logic  == #}
 {#---------------------------------------------------------------------------------------------#}
 
-{# --- Tests --- #}
-{%- if config.preTests is defined and config.preTests.parameters is defined -%}
-    {%- for test in config.preTests.parameters -%}
-        {% set testParts = test.split(':', 1) %}
-        {% set continueOnFailure = testParts[0] | lower == 'continueonfailure' %}
-        {{ test_stage(node.name + ": Test " + loop.index|string, continueOnFailure) }}
-        {{ testParts[-1] }}
-    {%- endfor %}
-{%- endif %}
+{# == To run data quality tests before data insertion == #}
+{{ runTests('Before') }}
 
 {%- if node.materializationType == 'table' %}
 
@@ -71,29 +64,5 @@ does not permit copying or modification for any other purpose.
 	SELECT 1 AS INFO_MESSAGE WHERE FALSE
 {%- endif %}
 
-{# --- Tests --- #}
-{%- if config.postTests is defined and config.postTests.parameters is defined -%}
-    {%- for test in config.postTests.parameters -%}
-        {% set testParts = test.split(':', 1) %}
-        {% set continueOnFailure = testParts[0] | lower == 'continueonfailure' %}
-        {{ test_stage(node.name + ": Test " + loop.index|string, continueOnFailure) }}
-        {{ testParts[-1] }}
-    {%- endfor %}
-{%- endif %}
-
-{%- for column in columns %}
-    {%- if column.tests is mapping and column.tests.parameters is defined -%}
-        {%- for test in column.tests.parameters %}
-            {%- if test | lower == "null" %}
-                {% set templateString = "SELECT 1 FROM " +  ref(node.location.name, node.name)  + " WHERE " + column.name + " IS NULL " %}                      
-                {{ test_stage(column.name + ": " + test | lower) }}
-                {{ templateString }}
-            {%- endif %}
-            {%- if test | lower == "unique" %}
-                {% set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + " GROUP BY " + column.name +  " HAVING COUNT(*) > 1" %}                      
-                {{ test_stage(column.name + ": " + test | lower) }}
-                {{ templateString }}
-            {%- endif %}
-        {%- endfor %}
-    {%- endif %}
-{%- endfor %}
+{# == To run data quality tests after data insertion == #}
+{{ runTests('After') }}

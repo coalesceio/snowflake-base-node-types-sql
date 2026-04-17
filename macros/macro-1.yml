@@ -143,8 +143,10 @@ macroString: |-
 
       {%- if runOrder == 'Before' %}
           {% set configTests = config.get('preTests', {}) %}
+          {% set testName = ': Pre-Load Test ' %}
       {% else %}
           {% set configTests = config.get('postTests', {}) %}
+          {% set testName = ': Post-Load Test ' %}
       {%- endif %}
 
       {# --- Tests --- #}
@@ -152,7 +154,7 @@ macroString: |-
           {%- for test in configTests.parameters -%}
               {% set testParts = test.split(':', 1) %}
               {% set continueOnFailure = testParts[0] | lower == 'continueonfailure' %}
-              {{ test_stage(node.name + ": Test " + loop.index|string, continueOnFailure) }}
+              {{ test_stage(node.name + testName + loop.index|string, continueOnFailure) }}
               {{ testParts[-1] }}
           {%- endfor %}
       {%- endif %}
@@ -163,12 +165,12 @@ macroString: |-
                   {%- for test in column.tests.parameters %}
                       {%- if test | lower == "null" %}
                           {% set templateString = "SELECT 1 FROM " +  ref(node.location.name, node.name)  + " WHERE " + column.name + " IS NULL " %}                      
-                          {{ test_stage(column.name + ": " + test | lower) }}
+                          {{ test_stage("Column Test: " + column.name + " - " + test | lower) }}
                           {{ templateString }}
                       {%- endif %}
                       {%- if test | lower == "unique" %}
                           {% set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + " GROUP BY " + column.name +  " HAVING COUNT(*) > 1" %}                      
-                          {{ test_stage(column.name + ": " + test | lower) }}
+                          {{ test_stage("Column Test: " + column.name + " - " + test | lower) }}
                           {{ templateString }}
                       {%- endif %}
                   {%- endfor %}
