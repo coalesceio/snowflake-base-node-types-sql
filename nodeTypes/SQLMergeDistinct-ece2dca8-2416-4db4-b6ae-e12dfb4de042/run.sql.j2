@@ -13,7 +13,7 @@ does not permit copying or modification for any other purpose.
 
 {%- if node.materializationType == 'table' %}
 
-    {# == Check if last modified comparison toggle is enabled  #}
+        {# == Check if last modified comparison toggle is enabled  #}
     {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) %}
 
     {%- if hasBusinessKey %}

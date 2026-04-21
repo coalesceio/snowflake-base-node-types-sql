@@ -1,6 +1,8 @@
 @id("ce2f4eb6-1cb6-4e73-bbb9-aca4a520bdc1")
 @nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
 
+@materializationType("view")
+
 SELECT
      NATION."N_NATIONKEY" AS "N_NATIONKEY",
      NATION."N_NAME" AS "N_NAME",

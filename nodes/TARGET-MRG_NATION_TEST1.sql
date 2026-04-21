@@ -1,0 +1,19 @@
+@id("a72c3832-4af3-44ba-b0d9-23495c37e03e")
+@nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
+
+@type2Dimension
+@treatNullAsCurrentTimestamp
+
+SELECT
+     0 AS "MRG_NATION_TEST1_KEY" @isSurrogateKey,
+     NATION_TEST."N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
+     NATION_TEST."N_NAME" AS "N_NAME",
+     NATION_TEST."N_REGIONKEY" AS "N_REGIONKEY",
+     NATION_TEST."N_COMMENT" AS "N_COMMENT",
+     NATION_TEST."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" @isLastModifiedColumn,
+     '' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
+     1 AS "SYSTEM_VERSION" @isSystemVersion,
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate,
+     CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
+FROM {{ ref('SRC', 'NATION_TEST') }} "NATION_TEST"
