@@ -1,7 +1,5 @@
-@id("b2833e6a-32bf-43b8-9a98-0cbf16e17d45")
-@nodeType("e35d8015-545b-4150-942f-5168dcd2bea8")
-
-@treatNullAsCurrentTimestamp
+@id("63d4fa0d-591f-4184-b1aa-36eee854ac32")
+@nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
 
 SELECT
      NATION."N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,

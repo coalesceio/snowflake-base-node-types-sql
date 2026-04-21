@@ -10,9 +10,11 @@ does not permit copying or modification for any other purpose.
 {#---------------------------------------------------------------------------------------------#}
 
 {%- if node.materializationType == 'table' %}
-	{{ stage('Create Table') }}
+
+    {{ validate_merge_columns() }}
 
     {# CreateSQL for Table #}
+	{{ stage('Create Table') }}
 	CREATE OR REPLACE TABLE {{ ref_no_link(node.location.name, node.name) }}
 	(
 		{%- for col in columns %}
@@ -35,7 +37,6 @@ does not permit copying or modification for any other purpose.
 
     {# CreateSQL for View #}
     {{ stage('Create View') }}
-
     CREATE OR REPLACE VIEW {{ ref_no_link(node.location.name, node.name) }}
     (
         {%- for col in columns %}

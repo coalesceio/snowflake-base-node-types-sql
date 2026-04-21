@@ -10,7 +10,7 @@ does not permit copying or modification for any other purpose.
 {#---------------------------------------------------------------------------------------------#}
 
 {# == To run data quality tests before data insertion == #}
-{{ runTests('Before') }}
+{{ run_tests('Before') }}
 
 {%- if node.materializationType == 'table' %}
 
@@ -65,4 +65,4 @@ does not permit copying or modification for any other purpose.
 {%- endif %}
 
 {# == To run data quality tests after data insertion == #}
-{{ runTests('After') }}
+{{ run_tests('After') }}

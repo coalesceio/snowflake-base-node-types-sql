@@ -1,17 +1,16 @@
-@id("ce2f4eb6-1cb6-4e73-bbb9-aca4a520bdc1")
+@id("6824ea7d-2bf4-4c25-868b-9ffee3eea040")
 @nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
 
-@materializationType("view")
-
 SELECT
-     NATION."N_NATIONKEY" AS "N_NATIONKEY",
+     0 AS "DIM_KEY" @isSurrogateKey @nullable("false") @description("System generated value"),
+     NATION."N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
      NATION."N_NAME" AS "N_NAME",
      NATION."N_REGIONKEY" AS "N_REGIONKEY",
      NATION."N_COMMENT" AS "N_COMMENT",
      NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
-     '' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
-     1 AS "SYSTEM_VERSION" @isSystemVersion,
+     0 AS "SYSTEM_VERSION" @isSystemVersion @defaultValue("1"),
+     '' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag @defaultValue("Y"),
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate,
      CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
-FROM {{ ref('SRC', 'NATION') }} "NATION"
+FROM {{ ref('SRC', 'NATION_TEST') }} "NATION"

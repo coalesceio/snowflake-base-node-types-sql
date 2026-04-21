@@ -12,5 +12,5 @@ metadata:
 
     enableCTESupport: true
     inputMode: 'sql'
-name: SQL Merge(Distinct)
+name: SQL Merge
 type: NodeType

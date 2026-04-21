@@ -1,8 +1,5 @@
-@id("1a603994-0970-4796-a573-15ef09add443")
-@nodeType("e35d8015-545b-4150-942f-5168dcd2bea8")
-
-@treatNullAsCurrentTimestamp
-@type2Dimension
+@id("b42f1f1a-c901-4a2c-98d2-e0e5fb114be9")
+@nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
 
 WITH ALL_NATIONS AS (
 
@@ -17,11 +14,12 @@ WITH ALL_NATIONS AS (
 )
 
 SELECT
+     0 AS "DIM_KEY" @isSurrogateKey,
      NATIONS_SAMPLE."N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
-     NATIONS_SAMPLE."N_NAME" AS "N_NAME" @description("name of country"),
+     NATIONS_SAMPLE."N_NAME" AS "N_NAME" @isChangeTracking,
      NATIONS_SAMPLE."N_REGIONKEY" AS "N_REGIONKEY",
-     NATIONS_SAMPLE."N_COMMENT" AS "N_COMMENT" @defaultValue("NA"),
-     NATIONS_SAMPLE."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" @isLastModifiedColumn,
+     NATIONS_SAMPLE."N_COMMENT" AS "N_COMMENT",
+     NATIONS_SAMPLE."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
      0 AS "SYSTEM_VERSION" @isSystemVersion @defaultValue("1"),
      '' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag @defaultValue("Y"),
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
