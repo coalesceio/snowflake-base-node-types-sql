@@ -201,10 +201,10 @@ To ensure SQL Insert and SQL Merge behave as expected and remain aligned with Ve
 | `@PreSQL("sql1", "sql2")` | ✓ | ✓ | Executes SQL before main query |
 | `@PostSQL("sql1", "sql2")` | ✓ | ✓ | Executes SQL after main query |
 | `@groupByAll` | ✓ | ✓ | Applies `GROUP BY ALL` |
-| `@treatNullAsCurrentTimestamp` |  | ✓ | Treats NULL as current timestamp for timestamp datatype, last modified comparison column if **@isLastModifiedColumn** is specified |
-| `@type2Dimension` |  | ✓ | Enables SCD Type 2 behavior if **@isLastModifiedColumn** is specified |
 | `@pretests("test1", "continueOnFailure:test2")` | ✓ | ✓ | Allows you to define validation checks that run before node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
 | `@postTests("continueOnFailure:test1", "test2")` | ✓ | ✓ | Allows you to define validation checks that run after node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
+| `@treatNullAsCurrentTimestamp` |  | ✓ | Treats NULL as current timestamp for timestamp datatype, last modified comparison column if **@isLastModifiedColumn** is specified |
+| `@type2Dimension` |  | ✓ | Enables SCD Type 2 behavior if **@isLastModifiedColumn** is specified |
 
 ---
 
@@ -215,11 +215,11 @@ To ensure SQL Insert and SQL Merge behave as expected and remain aligned with Ve
 | `@nullable("false")` | ✓ | ✓ | Marks column as NOT NULL |
 | `@description("text")` | ✓ | ✓ | Adds column description |
 | `@defaultValue("text")` | ✓ | ✓ | Adds default value |
+| `@tests("null", "unique")` | ✓ | ✓ | Column tests are more restrictive and apply directly to individual columns.<br/>*Supported Tests*<br/> - **null** → Checks for NULL values<br/> - **unique** → Checks to ensure all values are unique<br/>*Valid Examples*<br/>@tests("null", "unique")<br/>@tests("null")<br/>@tests("unique") |
 | `@isSurrogateKey` |  | ✓ | System-generated surrogate key |
 | `@isBusinessKey` |  | ✓ | Marks column as business key |
 | `@isLastModifiedColumn` |  | ✓ | Identifies the last modified column and enables a last-modified-based approach instead of column-level change tracking |
 | `@isChangeTracking` |  | ✓ | Identifies change tracking column |
-| `@tests("null", "unique")` | ✓ | ✓ | Column tests are more restrictive and apply directly to individual columns.<br/>*Supported Tests*<br/> - **null** → Checks for NULL values<br/> - **unique** → Checks to ensure all values are unique<br/>*Valid Examples*<br/>@tests("null", "unique")<br/>@tests("null")<br/>@tests("unique") |
 
 ---
 
@@ -239,7 +239,7 @@ To ensure SQL Insert and SQL Merge behave as expected and remain aligned with Ve
 
 | Column Name | Definition | Annotation |
 |------------|-----------|-----------|
-| {{ node.name }}_KEY | 0 AS "{{ node.name }}_KEY" | @isSurrogateKey, @nullable("false"), @description("System generated value") |
+| {{ node.name }}_KEY | 0 AS "{{ node.name }}_KEY" | @isSurrogateKey |
 | SYSTEM_VERSION | 0 AS "SYSTEM_VERSION" | @isSystemVersion |
 | SYSTEM_CURRENT_FLAG | '' AS "SYSTEM_CURRENT_FLAG" | @isSystemCurrentFlag |
 | SYSTEM_CREATE_DATE | CAST(CURRENT_TIMESTAMP AS TIMESTAMP) | @isSystemCreateDate |
@@ -248,11 +248,11 @@ To ensure SQL Insert and SQL Merge behave as expected and remain aligned with Ve
 
 ---
 
-### Node/Load Strategy-Specific System Columns
+### Node/Load Strategy-Specific System Columns(Recommended)
 
 | SCD Type 1(Fact)           | SCD Type 2(Dim and PStage) |
 |--------------------|---------------------------|
-SYSTEM_CREATE_DATE<br/>SYSTEM_UPDATE_DATE | {{ node.name }}_KEY<br/>SYSTEM_CREATE_DATE<br/>SYSTEM_UPDATE_DATE<br/>SYSTEM_END_DATE<br/>SYSTEM_CURRENT_FLAG<br/>SYSTEM_VERSION |
+SYSTEM_CREATE_DATE<br/>SYSTEM_UPDATE_DATE | {{ node.name }}_KEY<br/>SYSTEM_CURRENT_FLAG<br/>SYSTEM_VERSION<br/>SYSTEM_CREATE_DATE<br/>SYSTEM_UPDATE_DATE<br/>SYSTEM_END_DATE |
 
 ---
 
@@ -262,6 +262,7 @@ SYSTEM_CREATE_DATE<br/>SYSTEM_UPDATE_DATE | {{ node.name }}_KEY<br/>SYSTEM_CREAT
 - Ensure consistent naming for all system columns.
 - These columns support SCD handling and audit tracking in MERGE-based nodes.
 - If **MERGE** is selected and a **business key** is defined, **Change Tracking (SCD1)** is applied by default
+- When both Last Modified and Change Tracking are defined, the execution prioritizes Last Modified over Change Tracking.
 - System column names can be customized as needed. However, the **annotations must remain unchanged**, as they control how the template interprets and processes the SQL
 
 ---
