@@ -264,6 +264,7 @@ SYSTEM_CREATE_DATE<br/>SYSTEM_UPDATE_DATE | {{ node.name }}_KEY<br/>SYSTEM_CURRE
 - If **MERGE** is selected and a **business key** is defined, **Change Tracking (SCD1)** is applied by default
 - When both Last Modified and Change Tracking are defined, the execution prioritizes Last Modified over Change Tracking.
 - System column names can be customized as needed. However, the **annotations must remain unchanged**, as they control how the template interprets and processes the SQL
+- For the **MERGE** node to execute reliably, all columns should be explicitly **aliased**. Since MERGE involves joins and conditional logic, unaliased columns can lead to ambiguity and query failures.
 
 ---
 
