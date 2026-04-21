@@ -1,7 +1,6 @@
 @id("b8275bee-ffd3-4825-8f98-aaf2220432cf")
 @nodeType("6fda2820-4404-4b60-bad3-cf0edd7dab92")
 
-
 SELECT
      NATION_TEST."N_NATIONKEY" AS "N_NATIONKEY",
      NATION_TEST."N_NAME" AS "N_NAME",

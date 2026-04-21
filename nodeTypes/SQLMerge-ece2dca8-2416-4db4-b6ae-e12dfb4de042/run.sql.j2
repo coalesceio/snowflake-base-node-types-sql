@@ -81,6 +81,8 @@ does not permit copying or modification for any other purpose.
                     1
                     {%- elif col.isSystemCurrentFlag %}
                     'Y'
+                    {%- elif col.name == lastModifiedColName and treatNullAsCurrentTimestamp %}
+                        COALESCE({{ get_source_transform(col) }}, CURRENT_TIMESTAMP())
                     {%- else %}
                     {{ get_source_transform(col) }}
                     {%- endif %}
@@ -122,7 +124,7 @@ does not permit copying or modification for any other purpose.
                     {%- elif col.isSystemCurrentFlag %}
                         'Y'
                     {%- elif col.name == lastModifiedColName and treatNullAsCurrentTimestamp %}
-                            COALESCE({{ get_source_transform(col) }},CURRENT_TIMESTAMP())
+                        COALESCE({{ get_source_transform(col) }}, CURRENT_TIMESTAMP())
                     {%- else %}
                     {{ get_source_transform(col) }}
                     {%- endif %}
