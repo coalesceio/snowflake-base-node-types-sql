@@ -1,7 +1,6 @@
 @id("6824ea7d-2bf4-4c25-868b-9ffee3eea040")
 @nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
 
-/* Adde
 
 SELECT
      0 AS "DIM_KEY" @isSurrogateKey @nullable("false") @description("System generated value"),
