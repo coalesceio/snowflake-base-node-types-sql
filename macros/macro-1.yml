@@ -153,9 +153,9 @@ macroString: |-
       {%- if configTests is defined and configTests.parameters is defined -%}
           {%- for test in configTests.parameters -%}
               {% set testParts = test.split(':', 1) %}
-              {% set continueOnFailure = testParts[0] | lower == 'continueonfailure' %}
+              {% set continueOnFailure = testParts[0] | trim | lower == 'continueonfailure' %}
               {{ test_stage(node.name + testName + loop.index|string, continueOnFailure) }}
-              {{ testParts[-1] }}
+              {{ testParts[-1] | trim }}
           {%- endfor %}
       {%- endif %}
 
@@ -163,12 +163,12 @@ macroString: |-
           {%- for column in columns %}
               {%- if column.tests is mapping and column.tests.parameters is defined -%}
                   {%- for test in column.tests.parameters %}
-                      {%- if test | lower == "null" %}
+                      {%- if test | trim | lower == "null" %}
                           {% set templateString = "SELECT 1 FROM " +  ref(node.location.name, node.name)  + " WHERE " + column.name + " IS NULL " %}                      
                           {{ test_stage("Column Test: " + column.name + " - " + test | lower) }}
                           {{ templateString }}
                       {%- endif %}
-                      {%- if test | lower == "unique" %}
+                      {%- if test | trim | lower == "unique" %}
                           {% set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + " GROUP BY " + column.name +  " HAVING COUNT(*) > 1" %}                      
                           {{ test_stage("Column Test: " + column.name + " - " + test | lower) }}
                           {{ templateString }}
@@ -231,21 +231,40 @@ macroString: |-
 
           {%- set endDate = get_value_by_column_attribute("isSystemEndDate") %}
 
-          {%- if 'ERR:' in createDate or 'ERR:' in updateDate or 'ERR:' in endDate %}
-              {{ test_stage('Warning! Missing audit columns', true) }}
-              /*
-              It is recommended to also include columns with annotations @isSurrogateKey, @isSystemCreateDate, @isSystemUpdateDate and @isSystemEndDate for improved clarity and auditability.
-              Please specify it using @isSurrogateKey, @isSystemCreateDate, @isSystemUpdateDate and @isSystemEndDate at the column level in SQL.
+          {%- if lastModifiedComparison %}
 
-              Example:
+              {%- if 'ERR:' in createDate or 'ERR:' in endDate %}
+                  {{ test_stage('Warning! Missing audit columns', true) }}
+                  /*
+                  It is recommended to also include columns with annotations @isSurrogateKey, @isSystemCreateDate and @isSystemEndDate for improved clarity and auditability.
+                  Please specify it using @isSurrogateKey, @isSystemCreateDate, @isSystemEndDate at the column level in SQL.
 
-              0 AS "{{ node.name }}_KEY" @isSurrogateKey,
-              CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
-              CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate,
-              CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
+                  Example:
 
-              */
-              SELECT CAST('FAIL' AS INT)
+                  0 AS "{{ node.name }}_KEY" @isSurrogateKey,
+                  CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
+                  CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
+
+                  */
+                  SELECT CAST('FAIL' AS INT)
+              {%- endif %}
+          {%- else %}
+              {%- if 'ERR:' in createDate or 'ERR:' in updateDate or 'ERR:' in endDate %}
+                  {{ test_stage('Warning! Missing audit columns', true) }}
+                  /*
+                  It is recommended to also include columns with annotations @isSurrogateKey, @isSystemCreateDate, @isSystemUpdateDate and @isSystemEndDate for improved clarity and auditability.
+                  Please specify it using @isSurrogateKey, @isSystemCreateDate, @isSystemUpdateDate and @isSystemEndDate at the column level in SQL.
+
+                  Example:
+
+                  0 AS "{{ node.name }}_KEY" @isSurrogateKey,
+                  CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
+                  CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate,
+                  CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
+
+                  */
+                  SELECT CAST('FAIL' AS INT)
+              {%- endif %}
           {%- endif %}
       {%- else %}
           {%- if 'ERR:' in createDate or 'ERR:' in updateDate %}

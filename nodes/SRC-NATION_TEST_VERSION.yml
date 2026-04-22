@@ -1,0 +1,118 @@
+fileVersion: 1
+id: 56e9d03b-8d64-4662-9bfe-142464cd985c
+name: NATION_TEST_VERSION
+operation:
+  database: ""
+  deployEnabled: true
+  description: ""
+  locationName: SRC
+  metadata:
+    columns:
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: c505f75b-b17b-4f3e-b966-07852ecebac0
+          stepCounter: 56e9d03b-8d64-4662-9bfe-142464cd985c
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: N_NATIONKEY
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 68482b86-3acc-4228-b7f8-82f4e69b30b1
+          stepCounter: 56e9d03b-8d64-4662-9bfe-142464cd985c
+        config: {}
+        dataType: VARCHAR(25)
+        defaultValue: ""
+        description: ""
+        name: N_NAME
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 1dc06384-7ec7-46cc-bed6-d83b2716953d
+          stepCounter: 56e9d03b-8d64-4662-9bfe-142464cd985c
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: N_REGIONKEY
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 50ea8277-dd1a-44f9-920b-7b25e2c7dcae
+          stepCounter: 56e9d03b-8d64-4662-9bfe-142464cd985c
+        config: {}
+        dataType: VARCHAR(152)
+        defaultValue: ""
+        description: ""
+        name: N_COMMENT
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 7beecded-660e-43ba-a0ca-43229de51758
+          stepCounter: 56e9d03b-8d64-4662-9bfe-142464cd985c
+        config: {}
+        dataType: TIMESTAMP_LTZ(9)
+        defaultValue: ""
+        description: ""
+        name: N_LOAD_TIMESTAMP
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: f7c0f77f-d6eb-491f-9a90-6f91b09d723a
+          stepCounter: 56e9d03b-8d64-4662-9bfe-142464cd985c
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: VERSION
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+  name: NATION_TEST_VERSION
+  schema: ""
+  sqlType: Source
+  type: sourceInput
+  version: 1
+type: Node
