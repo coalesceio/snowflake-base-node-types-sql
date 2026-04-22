@@ -212,9 +212,9 @@ To ensure SQL Insert and SQL Merge behave as expected and remain aligned with Ve
 
 | Annotation | SQL Insert | SQL Merge | Description |
 |-----------|-----------|----------|------------|
-| `@nullable("false")` | ✓ | ✓ | Marks column as NOT NULL |
+| `@nullable("false")`<br/>`@nullable(false)` | ✓ | ✓ | Marks column as NOT NULL |
 | `@description("text")` | ✓ | ✓ | Adds column description |
-| `@defaultValue("text")` | ✓ | ✓ | Adds default value |
+| `@defaultValue("text")`</br>`@defaultValue(number)`</br>`@defaultValue(bool)` | ✓ | ✓ | Adds default value |
 | `@tests("null", "unique")` | ✓ | ✓ | Column tests are more restrictive and apply directly to individual columns.<br/>*Supported Tests*<br/> - **null** → Checks for NULL values<br/> - **unique** → Checks to ensure all values are unique<br/>*Valid Examples*<br/>@tests("null", "unique")<br/>@tests("null")<br/>@tests("unique") |
 | `@isSurrogateKey` |  | ✓ | System-generated surrogate key |
 | `@isBusinessKey` |  | ✓ | Marks column as business key |
