@@ -12,6 +12,6 @@ SELECT
      "N_NATIONKEY" AS "N_NATIONKEY" @description("text") @nullable("false"),
      "N_NAME" AS "N_NAME" @defaultValue("{{parameters.defaultString}}") @nullable(false),
      "N_REGIONKEY" AS "N_REGIONKEY" @defaultValue(0) @nullable(true),
-     "N_COMMENT" AS "N_COMMENT" @nullable('false') @defaultValue(True) ,
+     "N_COMMENT" AS "N_COMMENT" @nullable('true') @defaultValue(True) ,
      "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP"
 FROM {{ ref('SRC', 'NATION') }} "NATION"
