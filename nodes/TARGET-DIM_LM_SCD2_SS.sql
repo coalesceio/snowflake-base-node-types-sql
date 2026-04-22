@@ -11,7 +11,7 @@ SELECT
      NATION."N_REGIONKEY" AS "N_REGIONKEY",
      NATION."N_COMMENT" AS "N_COMMENT",
      NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" @isLastModifiedColumn,
-     0 AS "SYSTEM_VERSION" @isSystemVersion @defaultValue("1"),
+     0.0 AS "SYSTEM_VERSION" @isSystemVersion @defaultValue("1"),
      '' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag @defaultValue("Y"),
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate,
