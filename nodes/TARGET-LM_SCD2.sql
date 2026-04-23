@@ -4,6 +4,7 @@
 @type2Dimension
 
 SELECT
+     0 AS "LM_SCD2_KEY" @isSurrogateKey,
      NATION_TEST."N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
      NATION_TEST."N_NAME" AS "N_NAME",
      NATION_TEST."N_REGIONKEY" AS "N_REGIONKEY",
