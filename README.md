@@ -198,8 +198,8 @@ To ensure SQL Insert and SQL Merge behave as expected and remain aligned with Ve
 | `@materializationType("view")` | ✓ | ✓ | Creates object as a view |
 | `@truncateBefore` | ✓ | ✓ | Truncates target before load |
 | `@selectDistinct` | ✓ | ✓ | Applies `DISTINCT` to SELECT |
-| `@PreSQL("sql1", "sql2")` | ✓ | ✓ | Executes SQL before main query |
-| `@PostSQL("sql1", "sql2")` | ✓ | ✓ | Executes SQL after main query |
+| `@preSQL("sql1", "sql2")` | ✓ | ✓ | Executes SQL before main query |
+| `@postSQL("sql1", "sql2")` | ✓ | ✓ | Executes SQL after main query |
 | `@groupByAll` | ✓ | ✓ | Applies `GROUP BY ALL` |
 | `@preTests("test1", "continueOnFailure:test2")` | ✓ | ✓ | Allows you to define validation checks that run before node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
 | `@postTests("continueOnFailure:test1", "test2")` | ✓ | ✓ | Allows you to define validation checks that run after node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
