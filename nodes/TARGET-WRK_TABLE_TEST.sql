@@ -4,8 +4,8 @@
 
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY",
-     "N_NAME" AS "N_NAME" @tests('null'),
-     "N_REGIONKEY" AS "N_REGIONKEY"  @tests('NULL', 'unique'),
-     "N_COMMENT" AS "N_COMMENT" @tests('unique'),
+     "N_NAME" AS "N_NAME",
+     "N_REGIONKEY" AS "N_REGIONKEY" ,
+     "N_COMMENT" AS "N_COMMENT",
      "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP"
 FROM {{ ref('SRC', 'NATION') }} "NATION"

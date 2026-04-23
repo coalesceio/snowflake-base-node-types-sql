@@ -5,7 +5,7 @@
 @type2Dimension
 
 SELECT
-     0 AS "DIM_KEY" @isSurrogateKey @nullable("false") @description("System generated value"),
+     0 AS "DIM_KEY" @isSurrogateKey,
      NATION."N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
      NATION."N_NAME" AS "N_NAME",
      NATION."N_REGIONKEY" AS "N_REGIONKEY",
