@@ -1,7 +1,7 @@
 @id("ef23dea2-46c4-4015-89c6-f5b1fcbb7a64")
 @nodeType("6fda2820-4404-4b60-bad3-cf0edd7dab92")
 
-/* Adding a comment 
+/* Adding a comment */
 
 @truncateBefore
 @selectDistinct
