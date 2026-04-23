@@ -184,10 +184,9 @@ macroString: |-
 
       {# == Check if last modified comparison is enabled  #}
       {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) %}
+      {%- set lastModifiedComparison = columns | selectattr("isLastModifiedColumn") | list | length > 0 | default(false) %}
 
       {%- if hasBusinessKey %}
-
-          {%- set lastModifiedComparison = columns | selectattr("isLastModifiedColumn") | list | length > 0 | default(false) %}
           {%- if lastModifiedComparison %}
               {%- if columns | selectattr("isLastModifiedColumn") | list | length == 1 %}
                   {%- set type2Dimension = config.type2Dimension | default(false) %}

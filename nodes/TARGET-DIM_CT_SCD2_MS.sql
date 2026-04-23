@@ -1,6 +1,8 @@
 @id("b42f1f1a-c901-4a2c-98d2-e0e5fb114be9")
 @nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
 
+/* Add comment */
+
 WITH ALL_NATIONS AS (
 
     SELECT N_NATIONKEY, N_NAME, N_REGIONKEY, N_COMMENT, N_LOAD_TIMESTAMP
