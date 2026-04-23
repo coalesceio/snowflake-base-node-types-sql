@@ -11,7 +11,7 @@
 @preTests("SELECT 1 FROM {{ this }} GROUP BY N_REGIONKEY HAVING COUNT(*) > 1", "continuEOnFailure:SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1")
 
 SELECT
-     "N_NATIONKEY" AS "N_NATIONKEY",
+     "N_NATIONKEY" AS "N_NATIONKEY" @nullable(),
      "N_NAME" AS "N_NAME",
      "N_REGIONKEY" AS "N_REGIONKEY",
      "N_COMMENT" AS "N_COMMENT",
