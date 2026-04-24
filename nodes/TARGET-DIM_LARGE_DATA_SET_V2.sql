@@ -1,0 +1,18 @@
+@id("71bff0fc-4bf0-4699-8975-59ef7afd5974")
+@nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
+
+
+SELECT
+     0 AS "DIM_LARGE_DATA_SET_V2_KEY" @isSurrogateKey,
+     LARGE_DATA_SET."ID" AS "ID" @isBusinessKey,
+     LARGE_DATA_SET."USER_ID" AS "USER_ID" @isBusinessKey,
+     LARGE_DATA_SET."TRANSACTION_TYPE" AS "TRANSACTION_TYPE" @isChangeTracking,
+     LARGE_DATA_SET."AMOUNT" AS "AMOUNT" @isBusinessKey,
+     LARGE_DATA_SET."STATUS" AS "STATUS" @isChangeTracking,
+     LARGE_DATA_SET."TIMESTAMP" AS "TIMESTAMP" @isChangeTracking,
+    '' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
+    1 AS "SYSTEM_VERSION" @isSystemVersion,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate,
+    CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
+FROM {{ ref('SRC', 'LARGE_DATA_SET') }} "LARGE_DATA_SET"

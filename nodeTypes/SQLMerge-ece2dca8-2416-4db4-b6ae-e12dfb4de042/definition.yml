@@ -11,6 +11,5 @@ metadata:
     plural: SQL Merges
 
     enableCTESupport: true
-    inputMode: 'sql'
 name: SQL Merge
 type: NodeType

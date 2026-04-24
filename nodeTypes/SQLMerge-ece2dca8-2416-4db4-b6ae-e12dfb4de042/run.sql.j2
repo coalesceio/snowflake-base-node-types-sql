@@ -106,7 +106,7 @@ does not permit copying or modification for any other purpose.
                     "DIM"."{{ col.name }}" IS NULL
                 {%- endfor %}
                 {{ get_clause(joinclause) }}
-                {% if config.groupByAll %} GROUP BY ALL {% endif %}
+                {%- if config.groupByAll %} GROUP BY ALL {%- endif %}
             )
 
             UNION ALL
@@ -159,13 +159,14 @@ does not permit copying or modification for any other purpose.
                         {%- else %}
                             OR
                         {%- endif %}
-                        {{ get_source_transform(col) }} IS DISTINCT FROM "DIM"."{{ col.name }}"
-                    
+
+                        {{- safe_compare(get_source_transform(col), '"DIM"."' ~ col.name ~ '"', col.dataType) -}}
+
                         {%- if loop.last %} ) {%- endif %}
                     {%- endfor %}
                 {%- endif %}
                 {{  get_clause(joinclause)  }}
-                {% if config.groupByAll %} GROUP BY ALL {% endif %}
+                {%- if config.groupByAll %} GROUP BY ALL {%- endif %}
             )
 
             UNION ALL
@@ -216,7 +217,8 @@ does not permit copying or modification for any other purpose.
                         {%- else %}
                             OR
                         {%- endif %}
-                        {{ get_source_transform(col) }} IS DISTINCT FROM "DIM"."{{ col.name }}"
+
+                        {{- safe_compare(get_source_transform(col), '"DIM"."' ~ col.name ~ '"', col.dataType) -}}
 
                         {%- if loop.last %}
                             )
@@ -224,7 +226,7 @@ does not permit copying or modification for any other purpose.
                     {%- endfor %}
                 {%- endif %}
                 {{  get_clause(joinclause)  }}
-                {% if config.groupByAll %} GROUP BY ALL {% endif %}
+                {%- if config.groupByAll %} GROUP BY ALL {%- endif %}
             )
 
             {%- if not lastModifiedComparison %}
@@ -276,7 +278,8 @@ does not permit copying or modification for any other purpose.
                             {%- if not loop.first %}
                                 AND
                             {%- endif %}
-                            {{ get_source_transform(col) }} = "DIM"."{{ col.name }}"
+
+                            {{- safe_equals(get_source_transform(col), '"DIM"."' ~ col.name ~ '"', col.dataType) -}}
 
                         {%- endfor %} )
             
@@ -295,13 +298,14 @@ does not permit copying or modification for any other purpose.
                             {%- if not loop.first %}
                                 OR
                             {%- endif %}
-                            {{ get_source_transform(col) }} IS DISTINCT FROM "DIM"."{{ col.name }}"
+
+                            {{- safe_compare(get_source_transform(col), '"DIM"."' ~ col.name ~ '"', col.dataType) -}}
 
                             {%- if loop.last %} ) {%- endif %}
                         {%- endfor %}
                         
                         {{  get_clause(joinclause)  }}
-                        {% if config.groupByAll %} GROUP BY ALL {% endif %}
+                        {%- if config.groupByAll %} GROUP BY ALL {%- endif %}
                     ) 
                 {%- endif %}
             {%- endif %}
@@ -324,7 +328,7 @@ does not permit copying or modification for any other purpose.
                     {%- else %}
                         {{ get_source_transform(col) }}
                     {%- endif %}
-                    {%- if col.name != lastModifiedColName %} AS "{{ col.name }}" {% endif %}
+                    {%- if col.name != lastModifiedColName %} AS "{{ col.name }}" {%- endif %}
                     {%- if not loop.last %}, {%- endif %}
                 {%- endfor %}
                 {{ get_clause(joinclause,'from')}}
@@ -385,7 +389,8 @@ does not permit copying or modification for any other purpose.
                 {%- else %}
                     OR
                 {%- endif %}
-                "SRC"."{{ col.name }}" IS DISTINCT FROM "TGT"."{{ col.name }}"
+
+                {{- safe_compare('"SRC"."' ~  col.name ~ '"', '"TGT"."' ~ col.name ~ '"', col.dataType) -}}
 
                 {%- if loop.last %} ) {%- endif %}
             {%- endfor %}

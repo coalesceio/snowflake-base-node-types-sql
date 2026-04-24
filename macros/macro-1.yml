@@ -1,6 +1,24 @@
 fileVersion: 1
 id: "1"
 macroString: |-
+  {# ========================================================================
+  Macro: get_default
+
+  Description:
+  Generates a correctly formatted SQL default value based on the provided datatype
+  and input value. Ensures proper quoting, function handling, and datatype alignment
+  for use in DDL/DML statements.
+
+  Inputs:
+  - dataType (string):
+      Target column datatype (e.g., VARCHAR, NUMBER, DATE, BOOLEAN, VARIANT)
+
+  - defaultValue (any):
+      Default value to be applied (can be string, number, boolean, NULL, or function)
+
+  Output:
+  - Returns a SQL-safe default value string formatted according to datatype
+   ========================================================================#}
   {%- macro get_default(dataType, defaultValue) -%}
 
       {%- if dataType is not none %}
@@ -49,10 +67,30 @@ macroString: |-
       {%- endif %}
   {%- endmacro -%}
 
-  {#-- This macro will split the join clause into from and rest of the clauses like where,groupby,orderby ,qualify  #}
-  {#-- Input parmeters   - joinclause #}
-  {#-- Return            - from clause and other clauses #}
+  {# ========================================================================
+  Macro: get_clause
 
+  Description:
+  Parses a SQL join clause string and splits it into two logical parts:
+  1. FROM/JOIN portion
+  2. Remaining clause (WHERE / GROUP BY / QUALIFY / ORDER BY)
+
+  This is useful when dynamically injecting additional conditions into an
+  existing query without breaking its structure.
+
+  Inputs:
+  - joinclause (string):
+      Full SQL clause containing JOIN + optional filters and clauses.
+      May include comments (both block /* */ and line --).
+
+  - ret_clause (string):
+      Specifies which part to return:
+      - 'from' → returns only the FROM/JOIN portion
+      - anything else → returns the remaining clause
+
+  Output:
+  - Cleaned and trimmed SQL string based on requested clause
+   ========================================================================#}
   {%- macro get_clause( joinclause , ret_clause ) -%}
 
       {#  STEP 1: Remove Block Comments /* ... */ #}
@@ -180,6 +218,34 @@ macroString: |-
 
   {%- endmacro %}
 
+  {# ===================================================================================================== 
+  Macro: validate_merge_columns
+
+  Description:
+  Performs pre-validation checks on column metadata before executing a MERGE operation.
+  Ensures required column annotations are present and consistent based on the merge type
+  (standard, last-modified based, or SCD Type 2).
+
+  This macro is intended to fail fast with clear warnings if required configurations
+  are missing or incorrectly defined.
+
+  Inputs:
+  - columns (implicit):
+      List of column objects with attributes such as:
+      - isBusinessKey
+      - isLastModifiedColumn
+      - isChangeTracking
+      - isSystemCreateDate
+      - isSystemUpdateDate
+      - isSystemEndDate
+      - isSystemCurrentFlag
+      - isSystemVersion
+
+  Output:
+  - No direct data output
+  - Returns a FAIL-select statement if validation fails
+  - Otherwise allows query execution to proceed
+  ===================================================================================================== #}
   {% macro validate_merge_columns() %}
 
       {# == Check if last modified comparison is enabled  #}
@@ -281,6 +347,95 @@ macroString: |-
               SELECT CAST('FAIL' AS INT)
           {%- endif %}
       {%- endif %}
+  {% endmacro %}
+
+  {# ====================================================================================================
+  Macro: safe_equals
+
+  Description:
+  Generates a datatype-aware equality comparison between a source and target expression.
+  Designed for use in WHERE / JOIN conditions where different Snowflake datatypes
+  require different comparison logic.
+
+  Inputs:
+  - src_expr (string):
+      Source column or expression (e.g., SRC."COL1")
+
+  - tgt_expr (string):
+      Target column or expression (e.g., "DIM"."COL1")
+
+  - data_type (string):
+      Datatype of the column (e.g., VARCHAR, NUMBER, GEOGRAPHY, GEOMETRY)
+
+  Output:
+  - Returns a SQL boolean condition that evaluates to TRUE when source and target values are equal
+  ====================================================================================================#}
+  {% macro safe_equals(src_expr, tgt_expr, data_type) %}
+
+      {%- set dt = data_type | upper %}
+
+      {%- if 'GEOGRAPHY' in dt %}
+          (
+              ST_DISTANCE(
+                  COALESCE({{ src_expr }}, TO_GEOGRAPHY('POINT(0 0)')),
+                  COALESCE({{ tgt_expr }}, TO_GEOGRAPHY('POINT(0 0)'))
+              ) = 0
+          )
+      {%- elif 'GEOMETRY' in dt %}
+          (
+              ST_DISTANCE(
+                  COALESCE({{ src_expr }}, TO_GEOMETRY('POINT(0 0)')),
+                  COALESCE({{ tgt_expr }}, TO_GEOMETRY('POINT(0 0)'))
+              ) = 0
+          )
+      {%- else %}
+          {{ src_expr }} = {{ tgt_expr }}
+      {%- endif %}
+  {% endmacro %}
+
+  {#====================================================================================================
+  Macro: safe_compare
+
+  Description:
+  Generates a datatype-aware comparison to detect differences between a source and
+  target expression. Typically used in MERGE statements or change tracking logic
+  to identify when a column value has changed.
+
+  Inputs:
+  - src_expr (string):
+      Source column or expression (e.g., SRC."COL1")
+
+  - tgt_expr (string):
+      Target column or expression (e.g., "DIM"."COL1")
+
+  - data_type (string):
+      Datatype of the column (e.g., VARCHAR, NUMBER, GEOGRAPHY, GEOMETRY)
+
+  Output:
+  - Returns a SQL boolean condition that evaluates to TRUE when source and target values are different
+  ====================================================================================================#}
+  {% macro safe_compare(src_expr, tgt_expr, data_type) %}
+
+      {%- set dt = data_type | upper %}
+
+      {%- if 'GEOGRAPHY' in dt %}
+          (
+              ST_DISTANCE(
+                  COALESCE({{ src_expr }}, TO_GEOGRAPHY('POINT(0 0)')),
+                  COALESCE({{ tgt_expr }}, TO_GEOGRAPHY('POINT(0 0)'))
+              ) > 0
+          )
+      {%- elif 'GEOMETRY' in dt %}
+          (
+              ST_DISTANCE(
+                  COALESCE({{ src_expr }}, TO_GEOMETRY('POINT(0 0)')),
+                  COALESCE({{ tgt_expr }}, TO_GEOMETRY('POINT(0 0)'))
+              ) > 0
+          )
+      {%- else %}
+          {{ src_expr }} IS DISTINCT FROM {{ tgt_expr }}
+      {%- endif %}
+
   {% endmacro %}
 name: macro
 type: Macro
