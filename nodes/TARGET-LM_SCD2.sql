@@ -2,6 +2,7 @@
 @nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
 
 @type2Dimension
+@treatNullAsCurrentTimestamp
 
 SELECT
      0 AS "LM_SCD2_KEY" @isSurrogateKey,

@@ -9,11 +9,11 @@ does not permit copying or modification for any other purpose.
 {# == Node Type Description    : This node creates work table or view  == #}
 {#---------------------------------------------------------------------------------------------#}
 
-{%- if node.materializationType == 'table' %}
-	{{ stage('Create Table') }}
+{%- if node.materializationType | lower in ['table', 'transient table'] %}
+	{{ stage('Create ' + node.materializationType ) }}
 
     {# CreateSQL for Table #}
-	CREATE OR REPLACE TABLE {{ ref_no_link(node.location.name, node.name) }}
+	CREATE OR REPLACE {{ node.materializationType }} {{ ref_no_link(node.location.name, node.name) }}
 	(
 		{%- for col in columns %}
 
@@ -30,15 +30,14 @@ does not permit copying or modification for any other purpose.
 	)
 	{%- if node.description | length > 0 %} COMMENT = '{{ node.description | escape }}' {%- endif %}
 
-{%- elif node.materializationType == 'view' %}
+{%- elif node.materializationType | lower == 'view' %}
 
     {# CreateSQL for View #}
-    {{ stage('Create View') }}
+    {{ stage('Create ' + node.materializationType ) }}
 
-    CREATE OR REPLACE VIEW {{ ref_no_link(node.location.name, node.name) }}
+    CREATE OR REPLACE {{ node.materializationType }} {{ ref_no_link(node.location.name, node.name) }}
     (
         {%- for col in columns %}
-
             {%- set descriptionParams = col.description.parameters | default([]) %}
 
             "{{ col.name }}"

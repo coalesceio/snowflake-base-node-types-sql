@@ -12,7 +12,7 @@ does not permit copying or modification for any other purpose.
 {# == To run data quality tests before data insertion == #}
 {{ run_tests('Before') }}
 
-{%- if node.materializationType == 'table' %}
+{%- if node.materializationType | lower in ['table', 'transient table'] %}
 
     {# --- Pre-SQL --- #}
     {%- if config.preSQL is defined and config.preSQL.parameters is defined -%}
@@ -24,13 +24,13 @@ does not permit copying or modification for any other purpose.
 
 	{# == Truncate data before data insertion  == #}
     {%- if config.truncateBefore %}
-        {{ stage('Truncate Table') }}
+        {{ stage('Truncate ' + node.materializationType ) }}
         TRUNCATE IF EXISTS {{ ref_no_link(node.location.name, node.name) }}
     {%- endif %}
 
 	{# == Insert data from sources into Work table  == #}
 	
-    {{ stage('Load Table Using Insert') }}
+    {{ stage('Load ' + node.materializationType + ' Using Insert') }}
     INSERT INTO {{ ref_no_link(node.location.name, node.name) }}
     (
         {%- for col in sources[0].columns %}

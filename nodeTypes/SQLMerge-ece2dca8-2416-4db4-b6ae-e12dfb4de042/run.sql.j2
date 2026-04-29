@@ -11,7 +11,7 @@ does not permit copying or modification for any other purpose.
 {# == To run data quality tests before data insertion == #}
 {{ run_tests('Before') }}
 
-{%- if node.materializationType == 'table' %}
+{%- if node.materializationType | lower in ['table' or 'transient table'] %}
 
     {{ validate_merge_columns() }}
 
@@ -45,7 +45,7 @@ does not permit copying or modification for any other purpose.
 
 	{# == Truncate data before data insertion  == #}
     {%- if config.truncateBefore %}
-        {{ stage('Truncate Table') }}
+        {{ stage('Truncate ' + node.materializationType ) }}
         TRUNCATE IF EXISTS {{ ref_no_link(node.location.name, node.name) }}
     {%- endif %}
          
@@ -54,15 +54,15 @@ does not permit copying or modification for any other purpose.
 
     {%- if lastModifiedComparison %}
         {%- if type2Dimension %}
-            {{ stage('Load Table Using Merge - Last Modified Comparison - SCD2') }}
+            {{ stage('Load ' + {{ node.materializationType }} + ' Using Merge - Last Modified Comparison - SCD2') }}
         {%- else %}
-            {{ stage('Load Table Using Merge - Last Modified Comparison - SCD1') }}
+            {{ stage('Load ' + {{ node.materializationType }} + ' Using Merge - Last Modified Comparison - SCD1') }}
         {%- endif %}
     {%- else %}
         {%- if type2Dimension %}
-            {{ stage('Load Table Using Merge - Change Tracking - SCD2') }}
+            {{ stage('Load ' + {{ node.materializationType }} + ' Using Merge - Change Tracking - SCD2') }}
         {%- else %}
-            {{ stage('Load Table Using Merge - Change Tracking - SCD1') }}
+            {{ stage('Load ' + {{ node.materializationType }} + ' Using Merge - Change Tracking - SCD1') }}
         {%- endif %}
     {%- endif %}
 
