@@ -11,7 +11,7 @@ does not permit copying or modification for any other purpose.
 {# == To run data quality tests before data insertion == #}
 {{ run_tests('Before') }}
 
-{%- if node.materializationType | lower in ['table' or 'transient table'] %}
+{%- if node.materializationType | lower in ['table', 'transient table'] %}
 
     {{ validate_merge_columns() }}
 
@@ -35,9 +35,9 @@ does not permit copying or modification for any other purpose.
         {%- endif %}
     {%- endif %}
 
-    {# --- Pre-SQL --- #}
-    {%- if config.preSQL is defined and config.preSQL.parameters is defined -%}
-        {%- for sql in config.preSQL.parameters -%}
+    {#== Pre-SQL ==#}
+    {%- if config.preSQL is defined and config.preSQL.parameters is defined %}
+        {%- for sql in config.preSQL.parameters %}
             {{ stage('Pre-SQL ' + loop.index|string) }}
             {{ sql }}
         {%- endfor %}
@@ -45,7 +45,7 @@ does not permit copying or modification for any other purpose.
 
 	{# == Truncate data before data insertion  == #}
     {%- if config.truncateBefore %}
-        {{ stage('Truncate ' + node.materializationType ) }}
+        {{ stage('Truncate ' + node.materializationType) }}
         TRUNCATE IF EXISTS {{ ref_no_link(node.location.name, node.name) }}
     {%- endif %}
          
@@ -53,16 +53,18 @@ does not permit copying or modification for any other purpose.
     {%- set joinclause = source.join %}
 
     {%- if lastModifiedComparison %}
+        {#== Last Modified SCD ==#}
         {%- if type2Dimension %}
-            {{ stage('Load ' + {{ node.materializationType }} + ' Using Merge - Last Modified Comparison - SCD2') }}
+            {{ stage('Load ' + node.materializationType + ' Using Merge - Last Modified Comparison - SCD2') }}
         {%- else %}
-            {{ stage('Load ' + {{ node.materializationType }} + ' Using Merge - Last Modified Comparison - SCD1') }}
+            {{ stage('Load ' + node.materializationType + ' Using Merge - Last Modified Comparison - SCD1') }}
         {%- endif %}
     {%- else %}
+        {#== Change Tracking SCD ==#}
         {%- if type2Dimension %}
-            {{ stage('Load ' + {{ node.materializationType }} + ' Using Merge - Change Tracking - SCD2') }}
+            {{ stage('Load ' + node.materializationType + ' Using Merge - Change Tracking - SCD2') }}
         {%- else %}
-            {{ stage('Load ' + {{ node.materializationType }} + ' Using Merge - Change Tracking - SCD1') }}
+            {{ stage('Load ' + node.materializationType + ' Using Merge - Change Tracking - SCD1') }}
         {%- endif %}
     {%- endif %}
 
@@ -72,7 +74,8 @@ does not permit copying or modification for any other purpose.
         {{ source.cteString }}
 
         {%- if type2Dimension %}
-    
+
+            {#== SCD Type 2 ==#}
             /* New Rows That Don't Exist */
             (
                 SELECT {%- if config.selectDistinct %} DISTINCT {%- endif %}
@@ -310,6 +313,8 @@ does not permit copying or modification for any other purpose.
                 {%- endif %}
             {%- endif %}
         {%- else %}
+
+            {#== SCD Type 1 ==#}
             (
                 SELECT {%- if config.selectDistinct %} DISTINCT {%- endif %}
                 {%- for col in source.columns if not col.isSurrogateKey %}
@@ -335,7 +340,7 @@ does not permit copying or modification for any other purpose.
 
                 {%- if lastModifiedComparison %}
                     LEFT JOIN {{ ref_no_link(node.location.name, node.name) }} "DIM" ON
-                    {%- for col in source.columns if col.isBusinessKey -%}
+                    {%- for col in source.columns if col.isBusinessKey %}
                         {%- if not loop.first %}
                             AND
                         {%- endif %}
@@ -346,6 +351,7 @@ does not permit copying or modification for any other purpose.
                 {%- if clause %}
                     {{ ("WHERE " ~ clause.strip()[3:].strip()) if clause.strip().upper().startswith('AND') else clause }}
                 {%- endif %}
+
                 {%- if config.groupByAll or lastModifiedComparison %} GROUP BY ALL {%- endif %}
             )
         {%- endif %}
@@ -423,9 +429,9 @@ does not permit copying or modification for any other purpose.
         {%- endfor %}
     )
 
-    {# --- Post-SQL --- #}
-    {%- if config.postSQL is defined and config.postSQL.parameters is defined -%}
-        {%- for sql in config.postSQL.parameters -%}
+    {#== Post-SQL ==#}
+    {%- if config.postSQL is defined and config.postSQL.parameters is defined %}
+        {%- for sql in config.postSQL.parameters %}
             {{ stage('Post-SQL ' + loop.index|string) }}
             {{ sql }}
         {%- endfor %}
