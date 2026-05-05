@@ -28,6 +28,168 @@ Before using this node, ensure the following requirements are met:
 |----------|-------------|
 | **Storage Location** | Storage Location where the work will be created |
 
+### Node-Level Annotations
+
+| Annotation | SQL Insert | SQL Merge | Description |
+|-----------|-----------|----------|------------|
+| `@materializationType("table")` | ✓ | ✓ | Creates object as a table |
+| `@materializationType("transient table")` | ✓ | ✓ | Creates object as a transient table |
+| `@materializationType("view")` | ✓ | ✓ | Creates object as a view |
+| `@truncateBefore` | ✓ | ✓ | Truncates target before load |
+| `@selectDistinct` | ✓ | ✓ | Applies `DISTINCT` to SELECT |
+| `@preSQL("<sql1>", "<sql2>")` | ✓ | ✓ | Executes SQL before main query |
+| `@postSQL("<sql1>", "<sql2>")` | ✓ | ✓ | Executes SQL after main query |
+| `@groupByAll` | ✓ | ✓ | Applies `GROUP BY ALL` |
+| `@preTests("<test1>", "<continueOnFailure:test2>")` | ✓ | ✓ | Allows you to define validation checks that run before node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
+| `@postTests("<continueOnFailure:test1>", "<test2>")` | ✓ | ✓ | Allows you to define validation checks that run after node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
+| `@treatNullAsCurrentTimestamp` |  | ✓ | Treats NULL as current timestamp for timestamp datatype, last modified comparison column if **@isLastModifiedColumn** is specified |
+| `@type2Dimension` |  | ✓ | Enables SCD Type 2 behavior if **@isLastModifiedColumn** is specified |
+
+---
+
+### Column-Level Annotations
+
+| Annotation | SQL Insert | SQL Merge | Description |
+|-----------|-----------|----------|------------|
+| `@nullable("false")`<br/>`@nullable(false)` | ✓ | ✓ | Marks column as NOT NULL |
+| `@description("<text>")` | ✓ | ✓ | Adds column description |
+| `@defaultValue("<text>")`</br>`@defaultValue(<number>)`</br>`@defaultValue(<bool>)` | ✓ | ✓ | Adds default value |
+| `@tests("null", "unique")` | ✓ | ✓ | Column tests are more restrictive and apply directly to individual columns.<br/>*Supported Tests*<br/> - **null** → Checks for NULL values<br/> - **unique** → Checks to ensure all values are unique<br/>*Valid Examples*<br/>@tests("null", "unique")<br/>@tests("null")<br/>@tests("unique") |
+| `@hashValue(<hash_col_name>)` | ✓ | ✓ | Generates a hash key by combining and hashing the values of columns associated with a given hash group, ensuring consistent change detection and key generation.<br/><br/>**Default:** Uses `SHA1` hashing.<br/>**Supported Algorithms:** `SHA1` (default), `MD5`, `SHA256`.<br/><br/>**Example:**<br/><col_name> AS <col_name> @hashValue("GH_Col"),<br/>{{ get_hash('GH_Col') }}::STRING AS "GH_Col"<br/><br/>**Examples with different algorithms:**<br/>-- SHA1 (default)<br/>{{ get_hash('GH_Col') }}::STRING AS "GH_Col"<br/><br/>-- MD5<br/>{{ get_hash('GH_Col', 'MD5') }}::STRING AS "GH_Col"<br/><br/>-- SHA256<br/>{{ get_hash('GH_Col', 'SHA256') }}::STRING AS "GH_Col" |
+| `@isSurrogateKey` |  | ✓ | System-generated surrogate key |
+| `@isBusinessKey` |  | ✓ | Marks column as business key |
+| `@isLastModifiedColumn` |  | ✓ | Identifies the last modified column and enables a last-modified-based approach instead of column-level change tracking |
+| `@isChangeTracking` |  | ✓ | Identifies change tracking column |
+
+---
+
+#### Notes
+
+- `@materializationType` defaults to **table** if not specified.
+- `@nullable` defaults to **true**. Use `@nullable("false")` to enforce NOT NULL.
+- `@selectDistinct` must be explicitly defined via annotation (cannot be inferred from SQL).
+- Only **one** `@isLastModifiedColumn` should be defined. Multiple columns may lead to inconsistent results.
+- `@isBusinessKey` is required for MERGE operations.
+- The `@hashValue` transformation can be defined either using the reusable macro or by writing the full hash expression explicitly. Both approaches are supported and will produce the same result. Choose the macro approach for better reusability and cleaner code, or use the explicit expression when custom logic is required.
+
+    #### Examples:
+    
+    Using macro:
+    ```sql
+    <col_name> AS <col_name> @hashValue("GH_Col"),
+    {{ get_hash('GH_Col') }}::STRING AS "GH_Col"
+    ```
+    Using explicit expression:
+    ```sql
+    CAST(
+      SHA1(
+        NVL(CAST(<col_name> AS VARCHAR), 'null')
+      ) AS STRING
+    )::STRING AS "GH_Key"
+    ```
+---
+
+## Guidelines for Creating Nodes from SQL Merge Node Type
+
+### Standard System Columns
+
+| Column Name | Definition | Annotation |
+|------------|-----------|-----------|
+| {{ node.name }}_KEY | 0 AS "{{ node.name }}_KEY" | @isSurrogateKey |
+| SYSTEM_VERSION | 0 AS "SYSTEM_VERSION" | @isSystemVersion |
+| SYSTEM_CURRENT_FLAG | '' AS "SYSTEM_CURRENT_FLAG" | @isSystemCurrentFlag |
+| SYSTEM_CREATE_DATE | CAST(CURRENT_TIMESTAMP AS TIMESTAMP) | @isSystemCreateDate |
+| SYSTEM_END_DATE | CAST('2999-12-31 00:00:00' AS TIMESTAMP) | @isSystemEndDate |
+| SYSTEM_UPDATE_DATE | CAST(CURRENT_TIMESTAMP AS TIMESTAMP) | @isSystemUpdateDate |
+
+---
+
+### Node/Load Strategy-Specific System Columns(Recommended)
+
+| SCD Type 1(Fact)           | SCD Type 2(Dim and PStage) |
+|--------------------|---------------------------|
+SYSTEM_CREATE_DATE<br/>SYSTEM_UPDATE_DATE | {{ node.name }}_KEY<br/>SYSTEM_CURRENT_FLAG<br/>SYSTEM_VERSION<br/>SYSTEM_CREATE_DATE<br/>SYSTEM_UPDATE_DATE<br/>SYSTEM_END_DATE |
+
+---
+
+### Notes
+
+- Use annotations to control behavior instead of external configuration.
+- Ensure consistent naming for all system columns.
+- These columns support SCD handling and audit tracking in MERGE-based nodes.
+- If **MERGE** is selected and a **business key** is defined, **Change Tracking (SCD1)** is applied by default
+- When both Last Modified and Change Tracking are defined, the execution prioritizes Last Modified over Change Tracking.
+- System column names can be customized as needed. However, the **annotations must remain unchanged**, as they control how the template interprets and processes the SQL
+- Use fully qualified column references in the MERGE source to avoid ambiguity in joins and conditions.
+    <img width="386" height="100" alt="image" src="https://github.com/user-attachments/assets/444c8494-d543-4bb0-a15f-35e0f5409fa2" />
+
+
+
+---
+
+### Branching Overview
+
+<img width="409" height="632" alt="image" src="https://github.com/user-attachments/assets/e216437b-2f45-4464-b878-08065378a285" />
+
+---
+
+### Known Limitations
+
+Users should be aware of the following technical constraints when using SQL:
+
+* **Parsable SQL Only**:
+ The node only supports SQL that can be fully parsed by the platform’s engine. Non-standard SQL or vendor-specific "semantic views" that bypass standard parsing will not work.
+
+* **SELECT Statements Only**:  
+This node only supports data retrieval and transformation logic. DML or DDL commands such as `CREATE`, `MERGE`, `DELETE`, `UPDATE`, or `TRUNCATE` are not supported and will cause execution failures.
+
+* **Support for DISTINCT, UNION, and UNION ALL**:  
+Keywords like `DISTINCT`, `UNION`, and `UNION ALL` are fully supported when used within **Common Table Expressions (CTEs)**. However, if these keywords are used instandard `SELECT` statements, the platform will not return an error, but the keywords will not be "picked up" or reflected in the final output. To ensure these operations are functional, always implement them inside a CTE.
+
+###  SQL Stage Deployment
+
+####  SQL Stage Initial Deployment
+
+When deployed for the first time into an environment the  SQL Stage Node of materialization type table will execute the below stage:
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Create  SQL Stage Table** | This will execute a CREATE OR REPLACE statement and create a table in the target environment |
+
+####  SQL Stage Redeployment
+
+After the SQL Stage Node with materialization type table has been deployed for the first time into a target environment, subsequent deployments may result in either altering the  SQL Table or recreating the  SQL table.
+
+#### Altering the SQL Stage Tables
+
+A few types of column or table changes will result in an ALTER statement to modify the  SQL Table in the target environment, whether these changes are made individually or all together:
+
+* Changing table names
+* Dropping existing columns
+* Altering column data types
+* Adding new columns
+
+The following stages are executed:
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Clone Table** | Creates an internal table |
+| **Rename Table\| Alter Column \| Delete Column \| Add Column \| Edit table description** | Alter table statement is executed to perform the alter operation |
+| **Swap Cloned Table** | Upon successful completion of all updates, the clone replaces the main table ensuring that no data is lost |
+| **Delete Table** | Drops the internal table |
+
+###  SQL Undeployment
+
+If a  SQL Stage Node of materialization type table is deleted from a Workspace, that Workspace is committed to Git and that commit deployed to a higher level environment then the WorkTable in the target environment will be dropped.
+
+This is executed in two stages:
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Delete Table** | Coalesce Internal table is dropped |
+
+-----------
+
 ### Usage Examples 
 
 The following patterns represent common ways to use the  SQL Stage Node.<br/>
@@ -171,168 +333,7 @@ SELECT * FROM ALL_NATIONS "NATIONS"
 
 - **Recursive CTEs**: Full support for `WITH` RECURSIVE logic, enabling the transformation of hierarchical data and the programmatic generation of data sequences within a single node.
 
-## Annotations Guidance
-
-SQL annotations are used to configure V2 nodes. Instead of setting properties like materialization, insert strategy, or pre/post SQL in a configuration panel, these are defined directly within the SQL using annotations such as:
-
-- `@name`
-- `@name("value")`
-
-This approach keeps **transformation logic, column definitions, and configuration in one place**.
-
-> The annotation parser is **fully generic** — any `@name` is considered valid syntax.
-
----
-
-## Supported Annotations
-
-To ensure SQL Insert and SQL Merge behave as expected and remain aligned with Version 1 nodes, the following annotations are supported.
-
----
-
-### Node-Level Annotations
-
-| Annotation | SQL Insert | SQL Merge | Description |
-|-----------|-----------|----------|------------|
-| `@materializationType("table")` | ✓ | ✓ | Creates object as a table |
-| `@materializationType("view")` | ✓ | ✓ | Creates object as a view |
-| `@truncateBefore` | ✓ | ✓ | Truncates target before load |
-| `@selectDistinct` | ✓ | ✓ | Applies `DISTINCT` to SELECT |
-| `@preSQL("sql1", "sql2")` | ✓ | ✓ | Executes SQL before main query |
-| `@postSQL("sql1", "sql2")` | ✓ | ✓ | Executes SQL after main query |
-| `@groupByAll` | ✓ | ✓ | Applies `GROUP BY ALL` |
-| `@preTests("test1", "continueOnFailure:test2")` | ✓ | ✓ | Allows you to define validation checks that run before node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
-| `@postTests("continueOnFailure:test1", "test2")` | ✓ | ✓ | Allows you to define validation checks that run after node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
-| `@treatNullAsCurrentTimestamp` |  | ✓ | Treats NULL as current timestamp for timestamp datatype, last modified comparison column if **@isLastModifiedColumn** is specified |
-| `@type2Dimension` |  | ✓ | Enables SCD Type 2 behavior if **@isLastModifiedColumn** is specified |
-
----
-
-### Column-Level Annotations
-
-| Annotation | SQL Insert | SQL Merge | Description |
-|-----------|-----------|----------|------------|
-| `@nullable("false")`<br/>`@nullable(false)` | ✓ | ✓ | Marks column as NOT NULL |
-| `@description("text")` | ✓ | ✓ | Adds column description |
-| `@defaultValue("text")`</br>`@defaultValue(number)`</br>`@defaultValue(bool)` | ✓ | ✓ | Adds default value |
-| `@tests("null", "unique")` | ✓ | ✓ | Column tests are more restrictive and apply directly to individual columns.<br/>*Supported Tests*<br/> - **null** → Checks for NULL values<br/> - **unique** → Checks to ensure all values are unique<br/>*Valid Examples*<br/>@tests("null", "unique")<br/>@tests("null")<br/>@tests("unique") |
-| `@isSurrogateKey` |  | ✓ | System-generated surrogate key |
-| `@isBusinessKey` |  | ✓ | Marks column as business key |
-| `@isLastModifiedColumn` |  | ✓ | Identifies the last modified column and enables a last-modified-based approach instead of column-level change tracking |
-| `@isChangeTracking` |  | ✓ | Identifies change tracking column |
-
----
-
-#### Notes
-
-- `@materializationType` defaults to **table** if not specified.
-- `@nullable` defaults to **true**. Use `@nullable("false")` to enforce NOT NULL.
-- `@selectDistinct` must be explicitly defined via annotation (cannot be inferred from SQL).
-- Only **one** `@isLastModifiedColumn` should be defined. Multiple columns may lead to inconsistent results.
-- `@isBusinessKey` is required for MERGE operations.
-
----
-
-## Guidelines for Creating Nodes from SQL Merge Node Type
-
-### Standard System Columns
-
-| Column Name | Definition | Annotation |
-|------------|-----------|-----------|
-| {{ node.name }}_KEY | 0 AS "{{ node.name }}_KEY" | @isSurrogateKey |
-| SYSTEM_VERSION | 0 AS "SYSTEM_VERSION" | @isSystemVersion |
-| SYSTEM_CURRENT_FLAG | '' AS "SYSTEM_CURRENT_FLAG" | @isSystemCurrentFlag |
-| SYSTEM_CREATE_DATE | CAST(CURRENT_TIMESTAMP AS TIMESTAMP) | @isSystemCreateDate |
-| SYSTEM_END_DATE | CAST('2999-12-31 00:00:00' AS TIMESTAMP) | @isSystemEndDate |
-| SYSTEM_UPDATE_DATE | CAST(CURRENT_TIMESTAMP AS TIMESTAMP) | @isSystemUpdateDate |
-
----
-
-### Node/Load Strategy-Specific System Columns(Recommended)
-
-| SCD Type 1(Fact)           | SCD Type 2(Dim and PStage) |
-|--------------------|---------------------------|
-SYSTEM_CREATE_DATE<br/>SYSTEM_UPDATE_DATE | {{ node.name }}_KEY<br/>SYSTEM_CURRENT_FLAG<br/>SYSTEM_VERSION<br/>SYSTEM_CREATE_DATE<br/>SYSTEM_UPDATE_DATE<br/>SYSTEM_END_DATE |
-
----
-
-### Notes
-
-- Use annotations to control behavior instead of external configuration.
-- Ensure consistent naming for all system columns.
-- These columns support SCD handling and audit tracking in MERGE-based nodes.
-- If **MERGE** is selected and a **business key** is defined, **Change Tracking (SCD1)** is applied by default
-- When both Last Modified and Change Tracking are defined, the execution prioritizes Last Modified over Change Tracking.
-- System column names can be customized as needed. However, the **annotations must remain unchanged**, as they control how the template interprets and processes the SQL
-- Use fully qualified column references in the MERGE source to avoid ambiguity in joins and conditions.
-    <img width="386" height="100" alt="image" src="https://github.com/user-attachments/assets/444c8494-d543-4bb0-a15f-35e0f5409fa2" />
-
-
-
----
-
-### Branching Overview
-
-<img width="409" height="632" alt="image" src="https://github.com/user-attachments/assets/e216437b-2f45-4464-b878-08065378a285" />
-
----
-
-### Known Limitations
-
-Users should be aware of the following technical constraints when using SQL:
-
-* **Parsable SQL Only**:
- The node only supports SQL that can be fully parsed by the platform’s engine. Non-standard SQL or vendor-specific "semantic views" that bypass standard parsing will not work.
-
-* **SELECT Statements Only**:  
-This node only supports data retrieval and transformation logic. DML or DDL commands such as `CREATE`, `MERGE`, `DELETE`, `UPDATE`, or `TRUNCATE` are not supported and will cause execution failures.
-
-* **Support for DISTINCT, UNION, and UNION ALL**:  
-Keywords like `DISTINCT`, `UNION`, and `UNION ALL` are fully supported when used within **Common Table Expressions (CTEs)**. However, if these keywords are used instandard `SELECT` statements, the platform will not return an error, but the keywords will not be "picked up" or reflected in the final output. To ensure these operations are functional, always implement them inside a CTE.
-
-###  SQL Stage Deployment
-
-####  SQL Stage Initial Deployment
-
-When deployed for the first time into an environment the  SQL Stage Node of materialization type table will execute the below stage:
-
-| **Stage** | **Description** |
-|-----------|----------------|
-| **Create  SQL Stage Table** | This will execute a CREATE OR REPLACE statement and create a table in the target environment |
-
-####  SQL Stage Redeployment
-
-After the SQL Stage Node with materialization type table has been deployed for the first time into a target environment, subsequent deployments may result in either altering the  SQL Table or recreating the  SQL table.
-
-#### Altering the SQL Stage Tables
-
-A few types of column or table changes will result in an ALTER statement to modify the  SQL Table in the target environment, whether these changes are made individually or all together:
-
-* Changing table names
-* Dropping existing columns
-* Altering column data types
-* Adding new columns
-
-The following stages are executed:
-
-| **Stage** | **Description** |
-|-----------|----------------|
-| **Clone Table** | Creates an internal table |
-| **Rename Table\| Alter Column \| Delete Column \| Add Column \| Edit table description** | Alter table statement is executed to perform the alter operation |
-| **Swap Cloned Table** | Upon successful completion of all updates, the clone replaces the main table ensuring that no data is lost |
-| **Delete Table** | Drops the internal table |
-
-###  SQL Undeployment
-
-If a  SQL Stage Node of materialization type table is deleted from a Workspace, that Workspace is committed to Git and that commit deployed to a higher level environment then the WorkTable in the target environment will be dropped.
-
-This is executed in two stages:
-
-| **Stage** | **Description** |
-|-----------|----------------|
-| **Delete Table** | Coalesce Internal table is dropped |
-
---------------
+----
 
 ## Code
 
