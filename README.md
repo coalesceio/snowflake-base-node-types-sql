@@ -104,11 +104,11 @@ Before using this node, ensure the following requirements are met:
 
 ---
 
-### Node/Load Strategy-Specific System Columns(Recommended)
+### Node/Load Strategy-Specific System Columns/Annotations(Recommended)
 
-| SCD Type 1(Fact)           | SCD Type 2(Dim and PStage) |
-|--------------------|---------------------------|
-SYSTEM_CREATE_DATE<br/>SYSTEM_UPDATE_DATE | {{ node.name }}_KEY<br/>SYSTEM_CURRENT_FLAG<br/>SYSTEM_VERSION<br/>SYSTEM_CREATE_DATE<br/>SYSTEM_UPDATE_DATE<br/>SYSTEM_END_DATE |
+| Change Tracking - SCD Type 1  | Change Tracking - SCD Type 2 | Last Modified - SCD Type 1 | Last Modified - SCD Type 2 |
+|--------------------|---------------------------|--------------------|---------------------------|
+@isBusinessKey<br/>@isSystemCreateDate<br/>@isSystemUpdateDate|@isBusinessKey<br/>@isChangeTracking<br/>@isSurrogateKey<br/> @isSystemCurrentFlag<br/>@isSystemVersion<br/>@isSystemCreateDate<br/>@isSystemUpdateDate<br/>@isSystemEndDate|@treatNullAsCurrentTimestamp<br/>@isBusinessKey<br/>@isLastModifiedColumn<br/>@isSystemCreateDate<br/>@isSystemUpdateDate|@treatNullAsCurrentTimestamp<br/>@type2Dimension<br/>@isBusinessKey<br/>@isLastModifiedColumn<br/>@isSurrogateKey<br/> @isSystemCurrentFlag<br/>@isSystemVersion<br/>@isSystemCreateDate<br/>@isSystemEndDate|
 
 ---
 
@@ -317,6 +317,127 @@ WITH ALL_NATIONS AS (
 )
 
 SELECT * FROM ALL_NATIONS "NATIONS"
+```
+- **Sample Insert Node with Annotations** <br/>
+
+```sql
+
+@truncateBefore
+@selectDistinct
+@preSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
+@postSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
+@preTests("select count(*) from {{ this }}", "continueOnFailure:select count(*) from {{ this }}")
+@postTests("continueOnFailure:select count(*) from {{ this }}", "select count(*) from {{ this }}")
+
+SELECT
+     "N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_Col"),
+     "N_NAME" AS "N_NAME",
+     "N_REGIONKEY" AS "N_REGIONKEY",
+     "N_COMMENT" AS "N_COMMENT",
+     "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
+     {{ get_hash('GH_Col') }}::STRING AS "GH_Col"
+FROM {{ ref('SRC', 'NATION') }} "NATION"
+
+```
+- **Sample Merge Node - Change Tracking - SCD1 with Annotations** <br/>
+```sql
+
+@truncateBefore
+@selectDistinct
+@preSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
+@postSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
+@preTests("select count(*) from {{ this }}", "continueOnFailure:select count(*) from {{ this }}")
+@postTests("continueOnFailure:select count(*) from {{ this }}", "select count(*) from {{ this }}")
+
+SELECT
+     "N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_Col") @isBusinessKey,
+     "N_NAME" AS "N_NAME",
+     "N_REGIONKEY" AS "N_REGIONKEY",
+     "N_COMMENT" AS "N_COMMENT",
+     "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
+     {{ get_hash('GH_Col') }}::STRING AS "GH_Col",
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
+FROM {{ ref('SRC', 'NATION') }} "NATION"
+
+```
+- **Sample Merge Node - Change Tracking - SCD2 with Annotations** <br/>
+```sql
+
+@truncateBefore
+@selectDistinct
+@preSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
+@postSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
+@preTests("select count(*) from {{ this }}", "continueOnFailure:select count(*) from {{ this }}")
+@postTests("continueOnFailure:select count(*) from {{ this }}", "select count(*) from {{ this }}")
+
+SELECT
+    0 AS "MRG_ALL_ANNOT_KEY" @isSurrogateKey,
+     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_Col") @isBusinessKey,
+     NATION."N_NAME" AS "N_NAME" @isChangeTracking,
+     NATION."N_REGIONKEY" AS "N_REGIONKEY",
+     NATION."N_COMMENT" AS "N_COMMENT",
+     NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
+     {{ get_hash('GH_Col') }}::STRING AS "GH_Col",
+    '' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
+    1 AS "SYSTEM_VERSION" @isSystemVersion,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate,
+    CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
+FROM {{ ref('SRC', 'NATION') }} "NATION"
+
+```
+- **Sample Merge Node - Last Modified - SCD1 with Annotations** <br/>
+```sql
+
+@truncateBefore
+@selectDistinct
+@preSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
+@postSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
+@preTests("continueOnFailure:select count(*) from {{ this }}", "continueOnFailure:select count(*) from {{ this }}")
+@postTests("continueOnFailure:select count(*) from {{ this }}", "continueOnFailure:select count(*) from {{ this }}")
+
+@treatNullAsCurrentTimestamp
+
+SELECT
+     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_Col") @isBusinessKey,
+     NATION."N_NAME" AS "N_NAME",
+     NATION."N_REGIONKEY" AS "N_REGIONKEY",
+     NATION."N_COMMENT" AS "N_COMMENT",
+     NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" @isLastModifiedColumn,
+     {{ get_hash('GH_Col') }}::STRING AS "GH_Col",
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
+FROM {{ ref('SRC', 'NATION') }} "NATION"
+
+```
+- **Sample Merge Node - Last Modified - SCD2 with Annotations** <br/>
+```sql
+
+@truncateBefore
+@selectDistinct
+@preSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
+@postSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
+@preTests("continueOnFailure:select count(*) from {{ this }}", "continueOnFailure:select count(*) from {{ this }}")
+@postTests("continueOnFailure:select count(*) from {{ this }}", "continueOnFailure:select count(*) from {{ this }}")
+
+@treatNullAsCurrentTimestamp
+@type2Dimension
+
+SELECT
+    0 AS "MRG_ALL_ANNOT_KEY" @isSurrogateKey,
+     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_Col") @isBusinessKey,
+     NATION."N_NAME" AS "N_NAME",
+     NATION."N_REGIONKEY" AS "N_REGIONKEY",
+     NATION."N_COMMENT" AS "N_COMMENT",
+     NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" @isLastModifiedColumn,
+     {{ get_hash('GH_Col') }}::STRING AS "GH_Col",
+    '' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
+    1 AS "SYSTEM_VERSION" @isSystemVersion,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
+    CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
+FROM {{ ref('SRC', 'NATION') }} "NATION"
+
 ```
 
 ### Supported SQL functionality
