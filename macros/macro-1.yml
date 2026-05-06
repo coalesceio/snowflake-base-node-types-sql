@@ -482,5 +482,95 @@ macroString: |-
       {%- endif -%}
 
   {%- endmacro -%}
+
+  {#====================================================================================================
+  Description:
+      Returns a zero-key value for a given column based on:
+      1. Column-level zeroKey (highest priority)
+      2. Config-level zeroKey (matched using column dataType)
+      3. If no match is found → returns NULL
+
+      The macro ONLY resolves and formats the zero-key value.
+      It does not handle system columns or any business logic.
+
+  Inputs:
+      col (object)
+
+  Output:
+      Returns a SQL-compatible literal based on resolved zeroKey:
+          - NUMBER    → 0
+          - BOOLEAN   → TRUE / FALSE
+          - STRING    → 'DEFAULT'
+          - TIME      → TO_TIMESTAMP('1999-12-31')
+          - No match  → NULL
+  ====================================================================================================#}
+  {%- macro resolve_zero_key(col) %}
+
+      {%- set ns = namespace(zk_type=none, zk_value=none) %}
+
+      {# -------------------------------
+         STEP 1: Column-level zeroKey
+      -------------------------------- #}
+      {%- if col.zeroKey is defined 
+            and col.zeroKey.parameters is defined 
+            and col.zeroKey.parameters | trim | length > 0 %}
+
+          {%- set ns.zk_value = col.zeroKey.parameters[0] %}
+
+      {# -------------------------------
+         STEP 2: Config-level zeroKey (match datatype)
+      -------------------------------- #}
+      {%- elif config.zeroKey is defined 
+            and config.zeroKey.parameters is defined 
+            and config.zeroKey.parameters | trim | length > 0 %}
+
+          {%- for zk in config.zeroKey.parameters %}
+              {%- set parts = zk.split(':') %}
+              {%- set type = parts[0] | trim | lower %}
+              {%- set val = parts[-1] | trim %}
+
+              {%- if (
+                  (type == 'string' and col.dataType[:3] | upper in ('VAR', 'CHA', 'STR')) or
+                  (type == 'number' and col.dataType[:3] | upper in ('NUM',' INT', 'DEC', 'FLO')) or
+                  (type == 'boolean' and col.dataType | upper == 'BOOLEAN') or
+                  (type == 'datetime' and col.dataType[:4] | upper in ('DATE', 'TIME', 'TIMESTAMP'))
+              ) %}
+                  {%- set ns.zk_type = type %}
+                  {%- set ns.zk_value = val %}
+              {%- endif %}
+          {%- endfor %}
+
+      {%- else %}
+          {%- set ns.zk_type = none %}
+          {%- set ns.zk_value = none %}
+      {%- endif %}
+
+      {# -------------------------------
+         STEP 3: Return formatted value
+      -------------------------------- #}
+
+      {%- if ns.zk_value is not none %}
+
+          {%- if ns.zk_type == 'number' %}
+              {{ ns.zk_value }}
+
+          {%- elif ns.zk_type == 'boolean' %}
+              {{ ns.zk_value | upper }}
+
+          {%- elif ns.zk_type == 'datetime' %}
+              TO_TIMESTAMP('{{ ns.zk_value }}')
+
+          {%- elif ns.zk_type == 'string' %}
+              '{{ ns.zk_value }}'
+
+          {%- else %}
+              '{{ ns.zk_value }}'
+          {%- endif %}
+
+      {%- else %}
+          NULL
+      {%- endif %}
+
+  {%- endmacro %}
 name: macro
 type: Macro

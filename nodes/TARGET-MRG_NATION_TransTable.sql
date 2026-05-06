@@ -1,0 +1,14 @@
+@id("da176625-c3a8-4b7a-ac77-1ba571166ef7")
+@nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
+
+@materializationType("transient table")
+
+SELECT
+     "N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
+     "N_NAME" AS "N_NAME",
+     "N_REGIONKEY" AS "N_REGIONKEY",
+     "N_COMMENT" AS "N_COMMENT",
+     "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
+FROM {{ ref('SRC', 'NATION_TEST') }} "NATION_TEST"

@@ -1,0 +1,9 @@
+@id("39a0d5f9-98d7-4c15-9da4-33a6a92f61e5")
+@nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
+SELECT
+     "TXN_ID" AS "TXN_ID" @isBusinessKey,
+     "BUSINESS_KEY" AS "BUSINESS_KEY",
+     "AMOUNT"::NUMBER(20,5) AS "AMOUNT",
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
+FROM {{ ref('SRC', 'TXN_TEST') }} "TXN_TEST"

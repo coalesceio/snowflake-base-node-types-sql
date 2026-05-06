@@ -9,7 +9,7 @@ does not permit copying or modification for any other purpose.
 {# == Node Type Description    : This node creates dimension table or view  == #}
 {#---------------------------------------------------------------------------------------------#}
 
-{%- if node.materializationType | lower in ['table' or 'transient table'] %}
+{%- if node.materializationType | lower in ['table', 'transient table'] %}
 
     {{ validate_merge_columns() }}
 

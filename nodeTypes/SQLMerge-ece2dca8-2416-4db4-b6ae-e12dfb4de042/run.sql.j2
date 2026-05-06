@@ -52,6 +52,66 @@ does not permit copying or modification for any other purpose.
     {%- set source = sources[0] %}
     {%- set joinclause = source.join %}
 
+    {%- set hasZeroKey = columns 
+                        | selectattr('isSurrogateKey') 
+                        | selectattr('zeroKey', 'defined') 
+                        | selectattr('zeroKey.parameters', 'defined') 
+                        | list 
+                        | length > 0 
+                        and (config.zeroKey is defined and config.zeroKey.parameters is defined)
+    -%}
+
+    {%- if hasZeroKey %}
+        {{ stage('Load ' + node.materializationType + ' Using Merge - Zero Key Record') }}
+            MERGE INTO {{ ref_no_link(node.location.name, node.name) }} USING
+            (
+                SELECT 
+                {% for col in sources[0].columns %}
+
+                    {%- if col.isSystemCurrentFlag %}
+                        'Y'
+                    {%- elif col.isSystemStartDate or col.isSystemEndDate or col.isSystemUpdateDate or col.isSystemCreateDate %}
+                        {{ get_source_transform(col) }}
+                    {%- elif col.isSystemVersion %}
+                        1
+                    {%- else %}
+                        {{ resolve_zero_key(col) }}
+                    {%- endif %}
+                    AS "{{ col.name }}"
+                    {%- if not loop.last %}, {%- endif %}
+                {%- endfor %}
+                FROM DUAL
+            ) AS SOURCE_ZERO
+
+            ON
+            {%- for col in columns if col.isSurrogateKey %}
+                {{ node.name }}.{{ col.name }} = {{ col.zeroKey.parameters[0] }}
+            {% endfor %}
+
+            WHEN MATCHED THEN UPDATE
+            SET
+            {%- for col in columns if (not col.isSurrogateKey) %}
+                {{ node.name }}.{{ col.name }} = SOURCE_ZERO.{{ col.name }}
+                {%- if not loop.last %}, {%- endif %}			
+            {%- endfor %}
+
+            WHEN NOT MATCHED THEN
+            INSERT
+            (
+                {%- for col in columns %}
+                    {{ col.name }}
+                    {%- if not loop.last %}, {%- endif %}			
+                {%- endfor %}
+            )
+            VALUES
+            (
+                {%- for col in columns %}
+                    SOURCE_ZERO.{{ col.name }}			
+                    {%- if not loop.last %}, {%- endif %}			
+                {%- endfor %}
+            )
+    {%- endif %}
+
     {%- if lastModifiedComparison %}
         {#== Last Modified SCD ==#}
         {%- if type2Dimension %}
