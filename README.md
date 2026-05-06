@@ -56,7 +56,7 @@ Before using this node, ensure the following requirements are met:
 | `@description("<text>")` | ✓ | ✓ | Adds column description |
 | `@defaultValue("<text>")`</br>`@defaultValue(<number>)`</br>`@defaultValue(<bool>)` | ✓ | ✓ | Adds default value |
 | `@tests("null", "unique")` | ✓ | ✓ | Column tests are more restrictive and apply directly to individual columns.<br/>*Supported Tests*<br/> - **null** → Checks for NULL values<br/> - **unique** → Checks to ensure all values are unique<br/>*Valid Examples*<br/>@tests("null", "unique")<br/>@tests("null")<br/>@tests("unique") |
-| `@hashValue("<hash_col_name>")` | ✓ | ✓ | Generates a hash key by combining and hashing the values of columns associated with a given hash group, ensuring consistent change detection and key generation.<br/><br/>**Default:** Uses `SHA1` hashing.<br/>**Supported Algorithms:** `SHA1` (default), `MD5`, `SHA256`.<br/><br/>**Example:**<br/><col_name> AS <col_name> @hashValue("GH_Col"),<br/>{{ get_hash('GH_Col') }}::STRING AS "GH_Col"<br/><br/>**Examples with different algorithms:**<br/>-- SHA1 (default)<br/>{{ get_hash('GH_Col') }}::STRING AS "GH_Col"<br/><br/>-- MD5<br/>{{ get_hash('GH_Col', 'MD5') }}::STRING AS "GH_Col"<br/><br/>-- SHA256<br/>{{ get_hash('GH_Col', 'SHA256') }}::STRING AS "GH_Col" |
+| `@hashValue("<hash_col_name>")` | ✓ | ✓ | Generates a hash key by combining and hashing the values of columns associated with a given hash group, ensuring consistent change detection and key generation.<br/><br/>**Default:** Uses `SHA1` hashing.<br/>**Supported Algorithms:** `SHA1` (default), `MD5`, `SHA256`.<br/><br/>**Example:**<br/><col_name> AS <col_name> @hashValue("GH_COL"),<br/>{{ get_hash('GH_COL') }}::STRING AS "GH_COL"<br/><br/>**Examples with different algorithms:**<br/>-- SHA1 (default)<br/>{{ get_hash('GH_COL') }}::STRING AS "GH_COL"<br/><br/>-- MD5<br/>{{ get_hash('GH_COL', 'MD5') }}::STRING AS "GH_COL"<br/><br/>-- SHA256<br/>{{ get_hash('GH_COL', 'SHA256') }}::STRING AS "GH_COL" |
 | `@isSurrogateKey` |  | ✓ | System-generated surrogate key |
 | `@isBusinessKey` |  | ✓ | Marks column as business key |
 | `@isLastModifiedColumn` |  | ✓ | Identifies the last modified column and enables a last-modified-based approach instead of column-level change tracking |
@@ -80,8 +80,8 @@ Before using this node, ensure the following requirements are met:
     
     Using macro:
     ```sql
-    <col_name> AS <col_name> @hashValue("GH_Col"),
-    {{ get_hash('GH_Col') }}::STRING AS "GH_Col"
+    <col_name> AS <col_name> @hashValue("GH_COL"),
+    {{ get_hash('GH_COL') }}::STRING AS "GH_COL"
     ```
     Using explicit expression:
     ```sql
@@ -334,12 +334,12 @@ SELECT * FROM ALL_NATIONS "NATIONS"
 @postTests("continueOnFailure:select count(*) from {{ this }}", "select count(*) from {{ this }}")
 
 SELECT
-     "N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_Col"),
+     "N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_COL"),
      "N_NAME" AS "N_NAME",
      "N_REGIONKEY" AS "N_REGIONKEY",
      "N_COMMENT" AS "N_COMMENT",
      "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
-     {{ get_hash('GH_Col') }}::STRING AS "GH_Col"
+     {{ get_hash('GH_COL') }}::STRING AS "GH_COL"
 FROM {{ ref('SRC', 'NATION') }} "NATION"
 
 ```
@@ -354,12 +354,12 @@ FROM {{ ref('SRC', 'NATION') }} "NATION"
 @postTests("continueOnFailure:select count(*) from {{ this }}", "select count(*) from {{ this }}")
 
 SELECT
-     "N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_Col") @isBusinessKey,
+     "N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_COL") @isBusinessKey,
      "N_NAME" AS "N_NAME",
      "N_REGIONKEY" AS "N_REGIONKEY",
      "N_COMMENT" AS "N_COMMENT",
      "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
-     {{ get_hash('GH_Col') }}::STRING AS "GH_Col",
+     {{ get_hash('GH_COL') }}::STRING AS "GH_COL",
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
 FROM {{ ref('SRC', 'NATION') }} "NATION"
@@ -377,12 +377,12 @@ FROM {{ ref('SRC', 'NATION') }} "NATION"
 
 SELECT
     0 AS "MRG_ALL_ANNOT_KEY" @isSurrogateKey,
-     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_Col") @isBusinessKey,
+     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_COL") @isBusinessKey,
      NATION."N_NAME" AS "N_NAME" @isChangeTracking,
      NATION."N_REGIONKEY" AS "N_REGIONKEY",
      NATION."N_COMMENT" AS "N_COMMENT",
      NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
-     {{ get_hash('GH_Col') }}::STRING AS "GH_Col",
+     {{ get_hash('GH_COL') }}::STRING AS "GH_COL",
     '' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
     1 AS "SYSTEM_VERSION" @isSystemVersion,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
@@ -404,12 +404,12 @@ FROM {{ ref('SRC', 'NATION') }} "NATION"
 @treatNullAsCurrentTimestamp
 
 SELECT
-     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_Col") @isBusinessKey,
+     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_COL") @isBusinessKey,
      NATION."N_NAME" AS "N_NAME",
      NATION."N_REGIONKEY" AS "N_REGIONKEY",
      NATION."N_COMMENT" AS "N_COMMENT",
      NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" @isLastModifiedColumn,
-     {{ get_hash('GH_Col') }}::STRING AS "GH_Col",
+     {{ get_hash('GH_COL') }}::STRING AS "GH_COL",
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
 FROM {{ ref('SRC', 'NATION') }} "NATION"
@@ -430,12 +430,12 @@ FROM {{ ref('SRC', 'NATION') }} "NATION"
 
 SELECT
     0 AS "MRG_ALL_ANNOT_KEY" @isSurrogateKey,
-     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_Col") @isBusinessKey,
+     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_COL") @isBusinessKey,
      NATION."N_NAME" AS "N_NAME",
      NATION."N_REGIONKEY" AS "N_REGIONKEY",
      NATION."N_COMMENT" AS "N_COMMENT",
      NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" @isLastModifiedColumn,
-     {{ get_hash('GH_Col') }}::STRING AS "GH_Col",
+     {{ get_hash('GH_COL') }}::STRING AS "GH_COL",
     '' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
     1 AS "SYSTEM_VERSION" @isSystemVersion,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
