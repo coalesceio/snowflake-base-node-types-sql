@@ -120,10 +120,10 @@ Before using this node, ensure the following requirements are met:
 - If **MERGE** is selected and a **business key** is defined, **Change Tracking (SCD1)** is applied by default
 - When both Last Modified and Change Tracking are defined, the execution prioritizes Last Modified over Change Tracking.
 - System column names can be customized as needed. However, the **annotations must remain unchanged**, as they control how the template interprets and processes the SQL
-- Use fully qualified column references in the MERGE source to avoid ambiguity in joins and conditions.
-    <img width="386" height="100" alt="image" src="https://github.com/user-attachments/assets/444c8494-d543-4bb0-a15f-35e0f5409fa2" />
-
-
+- In cases where joins are used within MERGE logic (such as Last Modified logic in SCD1/SCD2 or Change Tracking in SCD2), explicit table aliases must be defined before running the node.<br/>While the Create step may succeed, the job execution can fail if aliases are not properly specified in the MERGE conditions.<br/><br/>Use fully qualified column references in the MERGE source like below, to avoid ambiguity in joins and conditions.<br/>
+  ```sql
+  NATION_TEST."N_NATIONKEY" AS "N_NATIONKEY"
+  ```
 
 ---
 
