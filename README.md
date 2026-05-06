@@ -44,6 +44,7 @@ Before using this node, ensure the following requirements are met:
 | `@postTests("<continueOnFailure:test1>", "<test2>")` | ✓ | ✓ | Allows you to define validation checks that run after node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
 | `@treatNullAsCurrentTimestamp` |  | ✓ | Treats NULL as current timestamp for timestamp datatype, last modified comparison column if **@isLastModifiedColumn** is specified |
 | `@type2Dimension` |  | ✓ | Enables SCD Type 2 behavior if **@isLastModifiedColumn** is specified |
+| `@zeroKey("string:<string>", "number:<number>", "boolean:<bool>", "datetime:<timestamp>")` |  | ✓ | Specifies default zero-key (ghost record) values by data type, applied when no column-level override is provided<br/>**Example:** <br/>@zeroKey("string:DEFAULT", "number:10", "boolean:True", "datetime:1999-12-31") |
 
 ---
 
@@ -60,6 +61,7 @@ Before using this node, ensure the following requirements are met:
 | `@isBusinessKey` |  | ✓ | Marks column as business key |
 | `@isLastModifiedColumn` |  | ✓ | Identifies the last modified column and enables a last-modified-based approach instead of column-level change tracking |
 | `@isChangeTracking` |  | ✓ | Identifies change tracking column |
+| `@zeroKey("<text>")`</br>`@zeroKey(<number>)`</br>`@zeroKey(<bool>)`<br/>`@zeroKey(<timestamp>)` |  | ✓ | Adds zero key value(ghost record) to the column.<br/> Zero Key Stage only triggers when **@isSurrogateKey** is defined with @zeroKey<br/>**Example:** <br/> 0 AS "{{ node.name }}_KEY" @isSurrogateKey @zeroKey(0) |
 
 ---
 
@@ -70,6 +72,8 @@ Before using this node, ensure the following requirements are met:
 - `@selectDistinct` must be explicitly defined via annotation (cannot be inferred from SQL).
 - Only **one** `@isLastModifiedColumn` should be defined. Multiple columns may lead to inconsistent results.
 - `@isBusinessKey` is required for MERGE operations.
+- Zero Key Stage only triggers when **@isSurrogateKey** is defined with @zeroKey.
+- Column-level `@zeroKey` takes precedence over node-level configuration. If `@zeroKey` is not defined at the column level, the node-level `@zeroKey` configuration is applied based on the column data type else NULL is applied by default.
 - The `@hashValue` transformation can be defined either using the reusable macro or by writing the full hash expression explicitly. Both approaches are supported and will produce the same result. Choose the macro approach for better reusability and cleaner code, or use the explicit expression when custom logic is required.
 
     #### Examples:
