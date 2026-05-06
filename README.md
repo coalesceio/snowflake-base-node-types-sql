@@ -61,7 +61,7 @@ Before using this node, ensure the following requirements are met:
 | `@isBusinessKey` |  | ✓ | Marks column as business key |
 | `@isLastModifiedColumn` |  | ✓ | Identifies the last modified column and enables a last-modified-based approach instead of column-level change tracking |
 | `@isChangeTracking` |  | ✓ | Identifies change tracking column |
-| `@zeroKey("<text>")`</br>`@zeroKey(<number>)`</br>`@zeroKey(<bool>)`<br/>`@zeroKey(<timestamp>)` |  | ✓ | Adds zero key value(ghost record) to the column.<br/> Zero Key Stage only triggers when **@isSurrogateKey** is defined with @zeroKey<br/>**Example:** <br/> 0 AS "{{ node.name }}_KEY" @isSurrogateKey @zeroKey(0) |
+| `@zeroKey("<text>")`</br>`@zeroKey(<number>)`</br>`@zeroKey(<bool>)`<br/>`@zeroKey(<timestamp>)` |  | ✓ | Adds zero key value(ghost record) to the column.<br/>**Example:** <br/> 0 AS "{{ node.name }}_KEY" @isSurrogateKey @zeroKey(0) |
 
 ---
 
@@ -72,7 +72,7 @@ Before using this node, ensure the following requirements are met:
 - `@selectDistinct` must be explicitly defined via annotation (cannot be inferred from SQL).
 - Only **one** `@isLastModifiedColumn` should be defined. Multiple columns may lead to inconsistent results.
 - `@isBusinessKey` is required for MERGE operations.
-- Zero Key Stage only triggers when **@isSurrogateKey** is defined with @zeroKey.
+- Zero Key Stage only triggers when **@isSurrogateKey** column and node level have @zeroKey annotation with datatype relevant values.
 - Column-level `@zeroKey` takes precedence over node-level configuration. If `@zeroKey` is not defined at the column level, the node-level `@zeroKey` configuration is applied based on the column data type else NULL is applied by default.
 - The `@hashValue` transformation can be defined either using the reusable macro or by writing the full hash expression explicitly. Both approaches are supported and will produce the same result. Choose the macro approach for better reusability and cleaner code, or use the explicit expression when custom logic is required.
 
