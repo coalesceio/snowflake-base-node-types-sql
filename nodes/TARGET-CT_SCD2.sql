@@ -1,6 +1,8 @@
 @id("507f9e12-466a-4638-8892-7938f83f0fd2")
 @nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
 
+@updateStrategy("INSERT/UPDATE")
+
 SELECT
      NATION_TEST."N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
      NATION_TEST."N_NAME" AS "N_NAME" @isChangeTracking,

@@ -17,7 +17,7 @@ macroString: |-
   Output:
   - Returns a SQL-safe default value string formatted according to datatype
    ========================================================================#}
-  {% macro get_default(dataType, defaultValue) %}
+  {%- macro get_default(dataType, defaultValue) %}
 
       {%- if dataType is not none %}
 
@@ -63,7 +63,7 @@ macroString: |-
               {%- endfor %}
           {%- endif %}
       {%- endif %}
-  {% endmacro %}
+  {%- endmacro %}
 
   {# ========================================================================
   Description:
@@ -87,7 +87,7 @@ macroString: |-
   Output:
   - Cleaned and trimmed SQL string based on requested clause
    ========================================================================#}
-  {% macro get_clause( joinclause , ret_clause ) %}
+  {%- macro get_clause( joinclause , ret_clause ) %}
 
       {#  STEP 1: Remove Block Comments /* ... */ #}
       {#  We split by the start of the comment and only keep the part after the end of the comment #}
@@ -176,18 +176,18 @@ macroString: |-
   {%- macro run_tests(runOrder) %}
 
       {%- if runOrder == 'Before' %}
-          {% set configTests = config.get('preTests', {}) %}
-          {% set testName = ': Pre-Load Test ' %}
-      {% else %}
-          {% set configTests = config.get('postTests', {}) %}
-          {% set testName = ': Post-Load Test ' %}
+          {%- set configTests = config.get('preTests', {}) %}
+          {%- set testName = ': Pre-Load Test ' %}
+      {%- else %}
+          {%- set configTests = config.get('postTests', {}) %}
+          {%- set testName = ': Post-Load Test ' %}
       {%- endif %}
 
       {# --- Tests --- #}
       {%- if configTests is defined and configTests.parameters is defined %}
           {%- for test in configTests.parameters %}
-              {% set testParts = test.split(':', 1) %}
-              {% set continueOnFailure = testParts[0] | trim | lower == 'continueonfailure' %}
+              {%- set testParts = test.split(':', 1) %}
+              {%- set continueOnFailure = testParts[0] | trim | lower == 'continueonfailure' %}
               {{ test_stage(node.name + testName + loop.index|string, continueOnFailure) }}
               {{ testParts[-1] | trim }}
           {%- endfor %}
@@ -198,12 +198,12 @@ macroString: |-
               {%- if column.tests is mapping and column.tests.parameters is defined %}
                   {%- for test in column.tests.parameters %}
                       {%- if test | trim | lower == "null" %}
-                          {% set templateString = "SELECT 1 FROM " +  ref(node.location.name, node.name)  + " WHERE " + column.name + " IS NULL " %}                      
+                          {%- set templateString = "SELECT 1 FROM " +  ref(node.location.name, node.name)  + " WHERE " + column.name + " IS NULL " %}                      
                           {{ test_stage("Column Test: " + column.name + " - " + test | lower) }}
                           {{ templateString }}
                       {%- endif %}
                       {%- if test | trim | lower == "unique" %}
-                          {% set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + " GROUP BY " + column.name +  " HAVING COUNT(*) > 1" %}                      
+                          {%- set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + " GROUP BY " + column.name +  " HAVING COUNT(*) > 1" %}                      
                           {{ test_stage("Column Test: " + column.name + " - " + test | lower) }}
                           {{ templateString }}
                       {%- endif %}
@@ -240,7 +240,7 @@ macroString: |-
   - Returns a FAIL-select statement if validation fails
   - Otherwise allows query execution to proceed
   ===================================================================================================== #}
-  {% macro validate_merge_columns() %}
+  {%- macro validate_merge_columns() %}
 
       {# == Check if last modified comparison is enabled  #}
       {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) %}
@@ -346,7 +346,7 @@ macroString: |-
               SELECT CAST('FAIL' AS INT)
           {%- endif %}
       {%- endif %}
-  {% endmacro %}
+  {%- endmacro %}
 
   {# ====================================================================================================
   Description:
@@ -367,7 +367,7 @@ macroString: |-
   Output:
   - Returns a SQL boolean condition that evaluates to TRUE when source and target values are equal
   ====================================================================================================#}
-  {% macro safe_equals(src_expr, tgt_expr, data_type) %}
+  {%- macro safe_equals(src_expr, tgt_expr, data_type) %}
 
       {%- set dt = data_type | upper %}
 
@@ -388,7 +388,7 @@ macroString: |-
       {%- else %}
           {{ src_expr }} = {{ tgt_expr }}
       {%- endif %}
-  {% endmacro %}
+  {%- endmacro %}
 
   {#====================================================================================================
   Description:
@@ -409,7 +409,7 @@ macroString: |-
   Output:
   - Returns a SQL boolean condition that evaluates to TRUE when source and target values are different
   ====================================================================================================#}
-  {% macro safe_compare(src_expr, tgt_expr, data_type) %}
+  {%- macro safe_compare(src_expr, tgt_expr, data_type) %}
 
       {%- set dt = data_type | upper %}
 
@@ -431,7 +431,7 @@ macroString: |-
           {{ src_expr }} IS DISTINCT FROM {{ tgt_expr }}
       {%- endif %}
 
-  {% endmacro %}
+  {%- endmacro %}
 
   {#===================================================================================================
   Description:
@@ -462,18 +462,18 @@ macroString: |-
       {%- else -%}
 
           {# define algo wrappers #}
-          {% set algo_start = algo_upper + '(' %}
-          {% set algo_end = ')' %}
+          {%- set algo_start = algo_upper + '(' %}
+          {%- set algo_end = ')' %}
 
-          {% if algo_upper == 'SHA256' %}
-              {% set algo_start = 'SHA2(' %}
-              {% set algo_end = ', 256)' %}
-          {% endif %}
+          {%- if algo_upper == 'SHA256' %}
+              {%- set algo_start = 'SHA2(' %}
+              {%- set algo_end = ', 256)' %}
+          {%- endif %}
 
           CAST(
               {{ algo_start }}
                   {%- for c in cols.name -%}
-                      {%- if not loop.first %} || {% endif -%}
+                      {%- if not loop.first %} || {%- endif -%}
                       NVL(CAST({{ c }} AS VARCHAR), 'null')
                   {%- endfor -%}
               {{ algo_end }}

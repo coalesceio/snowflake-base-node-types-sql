@@ -144,8 +144,6 @@ does not permit copying or modification for any other purpose.
                     1
                     {%- elif col.isSystemCurrentFlag %}
                     'Y'
-                    {%- elif col.name == lastModifiedColName and treatNullAsCurrentTimestamp %}
-                        COALESCE({{ get_source_transform(col) }}, CURRENT_TIMESTAMP())
                     {%- else %}
                     {{ get_source_transform(col) }}
                     {%- endif %}
@@ -396,7 +394,7 @@ does not permit copying or modification for any other purpose.
                     {%- if col.name != lastModifiedColName %} AS "{{ col.name }}" {%- endif %}
                     {%- if not loop.last %}, {%- endif %}
                 {%- endfor %}
-                {{ get_clause(joinclause,'from')}}
+                {{ get_clause(joinclause, 'from')}}
 
                 {%- if lastModifiedComparison %}
                     LEFT JOIN {{ ref_no_link(node.location.name, node.name) }} "DIM" ON
