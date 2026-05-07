@@ -66,7 +66,7 @@ does not permit copying or modification for any other purpose.
             MERGE INTO {{ ref_no_link(node.location.name, node.name) }} USING
             (
                 SELECT 
-                {% for col in sources[0].columns %}
+                {%- for col in source.columns %}
 
                     {%- if col.isSystemCurrentFlag %}
                         'Y'
@@ -85,13 +85,13 @@ does not permit copying or modification for any other purpose.
 
             ON
             {%- for col in columns if col.isSurrogateKey %}
-                {{ node.name }}.{{ col.name }} = {{ col.zeroKey.parameters[0] }}
-            {% endfor %}
+                "{{ node.name }}"."{{ col.name }}" = {{ col.zeroKey.parameters[0] }}
+            {%- endfor %}
 
             WHEN MATCHED THEN UPDATE
             SET
             {%- for col in columns if (not col.isSurrogateKey) %}
-                {{ node.name }}.{{ col.name }} = SOURCE_ZERO.{{ col.name }}
+                "{{ node.name }}"."{{ col.name }}" = "SOURCE_ZERO"."{{ col.name }}"
                 {%- if not loop.last %}, {%- endif %}			
             {%- endfor %}
 
@@ -99,14 +99,14 @@ does not permit copying or modification for any other purpose.
             INSERT
             (
                 {%- for col in columns %}
-                    {{ col.name }}
+                    "{{ col.name }}"
                     {%- if not loop.last %}, {%- endif %}			
                 {%- endfor %}
             )
             VALUES
             (
                 {%- for col in columns %}
-                    SOURCE_ZERO.{{ col.name }}			
+                    "SOURCE_ZERO"."{{ col.name }}"			
                     {%- if not loop.last %}, {%- endif %}			
                 {%- endfor %}
             )

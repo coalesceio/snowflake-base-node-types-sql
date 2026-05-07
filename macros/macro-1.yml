@@ -525,7 +525,7 @@ macroString: |-
             and config.zeroKey.parameters | trim | length > 0 %}
 
           {%- for zk in config.zeroKey.parameters %}
-              {%- set parts = zk.split(':') %}
+              {%- set parts = zk.split(':', 1) %}
               {%- set type = parts[0] | trim | lower %}
               {%- set val = parts[-1] | trim %}
 
