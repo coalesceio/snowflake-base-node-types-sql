@@ -6,7 +6,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 does not permit copying or modification for any other purpose.  
 #}
 {# == Node Type Name           : SQL Merge  == #}
-{# == Node Type Description    : This node creates dimension table or view  == #}
+{# == Node Type Description    : This node creates dimension/fact/Persistent table or view  == #}
 {#---------------------------------------------------------------------------------------------#}
 
 {%- if node.materializationType | lower in ['table', 'transient table'] %}

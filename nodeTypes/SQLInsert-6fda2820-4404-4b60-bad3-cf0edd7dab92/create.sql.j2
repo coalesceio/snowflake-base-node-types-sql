@@ -10,9 +10,9 @@ does not permit copying or modification for any other purpose.
 {#---------------------------------------------------------------------------------------------#}
 
 {%- if node.materializationType | lower in ['table', 'transient table'] %}
-	{{ stage('Create ' + node.materializationType ) }}
 
     {# CreateSQL for Table #}
+    {{ stage('Create ' + node.materializationType ) }}
 	CREATE OR REPLACE {{ node.materializationType }} {{ ref_no_link(node.location.name, node.name) }}
 	(
 		{%- for col in columns %}
@@ -34,10 +34,10 @@ does not permit copying or modification for any other purpose.
 
     {# CreateSQL for View #}
     {{ stage('Create ' + node.materializationType ) }}
-
     CREATE OR REPLACE {{ node.materializationType }} {{ ref_no_link(node.location.name, node.name) }}
     (
         {%- for col in columns %}
+
             {%- set descriptionParams = col.description.parameters | default([]) %}
 
             "{{ col.name }}"
