@@ -42,9 +42,9 @@ Before using this node, ensure the following requirements are met:
 | `@groupByAll` | ✓ | ✓ | Applies `GROUP BY ALL` |
 | `@preTests("<test1>", "<continueOnFailure:test2>")` | ✓ | ✓ | Allows you to define validation checks that run before node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
 | `@postTests("<continueOnFailure:test1>", "<test2>")` | ✓ | ✓ | Allows you to define validation checks that run after node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
+| `@zeroKey("string:<string>", "number:<number>", "boolean:<bool>", "datetime:<timestamp>")` |  | ✓ | Specifies default zero-key (ghost record) values by data type, applied when no column-level override is provided<br/>**Example:** <br/>@zeroKey("string:DEFAULT", "number:100", "boolean:True", "datetime:1900-01-01 00:00:00.000") |
 | `@treatNullAsCurrentTimestamp` |  | ✓ | Treats NULL as current timestamp for timestamp datatype, last modified comparison column if **@isLastModifiedColumn** is specified |
 | `@type2Dimension` |  | ✓ | Enables SCD Type 2 behavior if **@isLastModifiedColumn** is specified |
-| `@zeroKey("string:<string>", "number:<number>", "boolean:<bool>", "datetime:<timestamp>")` |  | ✓ | Specifies default zero-key (ghost record) values by data type, applied when no column-level override is provided<br/>**Example:** <br/>@zeroKey("string:DEFAULT", "number:10", "boolean:True", "datetime:1999-12-31") |
 
 ---
 
@@ -57,11 +57,11 @@ Before using this node, ensure the following requirements are met:
 | `@defaultValue("<text>")`</br>`@defaultValue(<number>)`</br>`@defaultValue(<bool>)` | ✓ | ✓ | Adds default value |
 | `@tests("null", "unique")` | ✓ | ✓ | Column tests are more restrictive and apply directly to individual columns.<br/>*Supported Tests*<br/> - **null** → Checks for NULL values<br/> - **unique** → Checks to ensure all values are unique<br/>*Valid Examples*<br/>@tests("null", "unique")<br/>@tests("null")<br/>@tests("unique") |
 | `@hashValue("<hash_col_name>")` | ✓ | ✓ | Generates a hash key by combining and hashing the values of columns associated with a given hash group, ensuring consistent change detection and key generation.<br/><br/>**Default:** Uses `SHA1` hashing.<br/>**Supported Algorithms:** `SHA1` (default), `MD5`, `SHA256`.<br/><br/>**Example:**<br/><col_name> AS <col_name> @hashValue("GH_COL"),<br/>{{ get_hash('GH_COL') }}::STRING AS "GH_COL"<br/><br/>**Examples with different algorithms:**<br/>-- SHA1 (default)<br/>{{ get_hash('GH_COL') }}::STRING AS "GH_COL"<br/><br/>-- MD5<br/>{{ get_hash('GH_COL', 'MD5') }}::STRING AS "GH_COL"<br/><br/>-- SHA256<br/>{{ get_hash('GH_COL', 'SHA256') }}::STRING AS "GH_COL" |
+| `@zeroKey("<text>")`</br>`@zeroKey(<number>)`</br>`@zeroKey(<bool>)`<br/>`@zeroKey(<timestamp>)` |  | ✓ | Adds zero key value(ghost record) to the column.<br/>**Example:** <br/> 0 AS "{{ node.name }}_KEY" @isSurrogateKey @zeroKey(0) |
 | `@isSurrogateKey` |  | ✓ | System-generated surrogate key |
 | `@isBusinessKey` |  | ✓ | Marks column as business key |
 | `@isLastModifiedColumn` |  | ✓ | Identifies the last modified column and enables a last-modified-based approach instead of column-level change tracking |
 | `@isChangeTracking` |  | ✓ | Identifies change tracking column |
-| `@zeroKey("<text>")`</br>`@zeroKey(<number>)`</br>`@zeroKey(<bool>)`<br/>`@zeroKey(<timestamp>)` |  | ✓ | Adds zero key value(ghost record) to the column.<br/>**Example:** <br/> 0 AS "{{ node.name }}_KEY" @isSurrogateKey @zeroKey(0) |
 
 ---
 
