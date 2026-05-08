@@ -11,6 +11,5 @@ metadata:
     tagColor: '#2EB67D'
 
     enableCTESupport: true
-    inputMode: 'sql'
 name: SQL Insert
 type: NodeType

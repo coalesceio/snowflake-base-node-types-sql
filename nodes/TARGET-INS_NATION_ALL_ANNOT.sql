@@ -2,6 +2,7 @@
 @nodeType("6fda2820-4404-4b60-bad3-cf0edd7dab92")
 
 @selectDistinct
+@truncateBefore
 @preSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
 @postSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
 @preTests("continueOnFailure:select count(*) from {{ this }}", "continueOnFailure:select count(*) from {{ this }}")

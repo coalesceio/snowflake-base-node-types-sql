@@ -1,13 +1,18 @@
 @id("7165f20a-e36a-47a0-ae7c-977b1a3c590d")
 @nodeType("6fda2820-4404-4b60-bad3-cf0edd7dab92")
 
-WITH pivoted_nation AS (
-    SELECT *
+WITH PIVOTED_NATION AS (
+    SELECT
+        "0" AS REGION_0_COUNT,
+        "1" AS REGION_1_COUNT,
+        "2" AS REGION_2_COUNT,
+        "3" AS REGION_3_COUNT,
+        "4" AS REGION_4_COUNT
     FROM (
         SELECT
             "N_NAME",
             "N_REGIONKEY"
-        FROM {{ ref('SRC', 'NATION') }} "NATION"
+        FROM "TANVI_DEV"."SOURCE"."NATION" AS "NATION"
     )
     PIVOT (
         COUNT("N_NAME")
@@ -15,4 +20,10 @@ WITH pivoted_nation AS (
     ) AS P
 )
 
-SELECT * FROM pivoted_nation;
+SELECT
+    REGION_0_COUNT::NUMBER AS "REGION_0_COUNT",
+    REGION_1_COUNT::NUMBER AS "REGION_1_COUNT",
+    REGION_2_COUNT::NUMBER AS "REGION_2_COUNT",
+    REGION_3_COUNT::NUMBER AS "REGION_3_COUNT",
+    REGION_4_COUNT::NUMBER AS "REGION_4_COUNT"
+FROM PIVOTED_NATION
