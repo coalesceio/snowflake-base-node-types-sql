@@ -1,5 +1,5 @@
 fileVersion: 1
-id: 3f74a90b-fbdb-4eb2-863a-9cc7a6c5a899
+id: 03ca1edb-e1f5-42e2-9192-421e143906ac
 name: NATION_COPY1
 operation:
   database: ""
@@ -13,8 +13,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 9d5c28b7-7d5a-4c52-8956-6438fa6541f6
-          stepCounter: 3f74a90b-fbdb-4eb2-863a-9cc7a6c5a899
+          columnCounter: e234903d-6eed-4ed0-aade-83368935f47d
+          stepCounter: 03ca1edb-e1f5-42e2-9192-421e143906ac
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
@@ -30,8 +30,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 30456c97-ccb6-40f7-aa85-e487b68f8656
-          stepCounter: 3f74a90b-fbdb-4eb2-863a-9cc7a6c5a899
+          columnCounter: ea67cda9-ad3b-4d95-ae55-a50b64b6891d
+          stepCounter: 03ca1edb-e1f5-42e2-9192-421e143906ac
         config: {}
         dataType: VARCHAR(25)
         defaultValue: ""
@@ -47,8 +47,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 87eba601-11b2-45d2-914a-b09a9131f119
-          stepCounter: 3f74a90b-fbdb-4eb2-863a-9cc7a6c5a899
+          columnCounter: 27be6b49-b8c2-42a6-9f42-8f0f764f8359
+          stepCounter: 03ca1edb-e1f5-42e2-9192-421e143906ac
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
@@ -64,8 +64,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 6adc63d9-42a3-4cfa-9472-a82e0827cf62
-          stepCounter: 3f74a90b-fbdb-4eb2-863a-9cc7a6c5a899
+          columnCounter: 11d6ecde-e0d2-4dd0-a20b-5110bebee037
+          stepCounter: 03ca1edb-e1f5-42e2-9192-421e143906ac
         config: {}
         dataType: VARCHAR(152)
         defaultValue: ""
@@ -81,8 +81,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 5d2745cd-31d3-44ed-85c3-06cdbcdd3ed6
-          stepCounter: 3f74a90b-fbdb-4eb2-863a-9cc7a6c5a899
+          columnCounter: 76536c97-c7e1-46ff-95b3-d67cfc8f2163
+          stepCounter: 03ca1edb-e1f5-42e2-9192-421e143906ac
         config: {}
         dataType: TIMESTAMP_LTZ(9)
         defaultValue: ""
