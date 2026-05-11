@@ -19,9 +19,9 @@ WITH ALL_TABLES AS (
 )
 
 SELECT
-     "N_NATIONKEY" AS "N_NATIONKEY" @nullable(false) @defaultValue(100) @tests("null", "unique") @hashValue("GH_NATIONKEY"),
+     "N_NATIONKEY" AS "N_NATIONKEY" @nullable(false) @defaultValue(200) @tests("null", "unique") @hashValue("GH_NATIONKEY"),
      "N_NAME" AS "N_NAME" @nullable("false") @description("column1 comment") @defaultValue("NA") @tests("null"),
-     "N_REGIONKEY" AS "N_REGIONKEY" @description("column2 comment") @defaultValue("99") @tests("unique"),
+     "N_REGIONKEY" AS "N_REGIONKEY" @description("column2 comment") @defaultValue("199") @tests("unique"),
      "N_COMMENT" AS "N_COMMENT" @defaultValue("'DEFAULT'"),
      "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
      {{ get_hash('GH_NATIONKEY', 'MD5') }}::STRING AS "GH_NATIONKEY"
