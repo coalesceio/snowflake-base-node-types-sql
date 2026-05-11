@@ -1,0 +1,20 @@
+@id("7d0494d2-f3cf-4e97-abaa-19009f08d05c")
+@nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
+
+@materializationType("transient table")
+
+WITH ALL_TABLES AS (
+     SELECT * FROM {{ ref('SRC', 'NATION_COPY1') }} "NATION_COPY1"
+     UNION
+     SELECT * FROM {{ ref('SRC', 'NATION_COPY2') }} "NATION_COPY2"
+)
+
+SELECT
+     "N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
+     "N_NAME" AS "N_NAME" @isBusinessKey,
+     "N_REGIONKEY" AS "N_REGIONKEY",
+     "N_COMMENT" AS "N_COMMENT",
+     "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
+FROM ALL_TABLES
