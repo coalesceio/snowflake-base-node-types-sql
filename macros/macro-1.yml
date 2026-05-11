@@ -265,44 +265,29 @@ macroString: |-
           SELECT CAST('FAIL' AS INT)
       {%- endif %}
 
+      {%- set currentFlagCol = get_value_by_column_attribute("isSystemCurrentFlag") %}
+      {%- set versionCol = get_value_by_column_attribute("isSystemVersion") %}
       {%- set createDate = get_value_by_column_attribute("isSystemCreateDate") %}
       {%- set updateDate = get_value_by_column_attribute("isSystemUpdateDate") %}
 
       {%- if type2Dimension %}
-
-          {#== SCD type 2 ==#}
-          {%- set currentFlagCol = get_value_by_column_attribute("isSystemCurrentFlag") %}
-          {%- set versionCol = get_value_by_column_attribute("isSystemVersion") %}
-
-          {%- if 'ERR:' in currentFlagCol or 'ERR:' in versionCol %}
-              {{ test_stage('Warning! Merge-SCD2 requires @isSystemCurrentFlag, @isSystemVersion annotated Columns', false) }}
-              /*
-              Columns with attributenames @isSystemCurrentFlag, @isSystemVersion must be provided for the MERGE-SCD2 statement to run successfully.
-              Please specify it using @isSystemCurrentFlag, @isSystemVersion at the column level in SQL.
-
-              Example:
-
-              '' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
-              1 AS "SYSTEM_VERSION" @isSystemVersion
-
-              */
-              SELECT CAST('FAIL' AS INT)
-          {%- endif %}
 
           {%- set endDate = get_value_by_column_attribute("isSystemEndDate") %}
 
           {%- if lastModifiedComparison %}
 
               {#== SCD type 2 - LM ==#}
-              {%- if 'ERR:' in createDate or 'ERR:' in endDate %}
-                  {{ test_stage('Warning! Missing audit columns', true) }}
+              {%- if 'ERR:' in createDate or 'ERR:' in endDate or 'ERR:' in currentFlagCol or 'ERR:' in versionCol %}
+                  {{ test_stage('Warning! Missing audit/version/status/metadata columns', false) }}
                   /*
-                  It is recommended to also include columns with annotations @isSurrogateKey, @isSystemCreateDate and @isSystemEndDate for improved clarity and auditability.
-                  Please specify it using @isSurrogateKey, @isSystemCreateDate, @isSystemEndDate at the column level in SQL.
+                  It is recommended to also include columns with annotations @isSurrogateKey, @isSystemCurrentFlag, @isSystemVersion, @isSystemCreateDate and @isSystemEndDate for improved clarity and auditability.
+                  Please specify it using @isSurrogateKey, @isSystemCurrentFlag, @isSystemVersion, @isSystemCreateDate, @isSystemEndDate at the column level in SQL.
 
                   Example:
 
-                  0 AS "{{ node.name }}_KEY" @isSurrogateKey,
+                  "{{ node.name }}_KEY"::NUMBER AS "{{ node.name }}_KEY" @isSurrogateKey,
+                  "SYSTEM_CURRENT_FLAG"::VARCHAR AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
+                  "SYSTEM_VERSION"::NUMBER AS "SYSTEM_VERSION" @isSystemVersion,
                   CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
                   CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
 
@@ -310,17 +295,18 @@ macroString: |-
                   SELECT CAST('FAIL' AS INT)
               {%- endif %}
           {%- else %}
-
               {#== SCD type 2 - CT ==#}
-              {%- if 'ERR:' in createDate or 'ERR:' in updateDate or 'ERR:' in endDate %}
-                  {{ test_stage('Warning! Missing audit columns', true) }}
+              {%- if 'ERR:' in createDate or 'ERR:' in updateDate or 'ERR:' in endDate or 'ERR:' in currentFlagCol or 'ERR:' in versionCol %}
+                  {{ test_stage('Warning! Missing audit/version/status/metadata columns', false) }}
                   /*
-                  It is recommended to also include columns with annotations @isSurrogateKey, @isSystemCreateDate, @isSystemUpdateDate and @isSystemEndDate for improved clarity and auditability.
-                  Please specify it using @isSurrogateKey, @isSystemCreateDate, @isSystemUpdateDate and @isSystemEndDate at the column level in SQL.
+                  It is recommended to also include columns with annotations @isSurrogateKey, @isSystemCurrentFlag, @isSystemVersion, @isSystemCreateDate, @isSystemUpdateDate and @isSystemEndDate for improved clarity and auditability.
+                  Please specify it using @isSurrogateKey, @isSystemCurrentFlag, @isSystemVersion, @isSystemCreateDate, @isSystemUpdateDate and @isSystemEndDate at the column level in SQL.
 
                   Example:
 
-                  0 AS "{{ node.name }}_KEY" @isSurrogateKey,
+                  "{{ node.name }}_KEY"::NUMBER AS "{{ node.name }}_KEY" @isSurrogateKey,
+                  "SYSTEM_CURRENT_FLAG"::VARCHAR AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
+                  "SYSTEM_VERSION"::NUMBER AS "SYSTEM_VERSION" @isSystemVersion,
                   CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
                   CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate,
                   CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
@@ -332,7 +318,7 @@ macroString: |-
       {%- else %}
           {#== SCD type 1 - Without Delete Strategy ==#}
           {%- if 'ERR:' in createDate or 'ERR:' in updateDate %}
-              {{ test_stage('Warning! Missing audit columns', true) }}
+              {{ test_stage('Warning! Missing audit/metadata columns', true) }}
               /*
               It is recommended to also include columns with annotations @isSystemCreateDate, @isSystemUpdateDate for improved clarity and auditability.
               Please specify it using @isSystemCreateDate, @isSystemUpdateDate at the column level in SQL.

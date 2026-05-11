@@ -12,7 +12,7 @@ WITH PIVOTED_NATION AS (
         SELECT
             "N_NAME",
             "N_REGIONKEY"
-        FROM "TANVI_DEV"."SOURCE"."NATION" AS "NATION"
+        FROM {{ ref('SRC', 'NATION') }} "NATION"
     )
     PIVOT (
         COUNT("N_NAME")
