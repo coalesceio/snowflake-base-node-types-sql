@@ -1,7 +1,7 @@
-@id("3b4e9eb3-3bbd-4d2a-bf9a-1992a12736b2")
+@id("7c8d0127-bf79-4b38-b255-c70a926d1a24")
 @nodeType("6fda2820-4404-4b60-bad3-cf0edd7dab92")
 
-@materializationType("transient table")
+@materializationType("view")
 
 WITH ALL_TABLES AS (
      SELECT * FROM {{ ref('SRC', 'NATION_COPY1') }} "NATION_COPY1"
