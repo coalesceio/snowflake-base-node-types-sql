@@ -100,9 +100,9 @@ Before using this node, ensure the following requirements are met:
 
 | Column Name | Definition | Annotation |
 |------------|-----------|-----------|
-| {{ node.name }}_KEY | 0 AS "{{ node.name }}_KEY" | @isSurrogateKey |
-| SYSTEM_VERSION | 0 AS "SYSTEM_VERSION" | @isSystemVersion |
-| SYSTEM_CURRENT_FLAG | '' AS "SYSTEM_CURRENT_FLAG" | @isSystemCurrentFlag |
+| {{ node.name }}_KEY | "{{ node.name }}_KEY"::NUMBER AS "{{ node.name }}_KEY" | @isSurrogateKey |
+| SYSTEM_VERSION | "SYSTEM_VERSION"::NUMBER AS "SYSTEM_VERSION" | @isSystemVersion |
+| SYSTEM_CURRENT_FLAG | "SYSTEM_CURRENT_FLAG"::VARCHAR AS "SYSTEM_CURRENT_FLAG" | @isSystemCurrentFlag |
 | SYSTEM_CREATE_DATE | CAST(CURRENT_TIMESTAMP AS TIMESTAMP) | @isSystemCreateDate |
 | SYSTEM_END_DATE | CAST('2999-12-31 00:00:00' AS TIMESTAMP) | @isSystemEndDate |
 | SYSTEM_UPDATE_DATE | CAST(CURRENT_TIMESTAMP AS TIMESTAMP) | @isSystemUpdateDate |
@@ -384,8 +384,8 @@ SELECT
      NATION."N_COMMENT" AS "N_COMMENT",
      NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
      {{ get_hash('GH_COL') }}::STRING AS "GH_COL",
-    '' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
-    1 AS "SYSTEM_VERSION" @isSystemVersion,
+    "SYSTEM_CURRENT_FLAG"::VARCHAR AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
+    "SYSTEM_VERSION"::NUMBER AS "SYSTEM_VERSION" @isSystemVersion,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate,
     CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
@@ -437,8 +437,8 @@ SELECT
      NATION."N_COMMENT" AS "N_COMMENT",
      NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" @isLastModifiedColumn,
      {{ get_hash('GH_COL') }}::STRING AS "GH_COL",
-    '' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
-    1 AS "SYSTEM_VERSION" @isSystemVersion,
+    "SYSTEM_CURRENT_FLAG"::VARCHAR AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
+    "SYSTEM_VERSION"::NUMBER AS "SYSTEM_VERSION" @isSystemVersion,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
     CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
 FROM {{ ref('SRC', 'NATION') }} "NATION"
