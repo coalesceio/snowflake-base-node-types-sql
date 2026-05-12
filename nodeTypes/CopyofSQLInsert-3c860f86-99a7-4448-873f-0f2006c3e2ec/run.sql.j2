@@ -1,0 +1,68 @@
+{#
+    Copyright (c) 2026 Coalesce. All rights reserved.
+This script and its associated documentation are confidential and proprietary to Coalesce.
+Unauthorized reproduction, distribution, or disclosure of this material is strictly prohibited.
+Coalesce permits you to copy and modify this script for the purposes of using with Coalesce but
+does not permit copying or modification for any other purpose.  
+#}
+{# == Node Type Name           : SQL Insert  == #}
+{# == Node Type Description    : Creates a table with custome SQL logic  == #}
+{#---------------------------------------------------------------------------------------------#}
+
+{# == To run data quality tests before data insertion == #}
+{{ run_tests('Before') }}
+
+{%- if node.materializationType | lower in ['table', 'transient table'] %}
+
+    {# --- Pre-SQL --- #}
+    {%- if config.preSQL is defined and config.preSQL.parameters is defined -%}
+        {%- for sql in config.preSQL.parameters -%}
+            {{ stage('Pre-SQL ' + loop.index|string) }}
+            {{ sql }}
+        {%- endfor %}
+    {%- endif %}
+
+	{# == Truncate data before data insertion  == #}
+    {%- if config.truncateBefore %}
+        {{ stage('Truncate ' + node.materializationType) }}
+        TRUNCATE IF EXISTS {{ ref_no_link(node.location.name, node.name) }}
+    {%- endif %}
+
+	{# == Insert data from sources into Work table  == #}
+	
+    {{ stage('Load ' + node.materializationType + ' Using Insert') }}
+    INSERT INTO {{ ref_no_link(node.location.name, node.name) }}
+    (
+        {%- for col in sources[0].columns %}
+            "{{ col.name }}"
+            {%- if not loop.last -%},{%- endif %}
+        {%- endfor %}
+    )
+    {{ sources[0].cteString }}
+    (
+        SELECT {%- if config.selectDistinct %} DISTINCT {%- endif %}
+        {%- for col in sources[0].columns %}
+            {{ get_source_transform(col) }} AS "{{ col.name }}"
+            {%- if not loop.last -%}, {%- endif %}
+        {%- endfor %}
+
+        {{ sources[0].join }}
+        {% if config.groupByAll %} GROUP BY ALL {% endif %}
+    )
+
+    {# --- Post-SQL --- #}
+    {%- if config.postSQL is defined and config.postSQL.parameters is defined -%}
+        {%- for sql in config.postSQL.parameters -%}
+            {{ stage('Post-SQL ' + loop.index|string) }}
+            {{ sql }}
+        {%- endfor %}
+    {%- endif %}
+
+{%- else %}
+	{{ stage('Load Skipped for View') }}
+	-- The node {{node.name}} is materialized as View. Therefore, a Load operation is not supported.
+	SELECT 1 AS INFO_MESSAGE WHERE FALSE
+{%- endif %}
+
+{# == To run data quality tests after data insertion == #}
+{{ run_tests('After') }}

@@ -1,0 +1,15 @@
+fileVersion: 2
+id: 3c860f86-99a7-4448-873f-0f2006c3e2ec
+isDisabled: false
+metadata:
+  defaultStorageLocation: null
+  error: null
+  nodeMetadataSpec: |-
+    capitalized: Copy of SQL Insert
+    short: INS
+    plural: SQL Inserts
+    tagColor: '#2EB67D'
+
+    enableCTESupport: true
+name: Copy of SQL Insert
+type: NodeType
