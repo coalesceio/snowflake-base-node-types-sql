@@ -113,7 +113,7 @@ Before using this node, ensure the following requirements are met:
 
 | Change Tracking - SCD Type 1  | Change Tracking - SCD Type 2 | Last Modified - SCD Type 1 | Last Modified - SCD Type 2 |
 |--------------------|---------------------------|--------------------|---------------------------|
-@isBusinessKey<br/>@isSystemCreateDate<br/>@isSystemUpdateDate|@isBusinessKey<br/>@isChangeTracking<br/>@isSurrogateKey<br/> @isSystemCurrentFlag<br/>@isSystemVersion<br/>@isSystemCreateDate<br/>@isSystemUpdateDate<br/>@isSystemEndDate|@treatNullAsCurrentTimestamp<br/>@isBusinessKey<br/>@isLastModifiedColumn<br/>@isSystemCreateDate<br/>@isSystemUpdateDate|@treatNullAsCurrentTimestamp<br/>@type2Dimension<br/>@isBusinessKey<br/>@isLastModifiedColumn<br/>@isSurrogateKey<br/> @isSystemCurrentFlag<br/>@isSystemVersion<br/>@isSystemCreateDate<br/>@isSystemEndDate|
+@isBusinessKey<br/><br/>@isSystemCreateDate<br/>@isSystemUpdateDate|@isBusinessKey<br/><br/>@isChangeTracking<br/><br/>@isSurrogateKey<br/> @isSystemCurrentFlag<br/>@isSystemVersion<br/>@isSystemCreateDate<br/>@isSystemUpdateDate<br/>@isSystemEndDate|@isBusinessKey<br/><br/>@isLastModifiedColumn<br/>@treatNullAsCurrentTimestamp<br/><br/>@isSystemCreateDate<br/>@isSystemUpdateDate|@isBusinessKey<br/><br/>@isLastModifiedColumn<br/>@treatNullAsCurrentTimestamp<br/>@type2Dimension<br/><br/>@isSurrogateKey<br/> @isSystemCurrentFlag<br/>@isSystemVersion<br/>@isSystemCreateDate<br/>@isSystemEndDate|
 
 ---
 
