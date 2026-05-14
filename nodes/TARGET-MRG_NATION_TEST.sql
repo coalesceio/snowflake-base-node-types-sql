@@ -1,6 +1,5 @@
-@id("722b6f3c-774f-408a-8a9d-36c7d9ae0f33")
+@id("114a82cf-3381-4566-8f6e-cb452740c810")
 @nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
-
 SELECT
      "{{ node.name }}_KEY"::NUMBER AS "{{ node.name }}_KEY" @isSurrogateKey,
      "N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
