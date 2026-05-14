@@ -253,7 +253,7 @@ macroString: |-
               {%- else %}
                   {{ test_stage('Warning! Count mismatch for last comparison', false) }}
                   -- Only one last modified column is allowed. Multiple/No columns may lead to inconsistent results.
-                  SELECT CAST('FAIL' AS INT)
+                  SELECT CAST('FAIL' AS STRING)
               {%- endif %}
           {%- else %}
               {%- set type2Dimension = columns | selectattr("isChangeTracking") | list | length > 0 | default(false) %}
@@ -262,7 +262,7 @@ macroString: |-
           {{ test_stage('Warning! Merge requires a business key', false) }}
           -- A business key must be provided for the MERGE statement to run successfully.
           -- Please specify it using @isBusinessKey at the column level in SQL.
-          SELECT CAST('FAIL' AS INT)
+          SELECT CAST('FAIL' AS STRING)
       {%- endif %}
 
       {%- set currentFlagCol = get_value_by_column_attribute("isSystemCurrentFlag") %}
@@ -292,7 +292,7 @@ macroString: |-
                   CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
 
                   */
-                  SELECT CAST('FAIL' AS INT)
+                  SELECT CAST('FAIL' AS STRING)
               {%- endif %}
           {%- else %}
               {#== SCD type 2 - CT ==#}
@@ -312,7 +312,7 @@ macroString: |-
                   CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
 
                   */
-                  SELECT CAST('FAIL' AS INT)
+                  SELECT CAST('FAIL' AS STRING)
               {%- endif %}
           {%- endif %}
       {%- else %}
@@ -329,7 +329,7 @@ macroString: |-
               CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
 
               */
-              SELECT CAST('FAIL' AS INT)
+              SELECT CAST('FAIL' AS STRING)
           {%- endif %}
       {%- endif %}
   {%- endmacro %}
