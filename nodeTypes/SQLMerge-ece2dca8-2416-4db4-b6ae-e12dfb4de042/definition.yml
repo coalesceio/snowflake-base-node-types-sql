@@ -11,5 +11,187 @@ metadata:
     plural: SQL Merges
 
     enableCTESupport: true
+
+    config:
+    - groupName: Node Level Annotations
+      items:
+      - type: materializationSelector
+        isRequired: true
+        default: table
+        options:
+        - table
+        - view
+
+      - type: toggleButton
+        attributeName: lastModifiedCompToggle
+        displayName: Last Modified Comparison
+        default: false
+        enableIf: "{% if node.materializationType != 'view' %} true {% else %} false {% endif %}"
+
+      - type: note
+        attributeName: noteLastModColumn
+        displayName: ⚠️ Ensure @isLastModifiedColumn annotation is applied to the required column.
+        enableIf: "{% if node.materializationType != 'view' and config.lastModifiedCompToggle %} true {% else %} false {% endif %}"
+
+      - type: toggleButton
+        attributeName: treatNullAsCurrentTimestamp
+        displayName: Treat NULL as Current Timestamp
+        default: false
+        enableIf: "{% if node.materializationType != 'view' 
+                  and config.lastModifiedCompToggle
+                  and ('TIMESTAMP' in config.lastModifiedColumn.dataType | upper) %} true {% else %} false {% endif %}"
+
+      - type: toggleButton
+        attributeName: type2Dimension
+        displayName: Enable SCD Type2
+        default: false
+        enableIf: "{% if node.materializationType != 'view' and config.lastModifiedCompToggle %} true {% else %} false {% endif %}"
+
+      - displayName: Truncate Before
+        attributeName: truncateBefore
+        type: toggleButton
+        default: false
+        enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+      - displayName: Enable Tests
+        attributeName: testsEnabled
+        type: toggleButton
+        default: false
+        
+      - displayName: Distinct
+        attributeName: selectDistinct
+        type: toggleButton
+        enableIf: "{% if config.groupByAll %} false {% else %} true {% endif %}"
+        default: false
+        
+      - displayName: Group By All
+        attributeName: groupByAll
+        type: toggleButton
+        default: false
+        enableIf: "{% if config.selectDistinct %} false {% else %} true {% endif %}"
+
+      - type: note
+        attributeName: noteZeroKey
+        displayName: ℹ️ Add column with @isSurrogateKey annotation to enable Zero Key insertion.
+        enableIf: "{% if node.materializationType != 'view' and config.lastModifiedCompToggle %} true {% else %} false {% endif %}"
+
+     
+      - type: toggleButton
+        attributeName: insertZeroKey
+        displayName: Insert Zero Key Record
+        default: false
+        enableIf: "{% if node.materializationType != 'view'
+                    and columns
+                    | selectattr('isSurrogateKey')
+                    | list
+                    | length == 1 %} true {% else %} false {% endif %}"
+
+      - displayName: Pre-SQL
+        attributeName: preSQL
+        type: textBox
+        syntax: sql
+        isRequired: false
+        enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+      - displayName: Post-SQL
+        attributeName: postSQL
+        type: textBox
+        syntax: sql
+        isRequired: false
+        enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+    - groupName: Zero Key Record Annotations
+      items:
+
+      - displayName: Default Surrogate Key Value
+        attributeName: insertZeroKeySurrogateKey
+        type: textBox
+        default: "0"
+        isRequired: false
+        enableIf: "true"
+
+      - displayName: Default String Value
+        attributeName: insertZeroKeyStr
+        type: textBox
+        default: "UNKNOWN"
+        isRequired: false
+        enableIf: "true"
+
+      - displayName: Default Date/Time/Timestamp Value
+        attributeName: insertZeroKeyTimestamp
+        type: textBox
+        default: "1900-01-01 00:00:00"
+        isRequired: false
+        enableIf: "true"
+        
+      - displayName: Default Boolean Value
+        attributeName: insertZeroKeyBol
+        type: dropdownSelector
+        default: "TRUE"
+        isRequired: false
+        options:
+        - "TRUE"
+        - "FALSE"
+        enableIf: "true"
+
+      enableIf: "{% if config.insertZeroKey == true and node.materializationType != 'view' %} true {% else %} false {% endif %}"
+
+    - groupName: Column Level Annotations
+      items:
+
+      - type: businessKeyColumns
+        isRequired: true
+
+      - type: changeTrackingColumns
+        isRequired: false
+        enableIf: "{% if node.materializationType != 'view' and not(config.lastModifiedCompToggle) %} true {% else %} false {% endif %}"
+
+      - type: note
+        attributeName: restrictedEdit
+        displayName: ⛔ The section below is read-only and provided for reference purposes only.
+        enableIf: "true"
+
+      - displayName: Allowed Column Annotations
+        attributeName: col_annots
+        type: textBox
+        isRequired: false
+        syntax: sql
+        enableIf: "true"
+        default: "
+        ⚠️ For more information, please refer to the documentation available in the Marketplace.\n\n
+        ℹ️ Not NULL\n
+        ✦ @nullable(\"false\")\n
+          ➜ Marks column as NOT NULL\n
+        ━━━━━━━━━━━━━━━━━━━\n\n
+        ℹ️ Column Description\n
+        ✦ @description(\"<text>\")\n
+          ➜ Adds column description\n
+        ━━━━━━━━━━━━━━━━━━━\n\n
+        ℹ️ Column Default Value\n
+        ✦ @defaultValue(\"<text>\")\n
+        ✦ @defaultValue(<number>)\n
+        ✦ @defaultValue(<bool>)\n
+          ➜ Adds default value\n
+        ━━━━━━━━━━━━━━━━━━━\n\n
+        ℹ️ Column Level Tests\n
+        ✦ @tests(\"null\", \"unique\")\n
+          ➜ Checks NULL / UNIQUE values\n
+        ━━━━━━━━━━━━━━━━━━━\n\n
+        ℹ️ Hash Columns\n
+        ✦ @hashValue(\"<hash_col_name>\")\n
+          ➜ Generates hash key from columns\n
+          ➜ Use it along with macro {{ get_hash('<hash_col_name>') }}\n
+        ━━━━━━━━━━━━━━━━━━━\n\n
+        ℹ️ Custom Zero Key Values\n
+        ✦ @zeroKey(\"<text>\")\n
+        ✦ @zeroKey(<number>)\n
+        ✦ @zeroKey(<bool>)\n
+        ✦ @zeroKey(<timestamp>)\n
+          ➜ Adds custom zero key value(ghost record) to the column\n
+        ━━━━━━━━━━━━━━━━━━━\n\n
+        ℹ️ Last Modified Column Selector\n
+        ✦ @isLastModifiedColumn\n
+          ➜ enables a last-modified-based approach instead of column-level change tracking\n
+        ━━━━━━━━━━━━━━━━━━━"
 name: SQL Merge
 type: NodeType

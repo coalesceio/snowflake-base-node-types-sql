@@ -9,7 +9,7 @@ does not permit copying or modification for any other purpose.
 {# == Node Type Description    : This node creates dimension/fact/Persistent table or view  == #}
 {#---------------------------------------------------------------------------------------------#}
 
-{%- if node.materializationType | lower in ['table', 'transient table'] %}
+{%- if node.materializationType == 'table' %}
 
     {{ validate_merge_columns() }}
 
@@ -33,7 +33,7 @@ does not permit copying or modification for any other purpose.
 	)
 	{%- if node.description | length > 0 %} COMMENT = '{{ node.description | escape }}' {%- endif %}
 
-{%- elif node.materializationType | lower == 'view' %}
+{%- elif node.materializationType == 'view' %}
 
     {# CreateSQL for View #}
     {{ stage('Create ' + node.materializationType ) }}

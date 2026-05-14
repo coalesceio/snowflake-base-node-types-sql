@@ -15,12 +15,10 @@ does not permit copying or modification for any other purpose.
 {%- if node.materializationType | lower in ['table', 'transient table'] %}
 
     {# --- Pre-SQL --- #}
-    {%- if config.preSQL is defined and config.preSQL.parameters is defined -%}
-        {%- for sql in config.preSQL.parameters -%}
-            {{ stage('Pre-SQL ' + loop.index|string) }}
-            {{ sql }}
-        {%- endfor %}
-    {%- endif %}
+	{% if config.preSQL %}
+		{{ stage('Pre-SQL') }}
+		{{ config.preSQL }}
+	{% endif %}
 
 	{# == Truncate data before data insertion  == #}
     {%- if config.truncateBefore %}
@@ -51,12 +49,10 @@ does not permit copying or modification for any other purpose.
     )
 
     {# --- Post-SQL --- #}
-    {%- if config.postSQL is defined and config.postSQL.parameters is defined -%}
-        {%- for sql in config.postSQL.parameters -%}
-            {{ stage('Post-SQL ' + loop.index|string) }}
-            {{ sql }}
-        {%- endfor %}
-    {%- endif %}
+	{% if config.postSQL %}
+		{{ stage('Post-SQL') }}
+		{{ config.postSQL }}
+	{% endif %}
 
 {%- else %}
 	{{ stage('Load Skipped for View') }}

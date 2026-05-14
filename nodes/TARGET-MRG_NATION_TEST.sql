@@ -1,7 +1,7 @@
-@id("06e64389-9619-46b8-bdc5-39c7f759c404")
-@nodeType("6fda2820-4404-4b60-bad3-cf0edd7dab92")
-@selectDistinct(true)
-@testsEnabled(true)
+@id("b8b6e117-2bfd-499f-94bd-59094cb5ae63")
+@nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
+@lastModifiedCompToggle(true)
+
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY",
      "N_NAME" AS "N_NAME",
