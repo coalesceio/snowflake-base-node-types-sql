@@ -25,7 +25,6 @@ The key differences between these nodes are outlined below.
 | Annotation | SQL Insert | SQL Merge | Description |
 |-----------|-----------|----------|------------|
 | `@materializationType("table")` | ✓ | ✓ | Creates object as a table |
-| `@materializationType("transient table")` | ✓ | ✓ | Creates object as a transient table |
 | `@materializationType("view")` | ✓ | ✓ | Creates object as a view |
 | `@truncateBefore` | ✓ | ✓ | Truncates target before load |
 | `@selectDistinct` | ✓ | ✓ | Applies `DISTINCT` to SELECT |
