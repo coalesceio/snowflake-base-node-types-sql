@@ -1,0 +1,220 @@
+fileVersion: 1
+id: 6bd08cbe-ba09-4d6d-87ce-b7db1cb032a7
+name: HR_DATA_MNC
+operation:
+  database: ""
+  deployEnabled: true
+  description: ""
+  locationName: SRC
+  metadata:
+    columns:
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 2024f95b-1a59-4b65-bad5-bebb2a3858b6
+          stepCounter: 6bd08cbe-ba09-4d6d-87ce-b7db1cb032a7
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: SL_NO
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 847702b8-c6c2-4478-924f-e39bec6d2656
+          stepCounter: 6bd08cbe-ba09-4d6d-87ce-b7db1cb032a7
+        config: {}
+        dataType: VARCHAR(16777216)
+        defaultValue: ""
+        description: ""
+        name: EMPLOYEE_ID
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: e72e1e05-8c8b-4eea-89d3-c8c26adc85ee
+          stepCounter: 6bd08cbe-ba09-4d6d-87ce-b7db1cb032a7
+        config: {}
+        dataType: VARCHAR(16777216)
+        defaultValue: ""
+        description: ""
+        name: FULL_NAME
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 6ded8992-8ffb-4262-98f5-2c1360a22e07
+          stepCounter: 6bd08cbe-ba09-4d6d-87ce-b7db1cb032a7
+        config: {}
+        dataType: VARCHAR(16777216)
+        defaultValue: ""
+        description: ""
+        name: DEPARTMENT
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 08c58302-adf6-4098-956f-50cf04c63a41
+          stepCounter: 6bd08cbe-ba09-4d6d-87ce-b7db1cb032a7
+        config: {}
+        dataType: VARCHAR(16777216)
+        defaultValue: ""
+        description: ""
+        name: JOB_TITLE
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 27693f49-cf47-473f-a730-44b167307633
+          stepCounter: 6bd08cbe-ba09-4d6d-87ce-b7db1cb032a7
+        config: {}
+        dataType: DATE
+        defaultValue: ""
+        description: ""
+        name: HIRE_DATE
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: dd7b6cb6-370a-4796-9985-4941a4137bac
+          stepCounter: 6bd08cbe-ba09-4d6d-87ce-b7db1cb032a7
+        config: {}
+        dataType: VARCHAR(16777216)
+        defaultValue: ""
+        description: ""
+        name: LOCATION
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 4022e660-6a8b-4949-938f-45b35e796bfd
+          stepCounter: 6bd08cbe-ba09-4d6d-87ce-b7db1cb032a7
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: PERFORMANCE_RATING
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 0665c85b-bc8f-49a9-9b71-e1aca1b2a396
+          stepCounter: 6bd08cbe-ba09-4d6d-87ce-b7db1cb032a7
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: EXPERIENCE_YEARS
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 133c104b-ee7c-47ad-b633-4fc4fadc5128
+          stepCounter: 6bd08cbe-ba09-4d6d-87ce-b7db1cb032a7
+        config: {}
+        dataType: VARCHAR(16777216)
+        defaultValue: ""
+        description: ""
+        name: STATUS
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 7cacca27-96d0-428a-8545-64c8467836d5
+          stepCounter: 6bd08cbe-ba09-4d6d-87ce-b7db1cb032a7
+        config: {}
+        dataType: VARCHAR(16777216)
+        defaultValue: ""
+        description: ""
+        name: WORK_MODE
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: a1e876e3-5d99-456a-bbaa-bb23c01c0cb9
+          stepCounter: 6bd08cbe-ba09-4d6d-87ce-b7db1cb032a7
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: SALARY_INR
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+  name: HR_DATA_MNC
+  schema: ""
+  sqlType: Source
+  type: sourceInput
+  version: 1
+type: Node

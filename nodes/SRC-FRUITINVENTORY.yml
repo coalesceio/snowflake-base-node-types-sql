@@ -1,0 +1,67 @@
+fileVersion: 1
+id: 2bc0f2d9-5b41-4c1d-b00c-337019c070e2
+name: FRUITINVENTORY
+operation:
+  database: ""
+  deployEnabled: true
+  description: ""
+  locationName: SRC
+  metadata:
+    columns:
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 74a0a692-b937-402c-90f9-7a02db01112c
+          stepCounter: 2bc0f2d9-5b41-4c1d-b00c-337019c070e2
+        config: {}
+        dataType: VARCHAR(16777216)
+        defaultValue: ""
+        description: ""
+        name: FRUITNAME
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: e145d9bf-af82-4961-afa6-e8e69c179c47
+          stepCounter: 2bc0f2d9-5b41-4c1d-b00c-337019c070e2
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: STOREA
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 98f5e02c-0878-4f4c-a808-19686e3083f7
+          stepCounter: 2bc0f2d9-5b41-4c1d-b00c-337019c070e2
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: STOREB
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+  name: FRUITINVENTORY
+  schema: ""
+  sqlType: Source
+  type: sourceInput
+  version: 1
+type: Node

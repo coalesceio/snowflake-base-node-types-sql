@@ -1,0 +1,23 @@
+@id("87be3da3-a886-442a-ae0e-4d85a1d66537")
+@nodeType("6fda2820-4404-4b60-bad3-cf0edd7dab92")
+
+WITH UNPIVOTED_FRUIT AS (
+    SELECT
+        FRUITNAME,
+        NAME,
+        QUANTITY
+    FROM {{ ref('SRC', 'FRUITINVENTORY') }} "FRUITINVENTORY"
+    UNPIVOT (
+        QUANTITY
+        FOR NAME IN (
+            "STOREA",
+            "STOREB"
+        )
+    ) AS U
+)
+
+SELECT
+    FRUITNAME::VARCHAR AS "FRUITNAME",
+    NAME::VARCHAR    AS "STORE_NAME",
+    QUANTITY::NUMBER AS "QUANTITY" 
+FROM UNPIVOTED_FRUIT
