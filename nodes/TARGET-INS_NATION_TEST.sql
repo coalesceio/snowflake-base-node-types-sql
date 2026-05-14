@@ -7,5 +7,5 @@ SELECT
      "N_REGIONKEY" AS "N_REGIONKEY" @nullable("false") @hashValue("GH_COL"),
      "N_COMMENT" AS "N_COMMENT" @tests("null", "unique"),
      "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
-     {{ get_hash('GH_COL') }}::STRING AS "GH_COL"
+     {{ get_hash('GH_COL') }}::STRING AS "GH_COL_RENAMED"
 FROM {{ ref('SRC', 'NATION_TEST') }} "NATION_TEST"
