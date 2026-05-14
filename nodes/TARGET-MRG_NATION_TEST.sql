@@ -2,7 +2,7 @@
 @nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
 
 SELECT
-     "{{ node.name }}_KEY"::NUMBER AS "{{ node.name }}_KEY" @isSurrogateKey,
+     "{{ node.name }}_KEY"::NUMBER AS "{{ node.name }}_KEY",
      "N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
      "N_NAME" AS "N_NAME",
      "N_REGIONKEY" AS "N_REGIONKEY",
