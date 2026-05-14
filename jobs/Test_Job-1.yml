@@ -1,6 +1,6 @@
 excludeSelector: ""
 fileVersion: 1
 id: "1"
-includeSelector: "{ location: \"SRC\" name: \"NATION\" } OR { location: \"SRC\" name: \"NATION_COPY1\" } OR { location: \"SRC\" name: \"NATION_COPY2\" } OR { location: \"SRC\" name: \"SOURCE_PRODUCTS\" } OR { location: \"SRC\" name: \"SOURCE_SALES\" } OR { location: \"SRC\" name: \"SOURCE_STORES\" } OR { location: \"TARGET\" name: \"WRK_SALES_CTE\" } OR { location: \"TARGET\" name: \"WRK_TABLE\" } OR { location: \"TARGET\" name: \"WRK_TABLE_TEST\" } OR { location: \"TARGET\" name: \"WRK_VIEW\" } OR { location: \"TARGET\" name: \"DIM_TABLE_CT_SCD1\" } OR { location: \"TARGET\" name: \"DIM_TABLE_CT_SCD2\" } OR { location: \"TARGET\" name: \"DIM_TABLE_JOIN_CT_SCD1\" } OR { location: \"TARGET\" name: \"DIM_TABLE_LM_SCD1\" } OR { location: \"TARGET\" name: \"DIM_TABLE_LM_SCD2\" } OR { location: \"TARGET\" name: \"DIM_TABLE_UNION_CT_SCD1\" } OR { location: \"TARGET\" name: \"FCT_TABLE_CT_SCD1\" }"
+includeSelector: "{ location: \"SRC\" name: \"NATION_TEST\" } OR { location: \"TARGET\" name: \"INS_NATION_TEST\" }"
 name: Test_Job
 type: Job
