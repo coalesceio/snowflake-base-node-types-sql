@@ -33,7 +33,7 @@ The key differences between these nodes are outlined below.
 | `@groupByAll` | ✓ | ✓ | Applies `GROUP BY ALL` |
 | `@preTests("<test1>", "<continueOnFailure:test2>")` | ✓ | ✓ | Allows you to define validation checks that run before node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
 | `@postTests("<continueOnFailure:test1>", "<test2>")` | ✓ | ✓ | Allows you to define validation checks that run after node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
-| `@zeroKey("string:<string>", "number:<number>", "boolean:<bool>", "datetime:<timestamp>")` |  | ✓ | Specifies default zero-key (ghost record) values by data type, applied when no column-level override is provided<br/>**Example:** <br/>@zeroKey("string:DEFAULT", "number:100", "boolean:True", "datetime:1900-01-01 00:00:00.000") |
+| `@zeroKey("string:<string>", "boolean:<bool>", "datetime:<timestamp>")` |  | ✓ | Specifies default zero-key (ghost record) values by data type, applied when no column-level override is provided<br/>**Example:** <br/>@zeroKey("string:DEFAULT", "boolean:True", "datetime:1900-01-01 00:00:00.000") |
 | `@treatNullAsCurrentTimestamp` |  | ✓ | Treats NULL as current timestamp for timestamp datatype, last modified comparison column if **@isLastModifiedColumn** is specified |
 | `@type2Dimension` |  | ✓ | Enables SCD Type 2 behavior if **@isLastModifiedColumn** is specified |
 
