@@ -1,7 +1,7 @@
 @id("97703530-0af1-4923-b490-fedcc9e9faed")
 @nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
 
-
+@type2Dimension
 SELECT
      "MRG_NATION_TEST_KEY"::NUMBER AS "MRG_NATION_TEST_KEY" @isSurrogateKey,
      NATION_TEST."N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
