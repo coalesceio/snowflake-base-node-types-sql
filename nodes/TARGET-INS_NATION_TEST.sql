@@ -3,6 +3,10 @@
 
 @selectDistinct
 
+@preSQL("SELECT count(*) FROM {{ this }}", "SELECT count(*) FROM {{ this }}") 
+
+@postSQL("BEGIN SELECT count(*) FROM {{ this }}; SELECT count(*) FROM {{ this }}; END", "SELECT count(*) FROM {{ this }}", "SELECT count(*) FROM {{ this }}") 
+
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY",
      "N_NAME" AS "N_NAME",
