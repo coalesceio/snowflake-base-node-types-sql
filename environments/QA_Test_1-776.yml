@@ -1,5 +1,5 @@
 fileVersion: 1
-id: "106"
+id: "776"
 mappingDefinitions:
   SRC:
     database: TANVI_DEV
@@ -7,5 +7,5 @@ mappingDefinitions:
   TARGET:
     database: TANVI_DEV
     schema: QA
-name: Test 1
+name: QA_Test_1
 type: Environment
