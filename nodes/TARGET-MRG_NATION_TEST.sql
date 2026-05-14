@@ -1,7 +1,9 @@
-@id("114a82cf-3381-4566-8f6e-cb452740c810")
+@id("97703530-0af1-4923-b490-fedcc9e9faed")
 @nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
+
+
 SELECT
-     "{{ node.name }}_KEY"::NUMBER AS "{{ node.name }}_KEY" @isSurrogateKey,
+     "MRG_NATION_TEST_KEY"::NUMBER AS "MRG_NATION_TEST_KEY" @isSurrogateKey,
      "N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
      "N_NAME" AS "N_NAME",
      "N_REGIONKEY" AS "N_REGIONKEY",
