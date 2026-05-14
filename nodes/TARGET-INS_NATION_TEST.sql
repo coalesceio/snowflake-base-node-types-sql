@@ -3,7 +3,7 @@
 
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY" @nullable("false"),
-     "N_NAME" AS "N_NAME" @description("nation name"),
+     "N_NAME" AS "N_NAME" @description("nation name") @defaultValue("NA")
      "N_REGIONKEY" AS "N_REGIONKEY" @nullable("false"),
      "N_COMMENT" AS "N_COMMENT",
      "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP"
