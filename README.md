@@ -10,14 +10,6 @@ This package includes two node types:
 
 The key differences between these nodes are outlined below.
 
-### Prerequisites
-
-Before using this node, ensure the following requirements are met:
-
-* Feature Flag: The `isSQLEditorEnabled` feature flag must be enabled for your Coalesce organization. 
-
-* Database Permissions: The user role must have sufficient privileges to execute queries and create objects in the target environment.
-
 ### Node Configuration
 
 * Node properties
