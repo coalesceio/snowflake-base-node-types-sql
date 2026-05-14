@@ -12,7 +12,7 @@ does not permit copying or modification for any other purpose.
 {# == To run data quality tests before data insertion == #}
 {{ run_tests('Before') }}
 
-{%- if node.materializationType | lower in ['table', 'transient table'] %}
+{%- if node.materializationType | lower == 'table' %}
 
     {# --- Pre-SQL --- #}
     {%- if config.preSQL is defined and config.preSQL.parameters is defined -%}
