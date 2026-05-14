@@ -6,6 +6,5 @@ SELECT
      "N_NAME" AS "N_NAME" @description("nation name") @defaultValue("NA") @hashValue("GH_COL"),
      "N_REGIONKEY" AS "N_REGIONKEY" @nullable("false") @hashValue("GH_COL"),
      "N_COMMENT" AS "N_COMMENT" @tests("null", "unique"),
-     "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
-     {{ get_hash('GH_COL') }}::STRING AS "GH_COL_RENAMED"
+     "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP"
 FROM {{ ref('SRC', 'NATION_TEST') }} "NATION_TEST"
