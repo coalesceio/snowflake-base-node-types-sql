@@ -48,7 +48,7 @@ The key differences between these nodes are outlined below.
 | `@defaultValue("<text>")`</br>`@defaultValue(<number>)`</br>`@defaultValue(<bool>)` | ✓ | ✓ | Adds default value |
 | `@tests("null", "unique")` | ✓ | ✓ | Column tests are more restrictive and apply directly to individual columns.<br/>*Supported Tests*<br/> - **null** → Checks for NULL values<br/> - **unique** → Checks to ensure all values are unique<br/>*Valid Examples*<br/>@tests("null", "unique")<br/>@tests("null")<br/>@tests("unique") |
 | `@hashValue("<hash_col_name>")` | ✓ | ✓ | Generates a hash key by combining and hashing the values of columns associated with a given hash group, ensuring consistent change detection and key generation.<br/><br/>**Default:** Uses `SHA1` hashing.<br/>**Supported Algorithms:** `SHA1` (default), `MD5`, `SHA256`.<br/><br/>**Example:**<br/><col_name> AS <col_name> @hashValue("GH_COL"),<br/>{{ get_hash('GH_COL') }}::STRING AS "GH_COL"<br/><br/>**Examples with different algorithms:**<br/>-- SHA1 (default)<br/>{{ get_hash('GH_COL') }}::STRING AS "GH_COL"<br/><br/>-- MD5<br/>{{ get_hash('GH_COL', 'MD5') }}::STRING AS "GH_COL"<br/><br/>-- SHA256<br/>{{ get_hash('GH_COL', 'SHA256') }}::STRING AS "GH_COL" |
-| `@zeroKey("<text>")`</br>`@zeroKey(<number>)`</br>`@zeroKey(<bool>)`<br/>`@zeroKey(<timestamp>)` |  | ✓ | Adds zero key value(ghost record) to the column.<br/>**Example:** <br/> 0 AS "<ENTITY>_SKEY" @isSurrogateKey @zeroKey(0) |
+| `@zeroKey("<text>")`</br>`@zeroKey(<number>)`</br>`@zeroKey(<bool>)`<br/>`@zeroKey(<timestamp>)` |  | ✓ | Adds zero key value(ghost record) to the column.<br/>**Example:** <br/> 0 AS "<NODE_NAME>_SKEY" @isSurrogateKey @zeroKey(0) |
 | `@isSurrogateKey` |  | ✓ | System-generated surrogate key |
 | `@isBusinessKey` |  | ✓ | Marks column as business key |
 | `@isLastModifiedColumn` |  | ✓ | Identifies the last modified column and enables a last-modified-based approach instead of column-level change tracking |
@@ -91,7 +91,7 @@ The key differences between these nodes are outlined below.
 
 | Column Name | Definition | Annotation |
 |------------|-----------|-----------|
-| "<ENTITY>_SKEY" | "<ENTITY>_SKEY"::NUMBER AS "<ENTITY>_SKEY" | @isSurrogateKey |
+| "<NODE_NAME>_SKEY" | "<NODE_NAME>_SKEY"::NUMBER AS "<NODE_NAME>_SKEY" | @isSurrogateKey |
 | SYSTEM_VERSION | "SYSTEM_VERSION"::NUMBER AS "SYSTEM_VERSION" | @isSystemVersion |
 | SYSTEM_CURRENT_FLAG | "SYSTEM_CURRENT_FLAG"::VARCHAR AS "SYSTEM_CURRENT_FLAG" | @isSystemCurrentFlag |
 | SYSTEM_CREATE_DATE | CAST(CURRENT_TIMESTAMP AS TIMESTAMP) | @isSystemCreateDate |
