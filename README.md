@@ -10,17 +10,17 @@ This package includes two node types:
 
 The key differences between these nodes are outlined below.
 
-###  Configuration
+### Node Configuration
 
-*  properties
+* Node properties
 
-####  Properties
+#### Node Properties
 
 | **Setting** | **Description** |
 |----------|-------------|
 | **Storage Location** | Storage Location where the work will be created |
 
-### -Level Annotations
+### Node-Level Annotations
 
 | Annotation | SQL Insert | SQL Merge | Description |
 |-----------|-----------|----------|------------|
@@ -31,8 +31,8 @@ The key differences between these nodes are outlined below.
 | `@preSQL("<sql1>", "<sql2>")` | ✓ | ✓ | Executes SQL before main query |
 | `@postSQL("<sql1>", "<sql2>")` | ✓ | ✓ | Executes SQL after main query |
 | `@groupByAll` | ✓ | ✓ | Applies `GROUP BY ALL` |
-| `@preTests("<test1>", "<continueOnFailure:test2>")` | ✓ | ✓ | Allows you to define validation checks that run before  execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
-| `@postTests("<continueOnFailure:test1>", "<test2>")` | ✓ | ✓ | Allows you to define validation checks that run after  execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
+| `@preTests("<test1>", "<continueOnFailure:test2>")` | ✓ | ✓ | Allows you to define validation checks that run before node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
+| `@postTests("<continueOnFailure:test1>", "<test2>")` | ✓ | ✓ | Allows you to define validation checks that run after node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
 | `@zeroKey("string:<string>", "boolean:<bool>", "datetime:<timestamp>")` |  | ✓ | Specifies default zero-key (ghost record) values by data type, applied when no column-level override is provided<br/>**Example:** <br/>@zeroKey("string:DEFAULT", "boolean:True", "datetime:1900-01-01 00:00:00.000") |
 | `@treatNullAsCurrentTimestamp` |  | ✓ | Treats NULL as current timestamp for timestamp datatype, last modified comparison column if **@isLastModifiedColumn** is specified |
 | `@type2Dimension` |  | ✓ | Enables SCD Type 2 behavior if **@isLastModifiedColumn** is specified |
