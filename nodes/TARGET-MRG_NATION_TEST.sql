@@ -1,0 +1,20 @@
+@id("97703530-0af1-4923-b490-fedcc9e9faed")
+@nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
+
+@zeroKey("string:DEFAULT", "boolean:True", "datetime:1900-01-01 00:00:00.000")
+@type2Dimension
+
+SELECT
+     NATION_TEST."N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
+     NATION_TEST."N_NAME" AS "N_NAME",
+     NATION_TEST."N_REGIONKEY" AS "N_REGIONKEY",
+     NATION_TEST."N_COMMENT" AS "N_COMMENT" @nullable("false") @zeroKey('NA'),
+     NATION_TEST."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" @isLastModifiedColumn,
+     "MRG_NATION_TEST_KEY"::NUMBER AS "MRG_NATION_TEST_KEY" @isSurrogateKey @zeroKey(0),
+     "SYSTEM_CURRENT_FLAG"::VARCHAR AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
+     "SYSTEM_VERSION"::NUMBER AS "SYSTEM_VERSION" @isSystemVersion,
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
+     CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
+FROM {{ ref('SRC', 'NATION_TEST') }} "NATION_TEST"
+WHERE NATION_TEST."N_NATIONKEY"  in (2, 3)
+ORDER BY NATION_TEST."N_NATIONKEY" DESC
