@@ -102,7 +102,7 @@ The key differences between these nodes are outlined below.
 
 ### Node/Load Strategy-Specific System Columns/Annotations(Recommended)
 
-<img width="1000" height="600" alt="image" src="https://github.com/user-attachments/assets/c78bde79-a3a4-4b29-8076-2cbb99c9425f" />
+<img width="1000" height="600" alt="SQL_Merge" src="https://github.com/user-attachments/assets/8a8f233e-95c5-4690-84f1-eee09b903919" />
 
 ---
 
