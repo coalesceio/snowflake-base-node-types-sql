@@ -454,16 +454,16 @@ SELECT * FROM ALL_NATIONS "NATIONS"
 
 | **Component** | **Link** |
 |--------------|-----------|
-| **Node definition** | [definition.yml](nodeTypes/SQLInsert-6fda2820-4404-4b60-bad3-cf0edd7dab92/definition.yml) |
-| **Create Template** | [create.sql.j2](nodeTypes/SQLInsert-6fda2820-4404-4b60-bad3-cf0edd7dab92/create.sql.j2) |
-| **Run Template** | [run.sql.j2](nodeTypes/SQLInsert-6fda2820-4404-4b60-bad3-cf0edd7dab92/run.sql.j2) |
+| **Node definition** | [definition.yml](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/SQLInsert-6fda2820-4404-4b60-bad3-cf0edd7dab92/definition.yml) |
+| **Create Template** | [create.sql.j2](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/SQLInsert-6fda2820-4404-4b60-bad3-cf0edd7dab92/create.sql.j2) |
+| **Run Template** | [run.sql.j2](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/SQLInsert-6fda2820-4404-4b60-bad3-cf0edd7dab92/run.sql.j2) |
 
 ### SQL Merge Deploy Code
 
 | **Component** | **Link** |
 |--------------|-----------|
-| **Node definition** | [definition.yml](nodeTypes/SQLMerge-ece2dca8-2416-4db4-b6ae-e12dfb4de042/definition.yml) |
-| **Create Template** | [create.sql.j2](nodeTypes/SQLMerge-ece2dca8-2416-4db4-b6ae-e12dfb4de042/create.sql.j2) |
-| **Run Template** | [run.sql.j2](nodeTypes/SQLMerge-ece2dca8-2416-4db4-b6ae-e12dfb4de042/run.sql.j2) |
+| **Node definition** | [definition.yml](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/SQLMerge-ece2dca8-2416-4db4-b6ae-e12dfb4de042/definition.yml) |
+| **Create Template** | [create.sql.j2](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/SQLMerge-ece2dca8-2416-4db4-b6ae-e12dfb4de042/create.sql.j2) |
+| **Run Template** | [run.sql.j2](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/SQLMerge-ece2dca8-2416-4db4-b6ae-e12dfb4de042/run.sql.j2) |
 
-[Macros](macros/macro-1.yml)
+[Macros](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/macros/macro-1.yml)
