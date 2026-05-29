@@ -175,43 +175,39 @@ macroString: |-
   ========================================================================= #}
   {%- macro run_tests(runOrder) %}
 
-      {%- if runOrder == 'Before' %}
-          {%- set configTests = config.get('preTests', {}) %}
-          {%- set testName = ': Pre-Load Test ' %}
-      {%- else %}
-          {%- set configTests = config.get('postTests', {}) %}
-          {%- set testName = ': Post-Load Test ' %}
-      {%- endif %}
-
-      {# --- Tests --- #}
-      {%- if configTests is defined and configTests.parameters is defined %}
-          {%- for test in configTests.parameters %}
-              {%- set testParts = test.split(':', 1) %}
-              {%- set continueOnFailure = testParts[0] | trim | lower == 'continueonfailure' %}
-              {{ test_stage(node.name + testName + loop.index|string, continueOnFailure) }}
-              {{ testParts[-1] | trim }}
-          {%- endfor %}
-      {%- endif %}
-
-      {%- if runOrder == 'After' %}
-          {%- for column in columns %}
-              {%- if column.tests is mapping and column.tests.parameters is defined %}
-                  {%- for test in column.tests.parameters %}
-                      {%- if test | trim | lower == "null" %}
-                          {%- set templateString = "SELECT 1 FROM " +  ref(node.location.name, node.name)  + " WHERE " + column.name + " IS NULL " %}                      
-                          {{ test_stage("Column Test: " + column.name + " - " + test | lower) }}
-                          {{ templateString }}
-                      {%- endif %}
-                      {%- if test | trim | lower == "unique" %}
-                          {%- set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + " GROUP BY " + column.name +  " HAVING COUNT(*) > 1" %}                      
-                          {{ test_stage("Column Test: " + column.name + " - " + test | lower) }}
-                          {{ templateString }}
-                      {%- endif %}
-                  {%- endfor %}
+      {%- if config.testsEnabled %}
+          {%- if runOrder == 'Before' %}
+              {%- if config.preTests | trim | length > 0 %}
+                  {%- set continueOnFailure = config.preContinueOnFailure | default(false) %}
+                  {{ test_stage(node.name + ': Pre-Load Test ', continueOnFailure) }}
+                  {{ config.preTests }}
               {%- endif %}
-          {%- endfor %}
-      {%- endif %}
 
+          {%- elif runOrder == 'After' %}
+              {%- for column in columns %}
+                  {%- if column.tests is mapping and column.tests.parameters is defined %}
+                      {%- for test in column.tests.parameters %}
+                          {%- if test | trim | lower == "null" %}
+                              {%- set templateString = "SELECT 1 FROM " +  ref(node.location.name, node.name)  + " WHERE " + column.name + " IS NULL " %}                      
+                              {{ test_stage("Column Test: " + column.name + " - " + test | lower) }}
+                              {{ templateString }}
+                          {%- endif %}
+                          {%- if test | trim | lower == "unique" %}
+                              {%- set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + " GROUP BY " + column.name +  " HAVING COUNT(*) > 1" %}                      
+                              {{ test_stage("Column Test: " + column.name + " - " + test | lower) }}
+                              {{ templateString }}
+                          {%- endif %}
+                      {%- endfor %}
+                  {%- endif %}
+              {%- endfor %}
+
+              {%- if config.postTests | trim | length > 0 %}
+                  {%- set continueOnFailure = config.postContinueOnFailure | default(false) %}
+                  {{ test_stage(node.name + ': Post-Load Test ', continueOnFailure) }}
+                  {{ config.postTests }}
+              {%- endif %}
+          {%- endif %}
+      {%- endif %}
   {%- endmacro %}
 
   {# ===================================================================================================== 
@@ -506,27 +502,17 @@ macroString: |-
       {# -------------------------------
          STEP 2: Config-level zeroKey (match datatype)
       -------------------------------- #}
-      {%- elif config.zeroKey is defined 
-            and config.zeroKey.parameters is defined 
-            and config.zeroKey.parameters | trim | length > 0 %}
-
-          {%- for zk in config.zeroKey.parameters %}
-              {%- set parts = zk.split(':', 1) %}
-              {%- set type = parts[0] | trim | lower %}
-              {%- set val = parts[-1] | trim %}
-
-              {%- if ((type == 'string' and col.dataType[:3] | upper in ('VAR', 'CHA', 'STR')) or
-                      (type == 'boolean' and col.dataType | upper == 'BOOLEAN') or
-                      (type == 'datetime' and col.dataType[:4] | upper in ('DATE', 'TIME', 'TIMESTAMP'))
-              ) %}
-                  {%- set ns.zk_type = type %}
-                  {%- set ns.zk_value = val %}
-              {%- endif %}
-          {%- endfor %}
-
       {%- else %}
-          {%- set ns.zk_type = none %}
-          {%- set ns.zk_value = none %}
+          {%- if col.dataType[:3] | upper in ('VAR', 'CHA', 'STR') %}
+              {%- set ns.zk_type = 'string' %}
+              {%- set ns.zk_value = config.insertZeroKeyStr %}
+          {%- elif col.dataType | upper == 'BOOLEAN' %}
+              {%- set ns.zk_type = 'boolean' %}
+              {%- set ns.zk_value = config.insertZeroKeyBol %}
+          {%- elif col.dataType[:4] | upper in ('DATE', 'TIME', 'TIMESTAMP') %}
+              {%- set ns.zk_type = 'datetime' %}
+              {%- set ns.zk_value = config.insertZeroKeyTimestamp %}
+          {%- endif %}
       {%- endif %}
 
       {# -------------------------------

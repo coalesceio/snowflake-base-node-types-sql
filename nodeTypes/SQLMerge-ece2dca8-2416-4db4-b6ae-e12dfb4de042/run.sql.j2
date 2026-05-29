@@ -11,7 +11,7 @@ does not permit copying or modification for any other purpose.
 {# == To run data quality tests before data insertion == #}
 {{ run_tests('Before') }}
 
-{%- if node.materializationType | lower == 'table' %}
+{%- if node.materializationType == 'table' %}
 
     {{ validate_merge_columns() }}
 
@@ -19,47 +19,53 @@ does not permit copying or modification for any other purpose.
     {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) %}
 
     {%- if hasBusinessKey %}
-        {%- set lastModifiedComparison = columns | selectattr("isLastModifiedColumn") | list | length > 0 | default(false) %}
+        {%- set lastModifiedComparison = config.lastModifiedCompToggle | default(false) %}
         {%- if lastModifiedComparison %}
-            {%- if columns | selectattr("isLastModifiedColumn") | list | length == 1 %}
-                {%- set lastModifiedCol = columns | selectattr('isLastModifiedColumn') | list | first %}
-                {%- set lastModifiedColName = lastModifiedCol.name %}
-                {%- set isTimeStamp = lastModifiedCol 
-                    and lastModifiedCol.dataType is defined 
-                    and (lastModifiedCol.dataType | upper).startswith('TIME') | default(false) %}
-                {%- set treatNullAsCurrentTimestamp = isTimeStamp and config.treatNullAsCurrentTimestamp | default(false) %}
+                {%- set lastModifiedColName = config.lastModifiedColumn.name %}
+                {%- set isTimeStamp = (config.lastModifiedColumn.dataType | upper).startswith('TIME') | default(false) %}
                 {%- set type2Dimension = config.type2Dimension | default(false) %}
-            {%- endif %}
         {%- else %}
             {%- set type2Dimension = columns | selectattr("isChangeTracking") | list | length > 0 | default(false) %}
         {%- endif %}
     {%- endif %}
 
-    {#== Pre-SQL ==#}
-    {%- if config.preSQL is defined and config.preSQL.parameters is defined %}
-        {%- for sql in config.preSQL.parameters %}
-            {{ stage('Pre-SQL ' + loop.index|string) }}
-            {{ sql }}
+    {%- set source = sources[0] %}
+    {%- set joinclause = source.join %}
+
+    {%- if isTimeStamp %}
+        {# Test stage for checking NULL values in source - last modified column #} 
+        {{ test_stage('Check NULL values for ' ~ lastModifiedColName ~ ' column', false) }}
+        {%- set ns = namespace(first=true) %}
+        {%- for col in source.columns if col.name == lastModifiedColName %}
+            {%- set col_transform = get_source_transform(col) %}
+
+            {%- if col_transform is not none and col_transform != 'NULL' %}
+
+                SELECT 1
+                {{ source.cteString }}
+                {{ get_clause(source.join, 'from') }}
+                WHERE {{ col_transform }} IS NULL
+                {{ get_clause(source.join) }}
+
+                /* If NULL values are detected, this stage will fail and execution will be terminated */
+
+            {%- endif %}
         {%- endfor %}
     {%- endif %}
+
+    {#== Pre-SQL ==#}
+	{%- if config.preSQL %}
+		{{ stage('Pre-SQL') }}
+		{{ config.preSQL }}
+	{%- endif %}
 
 	{# == Truncate data before data insertion  == #}
     {%- if config.truncateBefore %}
         {{ stage('Truncate ' + node.materializationType) }}
         TRUNCATE IF EXISTS {{ ref_no_link(node.location.name, node.name) }}
     {%- endif %}
-         
-    {%- set source = sources[0] %}
-    {%- set joinclause = source.join %}
 
-    {%- set hasZeroKey = columns 
-                        | selectattr('isSurrogateKey') 
-                        | selectattr('zeroKey', 'defined') 
-                        | selectattr('zeroKey.parameters', 'defined') 
-                        | list 
-                        | length > 0 
-                        and (config.zeroKey is defined and config.zeroKey.parameters is defined)
-    %}
+    {%- set hasZeroKey = config.insertZeroKey | default(false) %}
 
     {%- if hasZeroKey %}
         {{ stage('Load ' + node.materializationType + ' Using Merge - Zero Key Record') }}
@@ -67,8 +73,9 @@ does not permit copying or modification for any other purpose.
             (
                 SELECT 
                 {%- for col in source.columns %}
-
-                    {%- if col.isSystemCurrentFlag %}
+                    {%- if col.isSurrogateKey %}
+                        {{ config.insertZeroKeySurrogateKey }}
+                    {%- elif col.isSystemCurrentFlag %}
                         'Y'
                     {%- elif col.isSystemStartDate or col.isSystemEndDate or col.isSystemUpdateDate or col.isSystemCreateDate %}
                         {{ get_source_transform(col) }}
@@ -85,7 +92,7 @@ does not permit copying or modification for any other purpose.
 
             ON
             {%- for col in columns if col.isSurrogateKey %}
-                "{{ node.name }}"."{{ col.name }}" = {{ col.zeroKey.parameters[0] }}
+                "{{ node.name }}"."{{ col.name }}" = {{ config.insertZeroKeySurrogateKey }}
             {%- endfor %}
 
             WHEN MATCHED THEN UPDATE
@@ -184,8 +191,6 @@ does not permit copying or modification for any other purpose.
                         "DIM"."{{ col.name }}" + 1
                     {%- elif col.isSystemCurrentFlag %}
                         'Y'
-                    {%- elif col.name == lastModifiedColName and treatNullAsCurrentTimestamp %}
-                        COALESCE({{ get_source_transform(col) }}, CURRENT_TIMESTAMP())
                     {%- else %}
                     {{ get_source_transform(col) }}
                     {%- endif %}
@@ -206,12 +211,7 @@ does not permit copying or modification for any other purpose.
 
                 {%- if lastModifiedComparison %}
                     {%- for col in source.columns if col.name == lastModifiedColName %}
-                        AND
-                        {%- if treatNullAsCurrentTimestamp %}
-                        COALESCE({{ get_source_transform(col) }}, CURRENT_TIMESTAMP()) > "DIM"."{{lastModifiedColName}}"
-                        {%- else %}
-                        {{ get_source_transform(col) }} > "DIM"."{{lastModifiedColName}}"
-                        {%- endif %}
+                        AND {{ get_source_transform(col) }} > "DIM"."{{lastModifiedColName}}"
                     {%- endfor %}  
                 {%- else %}
                     {%- for col in source.columns if (col.isChangeTracking == true) %}
@@ -264,12 +264,7 @@ does not permit copying or modification for any other purpose.
 
                 {%- if lastModifiedComparison %}
                     {%- for col in source.columns if col.name == lastModifiedColName %}
-                            AND
-                        {%- if treatNullAsCurrentTimestamp %}
-                        COALESCE({{ get_source_transform(col) }}, CURRENT_TIMESTAMP()) > "DIM"."{{lastModifiedColName}}"
-                        {%- else %}
-                        {{ get_source_transform(col) }} > "DIM"."{{lastModifiedColName}}"
-                        {%- endif %}
+                        AND {{ get_source_transform(col) }} > "DIM"."{{lastModifiedColName}}"
                     {%- endfor %}  
                 {%- else %}
                     {%- for col in source.columns if (col.isChangeTracking == true) %}
@@ -379,12 +374,8 @@ does not permit copying or modification for any other purpose.
                     {%- if col.isSystemVersion %}
                         1
                     {%- elif col.isSystemCurrentFlag %}
-                        'Y'
-                    {%- elif col.name == lastModifiedColName and treatNullAsCurrentTimestamp %}
-                        COALESCE({{ get_source_transform(col) }}, CURRENT_TIMESTAMP()) AS "{{ col.name }}",
-                        COALESCE({{ get_source_transform(col) }}, CURRENT_TIMESTAMP()) as COMPARISON_VALUE,
-                        MAX ("DIM"."{{lastModifiedColName}}") AS MAX_TARGET_VALUE		    
-                    {%- elif col.name == lastModifiedColName and not treatNullAsCurrentTimestamp %}
+                        'Y'	    
+                    {%- elif col.name == lastModifiedColName %}
                         {{ get_source_transform(col) }} AS "{{ col.name }}",
                         {{ get_source_transform(col) }} AS COMPARISON_VALUE,
                         MAX ("DIM"."{{lastModifiedColName}}") AS MAX_TARGET_VALUE
@@ -488,12 +479,10 @@ does not permit copying or modification for any other purpose.
     )
 
     {#== Post-SQL ==#}
-    {%- if config.postSQL is defined and config.postSQL.parameters is defined %}
-        {%- for sql in config.postSQL.parameters %}
-            {{ stage('Post-SQL ' + loop.index|string) }}
-            {{ sql }}
-        {%- endfor %}
-    {%- endif %}
+	{%- if config.postSQL %}
+		{{ stage('Post-SQL') }}
+		{{ config.postSQL }}
+	{%- endif %}
 
 {%- else %}
 	{{ stage('Load Skipped for View') }}

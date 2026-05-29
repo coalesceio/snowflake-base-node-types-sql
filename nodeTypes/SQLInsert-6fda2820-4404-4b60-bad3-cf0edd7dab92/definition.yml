@@ -11,5 +11,118 @@ metadata:
     tagColor: '#2EB67D'
 
     enableCTESupport: true
+
+    config:
+    - groupName: Node Level Annotations
+      items:
+      - type: materializationSelector
+        isRequired: true
+        default: table
+        options:
+        - table
+        - view
+
+      - displayName: Truncate Before
+        attributeName: truncateBefore
+        type: toggleButton
+        default: false
+        enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+      - displayName: Distinct
+        attributeName: selectDistinct
+        type: toggleButton
+        enableIf: "{% if config.groupByAll %} false {% else %} true {% endif %}"
+        default: false
+        
+      - displayName: Group By All
+        attributeName: groupByAll
+        type: toggleButton
+        default: false
+        enableIf: "{% if config.selectDistinct %} false {% else %} true {% endif %}"
+
+      - displayName: Enable Tests
+        attributeName: testsEnabled
+        type: toggleButton
+        default: false
+
+      - type: toggleButton
+        attributeName: preContinueOnFailure
+        displayName: Pre-Test Continue On Failure
+        default: false
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+
+      - displayName: Pre-Test
+        attributeName: preTests
+        type: textBox
+        syntax: sql
+        isRequired: false
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+      
+      - type: toggleButton
+        attributeName: postContinueOnFailure
+        displayName: Post-Test Continue On Failure
+        default: false
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+
+      - displayName: Post-Test
+        attributeName: postTests
+        type: textBox
+        syntax: sql
+        isRequired: false
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+
+      - displayName: Pre-SQL
+        attributeName: preSQL
+        type: textBox
+        syntax: sql
+        isRequired: false
+        enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+      - displayName: Post-SQL
+        attributeName: postSQL
+        type: textBox
+        syntax: sql
+        isRequired: false
+        enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+    - groupName: Column Level Annotations
+      items:
+
+      - type: note
+        attributeName: restrictedEdit
+        displayName: ⛔ The section below is read-only and provided for reference purposes only
+        enableIf: "true"
+
+      - displayName: Allowed Column Annotations
+        attributeName: col_annots
+        type: textBox
+        isRequired: false
+        syntax: sql
+        enableIf: "true"
+        default: "
+        ⚠️ For more information, please refer to the documentation available in the Marketplace.\n\n
+        ℹ️ Not NULL\n
+        ✦ @nullable(\"false\")\n
+          ➜ Marks column as NOT NULL\n
+        ━━━━━━━━━━━━━━━━━━━\n\n
+        ℹ️ Column Description\n
+        ✦ @description(\"<text>\")\n
+          ➜ Adds column description\n
+        ━━━━━━━━━━━━━━━━━━━\n\n
+        ℹ️ Column Default Value\n
+        ✦ @defaultValue(\"<text>\")\n
+        ✦ @defaultValue(<number>)\n
+        ✦ @defaultValue(<bool>)\n
+          ➜ Adds default value\n
+        ━━━━━━━━━━━━━━━━━━━\n\n
+        ℹ️ Column Level Tests\n
+        ✦ @tests(\"null\", \"unique\")\n
+          ➜ Checks NULL / UNIQUE values\n
+        ━━━━━━━━━━━━━━━━━━━\n\n
+        ℹ️ Hash Columns\n
+        ✦ @hashValue(\"<hash_col_name>\")\n
+          ➜ Generates hash key from columns\n
+          ➜ Use it along with macro {{ get_hash('<hash_col_name>') }}\n
+        ━━━━━━━━━━━━━━━━━━━\n\n"
 name: SQL Insert
 type: NodeType

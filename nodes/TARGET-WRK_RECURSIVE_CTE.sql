@@ -1,5 +1,6 @@
 @id("ef28f053-c3b2-4207-9a2d-4f3faf614428")
 @nodeType("6fda2820-4404-4b60-bad3-cf0edd7dab92")
+@groupByAll(true)
 
 WITH RECURSIVE RCTE_FINAL AS (
 

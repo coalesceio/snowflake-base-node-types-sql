@@ -1,4 +1,4 @@
-defaultStorageMapping: null
+defaultStorageMapping: TARGET
 fileVersion: 1
 locations:
   - SRC
