@@ -20,22 +20,28 @@ The key differences between these nodes are outlined below.
 |----------|-------------|
 | **Storage Location** | Storage Location where the work will be created |
 
-### Node-Level Annotations
+### Node-Level Options
 
-| Annotation | SQL Insert | SQL Merge | Description |
+| Options | SQL Insert | SQL Merge | Description |
 |-----------|-----------|----------|------------|
-| `@materializationType("table")` | ✓ | ✓ | Creates object as a table |
-| `@materializationType("view")` | ✓ | ✓ | Creates object as a view |
-| `@truncateBefore` | ✓ | ✓ | Truncates target before load |
-| `@selectDistinct` | ✓ | ✓ | Applies `DISTINCT` to SELECT |
-| `@preSQL("<sql1>", "<sql2>")` | ✓ | ✓ | Executes SQL before main query |
-| `@postSQL("<sql1>", "<sql2>")` | ✓ | ✓ | Executes SQL after main query |
-| `@groupByAll` | ✓ | ✓ | Applies `GROUP BY ALL` |
-| `@preTests("<test1>", "<continueOnFailure:test2>")` | ✓ | ✓ | Allows you to define validation checks that run before node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
-| `@postTests("<continueOnFailure:test1>", "<test2>")` | ✓ | ✓ | Allows you to define validation checks that run after node execution<br/>**continueOnFailure** - Continues execution flow when a test fails<br/>*Default Behavior*<br/>If continueOnFailure not mentioned, assumes **false**, i.e if any test fails, execution stops immediately |
-| `@zeroKey("string:<string>", "boolean:<bool>", "datetime:<timestamp>")` |  | ✓ | Specifies default zero-key (ghost record) values by data type, applied when no column-level override is provided<br/>**Example:** <br/>@zeroKey("string:DEFAULT", "boolean:True", "datetime:1900-01-01 00:00:00.000") |
-| `@treatNullAsCurrentTimestamp` |  | ✓ | Treats NULL as current timestamp for timestamp datatype, last modified comparison column if **@isLastModifiedColumn** is specified |
-| `@type2Dimension` |  | ✓ | Enables SCD Type 2 behavior if **@isLastModifiedColumn** is specified |
+| **Create As** | ✓ | ✓ | - Table<br/> - View |
+| **Truncate Before** | ✓ | ✓ | **True**: Truncates target before load <br/>**False**: Table is not truncated before data load |
+| **Distinct** | ✓ | ✓ | **True**: Group by All is invisible. DISTINCT data is chosen for processing<br/>**False**: Group by All is visible |
+| **Group by All** | ✓ | ✓ | **True**: DISTINCT is invisible. Data is grouped by all columns for processing<br/>**False**: DISTINCT is visible |
+| **Enable tests** | ✓ | ✓ | Toggle: *Use `@tests` annotation on columns for column level tests*<br/>True or False<br/>Determines if tests are enabled |
+| **Pre-Test Continue On Failure** | ✓ | ✓ | Determines whether the load process should continue if a pre-test fails.|
+| **Pre-Test** | ✓ | ✓ | SQL validation or quality checks executed before the main load process. |
+| **Post-Test Continue On Failure** | ✓ | ✓ | Determines whether the load process should continue if a post-test fails.|
+| **Post-Test** | ✓ | ✓ | SQL validation or quality checks executed after the main load process.|
+| **Pre-SQL** | ✓ | ✓ | SQL to execute before data insert operation |
+| **Post-SQL** | ✓ | ✓ | SQL to execute after data insert operation |
+| **Business Key** |  | ✓ | Required column for both SCD Type 1 and Type 2.<br/>**Note:** Geometry and Geography data type columns are not supported as business key columns. |
+| **Last Modified Based Incremental Load** |  | ✓ | **True**: When enabled we can do timestamp based/Integer based CDC<br/>**False**: Regular CDC based on Change tracking columns is done. <br/>- Ensure `@isLastModifiedColumn` annotation is applied to the required column.<br/>- Change tracking columns are not enabled for this scenario |
+| **Lookback Days** |  | ✓ | Specifies the number of days to look back from the last successful load when extracting incremental data. <br/> *Enabled only if SCD Type 1 and timestamp column is chosen*|
+| **Enable SCD Type2** |  | ✓ | *Only when **Last Modified Based Incremental Load** is ON*<br/>**True**: SCD Type2 - CDC is based on timestamp/ID column chosen.<br/>**False**: SCD Type1 - CDC is based on timestamp/ID column chosen. |
+| **Change tracking** |  | ✓ | *Only when Last Modified Based Incremental Load is OFF*<br/>Required column/s for SCD Type 2 |
+| **Insert Zero Key Record** |  | ✓ | *Add column with `@isSurrogateKey` annotation to enable Zero Key insertion.*<br/>**True**: Zero Key Record Options enabled.<br/>**False**: Zero Key Record not added |
+| **Zero Key Record Options** |  | ✓ | Option Group to add custom zero key record values for : <br/>- Default Surrogate Key Value<br/>- Default String Value <br/>- Default Date/Time/Timestamp Value (Format: YYYY-MM-DD HH24:MI:SS) <br/>- Default Boolean Value |
 
 ---
 
@@ -48,22 +54,17 @@ The key differences between these nodes are outlined below.
 | `@defaultValue("<text>")`<br/>`@defaultValue(<number>)`<br/>`@defaultValue(<bool>)` | ✓ | ✓ | Adds default value |
 | `@tests("null", "unique")` | ✓ | ✓ | Column tests are more restrictive and apply directly to individual columns.<br/>*Supported Tests*<br/> - **null** → Checks for NULL values<br/> - **unique** → Checks to ensure all values are unique<br/>*Valid Examples*<br/>@tests("null", "unique")<br/>@tests("null")<br/>@tests("unique") |
 | `@hashValue("<hash_col_name>")` | ✓ | ✓ | Generates a hash key by combining and hashing the values of columns associated with a given hash group, ensuring consistent change detection and key generation.<br/><br/>**Default:** Uses `SHA1` hashing.<br/>**Supported Algorithms:** `SHA1` (default), `MD5`, `SHA256`.<br/><br/>**Example:**<br/><col_name> AS <col_name> @hashValue("GH_COL"),<br/>{{ get_hash('GH_COL') }}::STRING AS "GH_COL"<br/><br/>**Examples with different algorithms:**<br/>-- SHA1 (default)<br/>{{ get_hash('GH_COL') }}::STRING AS "GH_COL"<br/><br/>-- MD5<br/>{{ get_hash('GH_COL', 'MD5') }}::STRING AS "GH_COL"<br/><br/>-- SHA256<br/>{{ get_hash('GH_COL', 'SHA256') }}::STRING AS "GH_COL" |
-| `@zeroKey("<text>")`<br/>`@zeroKey(<number>)`<br/>`@zeroKey(<bool>)`<br/>`@zeroKey(<timestamp>)` |  | ✓ | Adds zero key value(ghost record) to the column.<br/>**Example:** <br/> 0 AS "<NODE_NAME>_SKEY" @isSurrogateKey @zeroKey(0) |
-| `@isSurrogateKey` |  | ✓ | System-generated surrogate key |
-| `@isBusinessKey` |  | ✓ | Marks column as business key |
-| `@isLastModifiedColumn` |  | ✓ | Identifies the last modified column and enables a last-modified-based approach instead of column-level change tracking |
-| `@isChangeTracking` |  | ✓ | Identifies change tracking column |
+| `@zeroKey("<text>")`<br/>`@zeroKey(<number>)`<br/>`@zeroKey(<bool>)`<br/>`@zeroKey(<timestamp>)` |  | ✓ | Provides override zero key value(ghost record) to the column |
+| `@isSurrogateKey` |  | ✓ | System-generated surrogate keys use an identity column to automatically generate unique values for newly inserted records |
+| `@isLastModifiedColumn` |  | ✓ | Identifies the last modified column and enables a last-modified-based approach instead of column-level change tracking.<br/>A timestamp column or an ID column can be chosen for incremental loading. |
 
 ---
 
 #### Notes
 
-- `@materializationType` defaults to **table** if not specified.
 - `@nullable` defaults to **true**. Use `@nullable("false")` to enforce NOT NULL.
-- `@selectDistinct` must be explicitly defined via annotation (cannot be inferred from SQL).
 - Only **one** `@isLastModifiedColumn` should be defined. Multiple columns may lead to inconsistent results.
 - `@isBusinessKey` is required for MERGE operations.
-- Zero Key Stage only triggers when **@isSurrogateKey column** and **node level** have `@zeroKey` annotation with datatype relevant values.
 - **Column-level** `@zeroKey` takes precedence over **node-level** configuration. If `@zeroKey` is not defined at the column level, the node-level `@zeroKey` configuration is applied based on the column data type else `NULL` is applied by default.
 - Once the surrogate-zero key is defined, it is **not advisable** to change it in future deployments or redeployments. Modifying the surrogate-zero key can lead to unintended behavior, such as new records being inserted instead of updating existing ones, causing data inconsistencies.
 - The hash transformation can be defined either using the reusable macro or by writing the full hash expression explicitly. Both approaches are supported and will produce the same result. Choose the macro approach for better reusability and cleaner code, or use the explicit expression when custom logic is required.
@@ -102,17 +103,15 @@ The key differences between these nodes are outlined below.
 
 ### Node/Load Strategy-Specific System Columns/Annotations(Recommended)
 
-<img width="1000" height="600" alt="SQL_Merge" src="https://github.com/user-attachments/assets/8a8f233e-95c5-4690-84f1-eee09b903919" />
+<img width="1000" height="600" alt="image" src="https://github.com/user-attachments/assets/e316ea13-a52a-4e5a-88e8-0d1132f4efb9" />
 
 ---
 
 ### Notes
 
-- Use annotations to control behavior instead of external configuration.
 - Ensure consistent naming for all system columns.
 - These columns support SCD handling and audit tracking in MERGE-based nodes.
 - If **MERGE** is selected and a **business key** is defined, **Change Tracking (SCD1)** is applied by default
-- When both Last Modified and Change Tracking are defined, the execution prioritizes Last Modified over Change Tracking.
 - System column names can be customized as needed. However, the **annotations must remain unchanged**, as they control how the template interprets and processes the SQL
 - In cases where joins are used within MERGE logic (such as Last Modified logic in SCD1/SCD2 or Change Tracking in SCD2), explicit table aliases must be defined before running the node.<br/>While the Create step may succeed, the job execution can fail if aliases are not properly specified in the MERGE conditions.<br/><br/>Use fully qualified column references in the MERGE source like below, to avoid ambiguity in joins and conditions.<br/>
   ```sql
@@ -166,6 +165,30 @@ The following stages are executed:
 | **Swap Cloned Table** | Upon successful completion of all updates, the clone replaces the main table ensuring that no data is lost |
 | **Delete Table** | Drops the internal table |
 
+
+#### Recreating the Dimension Tables
+
+If any of the following changes are detected, then the table will be recreated using a CREATE OR REPLACE.
+
+* Join clause
+* Adding transformation
+* Changes in configuration like adding distinct, group by, or order by
+
+One of the following stages is executed:
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Create Table** | Creates a new table |
+| **Replace Table** | Replaces an existing table|
+
+#### Recreating the Dimension Views
+
+Any of the following changes to views will result in deleting and recreating the Dimension view.
+
+* View definition
+* Adding table description
+* Renaming the view
+
 ###  SQL Undeployment
 
 If a  SQL Stage Node of materialization type table is deleted from a Workspace, that Workspace is committed to Git and that commit deployed to a higher level environment then the WorkTable in the target environment will be dropped.
@@ -186,12 +209,14 @@ The following patterns represent common ways to use the  SQL Stage Node.<br/>
 
 ```sql
 
-@truncateBefore
-@selectDistinct
-@preSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
-@postSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
-@preTests("select count(*) from {{ this }}", "continueOnFailure:select count(*) from {{ this }}")
-@postTests("continueOnFailure:select count(*) from {{ this }}", "select count(*) from {{ this }}")
+@truncateBefore(true)
+@selectDistinct(true)
+@preSQL("select count(*) from {{ this }}")
+@postSQL("select count(*) from {{ this }}")
+@preContinueOnFailure(true)
+@preTests("continueOnFailure:select count(*) from {{ this }}")
+@postContinueOnFailure(true)
+@postTests("continueOnFailure:select count(*) from {{ this }}")
 
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_COL"),
@@ -206,15 +231,11 @@ FROM {{ ref('SRC', 'NATION') }} "NATION"
 - **Sample Merge Node - Change Tracking - SCD1 with Annotations** <br/>
 ```sql
 
-@truncateBefore
-@selectDistinct
-@preSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
-@postSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
-@preTests("select count(*) from {{ this }}", "continueOnFailure:select count(*) from {{ this }}")
-@postTests("continueOnFailure:select count(*) from {{ this }}", "select count(*) from {{ this }}")
+@truncateBefore(true)
+@selectDistinct(true)
 
 SELECT
-     "N_NATIONKEY" AS "N_NATIONKEY" @hashValue("GH_COL") 🔴@isBusinessKey,
+     "N_NATIONKEY" AS "N_NATIONKEY" @hashValue("GH_COL"),
      "N_NAME" AS "N_NAME",
      "N_REGIONKEY" AS "N_REGIONKEY" @nullable("false") @description("region key") @defaultValue("100") @tests("null", "unique"),
      "N_COMMENT" AS "N_COMMENT",
@@ -228,18 +249,13 @@ FROM {{ ref('SRC', 'NATION') }} "NATION"
 - **Sample Merge Node - Change Tracking - SCD2 with Annotations** <br/>
 ```sql
 
-@truncateBefore
-@selectDistinct
-@preSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
-@postSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
-@preTests("select count(*) from {{ this }}", "continueOnFailure:select count(*) from {{ this }}")
-@postTests("continueOnFailure:select count(*) from {{ this }}", "select count(*) from {{ this }}")
-@zeroKey("string:DEFAULT", "boolean:True", "datetime:1900-01-01 00:00:00")
+@truncateBefore(true)
+@selectDistinct(true)
 
 SELECT
     0 AS "MRG_ALL_ANNOT_KEY" @isSurrogateKey @zeroKey(0),
-     NATION."N_NATIONKEY" AS "N_NATIONKEY" @hashValue("GH_COL") 🔴@isBusinessKey,
-     NATION."N_NAME" AS "N_NAME" 🔴@isChangeTracking,
+     NATION."N_NATIONKEY" AS "N_NATIONKEY" @hashValue("GH_COL"),
+     NATION."N_NAME" AS "N_NAME",
      NATION."N_REGIONKEY" AS "N_REGIONKEY" @nullable("false") @description("region key") @defaultValue("100") @tests("null", "unique"),
      NATION."N_COMMENT" AS "N_COMMENT" @zeroKey("NA"),
      NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
@@ -255,17 +271,12 @@ FROM {{ ref('SRC', 'NATION') }} "NATION"
 - **Sample Merge Node - Last Modified - SCD1 with Annotations** <br/>
 ```sql
 
-@truncateBefore
-@selectDistinct
-@preSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
-@postSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
-@preTests("continueOnFailure:select count(*) from {{ this }}", "continueOnFailure:select count(*) from {{ this }}")
-@postTests("continueOnFailure:select count(*) from {{ this }}", "continueOnFailure:select count(*) from {{ this }}")
-
-🔴@treatNullAsCurrentTimestamp
+@truncateBefore(true)
+@groupByAll(true)
+@lookBackDays("10")
 
 SELECT
-     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_COL") 🔴@isBusinessKey,
+     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_COL"),
      NATION."N_NAME" AS "N_NAME",
      NATION."N_REGIONKEY" AS "N_REGIONKEY",
      NATION."N_COMMENT" AS "N_COMMENT",
@@ -279,20 +290,11 @@ FROM {{ ref('SRC', 'NATION') }} "NATION"
 - **Sample Merge Node - Last Modified - SCD2 with Annotations** <br/>
 ```sql
 
-@truncateBefore
-@selectDistinct
-@preSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
-@postSQL("select count(*) from {{ this }}", "select count(*) from {{ this }}")
-@preTests("continueOnFailure:select count(*) from {{ this }}", "continueOnFailure:select count(*) from {{ this }}")
-@postTests("continueOnFailure:select count(*) from {{ this }}", "continueOnFailure:select count(*) from {{ this }}")
-@zeroKey("string:DEFAULT", "boolean:True", "datetime:1900-01-01 00:00:00")
-
-🔴@treatNullAsCurrentTimestamp
-🔴@type2Dimension
+🔴@type2Dimension(true)
 
 SELECT
     0 AS "MRG_ALL_ANNOT_KEY" @isSurrogateKey @zeroKey(0),
-     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_COL") 🔴@isBusinessKey,
+     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_COL"),
      NATION."N_NAME" AS "N_NAME",
      NATION."N_REGIONKEY" AS "N_REGIONKEY",
      NATION."N_COMMENT" AS "N_COMMENT",
