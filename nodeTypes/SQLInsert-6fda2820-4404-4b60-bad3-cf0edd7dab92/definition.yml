@@ -13,7 +13,7 @@ metadata:
     enableCTESupport: true
 
     config:
-    - groupName: Node Level Annotations
+    - groupName: Node Annotations and Options
       items:
       - type: materializationSelector
         isRequired: true
@@ -85,7 +85,7 @@ metadata:
         isRequired: false
         enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
 
-    - groupName: Column Level Annotations
+    - groupName: Column Annotations Help
       items:
 
       - type: note

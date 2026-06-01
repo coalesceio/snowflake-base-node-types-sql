@@ -31,12 +31,13 @@ metadata:
         default: false
         enableIf: "{% if node.materializationType != 'view' %} true {% else %} false {% endif %}"
 
-      - type: columnDropdownSelector
-        displayName: |
-          Last Modified Comparison Column(ℹ️Datatype: TIME or NUMBER)
-        attributeName: lastModifiedColumn
-        isRequired: true
-        enableIf: "{% if node.materializationType != 'view' and config.lastModifiedCompToggle %} true {% else %} false {% endif %}"
+      - type: note
+        attributeName: noteLastModColumn
+        displayName: ⚠️ Ensure @isLastModifiedColumn annotation is applied to the required column.
+        enableIf: "{% if node.materializationType != 'view' 
+                  and config.lastModifiedCompToggle
+                  and (columns | selectattr('isLastModifiedColumn') | list | length != 1) %} true {% else %} false {% endif %}"
+
 
       - type: textBox
         displayName: Lookback Days
@@ -130,8 +131,10 @@ metadata:
 
       - type: note
         attributeName: noteZeroKey
-        displayName: ℹ️ Add column with @isSurrogateKey annotation to enable Zero Key insertion.
-        enableIf: "{% if node.materializationType != 'view' and config.insertZeroKey %} true {% else %} false {% endif %}"
+        displayName: ⚠️ Add column with @isSurrogateKey annotation to enable Zero Key insertion.
+        enableIf: "{% if node.materializationType != 'view' 
+                  and config.insertZeroKey
+                  and (columns | selectattr('isSurrogateKey') | list | length != 1) %} true {% else %} false {% endif %}"
 
       - displayName: Default Surrogate Key Value
         attributeName: insertZeroKeySurrogateKey

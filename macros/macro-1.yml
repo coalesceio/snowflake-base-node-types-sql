@@ -238,27 +238,33 @@ macroString: |-
   ===================================================================================================== #}
   {%- macro validate_merge_columns() %}
 
-      {# == Check if last modified comparison is enabled  #}
-      {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) %}
-      {%- set lastModifiedComparison = columns | selectattr("isLastModifiedColumn") | list | length > 0 | default(false) %}
+      {%- set hasZeroKey = config.insertZeroKey | default(false) %}
 
-      {%- if hasBusinessKey %}
-          {%- if lastModifiedComparison %}
-              {%- if columns | selectattr("isLastModifiedColumn") | list | length == 1 %}
-                  {%- set type2Dimension = config.type2Dimension | default(false) %}
-              {%- else %}
-                  {{ test_stage('Warning! Count mismatch for last comparison', false) }}
-                  -- Only one last modified column is allowed. Multiple/No columns may lead to inconsistent results.
-                  SELECT CAST('FAIL' AS STRING)
-              {%- endif %}
+      {%- if hasZeroKey and columns | selectattr("isSurrogateKey") | list | length != 1 %}
+          {{ test_stage('Warning! Surrogate Key Column not defined', false) }}
+          /* Zero-key record insertion requires a surrogate key column. Please provide a column marked with @isSurrogateKey so that the process can proceed.
+
+          Example:
+
+                  "{{ node.name }}_KEY"::NUMBER AS "{{ node.name }}_KEY" @isSurrogateKey
+          */
+          SELECT CAST('FAIL' AS STRING)
+      {% endif %}
+
+      {%- set lastModifiedComparison = config.lastModifiedCompToggle | default(false) %}
+
+      {%- if lastModifiedComparison %}
+          {%- if columns | selectattr("isLastModifiedColumn") | list | length == 1 %}
+              {%- set type2Dimension = config.type2Dimension | default(false) %}
+              {%- set lastModifiedCol = columns | selectattr('isLastModifiedColumn') | list | first %}
+              {%- set lastModifiedColName = lastModifiedCol.name %}
           {%- else %}
-              {%- set type2Dimension = columns | selectattr("isChangeTracking") | list | length > 0 | default(false) %}
+              {{ test_stage('Warning! Count mismatch for last comparison', false) }}
+              -- Only one last modified column is allowed. Multiple/No columns may lead to inconsistent results.
+              SELECT CAST('FAIL' AS STRING)
           {%- endif %}
       {%- else %}
-          {{ test_stage('Warning! Merge requires a business key', false) }}
-          -- A business key must be provided for the MERGE statement to run successfully.
-          -- Please specify it using @isBusinessKey at the column level in SQL.
-          SELECT CAST('FAIL' AS STRING)
+          {%- set type2Dimension = columns | selectattr("isChangeTracking") | list | length > 0 | default(false) %}
       {%- endif %}
 
       {%- set currentFlagCol = get_value_by_column_attribute("isSystemCurrentFlag") %}
@@ -314,7 +320,7 @@ macroString: |-
       {%- else %}
           {#== SCD type 1 - Without Delete Strategy ==#}
           {%- if 'ERR:' in createDate or 'ERR:' in updateDate %}
-              {{ test_stage('Warning! Missing audit/metadata columns', true) }}
+              {{ test_stage('Warning! Missing audit/metadata columns', false) }}
               /*
               It is recommended to also include columns with annotations @isSystemCreateDate, @isSystemUpdateDate for improved clarity and auditability.
               Please specify it using @isSystemCreateDate, @isSystemUpdateDate at the column level in SQL.

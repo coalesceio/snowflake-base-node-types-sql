@@ -17,13 +17,14 @@ does not permit copying or modification for any other purpose.
 
     {# == Check if last modified comparison is enabled  #}
     {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) %}
+    {%- set lastModifiedComparison = config.lastModifiedCompToggle | default(false) %}
 
     {%- if hasBusinessKey %}
-        {%- set lastModifiedComparison = config.lastModifiedCompToggle | default(false) %}
         {%- if lastModifiedComparison %}
-                {%- set lastModifiedColName = config.lastModifiedColumn.name %}
-                {%- set isTimeStamp = (config.lastModifiedColumn.dataType | upper).startswith('TIME') | default(false) %}
-                {%- set type2Dimension = config.type2Dimension | default(false) %}
+            {%- set lastModifiedCol = columns | selectattr('isLastModifiedColumn') | list | first %}
+            {%- set lastModifiedColName = lastModifiedCol.name %}
+            {%- set type2Dimension = config.type2Dimension | default(false) %}
+            {%- set isTimeStamp = (lastModifiedCol.dataType | upper).startswith('TIME') | default(false) %}
         {%- else %}
             {%- set type2Dimension = columns | selectattr("isChangeTracking") | list | length > 0 | default(false) %}
         {%- endif %}
@@ -32,7 +33,7 @@ does not permit copying or modification for any other purpose.
     {%- set source = sources[0] %}
     {%- set joinclause = source.join %}
 
-    {%- if isTimeStamp %}
+    {%- if lastModifiedComparison and isTimeStamp %}
         {# Test stage for checking NULL values in source - last modified column #} 
         {{ test_stage('Check NULL values for ' ~ lastModifiedColName ~ ' column', false) }}
         {%- set ns = namespace(first=true) %}
