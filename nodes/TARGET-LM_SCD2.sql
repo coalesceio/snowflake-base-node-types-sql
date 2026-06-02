@@ -3,13 +3,14 @@
 @type2Dimension(true)
 @lastModifiedCompToggle(true)
 @insertZeroKey(true)
+@insertZeroKeyStr("NA")
 
 SELECT
      NATION_TEST."N_NATIONKEY" AS "N_NATIONKEY",
      NATION_TEST."N_NAME" AS "N_NAME",
-     NATION_TEST."N_REGIONKEY" AS "N_REGIONKEY",
+     NATION_TEST."N_REGIONKEY" AS "N_REGIONKEY" @isLastModifiedColumn,
      NATION_TEST."N_COMMENT" AS "N_COMMENT",
-     NATION_TEST."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" @isLastModifiedColumn,
+     NATION_TEST."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
      NATION_TEST."LM_SCD2_KEY"::NUMBER AS "LM_SCD2_KEY" @isSurrogateKey,
      "SYSTEM_CURRENT_FLAG"::VARCHAR AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
      "SYSTEM_VERSION"::NUMBER AS "SYSTEM_VERSION" @isSystemVersion,

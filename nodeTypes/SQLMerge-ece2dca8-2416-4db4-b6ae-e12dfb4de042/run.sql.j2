@@ -25,6 +25,7 @@ does not permit copying or modification for any other purpose.
             {%- set lastModifiedColName = lastModifiedCol.name %}
             {%- set type2Dimension = config.type2Dimension | default(false) %}
             {%- set isTimeStamp = (lastModifiedCol.dataType | upper).startswith('TIME') | default(false) %}
+            {%- set lookBackDays = config.lookBackDays | default(0) if isTimeStamp and not type2Dimension else 0 %}
         {%- else %}
             {%- set type2Dimension = columns | selectattr("isChangeTracking") | list | length > 0 | default(false) %}
         {%- endif %}
@@ -107,7 +108,7 @@ does not permit copying or modification for any other purpose.
             INSERT
             (
                 {%- for col in columns %}
-                    "{{ col.name }}"
+                    "{{ node.name }}"."{{ col.name }}"
                     {%- if not loop.last %}, {%- endif %}			
                 {%- endfor %}
             )
@@ -429,9 +430,8 @@ does not permit copying or modification for any other purpose.
 
         WHEN MATCHED 
         {%- if lastModifiedComparison %}
-            AND ("SRC".COMPARISON_VALUE > "SRC".MAX_TARGET_VALUE 
-            OR "SRC".MAX_TARGET_VALUE IS NULL)
-        {%- else %}  
+            AND "SRC".COMPARISON_VALUE > DATEADD(day, -{{ lookBackDays }}, NVL("SRC".MAX_TARGET_VALUE, CAST('1900-01-01' AS TIMESTAMP)))
+        {%- else %}
             {%- for col in columns if not ( col.isBusinessKey or
                                             col.isSurrogateKey or
                                             col.isSystemVersion or

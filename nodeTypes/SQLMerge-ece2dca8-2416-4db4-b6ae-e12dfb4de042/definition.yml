@@ -38,14 +38,15 @@ metadata:
                   and config.lastModifiedCompToggle
                   and (columns | selectattr('isLastModifiedColumn') | list | length != 1) %} true {% else %} false {% endif %}"
 
-
       - type: textBox
         displayName: Lookback Days
-        attributeName: lookbackdays
+        attributeName: lookBackDays
         default : 0
         enableIf: "{% if config.lastModifiedCompToggle
-                      and node.materializationType != 'view'
-                      and (config.lastModifiedColumn.dataType | upper).startswith('TIME') %} true {% else %} false {% endif %}"
+                    and not config.type2Dimension
+                    and node.materializationType != 'view'
+                    and (columns | selectattr('isLastModifiedColumn') | list | length) > 0
+                    and (((columns | selectattr('isLastModifiedColumn') | list | first).dataType | upper).startswith('TIME')) %} true {% else %} false {% endif %}"
 
       - type: toggleButton
         attributeName: type2Dimension
@@ -85,6 +86,11 @@ metadata:
         attributeName: testsEnabled
         type: toggleButton
         default: false
+
+      - type: note
+        attributeName: noteColumnTests
+        displayName: ℹ️ Use @tests annotation on columns for column level tests
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
 
       - displayName: Pre-Test
         attributeName: preTests
@@ -126,7 +132,7 @@ metadata:
         isRequired: false
         enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
 
-    - groupName: Zero Key Record Annotations
+    - groupName: Zero Key Record Options
       items:
 
       - type: note
@@ -135,6 +141,11 @@ metadata:
         enableIf: "{% if node.materializationType != 'view' 
                   and config.insertZeroKey
                   and (columns | selectattr('isSurrogateKey') | list | length != 1) %} true {% else %} false {% endif %}"
+
+      - type: note
+        attributeName: noteColumnZeroKey
+        displayName: ℹ️ Use @zeroKey annotation on columns for column level override value
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
 
       - displayName: Default Surrogate Key Value
         attributeName: insertZeroKeySurrogateKey
@@ -215,5 +226,12 @@ metadata:
         ✦ @zeroKey(<timestamp>)\n
           ➜ Adds custom zero key value(ghost record) to the column\n
         ━━━━━━━━━━━━━━━━━━━"
+
+    systemColumns:
+      - displayName: '{{NODE_NAME}}_KEY'
+        transform: '{{NODE_NAME}}_KEY'
+        dataType: NUMBER
+        placement: beginning
+        attributeName: isSurrogateKey
 name: SQL Merge
 type: NodeType

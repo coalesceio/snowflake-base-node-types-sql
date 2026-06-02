@@ -1,5 +1,9 @@
 @id("56afcd4e-ec7f-4ef1-9e99-cb5ebab78b4b")
 @nodeType("6fda2820-4404-4b60-bad3-cf0edd7dab92")
+@selectDistinct(true)
+@testsEnabled(true)
+@preContinueOnFailure(true)
+@postContinueOnFailure(true)
 
 
 SELECT

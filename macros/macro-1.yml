@@ -251,20 +251,28 @@ macroString: |-
           SELECT CAST('FAIL' AS STRING)
       {% endif %}
 
+      {# == Check if last modified comparison is enabled  #}
+      {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) %}
       {%- set lastModifiedComparison = config.lastModifiedCompToggle | default(false) %}
 
-      {%- if lastModifiedComparison %}
-          {%- if columns | selectattr("isLastModifiedColumn") | list | length == 1 %}
-              {%- set type2Dimension = config.type2Dimension | default(false) %}
-              {%- set lastModifiedCol = columns | selectattr('isLastModifiedColumn') | list | first %}
-              {%- set lastModifiedColName = lastModifiedCol.name %}
+      {%- if hasBusinessKey %}
+          {%- if lastModifiedComparison %}
+              {%- if columns | selectattr("isLastModifiedColumn") | list | length == 1 %}
+                  {%- set type2Dimension = config.type2Dimension | default(false) %}
+                  {%- set lastModifiedCol = columns | selectattr('isLastModifiedColumn') | list | first %}
+                  {%- set lastModifiedColName = lastModifiedCol.name %}
+              {%- else %}
+                  {{ test_stage('Warning! Count mismatch for last comparison', false) }}
+                  -- Only one last modified column is allowed. Multiple/No columns may lead to inconsistent results.
+                  SELECT CAST('FAIL' AS STRING)
+              {%- endif %}
           {%- else %}
-              {{ test_stage('Warning! Count mismatch for last comparison', false) }}
-              -- Only one last modified column is allowed. Multiple/No columns may lead to inconsistent results.
-              SELECT CAST('FAIL' AS STRING)
+              {%- set type2Dimension = columns | selectattr("isChangeTracking") | list | length > 0 | default(false) %}
           {%- endif %}
       {%- else %}
-          {%- set type2Dimension = columns | selectattr("isChangeTracking") | list | length > 0 | default(false) %}
+          {{ test_stage('Warning! Config Options missing business key column', false) }}
+          -- Please select a business key column.
+          SELECT CAST('FAIL' AS STRING)
       {%- endif %}
 
       {%- set currentFlagCol = get_value_by_column_attribute("isSystemCurrentFlag") %}

@@ -45,6 +45,11 @@ metadata:
         type: toggleButton
         default: false
 
+      - type: note
+        attributeName: noteColumnTests
+        displayName: ℹ️ Use @tests annotation on columns for column level tests
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+
       - type: toggleButton
         attributeName: preContinueOnFailure
         displayName: Pre-Test Continue On Failure

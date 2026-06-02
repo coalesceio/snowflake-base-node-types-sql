@@ -1,5 +1,8 @@
 @id("22a97364-7c77-4ed7-83c9-0247ad2b63f6")
 @nodeType("ece2dca8-2416-4db4-b6ae-e12dfb4de042")
+@insertZeroKey(true)
+@truncateBefore(true)
+@testsEnabled(true)
 
 SELECT
      NATION_TEST."N_NATIONKEY" AS "N_NATIONKEY",
