@@ -1,7 +1,8 @@
 # Base Node Types - SQL Package
 
-## SQL Nodes Types
-The  SQL Node is a powerful transformation tool within Coalesce that allows developers to write custom, hand-coded SQL instead of using the standard graphical column-mapping interface. It is ideal for complex transformations, advanced window functions, or multi-step logic that is difficult to represent via the standard UI. While it provides maximum flexibility, it shifts the responsibility of column definition and logic maintenance to the SQL author.
+## SQL Node Types
+
+The SQL Node is a powerful transformation tool within Coalesce that allows developers to write custom, hand-coded SQL instead of using the standard graphical column-mapping interface. It is ideal for complex transformations, advanced window functions, or multi-step logic that is difficult to represent with the standard UI. While it provides maximum flexibility, it shifts the responsibility of column definition and logic maintenance to the SQL author.
 
 The Base Node Types - SQL Package includes:
 
@@ -440,7 +441,7 @@ WITH ALL_NATIONS AS (
 SELECT * FROM ALL_NATIONS "NATIONS"
 ```
 
-### Supported SQL functionality
+### Supported SQL Functionality
 
 - **Multi-Source Joins & Enrichment:** The ability to reference and join multiple upstream nodes (e.g., Joining ORDERS and CUSTOMER) within a single stage to flatten data or create enriched wide tables while maintaining full lineage for every source.
 
