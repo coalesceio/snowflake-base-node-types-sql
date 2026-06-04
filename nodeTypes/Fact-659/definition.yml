@@ -1,19 +1,19 @@
 fileVersion: 2
-id: ece2dca8-2416-4db4-b6ae-e12dfb4de042
-isDisabled: true
+id: "659"
+isDisabled: false
 metadata:
   defaultStorageLocation: null
   error: null
   nodeMetadataSpec: |-
-    capitalized: SQL Merge
-    short: MRG
-    tagColor: '#1E339A'
-    plural: SQL Merges
+    capitalized: Fact
+    plural: Facts
+    short: FCT
+    tagColor: '#D9A438'
 
     enableCTESupport: true
 
     config:
-    - groupName: Node Annotations and Options
+    - groupName: Node Options
       items:
       - type: materializationSelector
         isRequired: true
@@ -23,40 +23,59 @@ metadata:
         - view
 
       - type: businessKeyColumns
-        isRequired: true
+        isRequired: false
+        enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
 
       - type: toggleButton
         attributeName: lastModifiedCompToggle
         displayName: Last Modified Based Incremental Load
         default: false
-        enableIf: "{% if node.materializationType != 'view' %} true {% else %} false {% endif %}"
+        enableIf: "{% if node.materializationType != 'view'
+                    and (columns 
+                        | selectattr('isBusinessKey')
+                        | list
+                        | length > 0) %} true {% else %} false {% endif %}"
 
       - type: note
         attributeName: noteLastModColumn
-        displayName: ⚠️ Ensure @isLastModifiedColumn annotation is applied to the required column.
+        displayName: ⚠️ Unsupported column data type
+        enableIf:  "{% if config.lastModifiedCompToggle
+                    and node.materializationType != 'view'
+                    and (columns 
+                      | selectattr('isBusinessKey')
+                      | list
+                      | length > 0)
+                    and not (
+                      ((config.lastModifiedColumn).dataType | upper).startswith('TIME')
+                      or 'INT' in ((config.lastModifiedColumn).dataType | upper)
+                      or ((config.lastModifiedColumn).dataType | upper).startswith('INT')
+                      or ((config.lastModifiedColumn).dataType | upper).startswith('BIGINT')
+                      or ((config.lastModifiedColumn).dataType | upper).startswith('NUMBER')
+                      or ((config.lastModifiedColumn).dataType | upper).startswith('NUMERIC')
+                    ) %} true {% else %} false {% endif %}"
+
+      - type: columnDropdownSelector
+        attributeName: lastModifiedColumn
+        displayName: |
+          Last Modified Column [ℹ️Datatype: NUMERIC or TIMESTAMP related]
         enableIf: "{% if node.materializationType != 'view' 
-                  and config.lastModifiedCompToggle
-                  and (columns | selectattr('isLastModifiedColumn') | list | length != 1) %} true {% else %} false {% endif %}"
+                    and config.lastModifiedCompToggle
+                    and (columns 
+                      | selectattr('isBusinessKey')
+                      | list
+                      | length > 0) %} true {% else %} false {% endif %}"
 
       - type: textBox
         displayName: Lookback Days
         attributeName: lookBackDays
         default : 0
         enableIf: "{% if config.lastModifiedCompToggle
-                    and not config.type2Dimension
                     and node.materializationType != 'view'
-                    and (columns | selectattr('isLastModifiedColumn') | list | length) > 0
-                    and (((columns | selectattr('isLastModifiedColumn') | list | first).dataType | upper).startswith('TIME')) %} true {% else %} false {% endif %}"
-
-      - type: toggleButton
-        attributeName: type2Dimension
-        displayName: Enable SCD Type2
-        default: false
-        enableIf: "{% if node.materializationType != 'view' and config.lastModifiedCompToggle %} true {% else %} false {% endif %}"
-
-      - type: changeTrackingColumns
-        isRequired: false
-        enableIf: "{% if node.materializationType != 'view' and not(config.lastModifiedCompToggle) %} true {% else %} false {% endif %}"
+                    and (((config.lastModifiedColumn).dataType | upper).startswith('TIME'))
+                    and (columns 
+                      | selectattr('isBusinessKey')
+                      | list
+                      | length > 0) %} true {% else %} false {% endif %}"
 
       - displayName: Truncate Before
         attributeName: truncateBefore
@@ -76,11 +95,34 @@ metadata:
         default: false
         enableIf: "{% if config.selectDistinct %} false {% else %} true {% endif %}"
 
-      - type: toggleButton
-        attributeName: insertZeroKey
-        displayName: Insert Zero Key Record
+      - displayName: Order By
+        attributeName: orderby
+        type: toggleButton
         default: false
-        enableIf: "{% if node.materializationType != 'view' %} true {% else %} false {% endif %}"
+        enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+      - type: tabular
+        displayName: 'ℹ️ Columns are sorted in the order they are defined'
+        attributeName: orderbycolumn
+        columns:
+
+          -  type: columnDropdownSelector
+             displayName: Sort Column
+             attributeName: sortColName
+
+          -  type: dropdownSelector
+             displayName: Sort Order
+             attributeName: sortOrder
+             default: desc
+             options:
+             - desc
+             - asc
+
+        isRequired: false
+        enableIf:  "{% if node.materializationType != 'view' and config.orderby %} true {% else %} false {% endif %}"
+
+    - groupName: Control Options
+      items:
 
       - displayName: Enable Tests
         attributeName: testsEnabled
@@ -92,16 +134,24 @@ metadata:
         displayName: ℹ️ Use @tests annotation on columns for column level tests
         enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
 
+      - type: toggleButton
+        attributeName: preContinueOnFailure
+        displayName: |
+          Pre-Test: Continue On Failure
+        default: false
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+
       - displayName: Pre-Test
         attributeName: preTests
         type: textBox
         syntax: sql
         isRequired: false
         enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
-      
+
       - type: toggleButton
-        attributeName: preContinueOnFailure
-        displayName: Insert Zero Key Record
+        attributeName: postContinueOnFailure
+        displayName: |
+          Post-Test: Continue On Failure
         default: false
         enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
 
@@ -110,12 +160,6 @@ metadata:
         type: textBox
         syntax: sql
         isRequired: false
-        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
-
-      - type: toggleButton
-        attributeName: postContinueOnFailure
-        displayName: Insert Zero Key Record
-        default: false
         enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
 
       - displayName: Pre-SQL
@@ -131,54 +175,6 @@ metadata:
         syntax: sql
         isRequired: false
         enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
-
-    - groupName: Zero Key Record Options
-      items:
-
-      - type: note
-        attributeName: noteZeroKey
-        displayName: ⚠️ Add column with @isSurrogateKey annotation to enable Zero Key insertion.
-        enableIf: "{% if node.materializationType != 'view' 
-                  and config.insertZeroKey
-                  and (columns | selectattr('isSurrogateKey') | list | length != 1) %} true {% else %} false {% endif %}"
-
-      - type: note
-        attributeName: noteColumnZeroKey
-        displayName: ℹ️ Use @zeroKey annotation on columns for column level override value
-        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
-
-      - displayName: Default Surrogate Key Value
-        attributeName: insertZeroKeySurrogateKey
-        type: textBox
-        default: "0"
-        isRequired: false
-        enableIf: "true"
-
-      - displayName: Default String Value
-        attributeName: insertZeroKeyStr
-        type: textBox
-        default: "UNKNOWN"
-        isRequired: false
-        enableIf: "true"
-
-      - displayName: Default Date/Time/Timestamp Value
-        attributeName: insertZeroKeyTimestamp
-        type: textBox
-        default: "1900-01-01 00:00:00"
-        isRequired: false
-        enableIf: "true"
-        
-      - displayName: Default Boolean Value
-        attributeName: insertZeroKeyBol
-        type: dropdownSelector
-        default: "TRUE"
-        isRequired: false
-        options:
-        - "TRUE"
-        - "FALSE"
-        enableIf: "true"
-
-      enableIf: "{% if config.insertZeroKey == true and node.materializationType != 'view' %} true {% else %} false {% endif %}"
 
     - groupName: Column Annotations Help
       items:
@@ -218,20 +214,22 @@ metadata:
         ✦ @hashValue(\"<hash_col_name>\")\n
           ➜ Generates hash key from columns\n
           ➜ Use it along with macro {{ get_hash('<hash_col_name>') }}\n
-        ━━━━━━━━━━━━━━━━━━━\n\n
-        ℹ️ Custom Zero Key Values\n
-        ✦ @zeroKey(\"<text>\")\n
-        ✦ @zeroKey(<number>)\n
-        ✦ @zeroKey(<bool>)\n
-        ✦ @zeroKey(<timestamp>)\n
-          ➜ Adds custom zero key value(ghost record) to the column\n
         ━━━━━━━━━━━━━━━━━━━"
 
+      enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
     systemColumns:
-      - displayName: '{{NODE_NAME}}_KEY'
-        transform: '{{NODE_NAME}}_KEY'
-        dataType: NUMBER
-        placement: beginning
-        attributeName: isSurrogateKey
-name: SQL Merge
+
+    - displayName: SYSTEM_CREATE_DATE
+      transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
+      dataType: TIMESTAMP
+      placement: end
+      attributeName: isSystemCreateDate
+
+    - displayName: SYSTEM_UPDATE_DATE
+      transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
+      dataType: TIMESTAMP
+      placement: end
+      attributeName: isSystemUpdateDate
+name: Fact
 type: NodeType

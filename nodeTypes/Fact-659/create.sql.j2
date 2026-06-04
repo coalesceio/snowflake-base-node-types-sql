@@ -5,14 +5,14 @@ Unauthorized reproduction, distribution, or disclosure of this material is stric
 Coalesce permits you to copy and modify this script for the purposes of using with Coalesce but
 does not permit copying or modification for any other purpose.  
 #}
-{# == Node Type Name           : Work  == #}
-{# == Node Type Description    : This node creates work table or view  == #}
+{# == Node Type Name           : Fact  == #}
+{# == Node Type Description    : This node creates fact table or view  == #}
 {#---------------------------------------------------------------------------------------------#}
 
 {%- if node.materializationType == 'table' %}
 
     {# CreateSQL for Table #}
-    {{ stage('Create ' + node.materializationType ) }}
+	{{ stage('Create ' + node.materializationType ) }}
 	CREATE OR REPLACE {{ node.materializationType }} {{ ref_no_link(node.location.name, node.name) }}
 	(
 		{%- for col in columns %}
@@ -22,6 +22,7 @@ does not permit copying or modification for any other purpose.
             {%- set descriptionParams = col.description.parameters | default([]) %}
 
 			"{{ col.name }}" {{ col.dataType }}
+            {%- if col.isSurrogateKey %} identity {%- endif %}
 			{%- if nullParams and (nullParams[0] in ['false', false]) %} NOT NULL {%- endif %}
 			{%- if defaultValueParams and defaultValueParams[0] is not none %} DEFAULT {{ get_default(col.dataType, defaultValueParams[0]) }} {%- endif %}
 			{%- if descriptionParams and descriptionParams[0] | length > 0 %} COMMENT '{{ descriptionParams[0] | escape }}' {%- endif %}
@@ -30,7 +31,7 @@ does not permit copying or modification for any other purpose.
 	)
 	{%- if node.description | length > 0 %} COMMENT = '{{ node.description | escape }}' {%- endif %}
 
-{%- elif node.materializationType | lower == 'view' %}
+{%- elif node.materializationType == 'view' %}
 
     {# CreateSQL for View #}
     {{ stage('Create ' + node.materializationType ) }}
@@ -50,7 +51,11 @@ does not permit copying or modification for any other purpose.
     {{ sources[0].cteString }}
     SELECT {%- if config.selectDistinct %} DISTINCT {%- endif %}
     {%- for col in sources[0].columns %}
-        {{ get_source_transform(col) }} AS "{{ col.name }}"
+        {% if col.isSurrogateKey or col.isSystemUpdateDate or col.isSystemCreateDate %}
+            NULL
+		{% else %}
+            {{ get_source_transform(col) }} AS "{{ col.name }}"
+		{% endif %}
         {%- if not loop.last -%}, {%- endif %}
     {%- endfor %}
 

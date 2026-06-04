@@ -1,11 +1,11 @@
 fileVersion: 2
-id: 6fda2820-4404-4b60-bad3-cf0edd7dab92
-isDisabled: true
+id: "664"
+isDisabled: false
 metadata:
   defaultStorageLocation: null
   error: null
   nodeMetadataSpec: |-
-    capitalized: SQL Insert
+    capitalized: Work
     short: WRK
     plural: Works
     tagColor: '#2EB67D'
@@ -129,5 +129,5 @@ metadata:
           ➜ Generates hash key from columns\n
           ➜ Use it along with macro {{ get_hash('<hash_col_name>') }}\n
         ━━━━━━━━━━━━━━━━━━━\n\n"
-name: SQL Insert
+name: Work
 type: NodeType

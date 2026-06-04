@@ -1,33 +1,32 @@
 fileVersion: 2
-id: 6fda2820-4404-4b60-bad3-cf0edd7dab92
-isDisabled: true
+id: "661"
+isDisabled: false
 metadata:
   defaultStorageLocation: null
   error: null
   nodeMetadataSpec: |-
-    capitalized: SQL Insert
-    short: WRK
-    plural: Works
-    tagColor: '#2EB67D'
+    capitalized: Factless Fact
+    plural: Facts
+    short: FCT
+    tagColor: '#D9A438'
 
     enableCTESupport: true
 
     config:
-    - groupName: Node Annotations and Options
+    - groupName: Node Options
       items:
       - type: materializationSelector
         isRequired: true
         default: table
         options:
         - table
-        - view
 
       - displayName: Truncate Before
         attributeName: truncateBefore
         type: toggleButton
         default: false
         enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
-
+        
       - displayName: Distinct
         attributeName: selectDistinct
         type: toggleButton
@@ -39,6 +38,35 @@ metadata:
         type: toggleButton
         default: false
         enableIf: "{% if config.selectDistinct %} false {% else %} true {% endif %}"
+
+      - displayName: Order By
+        attributeName: orderby
+        type: toggleButton
+        default: false
+        enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+      - type: tabular
+        displayName: 'ℹ️ Columns are sorted in the order they are defined'
+        attributeName: orderbycolumn
+        columns:
+
+          -  type: columnDropdownSelector
+             displayName: Sort Column
+             attributeName: sortColName
+
+          -  type: dropdownSelector
+             displayName: Sort Order
+             attributeName: sortOrder
+             default: desc
+             options:
+             - desc
+             - asc
+
+        isRequired: false
+        enableIf:  "{% if node.materializationType != 'view' and config.orderby %} true {% else %} false {% endif %}"
+
+    - groupName: Control Options
+      items:
 
       - displayName: Enable Tests
         attributeName: testsEnabled
@@ -52,7 +80,8 @@ metadata:
 
       - type: toggleButton
         attributeName: preContinueOnFailure
-        displayName: Pre-Test Continue On Failure
+        displayName: |
+          Pre-Test: Continue On Failure
         default: false
         enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
 
@@ -62,10 +91,11 @@ metadata:
         syntax: sql
         isRequired: false
         enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
-      
+
       - type: toggleButton
         attributeName: postContinueOnFailure
-        displayName: Post-Test Continue On Failure
+        displayName: |
+          Post-Test: Continue On Failure
         default: false
         enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
 
@@ -95,7 +125,7 @@ metadata:
 
       - type: note
         attributeName: restrictedEdit
-        displayName: ⛔ The section below is read-only and provided for reference purposes only
+        displayName: ⛔ The section below is read-only and provided for reference purposes only.
         enableIf: "true"
 
       - displayName: Allowed Column Annotations
@@ -128,6 +158,22 @@ metadata:
         ✦ @hashValue(\"<hash_col_name>\")\n
           ➜ Generates hash key from columns\n
           ➜ Use it along with macro {{ get_hash('<hash_col_name>') }}\n
-        ━━━━━━━━━━━━━━━━━━━\n\n"
-name: SQL Insert
+        ━━━━━━━━━━━━━━━━━━━"
+
+      enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+    systemColumns:
+
+    - displayName: SYSTEM_CREATE_DATE
+      transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
+      dataType: TIMESTAMP
+      placement: end
+      attributeName: isSystemCreateDate
+
+    - displayName: SYSTEM_UPDATE_DATE
+      transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
+      dataType: TIMESTAMP
+      placement: end
+      attributeName: isSystemUpdateDate
+name: Factless Fact
 type: NodeType

@@ -1,0 +1,278 @@
+fileVersion: 2
+id: "660"
+isDisabled: false
+metadata:
+  defaultStorageLocation: null
+  error: null
+  nodeMetadataSpec: |-
+    capitalized: Persistent Stage
+    short: PSTG
+    plural: Persistent Stages
+    tagColor: '#29B2DB'
+
+    enableCTESupport: true
+
+    config:
+    - groupName: Node Options
+      items:
+      - type: materializationSelector
+        isRequired: true
+        default: table
+        options:
+        - table
+
+      - type: businessKeyColumns
+        isRequired: false
+
+      - type: toggleButton
+        attributeName: lastModifiedCompToggle
+        displayName: Last Modified Based Incremental Load
+        default: false
+        enableIf: "{% if node.materializationType != 'view'
+                    and (columns 
+                        | selectattr('isBusinessKey')
+                        | list
+                        | length > 0) %} true {% else %} false {% endif %}"
+
+      - type: note
+        attributeName: noteLastModColumn
+        displayName: ⚠️ Unsupported column data type
+        enableIf:  "{% if config.lastModifiedCompToggle
+                    and (columns 
+                        | selectattr('isBusinessKey')
+                        | list
+                        | length > 0)
+                    and node.materializationType != 'view'
+                    and not (
+                      ((config.lastModifiedColumn).dataType | upper).startswith('TIME')
+                      or 'INT' in ((config.lastModifiedColumn).dataType | upper)
+                      or ((config.lastModifiedColumn).dataType | upper).startswith('INT')
+                      or ((config.lastModifiedColumn).dataType | upper).startswith('BIGINT')
+                      or ((config.lastModifiedColumn).dataType | upper).startswith('NUMBER')
+                      or ((config.lastModifiedColumn).dataType | upper).startswith('NUMERIC')
+                    ) %} true {% else %} false {% endif %}"
+
+      - type: columnDropdownSelector
+        attributeName: lastModifiedColumn
+        displayName: |
+          Last Modified Column [ℹ️Datatype: NUMERIC or TIMESTAMP related]
+        enableIf: "{% if node.materializationType != 'view' 
+                    and config.lastModifiedCompToggle
+                    and (columns 
+                        | selectattr('isBusinessKey')
+                        | list
+                        | length > 0) %} true {% else %} false {% endif %}"
+
+      - type: textBox
+        displayName: Lookback Days
+        attributeName: lookBackDays
+        default : 0
+        enableIf: "{% if config.lastModifiedCompToggle
+                    and (columns 
+                        | selectattr('isBusinessKey')
+                        | list
+                        | length > 0)
+                    and not config.type2Dimension
+                    and node.materializationType != 'view'
+                    and (((config.lastModifiedColumn).dataType | upper).startswith('TIME')) %} true {% else %} false {% endif %}"
+
+      - type: toggleButton
+        attributeName: type2Dimension
+        displayName: Enable SCD Type2
+        default: false
+        enableIf: "{% if node.materializationType != 'view' 
+                    and config.lastModifiedCompToggle
+                    and (columns 
+                        | selectattr('isBusinessKey')
+                        | list
+                        | length > 0) %} true {% else %} false {% endif %}"
+
+      - type: changeTrackingColumns
+        isRequired: false
+        enableIf: "{% if node.materializationType != 'view'
+                    and not(config.lastModifiedCompToggle)
+                    and (columns 
+                        | selectattr('isBusinessKey')
+                        | list
+                        | length > 0) %} true {% else %} false {% endif %}"
+
+      - displayName: Truncate Before
+        attributeName: truncateBefore
+        type: toggleButton
+        default: false
+        enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+        
+      - displayName: Distinct
+        attributeName: selectDistinct
+        type: toggleButton
+        enableIf: "{% if config.groupByAll %} false {% else %} true {% endif %}"
+        default: false
+        
+      - displayName: Group By All
+        attributeName: groupByAll
+        type: toggleButton
+        default: false
+        enableIf: "{% if config.selectDistinct %} false {% else %} true {% endif %}"
+
+      - displayName: Order By
+        attributeName: orderby
+        type: toggleButton
+        default: false
+        enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+      - type: tabular
+        displayName: 'ℹ️ Columns are sorted in the order they are defined'
+        attributeName: orderbycolumn
+        columns:
+
+          -  type: columnDropdownSelector
+             displayName: Sort Column
+             attributeName: sortColName
+
+          -  type: dropdownSelector
+             displayName: Sort Order
+             attributeName: sortOrder
+             default: desc
+             options:
+             - desc
+             - asc
+
+        isRequired: false
+        enableIf:  "{% if node.materializationType != 'view' and config.orderby %} true {% else %} false {% endif %}"
+
+    - groupName: Control Options
+      items:
+
+      - displayName: Enable Tests
+        attributeName: testsEnabled
+        type: toggleButton
+        default: false
+
+      - type: note
+        attributeName: noteColumnTests
+        displayName: ℹ️ Use @tests annotation on columns for column level tests
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+
+      - type: toggleButton
+        attributeName: preContinueOnFailure
+        displayName: |
+          Pre-Test: Continue On Failure
+        default: false
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+
+      - displayName: Pre-Test
+        attributeName: preTests
+        type: textBox
+        syntax: sql
+        isRequired: false
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+
+      - type: toggleButton
+        attributeName: postContinueOnFailure
+        displayName: |
+          Post-Test: Continue On Failure
+        default: false
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+
+      - displayName: Post-Test
+        attributeName: postTests
+        type: textBox
+        syntax: sql
+        isRequired: false
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+
+      - displayName: Pre-SQL
+        attributeName: preSQL
+        type: textBox
+        syntax: sql
+        isRequired: false
+        enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+      - displayName: Post-SQL
+        attributeName: postSQL
+        type: textBox
+        syntax: sql
+        isRequired: false
+        enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+    - groupName: Column Annotations Help
+      items:
+
+      - type: note
+        attributeName: restrictedEdit
+        displayName: ⛔ The section below is read-only and provided for reference purposes only.
+        enableIf: "true"
+
+      - displayName: Allowed Column Annotations
+        attributeName: col_annots
+        type: textBox
+        isRequired: false
+        syntax: sql
+        enableIf: "true"
+        default: "
+        ⚠️ For more information, please refer to the documentation available in the Marketplace.\n\n
+        ℹ️ Not NULL\n
+        ✦ @nullable(\"false\")\n
+          ➜ Marks column as NOT NULL\n
+        ━━━━━━━━━━━━━━━━━━━\n\n
+        ℹ️ Column Description\n
+        ✦ @description(\"<text>\")\n
+          ➜ Adds column description\n
+        ━━━━━━━━━━━━━━━━━━━\n\n
+        ℹ️ Column Default Value\n
+        ✦ @defaultValue(\"<text>\")\n
+        ✦ @defaultValue(<number>)\n
+        ✦ @defaultValue(<bool>)\n
+          ➜ Adds default value\n
+        ━━━━━━━━━━━━━━━━━━━\n\n
+        ℹ️ Column Level Tests\n
+        ✦ @tests(\"null\", \"unique\")\n
+          ➜ Checks NULL / UNIQUE values\n
+        ━━━━━━━━━━━━━━━━━━━\n\n
+        ℹ️ Hash Columns\n
+        ✦ @hashValue(\"<hash_col_name>\")\n
+          ➜ Generates hash key from columns\n
+          ➜ Use it along with macro {{ get_hash('<hash_col_name>') }}\n
+        ━━━━━━━━━━━━━━━━━━━"
+
+      enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+    systemColumns:
+
+    - displayName: '{{NODE_NAME}}_KEY'
+      transform: "0"
+      dataType: NUMBER
+      placement: beginning
+      attributeName: isSurrogateKey
+
+    - displayName: SYSTEM_VERSION
+      transform: "1"
+      dataType: NUMBER
+      placement: end
+      attributeName: isSystemVersion
+
+    - displayName: SYSTEM_CURRENT_FLAG
+      transform: "'Y'"
+      dataType: VARCHAR
+      placement: end
+      attributeName: isSystemCurrentFlag
+
+    - displayName: SYSTEM_CREATE_DATE
+      transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
+      dataType: TIMESTAMP
+      placement: end
+      attributeName: isSystemCreateDate
+
+    - displayName: SYSTEM_UPDATE_DATE
+      transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
+      dataType: TIMESTAMP
+      placement: end
+      attributeName: isSystemUpdateDate
+
+    - displayName: SYSTEM_END_DATE
+      transform: CAST('2999-12-31 00:00:00' AS TIMESTAMP)
+      dataType: TIMESTAMP
+      placement: end
+      attributeName: isSystemEndDate
+name: Persistent Stage
+type: NodeType

@@ -1,0 +1,84 @@
+fileVersion: 2
+id: "662"
+isDisabled: false
+metadata:
+  defaultStorageLocation: null
+  error: null
+  nodeMetadataSpec: |-
+    capitalized: View
+    short: V
+    tagColor: '#C4C4C4'
+    isDisabled: true
+    plural: Views
+
+    enableCTESupport: true
+
+    config:
+    - groupName: Node Options
+      items:
+      - type: materializationSelector
+        isRequired: true
+        default: view
+        options:
+        - view
+
+      - displayName: Secure
+        attributeName: secureoption
+        type: toggleButton
+        enableIf: "{% if  node.override.create.enabled %} false {% else %} true {% endif %}"
+        default: false
+
+      - displayName: Distinct
+        attributeName: selectDistinct
+        type: toggleButton
+        enableIf: "{% if config.groupByAll %} false {% else %} true {% endif %}"
+        default: false
+        
+      - displayName: Group By All
+        attributeName: groupByAll
+        type: toggleButton
+        default: false
+        enableIf: "{% if config.selectDistinct %} false {% else %} true {% endif %}"
+
+    - groupName: Control Options
+      items:
+
+      - displayName: Enable Tests
+        attributeName: testsEnabled
+        type: toggleButton
+        default: false
+
+      - type: note
+        attributeName: noteColumnTests
+        displayName: ℹ️ Use @tests annotation on columns for column level tests
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+
+      - type: toggleButton
+        attributeName: preContinueOnFailure
+        displayName: |
+          Pre-Test: Continue On Failure
+        default: false
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+
+      - displayName: Pre-Test
+        attributeName: preTests
+        type: textBox
+        syntax: sql
+        isRequired: false
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+
+      - type: toggleButton
+        attributeName: postContinueOnFailure
+        displayName: |
+          Post-Test: Continue On Failure
+        default: false
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+
+      - displayName: Post-Test
+        attributeName: postTests
+        type: textBox
+        syntax: sql
+        isRequired: false
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+name: View
+type: NodeType
