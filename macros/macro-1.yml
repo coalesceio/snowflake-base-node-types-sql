@@ -173,7 +173,7 @@ macroString: |-
                        node-level and column-level data quality tests.
                        No output is generated if tests are disabled.
   ========================================================================= #}
-  {%- macro run_tests(runOrder) -%}
+  {%- macro run_tests() -%}
 
       {%- if config.testsEnabled -%}
           {%- if runOrder == 'Before' -%}
@@ -446,17 +446,16 @@ macroString: |-
   {%- macro sortorder_by_colv() -%}
       {%- set ns = namespace(orderByClause='') -%}
 
-      {%- if config.orderby and config.orderbycolumn.get('items') -%}
-
-          {%- for item in config.orderbycolumn.get('items') -%}
-
-              {%- if loop.first -%}
-                  {%- set ns.orderByClause = '"' ~ item.sortColName.name ~ '" ' ~ item.sortOrder -%}
-              {%- else -%}
-                  {%- set ns.orderByClause = ns.orderByClause ~ ', "' ~ item.sortColName.name ~ '" ' ~ item.sortOrder -%}
-              {%- endif -%}
-
-          {%- endfor -%}
+      {%- if config.orderby -%}
+          {%- if config.orderbycolumn.get('items') -%}
+              {%- for item in config.orderbycolumn.get('items') -%}
+                  {%- if loop.first -%}
+                      {%- set ns.orderByClause = '"' ~ item.sortColName.name ~ '" ' ~ item.sortOrder -%}
+                  {%- else -%}
+                      {%- set ns.orderByClause = ns.orderByClause ~ ', "' ~ item.sortColName.name ~ '" ' ~ item.sortOrder -%}
+                  {%- endif -%}
+              {%- endfor -%}
+          {%- endif -%}
 
           ORDER BY {{ ns.orderByClause }}
 

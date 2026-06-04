@@ -1,11 +1,11 @@
 fileVersion: 2
-id: "663"
+id: "665"
 isDisabled: false
 metadata:
   defaultStorageLocation: null
   error: null
   nodeMetadataSpec: |-
-    capitalized: Dimension 
+    capitalized: Copy of Dimension 
     short: DIM
     tagColor: '#1E339A'
     plural: Dimensions
@@ -174,33 +174,36 @@ metadata:
         displayName: ℹ️ Use @tests annotation on columns for column level tests
         enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
 
-      - type: toggleButton
-        attributeName: preContinueOnFailure
-        displayName: |
-          Pre-Test: Continue On Failure
-        default: false
-        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+      - type: tabular
+        displayName: 'ℹ️ Select All Failing Records'
+        attributeName: tests
+        columns:
 
-      - displayName: Pre-Test
-        attributeName: preTests
-        type: textBox
-        syntax: sql
+          -  type: toggleButton
+             attributeName: continueOnFailure
+             displayName: Continue On Failure
+             default: true
+             enableIf: ""
+
+          -  displayName: Run
+             attributeName: runOrder
+             type: dropdownSelector
+             default: After
+             isRequired: false
+             options:
+              - "Before"
+              - "After"
+             enableIf: ""
+
+          -  displayName: Test
+             attributeName: templateString
+             type: textBox
+             syntax: sql
+             isRequired: false
+             enableIf: ""
+
         isRequired: false
-        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
-
-      - type: toggleButton
-        attributeName: postContinueOnFailure
-        displayName: |
-          Post-Test: Continue On Failure
-        default: false
-        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
-
-      - displayName: Post-Test
-        attributeName: postTests
-        type: textBox
-        syntax: sql
-        isRequired: false
-        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+        enableIf:  "{% if config.testsEnabled %} true {% else %} false {% endif %}"
 
       - displayName: Pre-SQL
         attributeName: preSQL
@@ -302,5 +305,5 @@ metadata:
       dataType: TIMESTAMP
       placement: end
       attributeName: isSystemEndDate
-name: Dimension
+name: Copy of Dimension
 type: NodeType
