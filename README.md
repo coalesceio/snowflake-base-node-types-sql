@@ -28,37 +28,45 @@ The key differences between these nodes are outlined below.
 
 ### Node Options
 
-| Options | Work | Dimension | Persistent Stage | Fact | Factless Fact | View | Description |
-|----------|------|-----------|------------------|------|---------------|------|-------------|
-| **Create As** | - Table<br/> - View | - Table<br/> - View | - Table | - Table<br/> - View | - Table | - View | Table or View |
-| **Truncate Before** | ✅ | ✅ | ✅ | ✅ | ✅ | ⬜ | **True**: Truncates target before load.<br/>**False**: Table is not truncated before data load. |
+| Options |   Work   | Dimension | Persistent Stage | Fact | Factless Fact | View | Description |
+|----------|-------------|-----------|------------------|------|---------------|------|-------------|
+| **Create As** | Table/View | Table/View | Table | Table/View | Table | View | |
+| **Truncate Before** | ✅ | ✅ | ✅ | ✅ | ✅ |  | **True**: Truncates target before load.<br/>**False**: Table is not truncated before data load. |
 | **Distinct** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **True**: Group By All is hidden and DISTINCT data is processed.<br/>**False**: Group By All is visible. |
 | **Group By All** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **True**: DISTINCT is hidden and data is grouped by all columns.<br/>**False**: DISTINCT is visible. |
-| **Business Key** | ⬜ | ✅ | ✅ | ✅ | ⬜ | ⬜ | Required column for both SCD Type 1 and Type 2.<br/>**Note:** Geometry and Geography data type columns are not supported as business key columns. |
-| **Last Modified Based Incremental Load** | ⬜ | ✅ | ✅ | ✅ | ⬜ | ⬜ | **True**: When enabled we can do timestamp based/Integer based CDC<br/>**False**: Regular CDC based on Change tracking columns is done.<br/>Change tracking columns are not enabled for this scenario<br/>For timestamp-based incremental loads, a *validation test checks* the selected Last Modified column for NULL values before the merge. If NULL values are detected, the merge is stopped; otherwise, processing continues. |
-| **Lookback Days** | ⬜ | ✅ | ✅ | ✅ | ⬜ | ⬜ | Specifies the number of days to look back from the last successful load when extracting incremental data. <br/> *Enabled only if SCD Type 1 and timestamp column is chosen*|
-| **Last Modified Column** | ⬜ | ✅ | ✅ | ✅ | ⬜ | ⬜ | Select the column used for incremental loading. Supported data types include NUMERIC and TIMESTAMP-related columns. |
-| **Enable SCD Type2** | ⬜ | ✅ | ✅ | ✅ | ⬜ | ⬜ | *Only when **Last Modified Based Incremental Load** is ON*<br/>**True**: SCD Type2 - CDC is based on timestamp/ID column chosen.<br/>**False**: SCD Type1 - CDC is based on timestamp/ID column chosen. |
-| **Change Tracking** | ⬜ | ✅ | ✅ | ⬜ | ⬜ | ⬜ | *Only when Last Modified Based Incremental Load is OFF*<br/>Required column/s for SCD Type 2 |
+| **Business Key** |  | ✅ | ✅ | ✅ |  |  | Required column for both SCD Type 1 and Type 2.<br/>**Note:** Geometry and Geography data type columns are not supported as business key columns. |
+| **Last Modified Based Incremental Load** |  | ✅ | ✅ | ✅ |  |  | **True**: When enabled we can do timestamp based/Integer based CDC<br/>**False**: Regular CDC based on Change tracking columns is done. |
+| **Lookback Days**¹ |  | ✅ | ✅ | ✅ |  |  | Specifies the number of days to look back from the last successful load when extracting incremental data |
+| **Last Modified Column**¹ |  | ✅ | ✅ | ✅ |  |  | Column used for incremental loading. Supported data types include NUMERIC and TIMESTAMP-related columns. |
+| **Enable SCD Type2**¹ |  | ✅ | ✅ | ✅ |  |  | **True**: SCD Type2 - CDC is based on timestamp/ID column chosen.<br/>**False**: SCD Type1 - CDC is based on timestamp/ID column chosen. |
+| **Change Tracking** |  | ✅ | ✅ |  |  |  | *Only when Last Modified Based Incremental Load is OFF*<br/>Required column/s for SCD Type 2 |
+
+- ¹ Enabled only if Last Modified Based Incremental Load is ON
+- For timestamp-based incremental loads, a *validation test checks* the selected Last Modified column for NULL values before the merge. If NULL values are detected, the merge is stopped; otherwise, processing continues.
 
 ### Zero Key Record Options
 
-| Options | Work | Dimension | Persistent Stage | Fact | Factless Fact | View | Description |
+| Option | Work | Dimension | Persistent Stage | Fact | Factless Fact | View | Description |
 |----------|------|-----------|------------------|------|---------------|------|-------------|
-| **Insert Zero Key Record** | ⬜ | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | **True**: Zero Key Record Options enabled.<br/>**False**: Zero Key Record not added |
-| **Zero Key Record Options** | ⬜ | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Option Group to add custom zero key record values for : <br/>- Default Surrogate Key Value<br/>- Default String Value <br/>- Default Date/Time/Timestamp Value (Format: YYYY-MM-DD HH24:MI:SS) <br/>- Default Boolean Value |
+| **Insert Zero Key Record** |  | ✅ |  |  |  |  | Enables insertion of a zero key (ghost) record. |
+| **Default Surrogate Key Value**¹ |  | ✅ |  |  |  |  | Default surrogate key value used for the zero key record. |
+| **Default String Value** |  | ✅ |  |  |  |  | Default value used for string columns in the zero key record. |
+| **Default Date/Time/Timestamp Value** |  | ✅ |  |  |  |  | Default value used for date, time, and timestamp columns in the zero key record. |
+| **Default Boolean Value** |  | ✅ |  |  |  |  | Default value used for boolean columns in the zero key record. |
+
+- Use the `@zeroKey` annotation on columns to provide a column-level override value.
+- ¹ Changing the surrogate key value after deployment is not recommended.
 
 ### Control Options
 
 | Options | Work | Dimension | Persistent Stage | Fact | Factless Fact | View | Description |
 |----------|------|-----------|------------------|------|---------------|------|-------------|
 | **Enable tests** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Toggle: *Use `@tests` annotation on columns for column level tests*<br/>True or False<br/>Determines if tests are enabled |
-| **Pre-Test Continue On Failure** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines whether the load process should continue if a pre-test fails.|
-| **Pre-Test** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | SQL validation or quality checks executed before the main load process. |
-| **Post-Test Continue On Failure** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines whether the load process should continue if a post-test fails.|
-| **Post-Test** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | SQL validation or quality checks executed after the main load process.|
-| **Pre-SQL** | ✅ | ✅ | ✅ | ✅ | ✅ | ⬜ | SQL to execute before data insert operation |
-| **Post-SQL** | ✅ | ✅ | ✅ | ✅ | ✅ | ⬜ | SQL to execute after data insert operation |
+| **Test** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | SQL query executed as a validation test. The test fails if the query returns any records. |
+| **Run** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines when the test is executed.<br/>**Before** - Run before the load operation.<br/>**After** - Run after the load operation. |
+| **Continue On Failure** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines whether execution should continue if the test fails.<br/>**True** - Continue execution.<br/>**False** - Stop execution. |
+| **Pre-SQL** | ✅ | ✅ | ✅ | ✅ | ✅ |  | SQL to execute before data insert operation |
+| **Post-SQL** | ✅ | ✅ | ✅ | ✅ | ✅ |  | SQL to execute after data insert operation |
 
 ---
 
@@ -66,14 +74,27 @@ The key differences between these nodes are outlined below.
 
 | Annotation | Work | Dimension | Persistent Stage | Fact | Factless Fact | View | Description |
 |------------|------|-----------|------------------|------|---------------|------|-------------|
-| `@nullable("false")`<br/>`@nullable(false)` | ✅ | ✅ | ✅ | ✅ | ✅ | ⬜ | Marks column as NOT NULL |
-| `@description("<text>")` | ✅ | ✅ | ✅ | ✅ | ✅ | ⬜ | Adds column description |
-| `@defaultValue("<text>")`<br/>`@defaultValue(<number>)`<br/>`@defaultValue(<bool>)` | ✅ | ✅ | ✅ | ✅ | ✅ | ⬜ | Adds default value |
-| `@tests("null", "unique")` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Column tests are more restrictive and apply directly to individual columns.<br/><br/>**Supported Tests**<br/>- **null** → Checks for NULL values<br/>- **unique** → Checks to ensure all values are unique<br/><br/>**Valid Examples**<br/>@tests("null", "unique")<br/>@tests("null")<br/>@tests("unique") |
-| `@hashValue("<hash_col_name>")` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Generates a hash key by combining and hashing the values of columns associated with a given hash group, ensuring consistent change detection and key generation.<br/><br/>**Default:** Uses `SHA1` hashing.<br/>**Supported Algorithms:** `SHA1` (default), `MD5`, `SHA256`.<br/><br/>**Example:**<br/><col_name> AS <col_name> @hashValue("GH_COL"),<br/>{{ get_hash('GH_COL') }}::STRING AS "GH_COL"<br/><br/>**Examples with different algorithms:**<br/>-- SHA1 (default)<br/>{{ get_hash('GH_COL') }}::STRING AS "GH_COL"<br/><br/>-- MD5<br/>{{ get_hash('GH_COL', 'MD5') }}::STRING AS "GH_COL"<br/><br/>-- SHA256<br/>{{ get_hash('GH_COL', 'SHA256') }}::STRING AS "GH_COL" |
-| `@zeroKey("<text>")`<br/>`@zeroKey(<number>)`<br/>`@zeroKey(<bool>)`<br/>`@zeroKey(<timestamp>)` | ⬜ | ✅ | ⬜ | ⬜ | ⬜ | ⬜ | Provides override zero key value(ghost record) to the column |
+| `@nullable("false")`<br/>`@nullable(false)` | ✅ | ✅ | ✅ | ✅ | ✅ |  | Marks column as NOT NULL |
+| `@description("<text>")` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Adds column description |
+| `@defaultValue("<text>")`<br/>`@defaultValue(<number>)`<br/>`@defaultValue(<bool>)` | ✅ | ✅ | ✅ | ✅ | ✅ |  | Adds default value |
+| `@tests("null", "unique")` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Column tests are more restrictive and apply directly to individual columns.<br/><br/>**Supported Tests**<br/>- **null** → Checks for NULL values<br/>- **unique** → Checks to ensure all values are unique |
+| `@hashValue("<hash_col_name>")` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Generates a hash key by combining and hashing the values of columns associated with a given hash group, ensuring consistent change detection and key generation.<br/>**Default:** Uses `SHA1` hashing. |
+| `@zeroKey("<text>")`<br/>`@zeroKey(<number>)`<br/>`@zeroKey(<bool>)`<br/>`@zeroKey(<timestamp>)` |  | ✅ |  |  |  |  | Provides override zero key value(ghost record) to the column |
 
 ---
+### Supported Load Strategies
+
+| Node Type | Supported Load Strategies |
+|-----------|---------------------------|
+| **Work** | Insert |
+| **Dimension** | Merge - Change Tracking (SCD1)<br/>Merge - Change Tracking (SCD2)<br/>Merge - Last Modified (SCD1)<br/>Merge - Last Modified (SCD2) |
+| **Persistent Stage** | Insert<br/>Merge - Change Tracking (SCD1)<br/>Merge - Change Tracking (SCD2)<br/>Merge - Last Modified (SCD1)<br/>Merge - Last Modified (SCD2) |
+| **Fact** | Insert<br/>Merge - Change Tracking (SCD1)<br/>Merge - Last Modified (SCD1) |
+| **Factless Fact** | Merge - Insert Only |
+| **View** | N/A |
+
+> **Note:** Load strategy is determined by the node type and selected configuration options. It is not a user-configurable setting.
+----
 
 #### Notes
 
@@ -84,11 +105,22 @@ The key differences between these nodes are outlined below.
 
     #### Examples:
     
-    Using macro:
+    Using macro(default-SHA1)
     ```sql
     <col_name> AS <col_name> @hashValue("GH_COL"),
     {{ get_hash('GH_COL') }}::STRING AS "GH_COL"
     ```
+    Using macro(MD5)
+    ```sql
+    <col_name> AS <col_name> @hashValue("GH_COL"),
+    {{ get_hash('GH_COL', 'MD5') }}::STRING AS "GH_COL"<SHA256
+    ```
+    Using macro(SHA256)
+    ```sql
+    <col_name> AS <col_name> @hashValue("GH_COL"),
+    {{ get_hash('GH_COL', 'SHA256') }}::STRING AS "GH_COL"
+    ```
+  
     Using explicit expression:
     ```sql
     CAST(
@@ -138,7 +170,7 @@ Keywords like `DISTINCT`, `UNION`, and `UNION ALL` are fully supported when used
 
 ####  SQL Node Initial Deployment
 
-When deployed for the first time into an environment the SQL Node Node of materialization type table will execute the below stage:
+When deployed for the first time into an environment the SQL Node of materialization type table will execute the below stage:
 
 | **Stage** | **Description** |
 |-----------|----------------|
@@ -146,7 +178,7 @@ When deployed for the first time into an environment the SQL Node Node of materi
 
 ####  SQL Node Redeployment
 
-After the SQL Node Node with materialization type table has been deployed for the first time into a target environment, subsequent deployments may result in either altering the  SQL Table or recreating the  SQL table.
+After the SQL Node with materialization type table has been deployed for the first time into a target environment, subsequent deployments may result in either altering the  SQL Table or recreating the  SQL table.
 
 #### Altering the SQL Node Tables
 
@@ -192,7 +224,7 @@ Any of the following changes to views will result in deleting and recreating the
 
 ###  SQL Node Undeployment
 
-If a  SQL Node Node of materialization type table is deleted from a Workspace, that Workspace is committed to Git and that commit deployed to a higher level environment then the WorkTable in the target environment will be dropped.
+If a  SQL Node of materialization type table is deleted from a Workspace, that Workspace is committed to Git and that commit deployed to a higher level environment then the WorkTable in the target environment will be dropped.
 
 This is executed in two stages:
 
@@ -204,63 +236,18 @@ This is executed in two stages:
 
 ### Usage Examples 
 
-The following patterns represent common ways to use the SQL Node Node.<br/>
+The following patterns represent common ways to use the SQL Node.<br/>
 
-- **Sample Work Node with Annotations** <br/>
-
+**Sample node with Annotations**
 ```sql
-
-@truncateBefore(true)
-@selectDistinct(true)
-@preSQL("select count(*) from {{ this }}")
-@postSQL("select count(*) from {{ this }}")
-@preContinueOnFailure(true)
-@preTests("select count(*) from {{ this }}")
-@postContinueOnFailure(true)
-@postTests("select count(*) from {{ this }}")
-
-SELECT
-     "N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_COL"),
-     "N_NAME" AS "N_NAME",
-     "N_REGIONKEY" AS "N_REGIONKEY",
-     "N_COMMENT" AS "N_COMMENT",
-     "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
-     {{ get_hash('GH_COL') }}::STRING AS "GH_COL"
-FROM {{ ref('SRC', 'NATION') }} "NATION"
-
-```
-- **Sample Fact Node - Change Tracking - SCD1 with Annotations** <br/>
-```sql
-
-@truncateBefore(true)
-@selectDistinct(true)
-
-SELECT
-     "N_NATIONKEY" AS "N_NATIONKEY" @hashValue("GH_COL"),
-     "N_NAME" AS "N_NAME",
-     "N_REGIONKEY" AS "N_REGIONKEY" @nullable("false") @description("region key") @defaultValue("100") @tests("null", "unique"),
-     "N_COMMENT" AS "N_COMMENT",
-     "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
-     {{ get_hash('GH_COL') }}::STRING AS "GH_COL",
-    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE",
-    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE"
-FROM {{ ref('SRC', 'NATION') }} "NATION"
-
-```
-- **Sample Dim Node - Change Tracking - SCD2 with Annotations** <br/>
-```sql
-
-@truncateBefore(true)
-@selectDistinct(true)
-@testsEnabled(true)
 
 SELECT
     0 AS "MRG_ALL_ANNOT_KEY" @zeroKey(0),
-     NATION."N_NATIONKEY" AS "N_NATIONKEY" @hashValue("GH_COL"),
-     NATION."N_NAME" AS "N_NAME",
-     NATION."N_REGIONKEY" AS "N_REGIONKEY" @nullable("false") @description("region key") @defaultValue("100") @tests("null", "unique"),
-     NATION."N_COMMENT" AS "N_COMMENT" @zeroKey("NA"),
-     NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
+     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @hashValue("GH_COL"),
+     NATION."N_NAME" AS "N_NAME" @defaultValue("NA"),
+     NATION."N_REGIONKEY" AS "N_REGIONKEY" @description("region key"),
+     NATION."N_COMMENT" AS "N_COMMENT" @hashValue("GH_COL"),
+     NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" @tests("null", "unique"),
      {{ get_hash('GH_COL') }}::STRING AS "GH_COL",
     "SYSTEM_CURRENT_FLAG"::VARCHAR AS "SYSTEM_CURRENT_FLAG",
     "SYSTEM_VERSION"::NUMBER AS "SYSTEM_VERSION",
@@ -268,54 +255,8 @@ SELECT
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE",
     CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE"
 FROM {{ ref('SRC', 'NATION') }} "NATION"
-
 ```
-- **Sample Persistent Node - Last Modified - SCD1 with Annotations** <br/>
-```sql
-
-@truncateBefore(true)
-@groupByAll(true)
-@lookBackDays("10")
-@testsEnabled(true)
-
-SELECT
-     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_COL"),
-     NATION."N_NAME" AS "N_NAME",
-     NATION."N_REGIONKEY" AS "N_REGIONKEY",
-     NATION."N_COMMENT" AS "N_COMMENT",
-     NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
-     {{ get_hash('GH_COL') }}::STRING AS "GH_COL",
-    "SYSTEM_CURRENT_FLAG"::VARCHAR AS "SYSTEM_CURRENT_FLAG",
-    "SYSTEM_VERSION"::NUMBER AS "SYSTEM_VERSION",
-    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE",
-    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE",
-    CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE"
-FROM {{ ref('SRC', 'NATION') }} "NATION"
-
-```
-- **Sample Persistent Node - Last Modified - SCD2 with Annotations** <br/>
-```sql
-
-@type2Dimension(true)
-
-SELECT
-    0 AS "MRG_ALL_ANNOT_KEY" @zeroKey(0),
-     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @description("nation key") @defaultValue("100") @tests("null", "unique") @hashValue("GH_COL"),
-     NATION."N_NAME" AS "N_NAME",
-     NATION."N_REGIONKEY" AS "N_REGIONKEY",
-     NATION."N_COMMENT" AS "N_COMMENT",
-     NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
-     {{ get_hash('GH_COL') }}::STRING AS "GH_COL",
-    "SYSTEM_CURRENT_FLAG"::VARCHAR AS "SYSTEM_CURRENT_FLAG",
-    "SYSTEM_VERSION"::NUMBER AS "SYSTEM_VERSION",
-    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE",
-    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE",
-    CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE"
-FROM {{ ref('SRC', 'NATION') }} "NATION"
-
-------
-
-- **Basic Transformation & Cleaning** <br/>
+**Basic Transformation & Cleaning**
 Standard pattern for renaming columns and handling nulls.
 
 ```sql
