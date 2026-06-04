@@ -173,17 +173,10 @@ macroString: |-
                        node-level and column-level data quality tests.
                        No output is generated if tests are disabled.
   ========================================================================= #}
-  {%- macro run_tests() -%}
+  {%- macro run_tests(runOrder) -%}
 
       {%- if config.testsEnabled -%}
-          {%- if runOrder == 'Before' -%}
-              {%- if config.preTests | trim | length > 0 -%}
-                  {%- set continueOnFailure = config.preContinueOnFailure | default(false) -%}
-                  {{ test_stage(node.name + ': Pre-Load Test ', continueOnFailure) }}
-                  {{ config.preTests }}
-              {%- endif -%}
-
-          {%- elif runOrder == 'After' -%}
+          {%- if runOrder == 'After' -%}
               {%- for column in columns -%}
                   {%- if column.tests is mapping and column.tests.parameters is defined -%}
                       {%- for test in column.tests.parameters -%}
@@ -200,13 +193,24 @@ macroString: |-
                       {%- endfor -%}
                   {%- endif -%}
               {%- endfor -%}
-
-              {%- if config.postTests | trim | length > 0 -%}
-                  {%- set continueOnFailure = config.postContinueOnFailure | default(false) -%}
-                  {{ test_stage(node.name + ': Post-Load Test ', continueOnFailure) }}
-                  {{ config.postTests }}
-              {%- endif -%}
           {%- endif -%}
+
+          {%- set ns = namespace(cnt=0) -%}
+
+          {%- for test in config.tests.get('items', []) -%}
+              {%- if test.runOrder == runOrder -%}
+                  {%- set ns.cnt = ns.cnt + 1 -%}
+
+                  {{ test_stage(
+                      ('Pre Load Test ' if runOrder == 'Before' else 'Post Load Test ') ~ ns.cnt,
+                      test.continueOnFailure
+                  ) }}
+
+                  {{ test.templateString }}
+
+              {%- endif -%}
+          {%- endfor -%}
+
       {%- endif -%}
   {%- endmacro -%}
 

@@ -174,31 +174,34 @@ metadata:
         displayName: ℹ️ Use @tests annotation on columns for column level tests
         enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
 
-      - type: toggleButton
-        attributeName: preContinueOnFailure
-        displayName: |
-          Pre-Test: Continue On Failure
-        default: false
-        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+      - type: tabular
+        displayName: 'ⓘ Test fails if the query returns any records'
+        attributeName: tests
+        columns:
 
-      - displayName: Pre-Test
-        attributeName: preTests
-        type: textBox
-        syntax: sql
-        isRequired: false
-        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+          -  displayName: Test
+             attributeName: templateString
+             type: textBox
+             syntax: sql
+             isRequired: false
+             enableIf: ""
 
-      - type: toggleButton
-        attributeName: postContinueOnFailure
-        displayName: |
-          Post-Test: Continue On Failure
-        default: false
-        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+          -  displayName: Run
+             attributeName: runOrder
+             type: dropdownSelector
+             default: After
+             isRequired: false
+             options:
+              - "Before"
+              - "After"
+             enableIf: ""
 
-      - displayName: Post-Test
-        attributeName: postTests
-        type: textBox
-        syntax: sql
+          -  type: toggleButton
+             attributeName: continueOnFailure
+             displayName: Continue On Failure
+             default: true
+             enableIf: ""
+
         isRequired: false
         enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
 
