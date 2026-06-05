@@ -34,15 +34,16 @@ The key differences between these nodes are outlined below.
 | **Truncate Before** | ✅ | ✅ | ✅ | ✅ | ✅ |  | **True**: Truncates target before load.<br/>**False**: Table is not truncated before data load. |
 | **Distinct** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **True**: Group By All is hidden and DISTINCT data is processed.<br/>**False**: Group By All is visible. |
 | **Group By All** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **True**: DISTINCT is hidden and data is grouped by all columns.<br/>**False**: DISTINCT is visible. |
+| **Order By** |  | ✅ | ✅ | ✅ |  |  | **True**: Sort column and sort order drop down are visible and are required to form order by clause<br/>**False**: Sort column and sort order drop down are invisible |
 | **Business Key** |  | ✅ | ✅ | ✅ |  |  | Required column for both SCD Type 1 and Type 2.<br/>**Note:** Geometry and Geography data type columns are not supported as business key columns. |
-| **Last Modified Based Incremental Load** |  | ✅ | ✅ | ✅ |  |  | **True**: When enabled we can do timestamp based/Integer based CDC<br/>**False**: Regular CDC based on Change tracking columns is done. |
+| **Last Modified Based Incremental Load**² |  | ✅ | ✅ | ✅ |  |  | **True**: When enabled we can do timestamp based/Integer based CDC<br/>**False**: Regular CDC based on Change tracking columns is done. |
 | **Lookback Days**¹ |  | ✅ | ✅ | ✅ |  |  | Specifies the number of days to look back from the last successful load when extracting incremental data |
 | **Last Modified Column**¹ |  | ✅ | ✅ | ✅ |  |  | Column used for incremental loading. Supported data types include NUMERIC and TIMESTAMP-related columns. |
 | **Enable SCD Type2**¹ |  | ✅ | ✅ | ✅ |  |  | **True**: SCD Type2 - CDC is based on timestamp/ID column chosen.<br/>**False**: SCD Type1 - CDC is based on timestamp/ID column chosen. |
 | **Change Tracking** |  | ✅ | ✅ |  |  |  | *Only when Last Modified Based Incremental Load is OFF*<br/>Required column/s for SCD Type 2 |
 
 - ¹ Enabled only if Last Modified Based Incremental Load is ON
-- For timestamp-based incremental loads, a *validation test checks* the selected Last Modified column for NULL values before the merge. If NULL values are detected, the merge is stopped; otherwise, processing continues.
+- ² For timestamp-based incremental loads, a *validation test checks* the selected Last Modified column for NULL values before the merge. If NULL values are detected, the merge is stopped; otherwise, processing continues.
 
 ### Zero Key Record Options
 
@@ -54,19 +55,22 @@ The key differences between these nodes are outlined below.
 | **Default Date/Time/Timestamp Value** |  | ✅ |  |  |  |  | Default value used for date, time, and timestamp columns in the zero key record. |
 | **Default Boolean Value** |  | ✅ |  |  |  |  | Default value used for boolean columns in the zero key record. |
 
-- Use the `@zeroKey` annotation on columns to provide a column-level override value.
 - ¹ Changing the surrogate key value after deployment is not recommended.
+- Use the `@zeroKey` annotation on columns to provide a column-level override value.
 
 ### Control Options
 
 | Options | Work | Dimension | Persistent Stage | Fact | Factless Fact | View | Description |
 |----------|------|-----------|------------------|------|---------------|------|-------------|
-| **Enable tests** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Toggle: *Use `@tests` annotation on columns for column level tests*<br/>True or False<br/>Determines if tests are enabled |
-| **Test** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | SQL query executed as a validation test. The test fails if the query returns any records. |
-| **Run** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines when the test is executed.<br/>**Before** - Run before the load operation.<br/>**After** - Run after the load operation. |
-| **Continue On Failure** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines whether execution should continue if the test fails.<br/>**True** - Continue execution.<br/>**False** - Stop execution. |
+| **Enable tests** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines if tests are enabled |
+| **Test**¹ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | SQL query executed as a validation test. The test fails if the query returns any records. |
+| **Run**¹ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines when the test is executed.<br/>**Before** - Run before the load operation.<br/>**After** - Run after the load operation. |
+| **Continue On Failure**¹ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines whether execution should continue if the test fails.<br/>**True** - Continue execution.<br/>**False** - Stop execution. |
 | **Pre-SQL** | ✅ | ✅ | ✅ | ✅ | ✅ |  | SQL to execute before data insert operation |
 | **Post-SQL** | ✅ | ✅ | ✅ | ✅ | ✅ |  | SQL to execute after data insert operation |
+
+- ¹ Enabled only if Enable tests is ON
+- Use `@tests` annotation on columns for column level tests
 
 ---
 
@@ -105,22 +109,35 @@ The key differences between these nodes are outlined below.
 
     #### Examples:
     
-    Using macro(default-SHA1)
+    Using hash macro(default-SHA1)
     ```sql
     <col_name> AS <col_name> @hashValue("GH_COL"),
     {{ get_hash('GH_COL') }}::STRING AS "GH_COL"
     ```
-    Using macro(MD5)
+    Using hash macro(MD5)
     ```sql
     <col_name> AS <col_name> @hashValue("GH_COL"),
     {{ get_hash('GH_COL', 'MD5') }}::STRING AS "GH_COL"<SHA256
     ```
-    Using macro(SHA256)
+    Using hash macro(SHA256)
     ```sql
     <col_name> AS <col_name> @hashValue("GH_COL"),
     {{ get_hash('GH_COL', 'SHA256') }}::STRING AS "GH_COL"
     ```
-  
+    Using multiple keys hash macro
+    ```sql
+    <col_name1> AS <col_name1> @hashValue("GH_COL"),
+    <col_name2> AS <col_name2> @hashValue("GH_COL"),
+    {{ get_hash('GH_COL') }}::STRING AS "GH_COL_COMBINED"
+    ```
+    Using multiple hash macros
+    ```sql
+    <col_name1> AS <col_name1> @hashValue("GH_COL1", "GH_COL2"),
+    <col_name2> AS <col_name2> @hashValue("GH_COL1"),
+    <col_name3> AS <col_name3> @hashValue("GH_COL2"),
+    {{ get_hash('GH_COL1') }}::STRING AS "GH_COL_COMBINED1",
+    {{ get_hash('GH_COL2') }}::STRING AS "GH_COL_COMBINED2"
+    ```
     Using explicit expression:
     ```sql
     CAST(
