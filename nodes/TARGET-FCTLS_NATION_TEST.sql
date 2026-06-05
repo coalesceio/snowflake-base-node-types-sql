@@ -1,0 +1,15 @@
+@id("f3ada1ed-a879-4b9c-8119-7076de0d3ec5")
+@nodeType("661")
+@truncateBefore(true)
+@orderby(true)
+@orderbycolumn("[object Object]", "desc")
+@groupByAll(true)
+SELECT
+     "N_NATIONKEY" AS "N_NATIONKEY",
+     "N_NAME" AS "N_NAME",
+     "N_REGIONKEY" AS "N_REGIONKEY",
+     "N_COMMENT" AS "N_COMMENT",
+     "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE",
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE"
+FROM {{ ref('SRC', 'NATION_TEST') }} "NATION_TEST"

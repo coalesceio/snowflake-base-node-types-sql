@@ -46,6 +46,7 @@ does not permit copying or modification for any other purpose.
 
         {{ sources[0].join }}
         {% if config.groupByAll %} GROUP BY ALL {% endif %}
+        {{ sortorder_by_colv() }}
     )
 
     {# --- Post-SQL --- #}
