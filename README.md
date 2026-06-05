@@ -341,32 +341,54 @@ CURRENT_TIMESTAMP() AS refreshed_at,
 FROM first_orders f;
 ```
 
-* Using Recursive CTE
+**Using Recursive CTE - Date Series**
 ```sql
-WITH RECURSIVE date_series AS (
-    SELECT 
-        MIN(O_ORDERDATE) AS report_date
-    FROM {{ ref('SRC','ORDERS') }}
+WITH RECURSIVE RCTE_FNL AS (
+    SELECT TO_DATE('2025-01-01') AS "date_s"
+    UNION ALL
+    SELECT DATEADD(day, 1, "date_s") AS "date_s"
+    FROM RCTE_FNL
+    where "date_s" < TO_DATE('2025-01-10')
+  )
+SELECT "date_s"
+FROM RCTE_FNL
+
+```
+**Using Recursive CTE - Classic Employee**
+
+```sql
+WITH RECURSIVE RCTE_FINAL AS (
+
+    -- Anchor clause: top-level employees (no manager)
+    SELECT
+        "EMPLOYEES_RECUR"."EMPLOYEE_ID"  AS "EMPLOYEE_ID",
+        1                                AS "LEVEL",
+        "EMPLOYEES_RECUR"."TITLE"        AS "TITLE",
+        "EMPLOYEES_RECUR"."MANAGER_ID"   AS "MANAGER_ID"
+    FROM {{ ref('SRC', 'EMPLOYEES_RECUR') }} AS "EMPLOYEES_RECUR"
+    WHERE "EMPLOYEES_RECUR"."MANAGER_ID" IS NULL
 
     UNION ALL
 
-    SELECT 
-        DATEADD(day, 1, report_date)
-    FROM date_series
-    WHERE report_date < (SELECT DATEADD(day, 10, MIN(O_ORDERDATE)) FROM {{ ref('SRC','ORDERS') }} )
+    -- Recursive clause: employees reporting to someone in the CTE
+    SELECT
+        "EMPLOYEES_RECUR"."EMPLOYEE_ID"  AS "EMPLOYEE_ID",
+        "RCTE_FINAL"."LEVEL" + 1         AS "LEVEL",
+        "EMPLOYEES_RECUR"."TITLE"        AS "TITLE",
+        "EMPLOYEES_RECUR"."MANAGER_ID"   AS "MANAGER_ID"
+    FROM {{ ref('SRC', 'EMPLOYEES_RECUR') }} AS "EMPLOYEES_RECUR"
+    JOIN RCTE_FINAL
+        ON "EMPLOYEES_RECUR"."MANAGER_ID" = "RCTE_FINAL"."EMPLOYEE_ID"
+
 )
 
-SELECT 
-    ds.report_date,
-    COUNT(o.O_ORDERKEY) AS total_orders,
-    SUM(o.O_TOTALPRICE) AS daily_revenue
-FROM date_series ds
-LEFT JOIN {{ ref('SRC','ORDERS') }} o 
-    ON ds.report_date = o.O_ORDERDATE
-GROUP BY 1
-ORDER BY 1
+SELECT
+    "LEVEL"          AS "LEVEL",
+    "TITLE"::VARCHAR AS "TITLE"
+FROM RCTE_FINAL
 ```
-* Using CTE for multisource combine
+
+**Using CTE for multisource combine**
 ```sql
 WITH ALL_NATIONS AS (
 
@@ -381,22 +403,6 @@ WITH ALL_NATIONS AS (
 )
 
 SELECT * FROM ALL_NATIONS
-```
-
-```sql
-WITH ALL_NATIONS AS (
-
-    SELECT N_NATIONKEY, N_NAME, N_REGIONKEY, N_COMMENT, N_LOAD_TIMESTAMP
-    FROM {{ ref('SRC', 'NATION_COPY1') }}
-
-    UNION ALL
-
-    SELECT N_NATIONKEY, N_NAME, N_REGIONKEY, N_COMMENT, N_LOAD_TIMESTAMP
-    FROM {{ ref('SRC', 'NATION_COPY2') }}
-
-)
-
-SELECT * FROM ALL_NATIONS "NATIONS"
 ```
 
 ### Supported SQL Functionality
