@@ -309,11 +309,10 @@ macroString: |-
           - A SHA1 hash of concatenated column values  
           - Returns `NULL` if no columns are mapped to the given hash group
   ====================================================================================================#}
-  {%- macro get_hash(hash_name, algo='SHA1') -%}
+  {%- macro get_hash(hash_name, algo='SHA1', delimiter='||', datatype='CHAR(32)') -%}
 
       {%- set cols = namespace(name=[]) -%}
       {%- set algo_upper = algo | upper -%}
-      {%- set delimiter = "'||'" -%}
 
       {# collect columns #}
       {%- for col in sources[0].columns -%}
@@ -338,15 +337,13 @@ macroString: |-
           {%- endif -%}
 
           CAST(
-              {{ algo_start }}
-                  {%- for c in cols.name -%}
-                      {%- if not loop.first -%}
-                          || {{ delimiter }} ||
-                      {%- endif -%}
-                      NVL(CAST({{ c }} AS VARCHAR), 'null')
-                  {%- endfor -%}
-              {{ algo_end }}
-          AS STRING)
+                {{ algo_start }}
+                    {%- for c in cols.name -%}
+                        NVL(CAST({{ c }} AS VARCHAR), 'null')
+                        {%- if not loop.last %} || {% if delimiter != '' %} '{{ delimiter }}' || {% endif -%} {% endif -%}
+                    {%- endfor -%}
+                {{ algo_end }}
+            AS STRING)
 
       {%- endif -%}
 

@@ -436,7 +436,7 @@ does not permit copying or modification for any other purpose.
     {{ stage('Load ' + node.materializationType + ' Using Insert') }}
     INSERT INTO {{ ref_no_link(node.location.name, node.name) }}
     (
-        {%- for col in sources[0].columns %}
+        {%- for col in sources[0].columns if not col.isSurrogateKey %}
             "{{ col.name }}"
             {%- if not loop.last -%},{%- endif %}
         {%- endfor %}
@@ -444,7 +444,7 @@ does not permit copying or modification for any other purpose.
     {{ sources[0].cteString }}
     (
         SELECT {%- if config.selectDistinct %} DISTINCT {%- endif %}
-        {%- for col in sources[0].columns %}
+        {%- for col in sources[0].columns if not col.isSurrogateKey %}
             {{ get_source_transform(col) }} AS "{{ col.name }}"
             {%- if not loop.last -%}, {%- endif %}
         {%- endfor %}

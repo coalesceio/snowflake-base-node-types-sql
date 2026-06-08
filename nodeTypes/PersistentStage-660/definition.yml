@@ -28,8 +28,7 @@ metadata:
         attributeName: lastModifiedCompToggle
         displayName: Last Modified Based Incremental Load
         default: false
-        enableIf: "{% if node.materializationType != 'view'
-                    and (columns 
+        enableIf: "{% if (columns 
                         | selectattr('isBusinessKey')
                         | list
                         | length > 0) %} true {% else %} false {% endif %}"
@@ -42,7 +41,6 @@ metadata:
                         | selectattr('isBusinessKey')
                         | list
                         | length > 0)
-                    and node.materializationType != 'view'
                     and not (
                       ((config.lastModifiedColumn).dataType | upper).startswith('TIME')
                       or 'INT' in ((config.lastModifiedColumn).dataType | upper)
@@ -56,8 +54,7 @@ metadata:
         attributeName: lastModifiedColumn
         displayName: |
           Last Modified Column [ℹ️Datatype: NUMERIC or TIMESTAMP related]
-        enableIf: "{% if node.materializationType != 'view' 
-                    and config.lastModifiedCompToggle
+        enableIf: "{% if config.lastModifiedCompToggle
                     and (columns 
                         | selectattr('isBusinessKey')
                         | list
@@ -73,15 +70,13 @@ metadata:
                         | list
                         | length > 0)
                     and not config.type2Dimension
-                    and node.materializationType != 'view'
                     and (((config.lastModifiedColumn).dataType | upper).startswith('TIME')) %} true {% else %} false {% endif %}"
 
       - type: toggleButton
         attributeName: type2Dimension
         displayName: Enable SCD Type2
         default: false
-        enableIf: "{% if node.materializationType != 'view' 
-                    and config.lastModifiedCompToggle
+        enableIf: "{% if config.lastModifiedCompToggle
                     and (columns 
                         | selectattr('isBusinessKey')
                         | list
@@ -89,8 +84,7 @@ metadata:
 
       - type: changeTrackingColumns
         isRequired: false
-        enableIf: "{% if node.materializationType != 'view'
-                    and not(config.lastModifiedCompToggle)
+        enableIf: "{% if not(config.lastModifiedCompToggle)
                     and (columns 
                         | selectattr('isBusinessKey')
                         | list
