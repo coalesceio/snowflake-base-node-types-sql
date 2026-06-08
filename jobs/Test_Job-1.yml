@@ -1,6 +1,6 @@
 excludeSelector: ""
 fileVersion: 1
 id: "1"
-includeSelector: "{ location: \"SRC\" name: \"NATION_TEST\" } OR { location: \"TARGET\" name: \"MRG_NATION_TEST\" } OR { location: \"TARGET\" name: \"DIM_NATION_TEST\" }"
+includeSelector: "{ location: \"SRC\" name: \"NATION_TEST\" } OR { location: \"TARGET\" name: \"MRG_NATION_TEST\" } OR { location: \"TARGET\" name: \"DIM_NATION_TEST\" } OR { location: \"TARGET\" name: \"DIM_ALL_DATATYPES_DEMO\" } OR { location: \"TARGET\" name: \"DIM_NATION_TEST_CT_SCD1\" } OR { location: \"TARGET\" name: \"DIM_NATION_TEST_CT_SCD2\" } OR { location: \"TARGET\" name: \"DIM_NATION_TEST_LM_SCD1\" } OR { location: \"TARGET\" name: \"DIM_NATION_TEST_LM_SCD2\" } OR { location: \"TARGET\" name: \"FCT_ALL_DATATYPES_DEMO\" } OR { location: \"TARGET\" name: \"FCT_NATION_TEST_CT\" } OR { location: \"TARGET\" name: \"FCT_NATION_TEST_INSERT\" } OR { location: \"TARGET\" name: \"FCT_NATION_TEST_LM\" } OR { location: \"TARGET\" name: \"FCT_NATION_TEST\" } OR { location: \"TARGET\" name: \"PSTG_NATION_TEST_CT_SCD1\" } OR { location: \"TARGET\" name: \"PSTG_NATION_TEST_CT_SCD2\" } OR { location: \"TARGET\" name: \"PSTG_NATION_TEST_INSERT\" } OR { location: \"TARGET\" name: \"PSTG_NATION_TEST_LM_SCD1\" } OR { location: \"TARGET\" name: \"PSTG_NATION_TEST_LM_SCD2\" } OR { location: \"SRC\" name: \"ALL_DATATYPES_DEMO\" } OR { location: \"TARGET\" name: \"V_NATION_TEST\" } OR { location: \"TARGET\" name: \"WRK_NATION_TEST_V2\" }"
 name: Test_Job
 type: Job
