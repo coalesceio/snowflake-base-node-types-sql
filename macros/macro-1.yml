@@ -313,6 +313,7 @@ macroString: |-
 
       {%- set cols = namespace(name=[]) -%}
       {%- set algo_upper = algo | upper -%}
+      {%- set delimiter = "'||'" -%}
 
       {# collect columns #}
       {%- for col in sources[0].columns -%}
@@ -339,7 +340,9 @@ macroString: |-
           CAST(
               {{ algo_start }}
                   {%- for c in cols.name -%}
-                      {%- if not loop.first -%} || {%- endif -%}
+                      {%- if not loop.first -%}
+                          || {{ delimiter }} ||
+                      {%- endif -%}
                       NVL(CAST({{ c }} AS VARCHAR), 'null')
                   {%- endfor -%}
               {{ algo_end }}
@@ -387,7 +390,10 @@ macroString: |-
          STEP 2: Config-level zeroKey (match datatype)
       -------------------------------- #}
       {%- else -%}
-          {%- if col.dataType[:3] | upper in ('VAR', 'CHA', 'STR') -%}
+          {%- if col.dataType | upper == 'VARIANT' -%}
+              {%- set ns.zk_type = 'variant' -%}
+              {%- set ns.zk_value = none -%}
+          {%- elif col.dataType[:3] | upper in ('VAR', 'CHA', 'STR') -%}
               {%- set ns.zk_type = 'string' -%}
               {%- set ns.zk_value = config.insertZeroKeyStr -%}
           {%- elif col.dataType | upper == 'BOOLEAN' -%}
@@ -404,6 +410,8 @@ macroString: |-
       -------------------------------- #}
       {%- if col.dataType[:3] | upper in ('NUM',' INT', 'DEC', 'FLO') -%}
           0
+      {%- elif ns.zk_type == 'variant' -%}
+          PARSE_JSON('null')
       {%- elif ns.zk_value is not none -%}
           {%- if ns.zk_type == 'boolean' -%}
               {{ ns.zk_value | upper }}
