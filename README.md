@@ -34,45 +34,34 @@ The key differences between these nodes are outlined below.
 | **Truncate Before** | ✅ | ✅ | ✅ | ✅ | ✅ |  | **True**: Truncates target before load.<br/>**False**: Table is not truncated before data load. |
 | **Distinct** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **True**: Group By All is hidden and DISTINCT data is processed.<br/>**False**: Group By All is visible. |
 | **Group By All** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **True**: DISTINCT is hidden and data is grouped by all columns.<br/>**False**: DISTINCT is visible. |
-| **Order By** |  | ✅ | ✅ | ✅ |  |  | **True**: Sort column and sort order drop down are visible and are required to form order by clause<br/>**False**: Sort column and sort order drop down are invisible |
+| **Order By** | ✅ | ✅ | ✅ | ✅ | ✅ |  | **True**: Sort column and sort order drop down are visible and are required to form order by clause<br/>**False**: Sort column and sort order drop down are invisible |
 | **Business Key** |  | ✅ | ✅ | ✅ |  |  | Required column for both SCD Type 1 and Type 2.<br/>**Note:** Geometry and Geography data type columns are not supported as business key columns. |
 | **Last Modified Based Incremental Load**² |  | ✅ | ✅ | ✅ |  |  | **True**: When enabled we can do timestamp based/Integer based CDC<br/>**False**: Regular CDC based on Change tracking columns is done. |
 | **Lookback Days**¹ |  | ✅ | ✅ | ✅ |  |  | Specifies the number of days to look back from the last successful load when extracting incremental data |
 | **Last Modified Column**¹ |  | ✅ | ✅ | ✅ |  |  | Column used for incremental loading. Supported data types include NUMERIC and TIMESTAMP-related columns. |
-| **Enable SCD Type2**¹ |  | ✅ | ✅ | ✅ |  |  | **True**: SCD Type2 - CDC is based on timestamp/ID column chosen.<br/>**False**: SCD Type1 - CDC is based on timestamp/ID column chosen. |
+| **Enable SCD Type2**¹ |  | ✅ | ✅ |  |  |  | **True**: SCD Type2 - CDC is based on timestamp/ID column chosen.<br/>**False**: SCD Type1 - CDC is based on timestamp/ID column chosen. |
 | **Change Tracking** |  | ✅ | ✅ |  |  |  | *Only when Last Modified Based Incremental Load is OFF*<br/>Required column/s for SCD Type 2 |
-
-- ¹ Enabled only if Last Modified Based Incremental Load is ON
-- ² For timestamp-based incremental loads, a *validation test checks* the selected Last Modified column for NULL values before the merge. If NULL values are detected, the merge is stopped; otherwise, processing continues.
 
 ### Zero Key Record Options
 
 | Option | Work | Dimension | Persistent Stage | Fact | Factless Fact | View | Description |
 |----------|------|-----------|------------------|------|---------------|------|-------------|
 | **Insert Zero Key Record** |  | ✅ |  |  |  |  | Enables insertion of a zero key (ghost) record. |
-| **Default Surrogate Key Value**¹ |  | ✅ |  |  |  |  | Default surrogate key value used for the zero key record. |
+| **Default Surrogate Key Value**³ |  | ✅ |  |  |  |  | Default surrogate key value used for the zero key record. |
 | **Default String Value** |  | ✅ |  |  |  |  | Default value used for string columns in the zero key record. |
 | **Default Date/Time/Timestamp Value** |  | ✅ |  |  |  |  | Default value used for date, time, and timestamp columns in the zero key record. |
 | **Default Boolean Value** |  | ✅ |  |  |  |  | Default value used for boolean columns in the zero key record. |
-
-- ¹ Changing the surrogate key value after deployment is not recommended.
-- Use the `@zeroKey` annotation on columns to provide a column-level override value.
 
 ### Control Options
 
 | Options | Work | Dimension | Persistent Stage | Fact | Factless Fact | View | Description |
 |----------|------|-----------|------------------|------|---------------|------|-------------|
 | **Enable tests** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines if tests are enabled |
-| **Test**¹ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | SQL query executed as a validation test. The test fails if the query returns any records. |
-| **Run**¹ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines when the test is executed.<br/>**Before** - Run before the load operation.<br/>**After** - Run after the load operation. |
-| **Continue On Failure**¹ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines whether execution should continue if the test fails.<br/>**True** - Continue execution.<br/>**False** - Stop execution. |
+| **Test**⁴ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | SQL query executed as a validation test. The test fails if the query returns any records. |
+| **Run**⁴ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines when the test is executed.<br/>**Before** - Run before the load operation.<br/>**After** - Run after the load operation. |
+| **Continue On Failure**⁴ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines whether execution should continue if the test fails.<br/>**True** - Continue execution.<br/>**False** - Stop execution. |
 | **Pre-SQL** | ✅ | ✅ | ✅ | ✅ | ✅ |  | SQL to execute before data insert operation |
 | **Post-SQL** | ✅ | ✅ | ✅ | ✅ | ✅ |  | SQL to execute after data insert operation |
-
-- ¹ Enabled only if Enable tests is ON
-- Use `@tests` annotation on columns for column level tests
-
----
 
 ### Column-Level Annotations
 
@@ -82,29 +71,27 @@ The key differences between these nodes are outlined below.
 | `@description("<text>")` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Adds column description |
 | `@defaultValue("<text>")`<br/>`@defaultValue(<number>)`<br/>`@defaultValue(<bool>)` | ✅ | ✅ | ✅ | ✅ | ✅ |  | Adds default value |
 | `@tests("null", "unique")` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Column tests are more restrictive and apply directly to individual columns.<br/><br/>**Supported Tests**<br/>- **null** → Checks for NULL values<br/>- **unique** → Checks to ensure all values are unique |
-| `@hashValue("<hash_col_name>")` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Generates a hash key by combining and hashing the values of columns associated with a given hash group, ensuring consistent change detection and key generation.<br/>**Default:** Uses `SHA1` hashing. |
+| `@hashValue("<hash_name>")` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Generates a hash key by combining and hashing the values of columns associated with a given hash group, ensuring consistent change detection and key generation.<br/>**Default:** Uses `SHA1` hashing. |
 | `@zeroKey("<text>")`<br/>`@zeroKey(<number>)`<br/>`@zeroKey(<bool>)`<br/>`@zeroKey(<timestamp>)` |  | ✅ |  |  |  |  | Provides override zero key value(ghost record) to the column |
 
 ---
-### Supported Load Strategies
-
-| Node Type | Supported Load Strategies |
-|-----------|---------------------------|
-| **Work** | Insert |
-| **Dimension** | Merge - Change Tracking (SCD1)<br/>Merge - Change Tracking (SCD2)<br/>Merge - Last Modified (SCD1)<br/>Merge - Last Modified (SCD2) |
-| **Persistent Stage** | Insert<br/>Merge - Change Tracking (SCD1)<br/>Merge - Change Tracking (SCD2)<br/>Merge - Last Modified (SCD1)<br/>Merge - Last Modified (SCD2) |
-| **Fact** | Insert<br/>Merge - Change Tracking (SCD1)<br/>Merge - Last Modified (SCD1) |
-| **Factless Fact** | Merge - Insert Only |
-| **View** | N/A |
-
-> **Note:** Load strategy is determined by the node type and selected configuration options. It is not a user-configurable setting.
-----
 
 #### Notes
 
+- ¹ Enabled only if Last Modified Based Incremental Load is ON
+- ² For timestamp-based incremental loads, a *validation test checks* the selected Last Modified column for NULL values before the merge. If NULL values are detected, the merge is stopped; otherwise, processing continues.
+- ³ Changing the surrogate key value after deployment is not recommended.
+- ⁴ Enabled only if Enable tests is ON
+- Some dependent options may **remain visible** in the SQL Editor regardless of the selected parent configuration. **This does not impact execution**. The generated SQL always follows the **parent setting**, and any non-applicable options are ignored.
+- Verify that all **column datatypes** are successfully resolved before creating the object. Columns with an `UNKNOWN` datatype may cause stage generation or runtime failures.
+- If a **Dim and PStage node** is renamed, ensure that the surrogate key column is also renamed to follow the `{{NODE_NAME}}_KEY` naming convention. Failure to do so may result in the surrogate key attribute being lost, which can impact the expected behavior of the flow.
 - `@nullable` defaults to **true**. Use `@nullable("false")` to enforce NOT NULL.
 - **Column-level** `@zeroKey` takes precedence over **node-level** configuration. If `@zeroKey` is not defined at the column level, the node-level `@zeroKey` configuration is applied based on the column data type else `NULL` is applied by default.
 - Once the surrogate-zero key value is defined, it is **not advisable** to change it in future deployments or redeployments. Modifying the surrogate-zero key can lead to unintended behavior, such as new records being inserted instead of updating existing ones, causing data inconsistencies.
+- In cases where joins are used within run template logic (such as Last Modified logic in SCD1/SCD2 or Change Tracking in SCD2), explicit table aliases must be defined before running the node.<br/>While the Create step may succeed, the job execution can fail if aliases are not properly specified in the MERGE conditions.<br/>Use fully qualified column references in the MERGE source like below, to avoid ambiguity in joins and conditions.<br/>
+  ```sql
+  NATION_TEST."N_NATIONKEY" AS "N_NATIONKEY"
+  ```
 - The hash transformation can be defined either using the reusable macro or by writing the full hash expression explicitly. Both approaches are supported and will produce the same result. Choose the macro approach for better reusability and cleaner code, or use the explicit expression when custom logic is required.
 
     #### Examples:
@@ -123,6 +110,11 @@ The key differences between these nodes are outlined below.
     ```sql
     <col_name> AS <col_name> @hashValue("GH_COL"),
     {{ get_hash('GH_COL', 'SHA256') }}::STRING AS "GH_COL"
+    ```
+    Using hash macro(algo=SHA256, delimeter='~' )
+    ```sql
+    <col_name> AS <col_name> @hashValue("GH_COL"),
+    {{ get_hash('GH_COL', 'SHA256', '~') }}::STRING AS "GH_COL"
     ```
     Using multiple keys hash macro
     ```sql
@@ -148,6 +140,20 @@ The key differences between these nodes are outlined below.
     ```
 ---
 
+### Supported Load Strategies
+
+| Node Type | Supported Load Strategies |
+|-----------|---------------------------|
+| **Work** | Insert |
+| **Dimension** | Merge - Change Tracking (SCD1)<br/>Merge - Change Tracking (SCD2)<br/>Merge - Last Modified (SCD1)<br/>Merge - Last Modified (SCD2) |
+| **Persistent Stage** | Insert<br/>Merge - Change Tracking (SCD1)<br/>Merge - Change Tracking (SCD2)<br/>Merge - Last Modified (SCD1)<br/>Merge - Last Modified (SCD2) |
+| **Fact** | Insert<br/>Merge - Change Tracking (SCD1)<br/>Merge - Last Modified (SCD1) |
+| **Factless Fact** | Merge - Insert Only |
+| **View** | N/A |
+
+> **Note:** Load strategy is determined by the node type and selected configuration options. It is not a user-configurable setting.
+----
+
 ## Standard System Columns
 
 | Column Name | Definition | Annotation |
@@ -158,15 +164,6 @@ The key differences between these nodes are outlined below.
 | SYSTEM_CREATE_DATE | CAST(CURRENT_TIMESTAMP AS TIMESTAMP) | @isSystemCreateDate |
 | SYSTEM_END_DATE | CAST('2999-12-31 00:00:00' AS TIMESTAMP) | @isSystemEndDate |
 | SYSTEM_UPDATE_DATE | CAST(CURRENT_TIMESTAMP AS TIMESTAMP) | @isSystemUpdateDate |
-
----
-
-### Notes
-
-- In cases where joins are used within run template logic (such as Last Modified logic in SCD1/SCD2 or Change Tracking in SCD2), explicit table aliases must be defined before running the node.<br/>While the Create step may succeed, the job execution can fail if aliases are not properly specified in the MERGE conditions.<br/><br/>Use fully qualified column references in the MERGE source like below, to avoid ambiguity in joins and conditions.<br/>
-  ```sql
-  NATION_TEST."N_NATIONKEY" AS "N_NATIONKEY"
-  ```
 
 ---
 
@@ -187,11 +184,15 @@ Keywords like `DISTINCT`, `UNION`, and `UNION ALL` are fully supported when used
 
 ####  SQL Node Initial Deployment
 
-When deployed for the first time into an environment the SQL Node of materialization type table will execute the below stage:
+When deployed for the first time into an environment the SQL Node of materialization type table/View will execute the below stage:
 
 | **Stage** | **Description** |
 |-----------|----------------|
-| **Create  SQL Node Table** | This will execute a CREATE OR REPLACE statement and create a table in the target environment |
+| **Create SQL Node Table** | This will execute a CREATE OR REPLACE statement and create a table in the target environment |
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Create SQL Node View** | This will execute a CREATE OR REPLACE statement and create a view in the target environment |
 
 ####  SQL Node Redeployment
 
@@ -215,22 +216,6 @@ The following stages are executed:
 | **Swap Cloned Table** | Upon successful completion of all updates, the clone replaces the main table ensuring that no data is lost |
 | **Delete Table** | Drops the internal table |
 
-
-#### Recreating the SQL Node Tables
-
-If any of the following changes are detected, then the table will be recreated using a CREATE OR REPLACE.
-
-* Join clause
-* Adding transformation
-* Changes in configuration like adding distinct, group by, or order by
-
-One of the following stages is executed:
-
-| **Stage** | **Description** |
-|-----------|----------------|
-| **Create Table** | Creates a new table |
-| **Replace Table** | Replaces an existing table|
-
 #### Recreating the SQL Node Views
 
 Any of the following changes to views will result in deleting and recreating the Dimension view.
@@ -239,15 +224,25 @@ Any of the following changes to views will result in deleting and recreating the
 * Adding table description
 * Renaming the view
 
-###  SQL Node Undeployment
-
-If a  SQL Node of materialization type table is deleted from a Workspace, that Workspace is committed to Git and that commit deployed to a higher level environment then the WorkTable in the target environment will be dropped.
-
 This is executed in two stages:
 
 | **Stage** | **Description** |
 |-----------|----------------|
+| **Drop View** | Existing view is dropped |
+| **Create View** | New view is created |
+
+###  SQL Node Undeployment
+
+If a  SQL Node of materialization type table is deleted from a Workspace, that Workspace is committed to Git and that commit deployed to a higher level environment then the WorkTable in the target environment will be dropped.
+
+| **Stage** | **Description** |
+|-----------|----------------|
 | **Delete Table** | Coalesce Internal table is dropped |
+| **Delete Table** | Existing is dropped |
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Drop View** | Existing view is dropped |
 
 -----------
 
