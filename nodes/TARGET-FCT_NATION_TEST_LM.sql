@@ -2,6 +2,7 @@
 @nodeType("659")
 @lastModifiedCompToggle(true)
 @lastModifiedColumn("[object Object]")
+@materializationType("view")
 SELECT
      NATION_TEST."N_NATIONKEY" AS "N_NATIONKEY",
      NATION_TEST."N_NAME" AS "N_NAME",
