@@ -1,5 +1,9 @@
 @id("4363ad8c-aa3e-46a7-9bfa-5192fb78fd67")
 @nodeType("664")
+@truncateBefore(true)
+@selectDistinct(true)
+@orderby(true)
+@orderbycolumn("[object Object]", "desc")
 SELECT
      NATION_TEST."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @hashValue("GH_COL"),
      NATION_TEST."N_NAME" AS "N_NAME" @defaultValue("NA")  @hashValue("GH_COL"),

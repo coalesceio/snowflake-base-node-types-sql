@@ -1,6 +1,6 @@
 excludeSelector: ""
 fileVersion: 1
 id: "1"
-includeSelector: "{ location: \"SRC\" name: \"NATION_TEST\" } OR { location: \"TARGET\" name: \"DIM_NATION_TEST_LM_SCD1\" }"
+includeSelector: "{ location: \"SRC\" name: \"NATION_TEST\" } OR  { location: \"TARGET\" name: \"WRK_NATION_TEST_V2\" }"
 name: Test_Job
 type: Job
