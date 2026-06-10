@@ -254,9 +254,9 @@ metadata:
           ➜ Checks NULL / UNIQUE values\n
         ━━━━━━━━━━━━━━━━━━━\n\n
         ℹ️ Hash Columns\n
-        ✦ @hashValue(\"<hash_col_name>\")\n
+        ✦ @hashValue(\"<hash_name>\")\n
           ➜ Generates hash key from columns\n
-          ➜ Use it along with macro {{ get_hash('<hash_col_name>') }}\n
+          ➜ Use it along with macro {{ get_hash('<hash_name>') }}\n
         ━━━━━━━━━━━━━━━━━━━\n\n
         ℹ️ Custom Zero Key Values\n
         ✦ @zeroKey(\"<text>\")\n

@@ -3,7 +3,7 @@
 @insertZeroKey(true)
 @lastModifiedCompToggle(true)
 @type2Dimension(true)
-@lastModifiedColumn("[object Object]")
+@insertZeroKeySurrogateKey("1")
 SELECT
      0 AS "DIM_NATION_TEST_LM_SCD2_KEY",
      NATION_TEST."N_NATIONKEY" AS "N_NATIONKEY" @nullable(false),
