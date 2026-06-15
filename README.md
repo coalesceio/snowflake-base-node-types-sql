@@ -92,6 +92,7 @@ The key differences between these nodes are outlined below.
   ```sql
   NATION_TEST."N_NATIONKEY" AS "N_NATIONKEY"
   ```
+- Hash values are generated based on the column order defined in the SQL Editor. Customizing the column order for hash generation is not supported at this time.
 - The hash transformation can be defined either using the reusable macro or by writing the full hash expression explicitly. Both approaches are supported and will produce the same result. Choose the macro approach for better reusability and cleaner code, or use the explicit expression when custom logic is required.
 
     #### Examples:
