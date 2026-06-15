@@ -470,5 +470,49 @@ macroString: |-
 
       {%- endif -%}
   {%- endmacro -%}
+
+  {# ========================================================================
+  Purpose:
+      Returns the SQL expression to be used for a column transformation.
+
+  Input:
+      col
+          - transform: Column transform expression.
+          - sourceColumns[0].node.name: Source table name.
+          - sourceColumns[0].column.name: Source column name.
+
+  Logic:
+      1. If transform is not empty and matches the source column name
+         (ignoring double quotes), return a fully qualified source
+         column reference:
+             "SOURCE_TABLE"."SOURCE_COLUMN"
+
+      2. If transform is not empty and does not match the source column
+         name, return the transform expression as-is.
+
+      3. If transform is empty, return NULL.
+
+  Examples:
+      transform = '"N_NAME"'      -> "NATION_TEST"."N_NAME"
+      transform = 'N_NAME'        -> "NATION_TEST"."N_NAME"
+      transform = 'UPPER(N_NAME)' -> UPPER(N_NAME)
+      transform = ''              -> NULL
+  ========================================================================#}
+  {%- macro get_source_transform(col) -%}
+      {%- set transform = col.transform | trim -%}
+      {%- if transform != '' -%}
+          {%- if col.sourceColumns
+                  and col.sourceColumns[0].node
+                  and transform | replace('"', '')
+                      == col.sourceColumns[0].column.name -%}
+
+                "{{ col.sourceColumns[0].node.name }}"."{{ col.sourceColumns[0].column.name }}"
+          {%- else -%}
+              {{ transform }}
+          {%- endif -%}
+      {%- else -%}
+          NULL
+      {%- endif -%}
+  {%- endmacro -%}
 name: macro
 type: Macro

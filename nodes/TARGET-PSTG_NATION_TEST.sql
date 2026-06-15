@@ -1,13 +1,11 @@
-@id("fccd78d3-0a38-4cc1-9987-83452459661f")
-@nodeType("663")
-@insertZeroKey(true)
+@id("362fee3f-8f84-424f-839c-230ced0fa396")
+@nodeType("660")
 @lastModifiedCompToggle(true)
-@type2Dimension(true)
-@insertZeroKeySurrogateKey("1")
 @lastModifiedColumn("[object Object]")
+@type2Dimension(true)
 SELECT
-     0 AS "DIM_NATION_TEST_LM_SCD2_KEY",
-     "N_NATIONKEY" AS "N_NATIONKEY" @nullable(false),
+     0 AS "PSTG_NATION_TEST_KEY",
+     "N_NATIONKEY" AS "N_NATIONKEY",
      "N_NAME" AS "N_NAME",
      "N_REGIONKEY" AS "N_REGIONKEY",
      "N_COMMENT" AS "N_COMMENT",
