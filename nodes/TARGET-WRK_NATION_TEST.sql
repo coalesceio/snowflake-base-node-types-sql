@@ -1,7 +1,7 @@
 @id("defd8dca-2561-4185-b502-7fef524a381b")
 @nodeType("664")
 SELECT
-     "N_NATIONKEY" AS "N_NATIONKEY",
+     "N_NATIONKEY" AS "N_NATIONKEY1",
      "N_NAME" AS "N_NAME",
      "N_REGIONKEY" AS "N_REGIONKEY",
      "N_COMMENT" AS "N_COMMENT",
