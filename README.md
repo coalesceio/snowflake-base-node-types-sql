@@ -71,7 +71,7 @@ The key differences between these nodes are outlined below.
 | `@description("<text>")` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Adds column description |
 | `@defaultValue("<text>")`<br/>`@defaultValue(<number>)`<br/>`@defaultValue(<bool>)` | ✅ | ✅ | ✅ | ✅ | ✅ |  | Adds default value |
 | `@tests("null", "unique")` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Column tests are more restrictive and apply directly to individual columns.<br/><br/>**Supported Tests**<br/>- **null** → Checks for NULL values<br/>- **unique** → Checks to ensure all values are unique |
-| `@hashValue("<hash_name>")` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Generates a hash key by combining and hashing the values of columns associated with a given hash group, ensuring consistent change detection and key generation.<br/>**Default:** Uses `SHA1` hashing. |
+| `@inHash("<hash_order>|<hash_name>")` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Generates a hash key by combining and hashing the values of columns associated with a given hash group, ensuring consistent change detection and key generation.<br/>**Default:** Uses `SHA1` algorithm. |
 | `@zeroKey("<text>")`<br/>`@zeroKey(<number>)`<br/>`@zeroKey(<bool>)`<br/>`@zeroKey(<timestamp>)` |  | ✅ |  |  |  |  | Provides override zero key value(ghost record) to the column |
 
 ---
@@ -92,42 +92,41 @@ The key differences between these nodes are outlined below.
   ```sql
   NATION_TEST."N_NATIONKEY" AS "N_NATIONKEY"
   ```
-- Hash values are generated based on the column order defined in the SQL Editor. Customizing the column order for hash generation is not supported at this time.
 - The hash transformation can be defined either using the reusable macro or by writing the full hash expression explicitly. Both approaches are supported and will produce the same result. Choose the macro approach for better reusability and cleaner code, or use the explicit expression when custom logic is required.
 
     #### Examples:
     
     Using hash macro(default-SHA1)
     ```sql
-    <col_name> AS <col_name> @hashValue("GH_COL"),
+    <col_name> AS <col_name> @inHash("1|GH_COL"),
     {{ get_hash('GH_COL') }}::STRING AS "GH_COL"
     ```
     Using hash macro(MD5)
     ```sql
-    <col_name> AS <col_name> @hashValue("GH_COL"),
+    <col_name> AS <col_name> @inHash("1|GH_COL"),
     {{ get_hash('GH_COL', 'MD5') }}::STRING AS "GH_COL"<SHA256
     ```
     Using hash macro(SHA256)
     ```sql
-    <col_name> AS <col_name> @hashValue("GH_COL"),
+    <col_name> AS <col_name> @inHash("1|GH_COL"),
     {{ get_hash('GH_COL', 'SHA256') }}::STRING AS "GH_COL"
     ```
     Using hash macro(algo=SHA256, delimeter='~' )
     ```sql
-    <col_name> AS <col_name> @hashValue("GH_COL"),
+    <col_name> AS <col_name> @inHash("1|GH_COL"),
     {{ get_hash('GH_COL', 'SHA256', '~') }}::STRING AS "GH_COL"
     ```
     Using multiple keys hash macro
     ```sql
-    <col_name1> AS <col_name1> @hashValue("GH_COL"),
-    <col_name2> AS <col_name2> @hashValue("GH_COL"),
+    <col_name1> AS <col_name1> @inHash("1|GH_COL"),
+    <col_name2> AS <col_name2> @inHash("2|GH_COL"),
     {{ get_hash('GH_COL') }}::STRING AS "GH_COL_COMBINED"
     ```
     Using multiple hash macros
     ```sql
-    <col_name1> AS <col_name1> @hashValue("GH_COL1", "GH_COL2"),
-    <col_name2> AS <col_name2> @hashValue("GH_COL1"),
-    <col_name3> AS <col_name3> @hashValue("GH_COL2"),
+    <col_name1> AS <col_name1> @inHash("1|GH_COL1", "2|GH_COL2"),
+    <col_name2> AS <col_name2> @inHash("2|GH_COL1"),
+    <col_name3> AS <col_name3> @inHash("1|GH_COL2"),
     {{ get_hash('GH_COL1') }}::STRING AS "GH_COL_COMBINED1",
     {{ get_hash('GH_COL2') }}::STRING AS "GH_COL_COMBINED2"
     ```
@@ -256,10 +255,10 @@ The following patterns represent common ways to use the SQL Node.<br/>
 
 SELECT
     0 AS "MRG_ALL_ANNOT_KEY" @zeroKey(0),
-     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @hashValue("GH_COL"),
+     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @inHash("1|GH_COL"),
      NATION."N_NAME" AS "N_NAME" @defaultValue("NA"),
      NATION."N_REGIONKEY" AS "N_REGIONKEY" @description("region key"),
-     NATION."N_COMMENT" AS "N_COMMENT" @hashValue("GH_COL"),
+     NATION."N_COMMENT" AS "N_COMMENT" @inHash("2|GH_COL"),
      NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" @tests("null", "unique"),
      {{ get_hash('GH_COL') }}::STRING AS "GH_COL",
     "SYSTEM_CURRENT_FLAG"::VARCHAR AS "SYSTEM_CURRENT_FLAG",
