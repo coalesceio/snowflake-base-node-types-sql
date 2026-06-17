@@ -301,9 +301,9 @@ macroString: |-
 
   {#===================================================================================================
   Description:
-  Generates a deterministic hash value by combining and hashing all column values associated with the given `hash_name` using the `@hashValue` annotation.
+  Generates a deterministic hash value by combining and hashing all column values associated with the given `hash_name` using the `@inHash` annotation.
 
-  Input: `hash_name` (string) - The hash group identifier used in `@hashValue("<hash_name>")` to group columns for hashing.
+  Input: `hash_name` (string) - The hash group identifier used in `@inHash("<hash_name>")` to group columns for hashing.
 
   Output: - Returns a SQL expression of type `STRING`:
           - A SHA1 hash of concatenated column values  
@@ -311,23 +311,36 @@ macroString: |-
   ====================================================================================================#}
   {%- macro get_hash(hash_name, algo='SHA1', delimiter='||', datatype='CHAR(32)') -%}
 
-      {%- set cols = namespace(name=[]) -%}
+      {%- set cols = namespace(items=[]) -%}
       {%- set algo_upper = algo | upper -%}
 
-      {# collect columns #}
+      {# Collect columns participating in this hash #}
       {%- for col in sources[0].columns -%}
-          {%- if col.hashValue is defined 
-                and col.hashValue.parameters is defined 
-                and hash_name in col.hashValue.parameters -%}
-              {%- set cols.name = cols.name + [col.transform] -%}
+
+          {%- if col.inHash is defined
+                and col.inHash.parameters is defined -%}
+
+              {%- for p in col.inHash.parameters -%}
+
+                  {%- set parts = p.split('|') -%}
+                  {%- set position = parts[0] | int -%}
+                  {%- set hash = parts[1] -%}
+
+                  {%- if hash == hash_name -%}
+                      {%- set cols.items = cols.items + [{
+                          "position": position,
+                          "column": col.transform
+                      }] -%}
+                  {%- endif -%}
+              {%- endfor -%}
           {%- endif -%}
       {%- endfor -%}
 
-      {%- if cols.name | length == 0 -%}
+      {%- if cols.items | length == 0 -%}
           NULL
       {%- else -%}
-
-          {# define algo wrappers #}
+          {%- set sorted_cols = cols.items | sort(attribute='position') -%}
+          {# Define algo wrappers #}
           {%- set algo_start = algo_upper + '(' -%}
           {%- set algo_end = ')' -%}
 
@@ -337,16 +350,16 @@ macroString: |-
           {%- endif -%}
 
           CAST(
-                {{ algo_start }}
-                    {%- for c in cols.name -%}
-                        NVL(CAST({{ c }} AS VARCHAR), 'null')
-                        {%- if not loop.last %} || {% if delimiter != '' %} '{{ delimiter }}' || {% endif -%} {% endif -%}
-                    {%- endfor -%}
-                {{ algo_end }}
-            AS STRING)
-
+              {{ algo_start }}
+                  {%- for c in sorted_cols -%}
+                      NVL(CAST({{ c.column }} AS VARCHAR), 'null')
+                      {%- if not loop.last -%}
+                          || {%- if delimiter != '' -%}'{{ delimiter }}'||{%- endif -%}
+                      {%- endif -%}
+                  {%- endfor -%}
+              {{ algo_end }}
+          AS STRING)
       {%- endif -%}
-
   {%- endmacro -%}
 
   {#====================================================================================================

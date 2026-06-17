@@ -160,7 +160,7 @@ metadata:
           ➜ Checks NULL / UNIQUE values\n
         ━━━━━━━━━━━━━━━━━━━\n\n
         ℹ️ Hash Columns\n
-        ✦ @hashValue(\"<hash_name>\")\n
+        ✦ @inHash(\"<hash_order>|<hash_name>\")\n
           ➜ Generates hash key from columns\n
           ➜ Use it along with macro {{ get_hash('<hash_name>') }}\n
         ━━━━━━━━━━━━━━━━━━━\n\n"
