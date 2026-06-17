@@ -88,10 +88,6 @@ The key differences between these nodes are outlined below.
 - `@nullable` defaults to **true**. Use `@nullable("false")` to enforce NOT NULL.
 - **Column-level** `@zeroKey` takes precedence over **node-level** configuration. If `@zeroKey` is not defined at the column level, the node-level `@zeroKey` configuration is applied based on the column data type else `NULL` is applied by default.
 - Once the surrogate-zero key value is defined, it is **not advisable** to change it in future deployments or redeployments. Modifying the surrogate-zero key can lead to unintended behavior, such as new records being inserted instead of updating existing ones, causing data inconsistencies.
-- In cases where joins are used within run template logic (such as Last Modified logic in SCD1/SCD2 or Change Tracking in SCD2), explicit table aliases must be defined before running the node.<br/>While the Create step may succeed, the job execution can fail if aliases are not properly specified in the MERGE conditions.<br/>Use fully qualified column references in the MERGE source like below, to avoid ambiguity in joins and conditions.<br/>
-  ```sql
-  NATION_TEST."N_NATIONKEY" AS "N_NATIONKEY"
-  ```
 - The hash transformation can be defined either using the reusable macro or by writing the full hash expression explicitly. Both approaches are supported and will produce the same result. Choose the macro approach for better reusability and cleaner code, or use the explicit expression when custom logic is required.
 
     #### Examples:
