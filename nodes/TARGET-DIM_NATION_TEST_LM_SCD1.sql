@@ -2,7 +2,6 @@
 @nodeType("663")
 @insertZeroKey(true)
 @lastModifiedCompToggle(true)
-@lastModifiedColumn("[object Object]")
 SELECT
      0 AS "DIM_NATION_TEST_LM_SCD1_KEY",
      "N_NATIONKEY" AS "N_NATIONKEY" @nullable(false),
