@@ -329,7 +329,7 @@ macroString: |-
                   {%- if hash == hash_name -%}
                       {%- set cols.items = cols.items + [{
                           "position": position,
-                          "column": col.transform
+                          "column": get_source_transform_v2(col)
                       }] -%}
                   {%- endif -%}
               {%- endfor -%}
