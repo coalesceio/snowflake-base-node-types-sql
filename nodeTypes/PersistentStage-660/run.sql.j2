@@ -105,6 +105,7 @@ Unauthorized reproduction, distribution, or disclosure of this material is stric
                     {%- endif %}
                     {{ get_source_transform_v2(col) }} = "DIM"."{{ col.name }}"
                 {%- endfor %}
+                AND "DIM"."{{ get_value_by_column_attribute("isSystemCurrentFlag") }}" = 'Y'
                 WHERE
                 {%- for col in source.columns if col.isBusinessKey %}
                     {%- if not loop.first %}
@@ -445,6 +446,7 @@ Unauthorized reproduction, distribution, or disclosure of this material is stric
 
         {{ sources[0].join }}
         {% if config.groupByAll %} GROUP BY ALL {% endif %}
+        {{ sortorder_by_colv() }}
     )
 {%- endif %}
 
