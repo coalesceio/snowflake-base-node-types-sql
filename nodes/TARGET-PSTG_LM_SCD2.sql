@@ -1,8 +1,14 @@
-@id("735950e1-cb9b-434b-a36f-aa63cb4ac724")
+@id("2cf7951f-2e02-411e-b540-cc21cf3f7985")
 @nodeType("660")
+@groupByAll(true)
+@orderby(true)
+@orderbycolumn("N_NAME", "desc")
+@lastModifiedCompToggle(true)
+@lastModifiedColumn("N_LOAD_TIMESTAMP")
+@type2Dimension(true)
 SELECT
-     0 AS "PSTG_NATION_TEST_INSERT_KEY",
-     "N_NATIONKEY" AS "N_NATIONKEY",
+     0 AS "PSTG_NATION_TEST_KEY",
+     "N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
      "N_NAME" AS "N_NAME",
      "N_REGIONKEY" AS "N_REGIONKEY",
      "N_COMMENT" AS "N_COMMENT",

@@ -1,13 +1,13 @@
-@id("fccd78d3-0a38-4cc1-9987-83452459661f")
+@id("bde7f2fe-1f72-4d39-8370-6bd66fb8b461")
 @nodeType("663")
-@insertZeroKey(true)
+@selectDistinct(true)
+@orderby(true)
+@orderbycolumn("N_REGIONKEY", "desc")
 @lastModifiedCompToggle(true)
-@type2Dimension(true)
-@insertZeroKeySurrogateKey("1")
-@lastModifiedColumn("[object Object]")
+@lastModifiedColumn("N_REGIONKEY")
 SELECT
-     0 AS "DIM_NATION_TEST_LM_SCD2_KEY",
-     "N_NATIONKEY" AS "N_NATIONKEY" @nullable(false),
+     0 AS "DIM_NATION_TEST_KEY",
+     "N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
      "N_NAME" AS "N_NAME",
      "N_REGIONKEY" AS "N_REGIONKEY",
      "N_COMMENT" AS "N_COMMENT",

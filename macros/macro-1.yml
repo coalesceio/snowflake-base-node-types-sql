@@ -329,7 +329,7 @@ macroString: |-
                   {%- if hash == hash_name -%}
                       {%- set cols.items = cols.items + [{
                           "position": position,
-                          "column": col.transform
+                          "column": get_source_transform_v2(col)
                       }] -%}
                   {%- endif -%}
               {%- endfor -%}
@@ -511,7 +511,7 @@ macroString: |-
       transform = 'UPPER(N_NAME)' -> UPPER(N_NAME)
       transform = ''              -> NULL
   ========================================================================#}
-  {%- macro get_source_transform(col) -%}
+  {%- macro get_source_transform_v2(col) -%}
       {%- set transform = col.transform | trim -%}
       {%- if transform != '' -%}
           {%- if col.sourceColumns

@@ -1,8 +1,10 @@
-@id("a876c59b-8b9c-46ca-8532-2a1962c00c4d")
+@id("6ab5de92-d66f-4694-bba8-36d76346f287")
 @nodeType("659")
+@orderby(true)
+@orderbycolumn("N_REGIONKEY", "desc")
 SELECT
-     "N_NATIONKEY" AS "N_NATIONKEY",
-     "N_NAME" AS "N_NAME",
+     "N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
+     "N_NAME" AS "N_NAME" @isBusinessKey,
      "N_REGIONKEY" AS "N_REGIONKEY",
      "N_COMMENT" AS "N_COMMENT",
      "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",

@@ -1,9 +1,11 @@
-@id("4bd8997c-0aaa-4c11-9491-7341b3bbdbd7")
-@nodeType("663")
-@insertZeroKey(true)
+@id("f6a33753-e470-4880-96d7-29c151c7a375")
+@nodeType("660")
+@orderby(true)
+@groupByAll(true)
+@orderbycolumn("N_NAME", "desc")
 SELECT
-     0 AS "DIM_NATION_TEST_CT_SCD1_RENAME_KEY",
-     "N_NATIONKEY" AS "N_NATIONKEY" @nullable(false),
+     0 AS "PSTG_NATION_TEST_KEY",
+     "N_NATIONKEY" AS "N_NATIONKEY",
      "N_NAME" AS "N_NAME",
      "N_REGIONKEY" AS "N_REGIONKEY",
      "N_COMMENT" AS "N_COMMENT",

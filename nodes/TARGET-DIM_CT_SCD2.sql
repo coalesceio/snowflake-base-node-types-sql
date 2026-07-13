@@ -1,10 +1,11 @@
-@id("da85e29c-fba1-4c03-b099-973185e8a460")
-@nodeType("660")
-@lastModifiedCompToggle(true)
-@lastModifiedColumn("[object Object]")
+@id("4e735fbe-f1b8-4767-aa14-a827cc1e360a")
+@nodeType("663")
+@selectDistinct(true)
+@orderby(true)
+@orderbycolumn("N_REGIONKEY", "desc")
 SELECT
-     0 AS "PSTG_NATION_TEST_KEY",
-     "N_NATIONKEY" AS "N_NATIONKEY",
+     0 AS "DIM_NATION_TEST_KEY",
+     "N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
      "N_NAME" AS "N_NAME",
      "N_REGIONKEY" AS "N_REGIONKEY",
      "N_COMMENT" AS "N_COMMENT",

@@ -186,6 +186,7 @@ Unauthorized reproduction, distribution, or disclosure of this material is stric
 
             {{ sources[0].join }}
             {% if config.groupByAll %} GROUP BY ALL {% endif %}
+            {{ sortorder_by_colv() }}
         )
     {%- endif %}
 

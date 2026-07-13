@@ -1,8 +1,11 @@
-@id("ba5a7e22-a717-4aa0-8705-5ade8dfb4099")
-@nodeType("660")
+@id("783568f2-b9e6-435c-aba5-026f00adf94a")
+@nodeType("663")
+@selectDistinct(true)
+@orderby(true)
+@orderbycolumn("N_REGIONKEY", "desc")
 SELECT
-     0 AS "PSTG_NATION_TEST_CT_SCD2_KEY",
-     "N_NATIONKEY" AS "N_NATIONKEY",
+     0 AS "DIM_NATION_TEST_KEY",
+     "N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
      "N_NAME" AS "N_NAME",
      "N_REGIONKEY" AS "N_REGIONKEY",
      "N_COMMENT" AS "N_COMMENT",

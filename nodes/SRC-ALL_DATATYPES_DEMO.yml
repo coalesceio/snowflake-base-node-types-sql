@@ -21,12 +21,10 @@ operation:
         description: ""
         name: COL_NUMBER
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -40,12 +38,10 @@ operation:
         description: ""
         name: COL_DECIMAL
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -59,12 +55,10 @@ operation:
         description: ""
         name: COL_INT
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -78,12 +72,10 @@ operation:
         description: ""
         name: COL_FLOAT
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -97,12 +89,10 @@ operation:
         description: ""
         name: COL_DOUBLE
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -116,12 +106,10 @@ operation:
         description: ""
         name: COL_BOOLEAN
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -135,12 +123,10 @@ operation:
         description: ""
         name: COL_VARCHAR
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -154,12 +140,10 @@ operation:
         description: ""
         name: COL_STRING
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -173,12 +157,10 @@ operation:
         description: ""
         name: COL_CHAR
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -192,12 +174,10 @@ operation:
         description: ""
         name: COL_TEXT
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -211,12 +191,10 @@ operation:
         description: ""
         name: COL_DATE
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -230,12 +208,10 @@ operation:
         description: ""
         name: COL_TIME
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -249,12 +225,10 @@ operation:
         description: ""
         name: COL_TIMESTAMP
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -268,12 +242,10 @@ operation:
         description: ""
         name: COL_TIMESTAMP_NTZ
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -287,12 +259,10 @@ operation:
         description: ""
         name: COL_TIMESTAMP_LTZ
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -306,12 +276,10 @@ operation:
         description: ""
         name: COL_TIMESTAMP_TZ
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -325,12 +293,10 @@ operation:
         description: ""
         name: COL_BINARY
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -344,12 +310,10 @@ operation:
         description: ""
         name: COL_VARIANT
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -363,12 +327,10 @@ operation:
         description: ""
         name: COL_OBJECT
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -382,12 +344,10 @@ operation:
         description: ""
         name: COL_ARRAY
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -401,12 +361,10 @@ operation:
         description: ""
         name: COL_GEOGRAPHY
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -420,12 +378,10 @@ operation:
         description: ""
         name: COL_GEOMETRY
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -439,12 +395,10 @@ operation:
         description: ""
         name: COL_XML
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
         transform: ""
-        uniqueKey: false
   name: ALL_DATATYPES_DEMO
   schema: ""
   sqlType: Source

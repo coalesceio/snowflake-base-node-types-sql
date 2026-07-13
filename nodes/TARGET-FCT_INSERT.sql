@@ -1,5 +1,7 @@
-@id("387b4361-9ebd-487a-8119-f9ca34d2d7d1")
-@nodeType("661")
+@id("71a8be0d-cf45-4da5-a3ad-5c8ed1b59a15")
+@nodeType("659")
+@orderby(true)
+@orderbycolumn("N_REGIONKEY", "desc")
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY",
      "N_NAME" AS "N_NAME",

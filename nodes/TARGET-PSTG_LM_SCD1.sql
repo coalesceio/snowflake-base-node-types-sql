@@ -1,9 +1,13 @@
-@id("73d4a527-2f1e-4860-ad98-3c1380bcae76")
-@nodeType("663")
-@insertZeroKey(true)
+@id("0fd73472-052a-459a-8399-41aa2effc236")
+@nodeType("660")
+@groupByAll(true)
+@orderby(true)
+@orderbycolumn("N_NAME", "desc")
+@lastModifiedCompToggle(true)
+@lastModifiedColumn("N_LOAD_TIMESTAMP")
 SELECT
-     0 AS "DIM_NATION_TEST_CT_SCD2_KEY",
-     "N_NATIONKEY" AS "N_NATIONKEY" @nullable(false),
+     0 AS "PSTG_NATION_TEST_KEY",
+     "N_NATIONKEY" AS "N_NATIONKEY" @isBusinessKey,
      "N_NAME" AS "N_NAME",
      "N_REGIONKEY" AS "N_REGIONKEY",
      "N_COMMENT" AS "N_COMMENT",

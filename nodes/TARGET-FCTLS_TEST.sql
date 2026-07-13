@@ -1,7 +1,8 @@
-@id("4cf674fd-b462-474b-9dde-33f4233f9015")
-@nodeType("659")
-@materializationType("view")
+@id("453e33de-991e-4d52-8665-fa98abaf88c8")
+@nodeType("661")
+@orderby(true)
 @groupByAll(true)
+@orderbycolumn("N_NAME", "desc")
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY",
      "N_NAME" AS "N_NAME",
