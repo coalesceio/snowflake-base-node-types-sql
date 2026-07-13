@@ -16,7 +16,6 @@ Unauthorized reproduction, distribution, or disclosure of this material is stric
             {%- set nullParams = col.nullable.parameters | default([]) %}
             {%- set defaultValueParams = col.defaultValue.parameters | default([]) %}
             {%- set descriptionParams = col.description.parameters | default([]) %}
-
 			"{{ col.name }}" {{ col.dataType }}
             {%- if col.isSurrogateKey %} identity {%- endif %}
 			{%- if nullParams and (nullParams[0] in ['false', false]) %} NOT NULL {%- endif %}

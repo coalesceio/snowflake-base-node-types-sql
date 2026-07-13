@@ -183,10 +183,9 @@ Unauthorized reproduction, distribution, or disclosure of this material is stric
                 {{ get_source_transform_v2(col) }} AS "{{ col.name }}"
                 {%- if not loop.last -%}, {%- endif %}
             {%- endfor %}
-
             {{ sources[0].join }}
             {% if config.groupByAll %} GROUP BY ALL {% endif %}
-            {{ sortorder_by_colv() }}
+            {{ sortorder_by_colv() }}            
         )
     {%- endif %}
 
