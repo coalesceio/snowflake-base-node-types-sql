@@ -511,7 +511,7 @@ macroString: |-
       transform = 'UPPER(N_NAME)' -> UPPER(N_NAME)
       transform = ''              -> NULL
   ========================================================================#}
-  {%- macro get_source_transform(col) -%}
+  {%- macro get_source_transform_v2(col) -%}
       {%- set transform = col.transform | trim -%}
       {%- if transform != '' -%}
           {%- if col.sourceColumns
