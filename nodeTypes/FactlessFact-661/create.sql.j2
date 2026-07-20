@@ -1,7 +1,8 @@
 {#
     Copyright (c) 2026 Coalesce. All rights reserved.
 This script and its associated documentation are confidential and proprietary to Coalesce.
-Unauthorized reproduction, distribution, or disclosure of this material is strictly prohibited. Coalesce permits you to copy and modify this script for the purposes of using with Coalesce but does not permit copying or modification for any other purpose.  
+Unauthorized reproduction, distribution, or disclosure of this material is strictly prohibited.
+Coalesce permits you to copy and modify this script for the purposes of using with Coalesce but does not permit copying or modification for any other purpose.  
 #}
 {# == Node Type Name           : Factless Fact  == #}
 {# == Node Type Description    : This node creates Factless Fact table or view  == #}
@@ -16,7 +17,6 @@ CREATE OR REPLACE {{ node.materializationType }} {{ ref_no_link(node.location.na
         {%- set nullParams = col.nullable.parameters | default([]) %}
         {%- set defaultValueParams = col.defaultValue.parameters | default([]) %}
         {%- set descriptionParams = col.description.parameters | default([]) %}
-
         "{{ col.name }}" {{ col.dataType }}
         {%- if col.isSurrogateKey %} identity {%- endif %}
         {%- if nullParams and (nullParams[0] in ['false', false]) %} NOT NULL {%- endif %}

@@ -1,7 +1,8 @@
 {#
     Copyright (c) 2026 Coalesce. All rights reserved.
 This script and its associated documentation are confidential and proprietary to Coalesce.
-Unauthorized reproduction, distribution, or disclosure of this material is strictly prohibited. Coalesce permits you to copy and modify this script for the purposes of using with Coalesce but does not permit copying or modification for any other purpose.  
+Unauthorized reproduction, distribution, or disclosure of this material is strictly prohibited.
+Coalesce permits you to copy and modify this script for the purposes of using with Coalesce but does not permit copying or modification for any other purpose.  
 #}
 {# == Node Type Name           : Dimension  == #}
 {# == Node Type Description    : This node loads data into dimension table using options distinct, groupby all, order by, multi-source cte  == #}
@@ -39,7 +40,7 @@ Unauthorized reproduction, distribution, or disclosure of this material is stric
             {%- set col_transform = get_source_transform_v2(col) %}
             {%- if col_transform is not none and col_transform != 'NULL' %}
                 SELECT 1
-                {{ source.cteString }}
+                {{- source.cteString }}
                 {{ get_clause(source.join, 'from') }}
                 WHERE {{ col_transform }} IS NULL
                 {{ get_clause(source.join) }}
@@ -131,11 +132,8 @@ Unauthorized reproduction, distribution, or disclosure of this material is stric
 
     MERGE INTO {{ ref_no_link(node.location.name, node.name) }} "TGT"
     USING (
-
-        {{ source.cteString }}
-
+        {{- source.cteString }}
         {%- if type2Dimension -%}
-
             {#== SCD Type 2 ==#}
             /* New Rows That Don't Exist */
             (

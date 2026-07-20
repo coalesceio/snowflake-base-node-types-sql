@@ -1,7 +1,8 @@
 {#
     Copyright (c) 2026 Coalesce. All rights reserved.
 This script and its associated documentation are confidential and proprietary to Coalesce.
-Unauthorized reproduction, distribution, or disclosure of this material is strictly prohibited. Coalesce permits you to copy and modify this script for the purposes of using with Coalesce but does not permit copying or modification for any other purpose.  
+Unauthorized reproduction, distribution, or disclosure of this material is strictly prohibited.
+Coalesce permits you to copy and modify this script for the purposes of using with Coalesce but does not permit copying or modification for any other purpose.  
 #}
 {# == Node Type Name           : Factless Fact  == #}
 {# == Node Type Description    : This node loads data into Factless Fact table using options distinct, groupby all, order by, multi-source cte  == #}
@@ -25,13 +26,13 @@ Unauthorized reproduction, distribution, or disclosure of this material is stric
 MERGE INTO {{ ref_no_link(node.location.name, node.name) }} "TGT"
 USING (
 
-    {{ sources[0].cteString }}
+    {{- sources[0].cteString }}
     SELECT {%- if config.selectDistinct %} DISTINCT {%- endif %}
     {%- for col in sources[0].columns %}
         {{ get_source_transform_v2(col) }} AS "{{ col.name }}"
         {%- if not loop.last %}, {%- endif %}
     {%- endfor %}
-    {{ sources[0].join }}
+    {{- sources[0].join }}
 
     {%- if config.groupByAll %} GROUP BY ALL {%- endif %}
     {{ sortorder_by_colv() }}

@@ -1,7 +1,8 @@
 {#
     Copyright (c) 2026 Coalesce. All rights reserved.
 This script and its associated documentation are confidential and proprietary to Coalesce.
-Unauthorized reproduction, distribution, or disclosure of this material is strictly prohibited. Coalesce permits you to copy and modify this script for the purposes of using with Coalesce but does not permit copying or modification for any other purpose.  
+Unauthorized reproduction, distribution, or disclosure of this material is strictly prohibited.
+Coalesce permits you to copy and modify this script for the purposes of using with Coalesce but does not permit copying or modification for any other purpose.  
 #}
 {# == Node Type Name           : Dimension  == #}
 {# == Node Type Description    : This node creates dimension table or view  == #}
@@ -39,7 +40,7 @@ Unauthorized reproduction, distribution, or disclosure of this material is stric
     )
     {%- if node.description | length > 0 %} COMMENT = '{{ node.description | escape }}' {%- endif %}
     AS    
-    {{ sources[0].cteString }}
+    {{- sources[0].cteString }}
     SELECT {%- if config.selectDistinct %} DISTINCT {%- endif %}
     {%- for col in sources[0].columns %}
         {%- if col.isSurrogateKey or col.isSystemUpdateDate or col.isSystemCreateDate %}
@@ -49,6 +50,6 @@ Unauthorized reproduction, distribution, or disclosure of this material is stric
 		{%- endif %}
         {%- if not loop.last -%}, {%- endif %}
     {%- endfor %}
-    {{ sources[0].join }}
+    {{- sources[0].join }}
     {% if config.groupByAll %} GROUP BY ALL {%- endif %}
 {%- endif %}
