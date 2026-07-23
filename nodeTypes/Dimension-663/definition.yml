@@ -13,7 +13,7 @@ metadata:
     enableCTESupport: true
 
     config:
-    - groupName: Node Options
+    - groupName: General Options
       items:
       - type: materializationSelector
         isRequired: true

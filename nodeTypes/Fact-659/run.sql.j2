@@ -20,7 +20,8 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
         {%- if lastModifiedComparison %}
             {%- set lastModifiedCol = config.lastModifiedColumn %}
             {%- set lastModifiedColName = lastModifiedCol.name %}
-            {%- set isTimeStamp = (lastModifiedCol.dataType | upper).startswith('TIME') | default(false) %}
+            {%- set dt = lastModifiedCol.dataType | upper %}
+            {%- set isTimeStamp = dt.startswith('TIME') or dt.startswith('DATE') %}
             {%- set lookBackDays = config.lookBackDays | default(0) if isTimeStamp else 0 %}
         {%- endif %}
     {%- endif %}
@@ -36,10 +37,10 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
         {%- for col in source.columns if col.name == lastModifiedColName %}
             {%- set col_transform = get_source_transform_v2(col) %}
             {%- if col_transform is not none and col_transform != 'NULL' %}
+                {{- source.cteString }}
                 SELECT 1
-                {{ source.cteString }}
                 {{ get_clause(source.join, 'from') }}
-                WHERE {{ col_transform }} IS NULL
+                WHERE {{ get_source_transform_v2(col) }} IS NULL
                 {{ get_clause(source.join) }}
             {%- endif %}
         {%- endfor %}
@@ -68,7 +69,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
         MERGE INTO {{ ref_no_link(node.location.name, node.name) }} "TGT"
         USING (
 
-            {{ source.cteString }}
+            {{- source.cteString }}
             (
                 SELECT {%- if config.selectDistinct %} DISTINCT {%- endif %}
                 {%- for col in source.columns if not col.isSurrogateKey %}

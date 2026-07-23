@@ -23,6 +23,7 @@ macroString: |-
 
           {%- set dtype = dataType | upper -%}
           {%- set default_str = defaultValue | string -%}
+
           {%- set is_function = default_str | upper in [
               'CURRENT_DATE', 
               'CURRENT_TIME', 
@@ -30,7 +31,6 @@ macroString: |-
               'SYSDATE()', 
               'CURRENT_TIMESTAMP()'
           ] -%}
-
           {%- set is_null = default_str | upper == 'NULL' -%}
           {%- set is_boolean = default_str | upper in ['TRUE', 'FALSE'] -%}
           {%- set is_number = default_str.replace('.', '', 1).isdigit() -%}

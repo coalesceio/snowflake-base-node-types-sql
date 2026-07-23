@@ -15,13 +15,14 @@
     {%- if node.description | length > 0 %} COMMENT = '{{ node.description | escape }}'{% endif %}
     AS
     {% for source in sources %}
-        SELECT {% if config.selectDistinct %} DISTINCT {% endif %}
+        SELECT {% if config.selectDistinct and not config.groupByAll %} DISTINCT {% endif %}
         {% for col in source.columns %}
             {{ get_source_transform(col) }} AS "{{ col.name }}"
             {%- if not loop.last -%}, {% endif %}
         {% endfor %}
 
         {{ source.join }}
+        {% if config.groupByAll %} GROUP BY ALL {% endif %}
 
         {% if not loop.last %}
             {% if config.insertStrategy in ['UNION', 'UNION ALL'] %}

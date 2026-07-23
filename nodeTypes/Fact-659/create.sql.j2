@@ -42,7 +42,7 @@ Unauthorized reproduction, distribution, or disclosure of this material is stric
     )
     {%- if node.description | length > 0 %} COMMENT = '{{ node.description | escape }}' {%- endif %}
     AS   
-    {{- sources[0].cteString }}
+    {{ sources[0].cteString }}
     SELECT {%- if config.selectDistinct %} DISTINCT {%- endif %}
     {%- for col in sources[0].columns %}
         {%- if col.isSurrogateKey or col.isSystemUpdateDate or col.isSystemCreateDate %}

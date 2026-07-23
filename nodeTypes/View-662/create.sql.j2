@@ -20,12 +20,12 @@ CREATE OR REPLACE {%- if config.secureoption %} SECURE {%- endif %} {{ node.mate
     {%- endfor %}
 )
 {%- if node.description | length > 0 %} COMMENT = '{{ node.description | escape }}' {%- endif %}
-AS    
-{{- sources[0].cteString }}
+AS 
+{{ sources[0].cteString }}
 SELECT {%- if config.selectDistinct %} DISTINCT {%- endif %}
 {%- for col in sources[0].columns %}
     {{ get_source_transform_v2(col) }} AS "{{ col.name }}"
-    {%- if not loop.last -%}, {%- endif %}
+    {%- if not loop.last -%} , {%- endif %}
 {%- endfor %}
 {{- sources[0].join }}
 {% if config.groupByAll %} GROUP BY ALL {%- endif %}

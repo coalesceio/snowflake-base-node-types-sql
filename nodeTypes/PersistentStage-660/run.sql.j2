@@ -19,7 +19,8 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
         {%- set lastModifiedCol = config.lastModifiedColumn %}
         {%- set lastModifiedColName = lastModifiedCol.name %}
         {%- set type2Dimension = config.type2Dimension | default(false) %}
-        {%- set isTimeStamp = (lastModifiedCol.dataType | upper).startswith('TIME') | default(false) %}
+        {%- set dt = lastModifiedCol.dataType | upper %}
+        {%- set isTimeStamp = dt.startswith('TIME') or dt.startswith('DATE') %}
         {%- set lookBackDays = config.lookBackDays | default(0) if isTimeStamp and not type2Dimension else 0 %}
     {%- else %}
         {%- set type2Dimension = columns | selectattr("isChangeTracking") | list | length > 0 | default(false) %}
@@ -37,10 +38,10 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     {%- for col in source.columns if col.name == lastModifiedColName %}
         {%- set col_transform = get_source_transform_v2(col) %}
         {%- if col_transform is not none and col_transform != 'NULL' %}
-            SELECT 1
             {{- source.cteString }}
+            SELECT 1
             {{ get_clause(source.join, 'from') }}
-            WHERE {{ col_transform }} IS NULL
+            WHERE {{ get_source_transform_v2(col) }} IS NULL
             {{ get_clause(source.join) }}
         {%- endif %}
     {%- endfor %}

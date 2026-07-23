@@ -1,0 +1,33 @@
+@id("4dba82f3-e967-481f-a5e3-9ddf49eb0a31")
+@nodeType("661")
+@groupByAll(true)
+@description("table ''krfgk")
+@orderby(true)
+@orderbycolumn("[object Object]", "desc")
+WITH ALL_NATIONS AS(
+SELECT
+     "N_NATIONKEY" AS "N_NATIONKEY" ,
+     "N_NAME" AS "N_NAME",
+     "N_REGIONKEY" AS "N_REGIONKEY",
+     "N_COMMENT" AS "N_COMMENT",
+     "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" 
+FROM {{ ref('SRC', 'NATION_COPY1') }} "NATION_COPY1" 
+UNION
+SELECT
+     "N_NATIONKEY" AS "N_NATIONKEY" ,
+     "N_NAME" AS "N_NAME",
+     "N_REGIONKEY" AS "N_REGIONKEY",
+     "N_COMMENT" AS "N_COMMENT",
+     "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP"
+FROM {{ ref('SRC', 'NATION_COPY2') }} "NATION_COPY2"
+) 
+SELECT
+     "N_NATIONKEY" AS "N_NATIONKEY"  @nullable(false) @isBusinessKey,
+     "N_NAME" AS "N_NAME" @defaultValue("NA") @isChangeTracking,
+     "N_REGIONKEY" AS "N_REGIONKEY" @description("Column''desc"),
+     "N_COMMENT" AS "N_COMMENT",
+     "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE",
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE"
+FROM ALL_NATIONS
+WHERE N_NATIONKEY = 2
