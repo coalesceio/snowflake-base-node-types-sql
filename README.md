@@ -82,7 +82,6 @@ The key differences between these nodes are outlined below.
 - ² For timestamp-based incremental loads, a *validation test checks* the selected Last Modified column for NULL values before the merge. If NULL values are detected, the merge is stopped; otherwise, processing continues.
 - ³ Changing the surrogate key value after deployment is not recommended.
 - ⁴ Enabled only if Enable tests is ON
-- Some dependent options may **remain visible** in the SQL Editor regardless of the selected parent configuration. **This does not impact execution**. The generated SQL always follows the **parent setting**, and any non-applicable options are ignored.
 - Verify that all **column datatypes** are successfully resolved before creating the object. Columns with an `UNKNOWN` datatype may cause stage generation or runtime failures.
 - If a **Dim and PStage node** is renamed, ensure that the surrogate key column is also renamed to follow the `{{NODE_NAME}}_KEY` naming convention. Failure to do so may result in the surrogate key attribute being lost, which can impact the expected behavior of the flow.
 - `@nullable` defaults to **true**. Use `@nullable("false")` to enforce NOT NULL.
@@ -136,16 +135,16 @@ The key differences between these nodes are outlined below.
     ```
 ---
 
-### Supported Load Strategies
+## Supported Load Strategies
 
-| Node Type | Supported Load Strategies |
-|-----------|---------------------------|
-| **Work** | Insert |
-| **Dimension** | Merge - Change Tracking (SCD1)<br/>Merge - Change Tracking (SCD2)<br/>Merge - Last Modified (SCD1)<br/>Merge - Last Modified (SCD2) |
-| **Persistent Stage** | Insert<br/>Merge - Change Tracking (SCD1)<br/>Merge - Change Tracking (SCD2)<br/>Merge - Last Modified (SCD1)<br/>Merge - Last Modified (SCD2) |
-| **Fact** | Insert<br/>Merge - Change Tracking (SCD1)<br/>Merge - Last Modified (SCD1) |
-| **Factless Fact** | Merge - Insert Only |
-| **View** | N/A |
+| Node Type | Insert | Change Tracking (SCD1) | Change Tracking (SCD2) | Last Modified (SCD1) | Last Modified (SCD2) | Merge-Insert Only |
+|------------|:------:|:----------------------:|:----------------------:|:--------------------:|:--------------------:|:-----------:|
+| **Work** | ✅ |  |  |  |  |  |
+| **Dimension** |  | ✅ | ✅ | ✅ | ✅ |  |
+| **Persistent Stage** | ✅ | ✅ | ✅ | ✅ | ✅ |  |
+| **Fact** | ✅ | ✅ |  | ✅ |  |  |
+| **Factless Fact** |  |  |  |  |  | ✅ |
+| **View** | NA | NA | NA | NA | NA | NA |
 
 > **Note:** Load strategy is determined by the node type and selected configuration options. It is not a user-configurable setting.
 ----
@@ -173,8 +172,8 @@ Users should be aware of the following technical constraints when using SQL:
 * **SELECT Statements Only**:  
 This node only supports data retrieval and transformation logic. DML or DDL commands such as `CREATE`, `MERGE`, `DELETE`, `UPDATE`, or `TRUNCATE` are not supported and will cause execution failures.
 
-* **Support for DISTINCT, UNION, and UNION ALL**:  
-Keywords like `DISTINCT`, `UNION`, and `UNION ALL` are fully supported when used within **Common Table Expressions (CTEs)**. However, if these keywords are used instandard `SELECT` statements, the platform will not return an error, but the keywords will not be "picked up" or reflected in the final output. To ensure these operations are functional, always implement them inside a CTE.
+* **Support for `DISTINCT`, `UNION`, and `UNION ALL`**:  
+`DISTINCT`, `UNION`, and `UNION ALL` are fully supported when used within **Common Table Expressions (CTEs)**. While these keywords can also be used in standard `SELECT` statements without generating an error, they may not parsed correctly by the platform. As a result, subsequent clauses (such as `JOIN`s) may be interpreted as part of a standard join structure, causing the generated SQL to differ from the intended query and potentially leading to inconsistent data loads. To ensure the SQL is parsed and executed as expected, always implement these operations inside a CTE.
 
 ###  SQL Node Deployment
 
@@ -214,7 +213,7 @@ The following stages are executed:
 
 #### Recreating the SQL Node Views
 
-Any of the following changes to views will result in deleting and recreating the Dimension view.
+Any of the following changes to views will result in deleting and recreating the view.
 
 * View definition
 * Adding table description
@@ -269,12 +268,12 @@ Standard pattern for renaming columns and handling nulls.
 
 ```sql
 SELECT
-"O_ORDERKEY",
-"O_CUSTKEY",
-UPPER("O_ORDERSTATUS") AS "O_ORDERSTATUS",
-COALESCE("O_TOTALPRICE", 0) AS "O_TOTALPRICE",
-"O_ORDERDATE"
-FROM {{ ref('SOURCE_DATA', 'ORDERS') }}
+     "O_ORDERKEY" AS "O_ORDERKEY",
+     "O_CUSTKEY" AS "O_CUSTKEY",
+     UPPER("O_ORDERSTATUS") AS "O_ORDERSTATUS",
+     COALESCE("O_TOTALPRICE", 0) AS "O_TOTALPRICE",
+     "O_ORDERDATE" AS "O_ORDERDATE"
+FROM {{ ref('SRC', 'ORDERS') }} "ORDERS"
 WHERE "O_ORDERSTATUS" != 'F'
 ```
 
@@ -282,20 +281,20 @@ WHERE "O_ORDERSTATUS" != 'F'
 For more complex, multi-step logic.
 
 ```sql
-WITH priority_counts AS (
+WITH PRIORITY_COUNTS AS (
     SELECT 
-        "O_ORDERPRIORITY",
-        COUNT(*) as order_count
-    FROM {{ ref('SOURCE_DATA', 'ORDERS') }}
+        "O_ORDERPRIORITY" AS "O_ORDERPRIORITY",
+        COUNT(*) AS ORDER_COUNT
+    FROM {{ ref('SRC', 'ORDERS') }}
     GROUP BY 1
 )
-SELECT * FROM priority_counts
+SELECT * FROM PRIORITY_COUNTS
 ```
 
 - **Multi-CTE Transformation With Window Functions** <br/>
 Complex transformations that would otherwise require multiple nodes can be written as a single SQL statement. Coalesce tracks lineage through each CTE and down to the source tables
 ```sql
-WITH ordered_orders AS (
+WITH ORDERED_ORDERS AS (
 -- CTE 1: Rank every order for each customer by date
 SELECT
 O_CUSTKEY,
@@ -306,30 +305,30 @@ O_ORDERSTATUS,
 ROW_NUMBER() OVER (
 PARTITION BY O_CUSTKEY
 ORDER BY O_ORDERDATE ASC, O_ORDERKEY ASC
-) AS order_rank
-FROM {{ ref('SOURCE_DATA', 'ORDERS') }}
+) AS ORDER_RANK
+FROM {{ ref('SRC', 'ORDERS') }}
 ),
-first_orders AS (
+FIRST_ORDERS AS (
 -- CTE 2: Filter to keep only the first order (rank 1) for each customer
 SELECT
 O_CUSTKEY,
-O_ORDERKEY AS first_order_id,
-O_ORDERDATE AS first_purchase_date,
-O_TOTALPRICE AS first_order_value,
+O_ORDERKEY AS FIRST_ORDER_ID,
+O_ORDERDATE AS FIRST_PURCHASE_DATE,
+O_TOTALPRICE AS FIRST_ORDER_VALUE,
 O_ORDERSTATUS
-FROM ordered_orders
-WHERE order_rank = 1
+FROM ORDERED_ORDERS
+WHERE ORDER_RANK = 1
 )
 -- Final Select: Add metadata and return the results
 SELECT
-f.O_CUSTKEY,
-f.first_order_id,
-f.first_purchase_date,
-f.first_order_value,
-f.O_ORDERSTATUS,
-CURRENT_TIMESTAMP() AS refreshed_at,
-'Initial Customer Purchase' AS record_type
-FROM first_orders f;
+F.O_CUSTKEY,
+F.FIRST_ORDER_ID,
+F.FIRST_PURCHASE_DATE,
+F.FIRST_ORDER_VALUE,
+F.O_ORDERSTATUS @nullable(false),
+CURRENT_TIMESTAMP() AS REFRESHED_AT,
+'Initial Customer Purchase' AS RECORD_TYPE
+FROM FIRST_ORDERS F
 ```
 
 **Using Recursive CTE - Date Series**
@@ -370,7 +369,6 @@ WITH RECURSIVE RCTE_FINAL AS (
     FROM {{ ref('SRC', 'EMPLOYEES_RECUR') }} AS "EMPLOYEES_RECUR"
     JOIN RCTE_FINAL
         ON "EMPLOYEES_RECUR"."MANAGER_ID" = "RCTE_FINAL"."EMPLOYEE_ID"
-
 )
 
 SELECT
@@ -382,15 +380,11 @@ FROM RCTE_FINAL
 **Using CTE for multisource combine**
 ```sql
 WITH ALL_NATIONS AS (
-
-    SELECT N_NATIONKEY, N_NAME, N_REGIONKEY, N_COMMENT
+    SELECT *
     FROM {{ ref('SOURCE_DATA', 'NATION_COPY1') }}
-
     UNION
-
-    SELECT N_NATIONKEY, N_NAME, N_REGIONKEY, N_COMMENT
+    SELECT *
     FROM {{ ref('SOURCE_DATA', 'NATION_COPY2') }}
-
 )
 
 SELECT * FROM ALL_NATIONS
