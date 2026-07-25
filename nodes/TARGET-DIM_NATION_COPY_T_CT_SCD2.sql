@@ -24,7 +24,7 @@ SELECT
      0 AS "DIM_NATION_COPY_KEY" @isSurrogateKey,
      ALL_NATIONS."N_NATIONKEY" AS "N_NATIONKEY"  @nullable(false) @isBusinessKey,
      ALL_NATIONS."N_NAME" AS "N_NAME" @defaultValue("NA") @isChangeTracking,
-     ALL_NATIONS."N_REGIONKEY" AS "N_REGIONKEY" @description("Column''desc"),
+     ALL_NATIONS."N_REGIONKEY" AS "N_REGIONKEY" @description("Column''desc") @isBusinessKey,
      ALL_NATIONS."N_COMMENT" AS "N_COMMENT",
      ALL_NATIONS."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
      1 AS "SYSTEM_VERSION",
