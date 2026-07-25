@@ -20,17 +20,9 @@ metadata:
           default: view
           isRequired: true
 
-        - displayName: Distinct
+        - type: toggleButton
           attributeName: selectDistinct
-          type: toggleButton
-          default: false
-          enableIf: "{% if node.override.create.enabled %} false {% else %} true {% endif %}"
-
-        - displayName: Group By All
-          attributeName: groupByAll
-          type: toggleButton
-          default: false
-          enableIf: "{% if node.override.create.enabled %} false {% else %} true {% endif %}"
+          displayName: Distinct
 
         - type: multisourceToggle
 
