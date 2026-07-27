@@ -25,7 +25,7 @@ FROM {{ ref('SRC', 'NATION_COPY2') }} "NATION_COPY2"
 
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY"  @nullable(false),
-     "N_NAME" AS "N_NAME" @defaultValue("NA"),
+     "N_NAME" AS "N_NAME_RENAME" @defaultValue("NA"),
      "N_REGIONKEY" AS "N_REGIONKEY" @description("Column''desc"),
      "N_COMMENT" AS "N_COMMENT",
      "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP"
