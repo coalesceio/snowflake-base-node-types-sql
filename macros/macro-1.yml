@@ -17,53 +17,53 @@ macroString: |-
   Output:
   - Returns a SQL-safe default value string formatted according to datatype
    ========================================================================#}
-  {%- macro get_default(dataType, defaultValue) %}
+  {%- macro get_default(dataType, defaultValue) -%}
 
-      {%- if dataType is not none %}
+      {%- if dataType is not none -%}
 
-          {%- set dtype = dataType | upper %}
-          {%- set default_str = defaultValue | string %}
+          {%- set dtype = dataType | upper -%}
+          {%- set default_str = defaultValue | string -%}
+
           {%- set is_function = default_str | upper in [
               'CURRENT_DATE', 
               'CURRENT_TIME', 
               'CURRENT_TIMESTAMP', 
               'SYSDATE()', 
               'CURRENT_TIMESTAMP()'
-          ] %}
-
-          {%- set is_null = default_str | upper == 'NULL' %}
-          {%- set is_boolean = default_str | upper in ['TRUE', 'FALSE'] %}
-          {%- set is_number = default_str.replace('.', '', 1).isdigit() %}
-          {%- set is_quoted = default_str.startswith("'") and default_str.endswith("'") %}
+          ] -%}
+          {%- set is_null = default_str | upper == 'NULL' -%}
+          {%- set is_boolean = default_str | upper in ['TRUE', 'FALSE'] -%}
+          {%- set is_number = default_str.replace('.', '', 1).isdigit() -%}
+          {%- set is_quoted = default_str.startswith("'") and default_str.endswith("'") -%}
 
           {%- set quote_types = [
               'VARCHAR', 'STRING', 'TEXT', 'CHAR', 'DATE', 'TIME', 'VARIANT', 'OBJECT', 'ARRAY'
-          ] %}
+          ] -%}
 
-          {%- if is_null %}
+          {%- if is_null -%}
               NULL
 
-          {%- elif is_function %}
+          {%- elif is_function -%}
               {{ default_str }}
 
-          {%- elif is_boolean %}
+          {%- elif is_boolean -%}
               {{ default_str | upper }}
 
-          {%- elif is_number and dtype not in quote_types %}
+          {%- elif is_number and dtype not in quote_types -%}
               {{ defaultValue }}
 
-          {%- elif is_quoted %}
+          {%- elif is_quoted -%}
               {{ default_str }}
 
-          {%- else %}
-              {%- for qt in quote_types %}
-                  {%- if dtype.startswith(qt) %}
+          {%- else -%}
+              {%- for qt in quote_types -%}
+                  {%- if dtype.startswith(qt) -%}
                       '{{ default_str }}'
-                  {%- endif %}
-              {%- endfor %}
-          {%- endif %}
-      {%- endif %}
-  {%- endmacro %}
+                  {%- endif -%}
+              {%- endfor -%}
+          {%- endif -%}
+      {%- endif -%}
+  {%- endmacro -%}
 
   {# ========================================================================
   Description:
@@ -87,78 +87,78 @@ macroString: |-
   Output:
   - Cleaned and trimmed SQL string based on requested clause
    ========================================================================#}
-  {%- macro get_clause( joinclause , ret_clause ) %}
+  {%- macro get_clause( joinclause , ret_clause ) -%}
 
       {#  STEP 1: Remove Block Comments /* ... */ #}
       {#  We split by the start of the comment and only keep the part after the end of the comment #}
-      {%- set ns_block = namespace(text="") %}
-      {%- set block_parts = joinclause.split('/*') %}
-      {%- set ns_block.text = block_parts[0] %} {# The text before the very first /* #}
+      {%- set ns_block = namespace(text="") -%}
+      {%- set block_parts = joinclause.split('/*') -%}
+      {%- set ns_block.text = block_parts[0] -%} {# The text before the very first /* #}
       
-      {%- for part in block_parts[1:] %}
-          {%- if '*/' in part %}
+      {%- for part in block_parts[1:] -%}
+          {%- if '*/' in part -%}
               {# Split by the first occurrence of */ and take everything after it #}
-              {%- set after_comment = part.split('*/', 1)[1] %}
-              {%- set ns_block.text = ns_block.text ~ ' ' ~ after_comment  %}
-          {%- endif %}
-      {%- endfor %}
+              {%- set after_comment = part.split('*/', 1)[1] -%}
+              {%- set ns_block.text = ns_block.text ~ ' ' ~ after_comment  -%}
+          {%- endif -%}
+      {%- endfor -%}
 
       {# STEP 2: Remove Line Comments #}
-      {%- set ns_line = namespace(clean_lines=[]) %}
-      {%- for line in ns_block.text.split('\n') %}
-          {%- set active_part = line.split('--')[0] %}
-          {%- set ns_line.clean_lines = ns_line.clean_lines + [active_part] %}
-      {%- endfor  %}
+      {%- set ns_line = namespace(clean_lines=[]) -%}
+      {%- for line in ns_block.text.split('\n') -%}
+          {%- set active_part = line.split('--')[0] -%}
+          {%- set ns_line.clean_lines = ns_line.clean_lines + [active_part] -%}
+      {%- endfor  -%}
       
       {# Rejoin everything and normalize whitespace for searching #}
-      {%- set cleaned_join_clause = ns_line.clean_lines | join(' ')  %}
-      {%- set search_string = ' ' ~ cleaned_join_clause.lower().replace('\t', ' ').replace('\r', ' ') ~ ' '  %}
+      {%- set cleaned_join_clause = ns_line.clean_lines | join(' ')  -%}
+      {%- set search_string = ' ' ~ cleaned_join_clause.lower().replace('\t', ' ').replace('\r', ' ') ~ ' '  -%}
 
       {# STEP 3: Identify Keyword Split Point (Priority: WHERE > GROUP > QUALIFY > ORDER) #}
-      {%- set found_keyword = '' %}
-      {%- set split_index = -1 %}
+      {%- set found_keyword = '' -%}
+      {%- set split_index = -1 -%}
 
-      {%- if ' where ' in search_string %}
-          {%- set found_keyword = 'where'  %}
-          {%- set split_index = search_string.find(' where ') %}
-      {%- elif ' group by ' in search_string %}
-          {%- set found_keyword = 'group by' %}
-          {%- set split_index = search_string.find(' group by ') %}
-      {%- elif ' qualify ' in search_string %}
-          {%- set found_keyword = 'qualify' %}
-          {%- set split_index = search_string.find(' qualify ') %}
-      {%- elif ' order by ' in search_string %}
-          {%- set found_keyword = 'order by' %}
-          {%- set split_index = search_string.find(' order by ') %}
-      {%- endif %}
+      {%- if ' where ' in search_string -%}
+          {%- set found_keyword = 'where'  -%}
+          {%- set split_index = search_string.find(' where ') -%}
+      {%- elif ' group by ' in search_string -%}
+          {%- set found_keyword = 'group by' -%}
+          {%- set split_index = search_string.find(' group by ') -%}
+      {%- elif ' qualify ' in search_string -%}
+          {%- set found_keyword = 'qualify' -%}
+          {%- set split_index = search_string.find(' qualify ') -%}
+      {%- elif ' order by ' in search_string -%}
+          {%- set found_keyword = 'order by' -%}
+          {%- set split_index = search_string.find(' order by ') -%}
+      {%- endif -%}
 
       {# STEP 4: Perform the Split #}
-      {%- if split_index >= 0 %}
+      {%- if split_index >= 0 -%}
           {# split_index maps directly to cleaned_join_clause because we replaced chars 1-to-1 #}
-          {%- set from_part = cleaned_join_clause[:split_index] %}
+          {%- set from_part = cleaned_join_clause[:split_index] -%}
           
           {# offset = keyword length + 1 space #}
-          {%- set offset = found_keyword|length + 1 %}
-          {%- set remainder = cleaned_join_clause[split_index + offset:] %}
+          {%- set offset = found_keyword|length + 1 -%}
+          {%- set remainder = cleaned_join_clause[split_index + offset:] -%}
 
-          {%- if found_keyword == 'where' %}
-              {%- set add_part = 'AND ' ~ remainder %}
-          {%- else %}
-              {%- set add_part = found_keyword ~ ' ' ~ remainder %}
-          {%- endif %}
-      {%- else %}
-          {%- set from_part = cleaned_join_clause %}
-          {%- set add_part = '' %}
-      {%- endif %}
+          {%- if found_keyword == 'where' -%}
+              {%- set add_part = 'AND ' ~ remainder -%}
+          {%- else -%}
+              {%- set add_part = found_keyword ~ ' ' ~ remainder -%}
+          {%- endif -%}
+      {%- else -%}
+          {%- set from_part = cleaned_join_clause -%}
+          {%- set add_part = '' -%}
+      {%- endif -%}
 
       {# STEP 5: Return Result #}
-      {%- if ret_clause == 'from' %}
+      {%- if ret_clause == 'from' -%}
           {{ from_part | trim }}
-      {%- else %}
+      {%- else -%}
           {{ add_part | trim }}
-      {%- endif  %}
+      {%- endif -%}
 
-  {%- endmacro %}
+  {%- endmacro -%}
 
   {# ========================================================================
     Purpose          : Executes data quality tests associated with the node
@@ -173,166 +173,45 @@ macroString: |-
                        node-level and column-level data quality tests.
                        No output is generated if tests are disabled.
   ========================================================================= #}
-  {%- macro run_tests(runOrder) %}
+  {%- macro run_tests(runOrder) -%}
 
-      {%- if runOrder == 'Before' %}
-          {%- set configTests = config.get('preTests', {}) %}
-          {%- set testName = ': Pre-Load Test ' %}
-      {%- else %}
-          {%- set configTests = config.get('postTests', {}) %}
-          {%- set testName = ': Post-Load Test ' %}
-      {%- endif %}
+      {%- if config.testsEnabled -%}
+          {%- if runOrder == 'After' -%}
+              {%- for column in columns -%}
+                  {%- if column.tests is mapping and column.tests.parameters is defined -%}
+                      {%- for test in column.tests.parameters -%}
+                          {%- if test | trim | lower == "null" -%}
+                              {%- set templateString = "SELECT 1 FROM " +  ref(node.location.name, node.name)  + " WHERE " + column.name + " IS NULL " -%}                      
+                              {{ test_stage("Column Test: " + column.name + " - " + test | lower) }}
+                              {{ templateString }}
+                          {%- endif -%}
+                          {%- if test | trim | lower == "unique" -%}
+                              {%- set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + " GROUP BY " + column.name +  " HAVING COUNT(*) > 1" -%}                      
+                              {{ test_stage("Column Test: " + column.name + " - " + test | lower) }}
+                              {{ templateString }}
+                          {%- endif -%}
+                      {%- endfor -%}
+                  {%- endif -%}
+              {%- endfor -%}
+          {%- endif -%}
 
-      {# --- Tests --- #}
-      {%- if configTests is defined and configTests.parameters is defined %}
-          {%- for test in configTests.parameters %}
-              {%- set testParts = test.split(':', 1) %}
-              {%- set continueOnFailure = testParts[0] | trim | lower == 'continueonfailure' %}
-              {{ test_stage(node.name + testName + loop.index|string, continueOnFailure) }}
-              {{ testParts[-1] | trim }}
-          {%- endfor %}
-      {%- endif %}
+          {%- set ns = namespace(cnt=0) -%}
+          {%- for test in config.tests.get('items', []) -%}
+              {%- if test.runOrder == runOrder -%}
+                  {%- set ns.cnt = ns.cnt + 1 -%}
 
-      {%- if runOrder == 'After' %}
-          {%- for column in columns %}
-              {%- if column.tests is mapping and column.tests.parameters is defined %}
-                  {%- for test in column.tests.parameters %}
-                      {%- if test | trim | lower == "null" %}
-                          {%- set templateString = "SELECT 1 FROM " +  ref(node.location.name, node.name)  + " WHERE " + column.name + " IS NULL " %}                      
-                          {{ test_stage("Column Test: " + column.name + " - " + test | lower) }}
-                          {{ templateString }}
-                      {%- endif %}
-                      {%- if test | trim | lower == "unique" %}
-                          {%- set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + " GROUP BY " + column.name +  " HAVING COUNT(*) > 1" %}                      
-                          {{ test_stage("Column Test: " + column.name + " - " + test | lower) }}
-                          {{ templateString }}
-                      {%- endif %}
-                  {%- endfor %}
-              {%- endif %}
-          {%- endfor %}
-      {%- endif %}
+                  {{ test_stage(
+                      ('Pre Load Test ' if runOrder == 'Before' else 'Post Load Test ') ~ ns.cnt,
+                      test.continueOnFailure
+                  ) }}
 
-  {%- endmacro %}
+                  {{ test.templateString }}
 
-  {# ===================================================================================================== 
-  Description:
-  Performs pre-validation checks on column metadata before executing a MERGE operation.
-  Ensures required column annotations are present and consistent based on the merge type
-  (standard, last-modified based, or SCD Type 2).
+              {%- endif -%}
+          {%- endfor -%}
 
-  This macro is intended to fail fast with clear warnings if required configurations
-  are missing or incorrectly defined.
-
-  Inputs:
-  - columns (implicit):
-      List of column objects with attributes such as:
-      - isBusinessKey
-      - isLastModifiedColumn
-      - isChangeTracking
-      - isSystemCreateDate
-      - isSystemUpdateDate
-      - isSystemEndDate
-      - isSystemCurrentFlag
-      - isSystemVersion
-
-  Output:
-  - No direct data output
-  - Returns a FAIL-select statement if validation fails
-  - Otherwise allows query execution to proceed
-  ===================================================================================================== #}
-  {%- macro validate_merge_columns() %}
-
-      {# == Check if last modified comparison is enabled  #}
-      {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) %}
-      {%- set lastModifiedComparison = columns | selectattr("isLastModifiedColumn") | list | length > 0 | default(false) %}
-
-      {%- if hasBusinessKey %}
-          {%- if lastModifiedComparison %}
-              {%- if columns | selectattr("isLastModifiedColumn") | list | length == 1 %}
-                  {%- set type2Dimension = config.type2Dimension | default(false) %}
-              {%- else %}
-                  {{ test_stage('Warning! Count mismatch for last comparison', false) }}
-                  -- Only one last modified column is allowed. Multiple/No columns may lead to inconsistent results.
-                  SELECT CAST('FAIL' AS STRING)
-              {%- endif %}
-          {%- else %}
-              {%- set type2Dimension = columns | selectattr("isChangeTracking") | list | length > 0 | default(false) %}
-          {%- endif %}
-      {%- else %}
-          {{ test_stage('Warning! Merge requires a business key', false) }}
-          -- A business key must be provided for the MERGE statement to run successfully.
-          -- Please specify it using @isBusinessKey at the column level in SQL.
-          SELECT CAST('FAIL' AS STRING)
-      {%- endif %}
-
-      {%- set currentFlagCol = get_value_by_column_attribute("isSystemCurrentFlag") %}
-      {%- set versionCol = get_value_by_column_attribute("isSystemVersion") %}
-      {%- set createDate = get_value_by_column_attribute("isSystemCreateDate") %}
-      {%- set updateDate = get_value_by_column_attribute("isSystemUpdateDate") %}
-
-      {%- if type2Dimension %}
-
-          {%- set endDate = get_value_by_column_attribute("isSystemEndDate") %}
-
-          {%- if lastModifiedComparison %}
-
-              {#== SCD type 2 - LM ==#}
-              {%- if 'ERR:' in createDate or 'ERR:' in endDate or 'ERR:' in currentFlagCol or 'ERR:' in versionCol %}
-                  {{ test_stage('Warning! Missing audit/version/status/metadata columns', false) }}
-                  /*
-                  It is recommended to also include columns with annotations @isSurrogateKey, @isSystemCurrentFlag, @isSystemVersion, @isSystemCreateDate and @isSystemEndDate for improved clarity and auditability.
-                  Please specify it using @isSurrogateKey, @isSystemCurrentFlag, @isSystemVersion, @isSystemCreateDate, @isSystemEndDate at the column level in SQL.
-
-                  Example:
-
-                  "{{ node.name }}_KEY"::NUMBER AS "{{ node.name }}_KEY" @isSurrogateKey,
-                  "SYSTEM_CURRENT_FLAG"::VARCHAR AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
-                  "SYSTEM_VERSION"::NUMBER AS "SYSTEM_VERSION" @isSystemVersion,
-                  CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
-                  CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
-
-                  */
-                  SELECT CAST('FAIL' AS STRING)
-              {%- endif %}
-          {%- else %}
-              {#== SCD type 2 - CT ==#}
-              {%- if 'ERR:' in createDate or 'ERR:' in updateDate or 'ERR:' in endDate or 'ERR:' in currentFlagCol or 'ERR:' in versionCol %}
-                  {{ test_stage('Warning! Missing audit/version/status/metadata columns', false) }}
-                  /*
-                  It is recommended to also include columns with annotations @isSurrogateKey, @isSystemCurrentFlag, @isSystemVersion, @isSystemCreateDate, @isSystemUpdateDate and @isSystemEndDate for improved clarity and auditability.
-                  Please specify it using @isSurrogateKey, @isSystemCurrentFlag, @isSystemVersion, @isSystemCreateDate, @isSystemUpdateDate and @isSystemEndDate at the column level in SQL.
-
-                  Example:
-
-                  "{{ node.name }}_KEY"::NUMBER AS "{{ node.name }}_KEY" @isSurrogateKey,
-                  "SYSTEM_CURRENT_FLAG"::VARCHAR AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
-                  "SYSTEM_VERSION"::NUMBER AS "SYSTEM_VERSION" @isSystemVersion,
-                  CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
-                  CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate,
-                  CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
-
-                  */
-                  SELECT CAST('FAIL' AS STRING)
-              {%- endif %}
-          {%- endif %}
-      {%- else %}
-          {#== SCD type 1 - Without Delete Strategy ==#}
-          {%- if 'ERR:' in createDate or 'ERR:' in updateDate %}
-              {{ test_stage('Warning! Missing audit/metadata columns', true) }}
-              /*
-              It is recommended to also include columns with annotations @isSystemCreateDate, @isSystemUpdateDate for improved clarity and auditability.
-              Please specify it using @isSystemCreateDate, @isSystemUpdateDate at the column level in SQL.
-
-              Example:
-     
-              CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
-              CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
-
-              */
-              SELECT CAST('FAIL' AS STRING)
-          {%- endif %}
-      {%- endif %}
-  {%- endmacro %}
+      {%- endif -%}
+  {%- endmacro -%}
 
   {# ====================================================================================================
   Description:
@@ -353,28 +232,28 @@ macroString: |-
   Output:
   - Returns a SQL boolean condition that evaluates to TRUE when source and target values are equal
   ====================================================================================================#}
-  {%- macro safe_equals(src_expr, tgt_expr, data_type) %}
+  {%- macro safe_equals(src_expr, tgt_expr, data_type) -%}
 
-      {%- set dt = data_type | upper %}
+      {%- set dt = data_type | upper -%}
 
-      {%- if 'GEOGRAPHY' in dt %}
+      {%- if 'GEOGRAPHY' in dt -%}
           (
               ST_DISTANCE(
                   COALESCE({{ src_expr }}, TO_GEOGRAPHY('POINT(0 0)')),
                   COALESCE({{ tgt_expr }}, TO_GEOGRAPHY('POINT(0 0)'))
               ) = 0
           )
-      {%- elif 'GEOMETRY' in dt %}
+      {%- elif 'GEOMETRY' in dt -%}
           (
               ST_DISTANCE(
                   COALESCE({{ src_expr }}, TO_GEOMETRY('POINT(0 0)')),
                   COALESCE({{ tgt_expr }}, TO_GEOMETRY('POINT(0 0)'))
               ) = 0
           )
-      {%- else %}
+      {%- else -%}
           {{ src_expr }} = {{ tgt_expr }}
-      {%- endif %}
-  {%- endmacro %}
+      {%- endif -%}
+  {%- endmacro -%}
 
   {#====================================================================================================
   Description:
@@ -395,78 +274,91 @@ macroString: |-
   Output:
   - Returns a SQL boolean condition that evaluates to TRUE when source and target values are different
   ====================================================================================================#}
-  {%- macro safe_compare(src_expr, tgt_expr, data_type) %}
+  {%- macro safe_compare(src_expr, tgt_expr, data_type) -%}
 
-      {%- set dt = data_type | upper %}
+      {%- set dt = data_type | upper -%}
 
-      {%- if 'GEOGRAPHY' in dt %}
+      {%- if 'GEOGRAPHY' in dt -%}
           (
               ST_DISTANCE(
                   COALESCE({{ src_expr }}, TO_GEOGRAPHY('POINT(0 0)')),
                   COALESCE({{ tgt_expr }}, TO_GEOGRAPHY('POINT(0 0)'))
               ) > 0
           )
-      {%- elif 'GEOMETRY' in dt %}
+      {%- elif 'GEOMETRY' in dt -%}
           (
               ST_DISTANCE(
                   COALESCE({{ src_expr }}, TO_GEOMETRY('POINT(0 0)')),
                   COALESCE({{ tgt_expr }}, TO_GEOMETRY('POINT(0 0)'))
               ) > 0
           )
-      {%- else %}
+      {%- else -%}
           {{ src_expr }} IS DISTINCT FROM {{ tgt_expr }}
-      {%- endif %}
+      {%- endif -%}
 
-  {%- endmacro %}
+  {%- endmacro -%}
 
   {#===================================================================================================
   Description:
-  Generates a deterministic hash value by combining and hashing all column values associated with the given `hash_name` using the `@hashValue` annotation.
+  Generates a deterministic hash value by combining and hashing all column values associated with the given `hash_name` using the `@inHash` annotation.
 
-  Input: `hash_name` (string) - The hash group identifier used in `@hashValue("<hash_name>")` to group columns for hashing.
+  Input: `hash_name` (string) - The hash group identifier used in `@inHash("<hash_name>")` to group columns for hashing.
 
   Output: - Returns a SQL expression of type `STRING`:
           - A SHA1 hash of concatenated column values  
           - Returns `NULL` if no columns are mapped to the given hash group
   ====================================================================================================#}
-  {%- macro get_hash(hash_name, algo='SHA1') -%}
+  {%- macro get_hash(hash_name, algo='SHA1', delimiter='||', datatype='CHAR(32)') -%}
 
-      {%- set cols = namespace(name=[]) -%}
+      {%- set cols = namespace(items=[]) -%}
       {%- set algo_upper = algo | upper -%}
 
-      {# collect columns #}
+      {# Collect columns participating in this hash #}
       {%- for col in sources[0].columns -%}
-          {%- if col.hashValue is defined 
-                and col.hashValue.parameters is defined 
-                and hash_name in col.hashValue.parameters -%}
-              {%- set cols.name = cols.name + [col.transform] -%}
+
+          {%- if col.inHash is defined
+                and col.inHash.parameters is defined -%}
+
+              {%- for p in col.inHash.parameters -%}
+
+                  {%- set parts = p.split('|') -%}
+                  {%- set position = parts[0] | int -%}
+                  {%- set hash = parts[1] -%}
+
+                  {%- if hash == hash_name -%}
+                      {%- set cols.items = cols.items + [{
+                          "position": position,
+                          "column": get_source_transform_v2(col)
+                      }] -%}
+                  {%- endif -%}
+              {%- endfor -%}
           {%- endif -%}
       {%- endfor -%}
 
-      {%- if cols.name | length == 0 -%}
+      {%- if cols.items | length == 0 -%}
           NULL
       {%- else -%}
+          {%- set sorted_cols = cols.items | sort(attribute='position') -%}
+          {# Define algo wrappers #}
+          {%- set algo_start = algo_upper + '(' -%}
+          {%- set algo_end = ')' -%}
 
-          {# define algo wrappers #}
-          {%- set algo_start = algo_upper + '(' %}
-          {%- set algo_end = ')' %}
-
-          {%- if algo_upper == 'SHA256' %}
-              {%- set algo_start = 'SHA2(' %}
-              {%- set algo_end = ', 256)' %}
-          {%- endif %}
+          {%- if algo_upper == 'SHA256' -%}
+              {%- set algo_start = 'SHA2(' -%}
+              {%- set algo_end = ', 256)' -%}
+          {%- endif -%}
 
           CAST(
               {{ algo_start }}
-                  {%- for c in cols.name -%}
-                      {%- if not loop.first %} || {%- endif -%}
-                      NVL(CAST({{ c }} AS VARCHAR), 'null')
+                  {%- for c in sorted_cols -%}
+                      NVL(CAST({{ c.column }} AS VARCHAR), 'null')
+                      {%- if not loop.last -%}
+                          || {%- if delimiter != '' -%}'{{ delimiter }}'||{%- endif -%}
+                      {%- endif -%}
                   {%- endfor -%}
               {{ algo_end }}
           AS STRING)
-
       {%- endif -%}
-
   {%- endmacro -%}
 
   {#====================================================================================================
@@ -490,68 +382,149 @@ macroString: |-
           - TIME      → TO_TIMESTAMP('1999-12-31')
           - No match  → NULL
   ====================================================================================================#}
-  {%- macro resolve_zero_key(col) %}
+  {%- macro resolve_zero_key(col) -%}
 
-      {%- set ns = namespace(zk_type=none, zk_value=none) %}
+      {%- set ns = namespace(zk_type=none, zk_value=none) -%}
 
       {# -------------------------------
          STEP 1: Column-level zeroKey
       -------------------------------- #}
       {%- if col.zeroKey is defined 
             and col.zeroKey.parameters is defined 
-            and col.zeroKey.parameters | trim | length > 0 %}
+            and col.zeroKey.parameters | trim | length > 0 -%}
 
-          {%- set ns.zk_value = col.zeroKey.parameters[0] %}
+          {%- set ns.zk_value = col.zeroKey.parameters[0] -%}
 
       {# -------------------------------
          STEP 2: Config-level zeroKey (match datatype)
       -------------------------------- #}
-      {%- elif config.zeroKey is defined 
-            and config.zeroKey.parameters is defined 
-            and config.zeroKey.parameters | trim | length > 0 %}
-
-          {%- for zk in config.zeroKey.parameters %}
-              {%- set parts = zk.split(':', 1) %}
-              {%- set type = parts[0] | trim | lower %}
-              {%- set val = parts[-1] | trim %}
-
-              {%- if ((type == 'string' and col.dataType[:3] | upper in ('VAR', 'CHA', 'STR')) or
-                      (type == 'boolean' and col.dataType | upper == 'BOOLEAN') or
-                      (type == 'datetime' and col.dataType[:4] | upper in ('DATE', 'TIME', 'TIMESTAMP'))
-              ) %}
-                  {%- set ns.zk_type = type %}
-                  {%- set ns.zk_value = val %}
-              {%- endif %}
-          {%- endfor %}
-
-      {%- else %}
-          {%- set ns.zk_type = none %}
-          {%- set ns.zk_value = none %}
-      {%- endif %}
+      {%- else -%}
+          {%- if col.dataType | upper == 'VARIANT' -%}
+              {%- set ns.zk_type = 'variant' -%}
+              {%- set ns.zk_value = none -%}
+          {%- elif col.dataType[:3] | upper in ('VAR', 'CHA', 'STR') -%}
+              {%- set ns.zk_type = 'string' -%}
+              {%- set ns.zk_value = config.insertZeroKeyStr -%}
+          {%- elif col.dataType | upper == 'BOOLEAN' -%}
+              {%- set ns.zk_type = 'boolean' -%}
+              {%- set ns.zk_value = config.insertZeroKeyBol -%}
+          {%- elif col.dataType[:4] | upper in ('DATE', 'TIME', 'TIMESTAMP') -%}
+              {%- set ns.zk_type = 'datetime' -%}
+              {%- set ns.zk_value = config.insertZeroKeyTimestamp -%}
+          {%- endif -%}
+      {%- endif -%}
 
       {# -------------------------------
          STEP 3: Return formatted value
       -------------------------------- #}
-      {%- if col.dataType[:3] | upper in ('NUM',' INT', 'DEC', 'FLO') %}
+      {%- if col.dataType[:3] | upper in ('NUM',' INT', 'DEC', 'FLO') -%}
           0
-      {%- elif ns.zk_value is not none %}
-          {%- if ns.zk_type == 'boolean' %}
+      {%- elif ns.zk_type == 'variant' -%}
+          PARSE_JSON('null')
+      {%- elif ns.zk_value is not none -%}
+          {%- if ns.zk_type == 'boolean' -%}
               {{ ns.zk_value | upper }}
 
-          {%- elif ns.zk_type == 'datetime' %}
+          {%- elif ns.zk_type == 'datetime' -%}
               TO_TIMESTAMP('{{ ns.zk_value }}')
 
-          {%- elif ns.zk_type == 'string' %}
+          {%- elif ns.zk_type == 'string' -%}
               '{{ ns.zk_value }}'
 
-          {%- else %}
+          {%- else -%}
               '{{ ns.zk_value }}'
-          {%- endif %}
+          {%- endif -%}
 
-      {%- else %}
+      {%- else -%}
           NULL
-      {%- endif %}
+      {%- endif -%}
 
-  {%- endmacro %}
+  {%- endmacro -%}
+
+  {#====================================================================================================
+      Macro Name : sortorder_by_colv
+
+      Description:
+          Generates an ORDER BY clause using the configured sort columns and
+          sort directions.
+
+      Inputs:
+          - config.orderby (Boolean)
+              Enables or disables sorting.
+
+          - config.orderbycolumn.items (Array)
+              List of sort definitions:
+                  * sortColName.name : Column name
+                  * sortOrder        : ASC or DESC
+
+      Output:
+          - ORDER BY clause string.
+          - Empty string if sorting is disabled or no sort columns exist.
+
+      Example Output:
+          ORDER BY "CUSTOMER_ID" ASC, "LOAD_DATE" DESC
+  ====================================================================================================#}
+  {%- macro sortorder_by_colv() -%}
+      {%- set ns = namespace(orderByClause='') -%}
+
+      {%- if config.orderby -%}
+          {%- if config.orderbycolumn.get('items', []) -%}
+              {%- for item in config.orderbycolumn.get('items', []) -%}
+                  {%- if loop.first -%}
+                      {%- set ns.orderByClause = '"' ~ item.sortColName.name ~ '" ' ~ item.sortOrder -%}
+                  {%- else -%}
+                      {%- set ns.orderByClause = ns.orderByClause ~ ', "' ~ item.sortColName.name ~ '" ' ~ item.sortOrder -%}
+                  {%- endif -%}
+              {%- endfor -%}
+          {%- endif -%}
+
+          ORDER BY {{ ns.orderByClause }}
+
+      {%- endif -%}
+  {%- endmacro -%}
+
+  {# ========================================================================
+  Purpose:
+      Returns the SQL expression to be used for a column transformation.
+
+  Input:
+      col
+          - transform: Column transform expression.
+          - sourceColumns[0].node.name: Source table name.
+          - sourceColumns[0].column.name: Source column name.
+
+  Logic:
+      1. If transform is not empty and matches the source column name
+         (ignoring double quotes), return a fully qualified source
+         column reference:
+             "SOURCE_TABLE"."SOURCE_COLUMN"
+
+      2. If transform is not empty and does not match the source column
+         name, return the transform expression as-is.
+
+      3. If transform is empty, return NULL.
+
+  Examples:
+      transform = '"N_NAME"'      -> "NATION_TEST"."N_NAME"
+      transform = 'N_NAME'        -> "NATION_TEST"."N_NAME"
+      transform = 'UPPER(N_NAME)' -> UPPER(N_NAME)
+      transform = ''              -> NULL
+  ========================================================================#}
+  {%- macro get_source_transform_v2(col) -%}
+      {%- set transform = col.transform | trim -%}
+      {%- if transform != '' -%}
+          {%- if col.sourceColumns
+                  and col.sourceColumns[0].node
+                  and transform | replace('"', '')
+                      == col.sourceColumns[0].column.name -%}
+
+                "{{ col.sourceColumns[0].node.name }}"."{{ col.sourceColumns[0].column.name }}"
+          {%- else -%}
+              {{ transform }}
+          {%- endif -%}
+      {%- else -%}
+          NULL
+      {%- endif -%}
+  {%- endmacro -%}
 name: macro
 type: Macro
