@@ -2,6 +2,8 @@
 @nodeType("664")
 @testsEnabled(true)
 @tests("SELECT 1 FROM {{ this }} GROUP BY EMP_NAME HAVING COUNT(*) > 1", "Before", true)
+@orderby(true)
+@orderbycolumn("[object Object]", "desc")
 SELECT
      "EMP_ID" AS "EMP_ID",
      "EMP_NAME" AS "EMP_NAME" @tests('null'),
