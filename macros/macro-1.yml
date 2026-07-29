@@ -468,7 +468,7 @@ macroString: |-
       {%- set ns = namespace(orderByClause='') -%}
 
       {%- if config.orderby -%}
-          {%- for item in config.orderbycolumn -%}
+          {%- for item in config.orderbycolumn.get('items', []) -%}
               {%- if loop.first -%}
                   {%- set ns.orderByClause = '"' ~ item.sortColName.name ~ '" ' ~ item.sortOrder -%}
               {%- else -%}

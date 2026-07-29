@@ -7,14 +7,16 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 {# == Node Type Name           : Work  == #}
 {# == Node Type Description    : Loads a table with custome SQL logic  == #}
 {#---------------------------------------------------------------------------------------------#}
+{{stage('0')}}
+-- config.tests is mapping = {{ config.tests is mapping }}
+-- config.tests is sequence = {{ config.tests is sequence }}
+-- config.tests = {{ config.tests }}
+-- config.orderbycolumn is sequence = {{ config.tests is sequence }}
+-- config.orderbycolumn is sequence = {{ config.tests is sequence }}
+select 1=0
 
 {# == To run data quality tests before data insertion == #}
 {{ run_tests('Before') }}
-
-        -- config.tests is mapping = {{ config.tests is mapping }}
-        -- config.tests is sequence = {{ config.tests is sequence }}
-        -- config.orderbycolumn is sequence = {{ config.tests is sequence }}
-        -- config.orderbycolumn is sequence = {{ config.tests is sequence }}
 
 {%- if node.materializationType == 'table' %}
 
