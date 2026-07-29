@@ -175,6 +175,8 @@ macroString: |-
   ========================================================================= #}
   {%- macro run_tests(runOrder) -%}
 
+  {{ config.tests}}
+
       {%- if config.testsEnabled -%}
           {%- if runOrder == 'After' -%}
               {%- for column in columns -%}
@@ -468,8 +470,8 @@ macroString: |-
       {%- set ns = namespace(orderByClause='') -%}
 
       {%- if config.orderby -%}
-          {%- if config.orderbycolumn.get('items') -%}
-              {%- for item in config.orderbycolumn.get('items') -%}
+          {%- if config.orderbycolumn.get('items', []) -%}
+              {%- for item in config.orderbycolumn.get('items', []) -%}
                   {%- if loop.first -%}
                       {%- set ns.orderByClause = '"' ~ item.sortColName.name ~ '" ' ~ item.sortOrder -%}
                   {%- else -%}
