@@ -196,7 +196,7 @@ macroString: |-
           {%- endif -%}
 
           {%- set ns = namespace(cnt=0) -%}
-          {%- for test in config.get('tests', {}).get('items', []) -%}
+          {%- for test in config.tests.get('items', []) -%}
               {%- if test.runOrder == runOrder -%}
                   {%- set ns.cnt = ns.cnt + 1 -%}
 
