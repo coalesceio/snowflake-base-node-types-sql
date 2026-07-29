@@ -4,11 +4,12 @@
 @orderby(true)
 @orderbycolumn("[object Object]", "desc")
 @lastModifiedCompToggle(true)
-@lastModifiedColumn("[object Object]")
 @type2Dimension(true)
 @tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "After", true)
 @tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "Before", true)
 @tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "Before", false)
+@lastModifiedColumn("[object Object]")
+@testsEnabled(true)
 WITH ALL_NATIONS AS(
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY" ,
