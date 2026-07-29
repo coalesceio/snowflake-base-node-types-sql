@@ -1,6 +1,6 @@
-excludeSelector: ""
+excludeSelector: "{ location: \"TARGET\" name: \"V_NATION_COPY\" }"
 fileVersion: 1
 id: "1"
-includeSelector: "{ location: \"SRC\" name: \"NATION_TEST\" } OR { location: \"TARGET\" name: \"V_NATION_COPY\" } OR { location: \"SRC\" name: \"NATION_COPY1\" } OR { location: \"SRC\" name: \"NATION_COPY2\" }"
+includeSelector: "{ location: \"SRC\" name: \"NATION_TEST\" } OR { location: \"TARGET\" name: \"V_NATION_COPY\" } OR { location: \"SRC\" name: \"NATION_COPY1\" } OR { location: \"SRC\" name: \"NATION_COPY2\" } OR { location: \"TARGET\" name: \"WRK_NATION_T\" }"
 name: Test_Job
 type: Job
