@@ -175,6 +175,9 @@ macroString: |-
   ========================================================================= #}
   {%- macro run_tests(runOrder) -%}
 
+          -- {{ config.tests is mapping }}
+          -- {{ config.tests is sequence }}
+
       {%- if config.testsEnabled -%}
           {%- if runOrder == 'After' -%}
               {%- for column in columns -%}
@@ -194,9 +197,6 @@ macroString: |-
                   {%- endif -%}
               {%- endfor -%}
           {%- endif -%}
-
-          -- {{ config.tests is mapping }}
-          -- {{ config.tests is msequence }}
 
           {%- set ns = namespace(cnt=0) -%}
           {%- for test in config.tests -%}
