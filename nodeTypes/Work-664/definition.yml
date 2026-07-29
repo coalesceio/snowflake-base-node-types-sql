@@ -109,7 +109,7 @@ metadata:
              enableIf: ""
 
         isRequired: false
-        enableIf: "false"
+        enableIf: "{% if config.testsEnabled == true %} true {% else %} false {% endif %}"
 
       - displayName: Pre-SQL
         attributeName: preSQL
