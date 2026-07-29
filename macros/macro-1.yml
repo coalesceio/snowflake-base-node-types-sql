@@ -484,7 +484,9 @@ macroString: |-
 
       {%- endfor -%}
 
-      ORDER BY {{ ns.orderByClause }}
+      {%- if ns.orderByClause != '' -%}
+          ORDER BY {{ ns.orderByClause }}
+      {%- endif -%}
 
   {%- endmacro -%}
 
