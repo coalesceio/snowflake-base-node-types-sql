@@ -195,8 +195,11 @@ macroString: |-
               {%- endfor -%}
           {%- endif -%}
 
+          -- {{ config.tests is mapping }}
+          -- {{ config.tests is msequence }}
+
           {%- set ns = namespace(cnt=0) -%}
-          {%- for test in config.tests.get('items', []) -%}
+          {%- for test in config.tests -%}
               {%- if test.runOrder == runOrder -%}
                   {%- set ns.cnt = ns.cnt + 1 -%}
 
