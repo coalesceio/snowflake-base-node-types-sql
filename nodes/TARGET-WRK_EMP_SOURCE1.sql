@@ -2,6 +2,8 @@
 @nodeType("664")
 @testsEnabled(true)
 @tests("", "After", true)
+@orderby(true)
+@orderbycolumn("[object Object]", "desc")
 SELECT
      "EMP_ID" AS "EMP_ID",
      "EMP_NAME" AS "EMP_NAME",
