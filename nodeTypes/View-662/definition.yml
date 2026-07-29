@@ -83,6 +83,6 @@ metadata:
              enableIf: ""
 
         isRequired: false
-        enableIf: "false"
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
 name: View
 type: NodeType
