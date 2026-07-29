@@ -4,9 +4,14 @@
 @groupByAll(true)
 @description("Table''desc")
 @testsEnabled(true)
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "Before", true)
 @tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "After", true)
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "Before", true)
 @tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "After", true)
 @orderbycolumn("[object Object]", "desc")
+@orderbycolumn("[object Object]", "desc")
+
+
 WITH ALL_NATION AS
 (
 SELECT
