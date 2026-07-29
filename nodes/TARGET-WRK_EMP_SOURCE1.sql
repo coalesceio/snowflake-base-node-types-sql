@@ -6,7 +6,7 @@
 SELECT
      "EMP_ID" AS "EMP_ID",
      "EMP_NAME" AS "EMP_NAME",
-     "EMP_CITY" AS "EMP_CITY",
+     "EMP_CITY" AS "EMP_CITY" @tests("null"),
      "DML_FLAG" AS "DML_FLAG",
      "CREATED_AT" AS "CREATED_AT"
 FROM {{ ref('SRC', 'EMP_SOURCE') }} "EMP_SOURCE"
