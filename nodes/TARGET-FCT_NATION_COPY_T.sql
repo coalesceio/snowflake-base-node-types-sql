@@ -29,7 +29,7 @@ SELECT
      "N_NATIONKEY" AS "N_NATIONKEY"  @nullable(false) @isBusinessKey,
      "N_NAME" AS "N_NAME" @defaultValue("NA") @isChangeTracking,
      "N_REGIONKEY" AS "N_REGIONKEY" @description("Column''desc"),
-     "N_COMMENT" AS "N_COMMENT",
+     "N_COMMENT" AS "N_COMMENT" @tests('null'),
      "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE",
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE"

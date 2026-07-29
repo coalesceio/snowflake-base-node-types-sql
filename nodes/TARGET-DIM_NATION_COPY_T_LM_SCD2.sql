@@ -7,8 +7,8 @@
 @selectDistinct(true)
 @orderby(true)
 @orderbycolumn("[object Object]", "desc")
-@lastModifiedColumn("[object Object]")
 @type2Dimension(true)
+@lastModifiedColumn("[object Object]")
 WITH ALL_NATIONS AS(
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY" ,
@@ -38,5 +38,5 @@ SELECT
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE",
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE",
      CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE"
-FROM ALL_NATIONS
+FROM ALL_NATIONS ALL_NATIONS
 WHERE ALL_NATIONS.N_NATIONKEY = 2

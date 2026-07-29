@@ -3,6 +3,10 @@
 @description("Table''adk")
 @insertZeroKey(true)
 @insertZeroKeySurrogateKey("10")
+@testsEnabled(true)
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "After", true)
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "Before", true)
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "Before", false)
 WITH ALL_NATIONS AS(
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY" ,
@@ -25,7 +29,7 @@ SELECT
      ALL_NATIONS."N_NATIONKEY" AS "N_NATIONKEY"  @nullable(false) @isBusinessKey,
      ALL_NATIONS."N_NAME" AS "N_NAME" @defaultValue("NA") @isChangeTracking,
      ALL_NATIONS."N_REGIONKEY" AS "N_REGIONKEY" @description("Column''desc") @isBusinessKey,
-     ALL_NATIONS."N_COMMENT" AS "N_COMMENT",
+     ALL_NATIONS."N_COMMENT" AS "N_COMMENT" @tests('null'),
      ALL_NATIONS."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
      1 AS "SYSTEM_VERSION",
      'Y' AS "SYSTEM_CURRENT_FLAG",

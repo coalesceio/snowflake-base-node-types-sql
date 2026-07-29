@@ -6,6 +6,7 @@
 @description("Table''desc")
 @testsEnabled(true)
 @tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "After", true)
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "After", true)
 WITH ALL_NATION AS
 (
 SELECT
@@ -26,10 +27,10 @@ FROM {{ ref('SRC', 'NATION_COPY2') }} "NATION_COPY2"
 )
 
 SELECT
-     "N_NATIONKEY" AS "N_NATIONKEY"  @nullable(false),
-     "N_NAME" AS "N_NAME_RENAME" @defaultValue("NA"),
-     "N_REGIONKEY" AS "N_REGIONKEY" @description("Column''desc"),
-     "N_COMMENT" AS "N_COMMENT",
-     "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP"
-FROM ALL_NATION
+     ALL_NATION."N_NATIONKEY" AS "N_NATIONKEY"  @nullable(false),
+     ALL_NATION."N_NAME" AS "N_NAME_RENAME" @defaultValue("NA"),
+     ALL_NATION."N_REGIONKEY" AS "N_REGIONKEY" @description("Column''desc"),
+     ALL_NATION."N_COMMENT" AS "N_COMMENT" @tests('null'),
+     ALL_NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP"
+FROM ALL_NATION ALL_NATION
 WHERE N_NATIONKEY = 2
