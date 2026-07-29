@@ -476,9 +476,7 @@ macroString: |-
               {%- endif -%}
           {%- endfor -%}
 
-          {%- if ns.orderByClause -%}
               ORDER BY {{ ns.orderByClause }}
-          {%- endif -%}
 
       {%- endif -%}
   {%- endmacro -%}

@@ -11,9 +11,9 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 -- config.tests is mapping = {{ config.tests is mapping }}
 -- config.tests is sequence = {{ config.tests is sequence }}
 -- config.tests = {{ config.tests }}
+-- config.orderbycolumn is mapping = {{ config.tests is mapping }}
 -- config.orderbycolumn is sequence = {{ config.tests is sequence }}
--- config.orderbycolumn is sequence = {{ config.tests is sequence }}
--- config.tests = {{ config.orderbycolumn }}
+-- config.orderbycolumn = {{ config.orderbycolumn }}
 select 1=0
 
 {# == To run data quality tests before data insertion == #}
