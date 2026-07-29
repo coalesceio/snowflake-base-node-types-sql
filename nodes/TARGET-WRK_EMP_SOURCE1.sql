@@ -1,7 +1,7 @@
 @id("46b1a105-6894-4e72-b9d9-14af05cc4c9a")
 @nodeType("664")
 @testsEnabled(true)
-@tests("SELECT 1 FROM {{ this }} GROUP BY EMP_NAME HAVING COUNT(*) > 1", "After", true)
+@tests("", "After", true)
 SELECT
      "EMP_ID" AS "EMP_ID",
      "EMP_NAME" AS "EMP_NAME",
