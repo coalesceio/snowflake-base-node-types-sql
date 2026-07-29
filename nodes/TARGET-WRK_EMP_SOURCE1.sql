@@ -1,7 +1,6 @@
 @id("46b1a105-6894-4e72-b9d9-14af05cc4c9a")
 @nodeType("664")
 @testsEnabled(true)
-@tests("", "After", true)
 @orderby(true)
 @orderbycolumn("[object Object]", "desc")
 SELECT
