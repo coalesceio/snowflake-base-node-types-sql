@@ -35,6 +35,7 @@ The key differences between these nodes are outlined below.
 | **Distinct** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **True**: Group By All is hidden and DISTINCT data is processed.<br/>**False**: Group By All is visible. |
 | **Group By All** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **True**: DISTINCT is hidden and data is grouped by all columns.<br/>**False**: DISTINCT is visible. |
 | **Order By** | ✅ | ✅ | ✅ | ✅ | ✅ |  | **True**: Sort column and sort order drop down are visible and are required to form order by clause<br/>**False**: Sort column and sort order drop down are invisible |
+| **Insert Zero Key Record⁵** |  | ✅ |  |  |  |  | Enables insertion of a zero key (ghost) record. |
 | **Business Key** |  | ✅ | ✅ | ✅ |  |  | Required column for both SCD Type 1 and Type 2.<br/>**Note:** Geometry and Geography data type columns are not supported as business key columns. |
 | **Last Modified Based Incremental Load**² |  | ✅ | ✅ | ✅ |  |  | **True**: When enabled we can do timestamp based/Integer based CDC<br/>**False**: Regular CDC based on Change tracking columns is done. |
 | **Lookback Days**¹ |  | ✅ | ✅ | ✅ |  |  | Specifies the number of days to look back from the last successful load when extracting incremental data |
@@ -42,24 +43,11 @@ The key differences between these nodes are outlined below.
 | **Enable SCD Type2**¹ |  | ✅ | ✅ |  |  |  | **True**: SCD Type2 - CDC is based on timestamp/ID column chosen.<br/>**False**: SCD Type1 - CDC is based on timestamp/ID column chosen. |
 | **Change Tracking** |  | ✅ | ✅ |  |  |  | *Only when Last Modified Based Incremental Load is OFF*<br/>Required column/s for SCD Type 2 |
 
-### Zero Key Record Options
-
-| Option | Work | Dimension | Persistent Stage | Fact | Factless Fact | View | Description |
-|----------|------|-----------|------------------|------|---------------|------|-------------|
-| **Insert Zero Key Record** |  | ✅ |  |  |  |  | Enables insertion of a zero key (ghost) record. |
-| **Default Surrogate Key Value**³ |  | ✅ |  |  |  |  | Default surrogate key value used for the zero key record. |
-| **Default String Value** |  | ✅ |  |  |  |  | Default value used for string columns in the zero key record. |
-| **Default Date/Time/Timestamp Value** |  | ✅ |  |  |  |  | Default value used for date, time, and timestamp columns in the zero key record. |
-| **Default Boolean Value** |  | ✅ |  |  |  |  | Default value used for boolean columns in the zero key record. |
-
 ### Control Options
 
 | Options | Work | Dimension | Persistent Stage | Fact | Factless Fact | View | Description |
 |----------|------|-----------|------------------|------|---------------|------|-------------|
-| **Enable tests** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines if tests are enabled |
-| **Test**⁴ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | SQL query executed as a validation test. The test fails if the query returns any records. |
-| **Run**⁴ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines when the test is executed.<br/>**Before** - Run before the load operation.<br/>**After** - Run after the load operation. |
-| **Continue On Failure**⁴ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines whether execution should continue if the test fails.<br/>**True** - Continue execution.<br/>**False** - Stop execution. |
+| **Enable tests⁴** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines if tests are enabled. <br/>Tests can be defined using @tests annotations at both the node and column levels.|
 | **Pre-SQL** | ✅ | ✅ | ✅ | ✅ | ✅ |  | SQL to execute before data insert operation |
 | **Post-SQL** | ✅ | ✅ | ✅ | ✅ | ✅ |  | SQL to execute after data insert operation |
 
@@ -81,7 +69,30 @@ The key differences between these nodes are outlined below.
 - ¹ Enabled only if Last Modified Based Incremental Load is ON
 - ² For timestamp-based incremental loads, a *validation test checks* the selected Last Modified column for NULL values before the merge. If NULL values are detected, the merge is stopped; otherwise, processing continues.
 - ³ Changing the surrogate key value after deployment is not recommended.
-- ⁴ Enabled only if Enable tests is ON
+- ⁴ Tests are performed only when `Enable tests` is ON
+    ```text
+    @tests("<SQL Query>", "<Run Order>", <Continue On Failure>)
+    ```
+    | Parameter | Description |
+    |-----------|-------------|
+    | SQL Query | SQL statement to execute as a validation test. The test fails if the query returns any records. |
+    | Run Order | `Before` or `After`. Determines whether the test is executed before or after the load operation. |
+    | Continue On Failure | `true` or `false`. Determines whether execution continues when the test fails. |
+    
+    **Examples**
+    
+    ```text
+    @tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "Before", true)
+    
+    @tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "After", true)
+    ```
+- ⁵ Applicable to **Dimension** nodes only.
+    | Option | Description |
+    |----------|-------------|
+    | **Default Surrogate Key Value**³ | Default surrogate key value used for the zero key record. |
+    | **Default String Value** | Default value used for string columns in the zero key record. |
+    | **Default Date/Time/Timestamp Value** | Default value used for date, time, and timestamp columns in the zero key record. |
+    | **Default Boolean Value** | Default value used for boolean columns in the zero key record. |
 - Verify that all **column datatypes** are successfully resolved before creating the object. Columns with an `UNKNOWN` datatype may cause stage generation or runtime failures.
 - If a **Dim and PStage node** is renamed, ensure that the surrogate key column is also renamed to follow the `{{NODE_NAME}}_KEY` naming convention. Failure to do so may result in the surrogate key attribute being lost, which can impact the expected behavior of the flow.
 - `@nullable` defaults to **true**. Use `@nullable("false")` to enforce NOT NULL.
