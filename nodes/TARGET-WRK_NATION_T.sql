@@ -4,6 +4,8 @@
 @orderbycolumn("[object Object]", "desc")
 @groupByAll(true)
 @description("Table''desc")
+@testsEnabled(true)
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "After", true)
 WITH ALL_NATION AS
 (
 SELECT

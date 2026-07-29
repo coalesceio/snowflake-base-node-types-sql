@@ -3,6 +3,10 @@
 @description("Table''adk")
 @insertZeroKey(true)
 @insertZeroKeySurrogateKey("10")
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "After", true)
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "Before", true)
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "Before", false)
+@testsEnabled(true)
 WITH ALL_NATIONS AS(
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY" ,

@@ -124,15 +124,16 @@ metadata:
     - groupName: Control Options
       items:
 
+      - type: label
+        attributeName: noteColumnTests
+        syntax: html
+        displayName: ℹ️ Use annotation @tests on nodes/columns. Refer to the documentation for more information.
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+
       - displayName: Enable Tests
         attributeName: testsEnabled
         type: toggleButton
         default: false
-
-      - type: note
-        attributeName: noteColumnTests
-        displayName: ℹ️ Use @tests annotation on columns for column level tests
-        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
 
       - type: tabular
         displayName: 'ⓘ Test fails if the query returns any records'
@@ -163,7 +164,7 @@ metadata:
              enableIf: ""
 
         isRequired: false
-        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+        enableIf: "false"
 
       - displayName: Pre-SQL
         attributeName: preSQL

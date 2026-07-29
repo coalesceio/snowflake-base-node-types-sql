@@ -4,6 +4,10 @@
 @orderbycolumn("[object Object]", "desc")
 @groupByAll(true)
 @description("table''adkfh")
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "After", true)
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "Before", true)
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "Before", false)
+@testsEnabled(true)
 WITH ALL_NATIONS AS(
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY" ,
@@ -23,7 +27,7 @@ FROM {{ ref('SRC', 'NATION_COPY2') }} "NATION_COPY2"
 ) 
 SELECT
      ALL_NATIONS."N_NATIONKEY" AS "N_NATIONKEY"  @nullable(false) @isBusinessKey,
-     ALL_NATIONS."N_NAME" AS "N_NAME" @defaultValue("NA"),
+     ALL_NATIONS."N_NAME" AS "N_NAME" @defaultValue("NA") @tests('null'),
      ALL_NATIONS."N_REGIONKEY" AS "N_REGIONKEY" @description("Column''desc"),
      ALL_NATIONS."N_COMMENT" AS "N_COMMENT",
      ALL_NATIONS."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" ,
