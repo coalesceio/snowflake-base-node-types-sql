@@ -1,15 +1,15 @@
 @id("c814974d-8fd5-48f2-9fb1-6a9aa9080a69")
 @nodeType("664")
-@orderby(true)
 @groupByAll(true)
 @description("Table''desc")
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "Before", true)
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "After", true)
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "Before", true)
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "After", true)
+@orderbycolumn("[object Object]", "desc")
+@orderbycolumn("[object Object]", "desc")
+@orderby(true)
 @testsEnabled(true)
-@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "Before", true)
-@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "After", true)
-@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "Before", true)
-@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "After", true)
-@orderbycolumn("[object Object]", "desc")
-@orderbycolumn("[object Object]", "desc")
 
 
 WITH ALL_NATION AS

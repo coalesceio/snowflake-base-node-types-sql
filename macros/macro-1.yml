@@ -467,25 +467,23 @@ macroString: |-
           ORDER BY "CUSTOMER_ID" ASC, "LOAD_DATE" DESC
   ====================================================================================================#}
   {%- macro sortorder_by_colv() -%}
-      {%- set ns = namespace(orderByClause='') -%}
-      {%- set orderByItems = config.orderbycolumn.get('items', []) if config.orderbycolumn is mapping
-                                                                  else config.orderbycolumn -%}
+      {%- if config.orderby -%}
+          {%- set ns = namespace(orderByClause='') -%}
+          {%- set orderByItems = config.orderbycolumn.get('items', []) if config.orderbycolumn is mapping
+                                                                      else config.orderbycolumn -%}
 
-      {%- for item in orderByItems -%}
+          {%- for item in orderByItems -%}
+              {%- set colName = item.sortColName.name if config.orderbycolumn is mapping
+                                                      else item.sortColName -%}
 
-          {%- set colName = item.sortColName.name if config.orderbycolumn is mapping
-                                                  else item.sortColName -%}
-
-          {%- if loop.first -%}
-              {%- set ns.orderByClause = '"' ~ colName ~ '" ' ~ item.sortOrder -%}
-          {%- else -%}
-              {%- set ns.orderByClause = ns.orderByClause ~ ', "' ~ colName ~ '" ' ~ item.sortOrder -%}
-          {%- endif -%}
-
-      {%- endfor -%}
-
-      ORDER BY {{ ns.orderByClause }}
-
+              {%- if loop.first -%}
+                  {%- set ns.orderByClause = '"' ~ colName ~ '" ' ~ item.sortOrder -%}
+              {%- else -%}
+                  {%- set ns.orderByClause = ns.orderByClause ~ ', "' ~ colName ~ '" ' ~ item.sortOrder -%}
+              {%- endif -%}
+          {%- endfor -%}
+          ORDER BY {{ ns.orderByClause }}
+      {%- endif -%}
   {%- endmacro -%}
 
   {# ========================================================================
