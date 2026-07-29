@@ -1,0 +1,82 @@
+{#
+    Copyright (c) 2026 Coalesce. All rights reserved.
+This script and its associated documentation are confidential and proprietary to Coalesce.
+Unauthorized reproduction, distribution, or disclosure of this material is strictly prohibited.
+Coalesce permits you to copy and modify this script for the purposes of using with Coalesce but does not permit copying or modification for any other purpose.  
+#}
+{# == Node Type Name           : Factless Fact  == #}
+{# == Node Type Description    : This node loads data into Factless Fact table using options distinct, groupby all, order by, multi-source cte  == #}
+
+{# == To run data quality tests before data insertion == #}
+{{ run_tests('Before') }}
+
+{#== Pre-SQL ==#}
+{%- if config.preSQL %}
+    {{ stage('Pre-SQL') }}
+    {{ config.preSQL }}
+{%- endif %}
+
+{# == Truncate data before data insertion  == #}
+{%- if config.truncateBefore %}
+    {{ stage('Truncate ' + node.materializationType) }}
+    TRUNCATE IF EXISTS {{ ref_no_link(node.location.name, node.name) }}
+{%- endif %}
+
+{{ stage('Load ' + node.materializationType + ' Using Merge') }}
+MERGE INTO {{ ref_no_link(node.location.name, node.name) }} "TGT"
+USING (
+
+    {{- sources[0].cteString }}
+    SELECT {%- if config.selectDistinct %} DISTINCT {%- endif %}
+    {%- for col in sources[0].columns %}
+        {{ get_source_transform_v2(col) }} AS "{{ col.name }}"
+        {%- if not loop.last %}, {%- endif %}
+    {%- endfor %}
+    {{- sources[0].join }}
+
+    {%- if config.groupByAll %} GROUP BY ALL {%- endif %}
+    {{ sortorder_by_colv() }}
+) AS "SRC"
+ON
+
+{% for col in columns if not (col.isSystemUpdateDate or col.isSystemCreateDate) -%}
+    {%- if not loop.first %} AND {%- endif %}
+    {{ safe_equals('"SRC"."' ~  col.name ~ '"', '"TGT"."' ~ col.name ~ '"', col.dataType) }}
+{%- endfor %}
+
+WHEN MATCHED 
+{%- for col in columns if not (col.isSystemCreateDate) %}
+    {%- if loop.first %} AND ( {%- else %} OR {%- endif %}
+    {{ safe_compare('"SRC"."' ~  col.name ~ '"', '"TGT"."' ~ col.name ~ '"', col.dataType) }}
+    {%- if loop.last %} ) {%- endif %}
+{%- endfor %}
+
+THEN UPDATE SET
+{%- for col in columns if not (col.isSystemCreateDate) %}
+    "TGT"."{{ col.name }}" = "SRC"."{{ col.name }}"
+    {%- if not loop.last %}, {%- endif %}
+{%- endfor %}
+
+WHEN NOT MATCHED THEN INSERT
+(
+    {%- for col in columns if not col.isSurrogateKey %}
+        "{{ col.name }}"
+        {%- if not loop.last %}, {%- endif %}
+    {%- endfor %}
+)
+VALUES
+(
+    {%- for col in columns if not col.isSurrogateKey %}
+        "SRC"."{{ col.name }}"
+        {%- if not loop.last %}, {%- endif %}
+    {%- endfor %}
+)
+
+{#== Post-SQL ==#}
+{%- if config.postSQL %}
+    {{ stage('Post-SQL') }}
+    {{ config.postSQL }}
+{%- endif %}
+
+{# == To run data quality tests after data insertion == #}
+{{ run_tests('After') }}

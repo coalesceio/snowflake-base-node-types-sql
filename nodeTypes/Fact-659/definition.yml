@@ -1,14 +1,14 @@
 fileVersion: 2
-id: "664"
+id: "659"
 isDisabled: false
 metadata:
   defaultStorageLocation: null
   error: null
   nodeMetadataSpec: |-
-    capitalized: Work
-    short: WRK
-    plural: Works
-    tagColor: '#2EB67D'
+    capitalized: Fact
+    plural: Facts
+    short: FCT
+    tagColor: '#D9A438'
 
     enableCTESupport: true
 
@@ -22,12 +22,67 @@ metadata:
         - table
         - view
 
+      - type: businessKeyColumns
+        isRequired: false
+        enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+      - type: toggleButton
+        attributeName: lastModifiedCompToggle
+        displayName: Last Modified Based Incremental Load
+        default: false
+        enableIf: "{% if node.materializationType != 'view'
+                    and (columns 
+                        | selectattr('isBusinessKey')
+                        | list
+                        | length > 0) %} true {% else %} false {% endif %}"
+
+      - type: note
+        attributeName: noteLastModColumn
+        displayName: ⚠️ Unsupported column data type
+        enableIf:  "{% if config.lastModifiedCompToggle
+                    and node.materializationType != 'view'
+                    and (columns 
+                      | selectattr('isBusinessKey')
+                      | list
+                      | length > 0)
+                    and not (
+                      ((config.lastModifiedColumn).dataType | upper).startswith('TIME')
+                      or 'INT' in ((config.lastModifiedColumn).dataType | upper)
+                      or ((config.lastModifiedColumn).dataType | upper).startswith('INT')
+                      or ((config.lastModifiedColumn).dataType | upper).startswith('BIGINT')
+                      or ((config.lastModifiedColumn).dataType | upper).startswith('NUMBER')
+                      or ((config.lastModifiedColumn).dataType | upper).startswith('NUMERIC')
+                    ) %} true {% else %} false {% endif %}"
+
+      - type: columnDropdownSelector
+        attributeName: lastModifiedColumn
+        displayName: |
+          Last Modified Column [ℹ️Datatype: NUMERIC or TIMESTAMP related]
+        enableIf: "{% if node.materializationType != 'view' 
+                    and config.lastModifiedCompToggle
+                    and (columns 
+                      | selectattr('isBusinessKey')
+                      | list
+                      | length > 0) %} true {% else %} false {% endif %}"
+
+      - type: textBox
+        displayName: Lookback Days
+        attributeName: lookBackDays
+        default : 0
+        enableIf: "{% if config.lastModifiedCompToggle
+                    and node.materializationType != 'view'
+                    and (((config.lastModifiedColumn).dataType | upper).startswith('TIME'))
+                    and (columns 
+                      | selectattr('isBusinessKey')
+                      | list
+                      | length > 0) %} true {% else %} false {% endif %}"
+
       - displayName: Truncate Before
         attributeName: truncateBefore
         type: toggleButton
-        default: true
+        default: false
         enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
-
+        
       - displayName: Distinct
         attributeName: selectDistinct
         type: toggleButton
@@ -62,7 +117,7 @@ metadata:
              options:
              - desc
              - asc
-      
+
         isRequired: false
         enableIf:  "{% if node.materializationType != 'view' and config.orderby %} true {% else %} false {% endif %}"
 
@@ -126,12 +181,11 @@ metadata:
         enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
 
     - groupName: Column Annotations Help
-      enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
       items:
 
       - type: note
         attributeName: restrictedEdit
-        displayName: ⛔ The section below is read-only and provided for reference purposes only
+        displayName: ⛔ The section below is read-only and provided for reference purposes only.
         enableIf: "true"
 
       - displayName: Allowed Column Annotations
@@ -164,6 +218,22 @@ metadata:
         ✦ @inHash(\"<hash_order>|<hash_name>\")\n
           ➜ Generates hash key from columns\n
           ➜ Use it along with macro {{ get_hash('<hash_name>') }}\n
-        ━━━━━━━━━━━━━━━━━━━\n\n"
-name: Work
+        ━━━━━━━━━━━━━━━━━━━"
+
+      enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+    systemColumns:
+
+    - displayName: SYSTEM_CREATE_DATE
+      transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
+      dataType: TIMESTAMP
+      placement: end
+      attributeName: isSystemCreateDate
+
+    - displayName: SYSTEM_UPDATE_DATE
+      transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
+      dataType: TIMESTAMP
+      placement: end
+      attributeName: isSystemUpdateDate
+name: Fact
 type: NodeType

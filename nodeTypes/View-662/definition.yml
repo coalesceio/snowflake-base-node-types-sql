@@ -1,0 +1,88 @@
+fileVersion: 2
+id: "662"
+isDisabled: false
+metadata:
+  defaultStorageLocation: null
+  error: null
+  nodeMetadataSpec: |-
+    capitalized: View
+    short: V
+    tagColor: '#C4C4C4'
+    isDisabled: true
+    plural: Views
+
+    enableCTESupport: true
+
+    config:
+    - groupName: General Options
+      items:
+      - type: materializationSelector
+        isRequired: true
+        default: view
+        options:
+        - view
+
+      - displayName: Secure
+        attributeName: secureoption
+        type: toggleButton
+        enableIf: "{% if  node.override.create.enabled %} false {% else %} true {% endif %}"
+        default: false
+
+      - displayName: Distinct
+        attributeName: selectDistinct
+        type: toggleButton
+        enableIf: "{% if config.groupByAll %} false {% else %} true {% endif %}"
+        default: false
+        
+      - displayName: Group By All
+        attributeName: groupByAll
+        type: toggleButton
+        default: false
+        enableIf: "{% if config.selectDistinct %} false {% else %} true {% endif %}"
+
+    - groupName: Control Options
+      items:
+
+      - type: label
+        attributeName: noteColumnTests
+        syntax: html
+        displayName: ℹ️ Use annotation @tests on nodes/columns. Refer to the documentation for more information.
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+
+      - displayName: Enable Tests
+        attributeName: testsEnabled
+        type: toggleButton
+        default: false
+
+      - type: tabular
+        displayName: 'ⓘ Test fails if the query returns any records'
+        attributeName: tests
+        columns:
+
+          -  displayName: Test
+             attributeName: templateString
+             type: textBox
+             syntax: sql
+             isRequired: false
+             enableIf: ""
+
+          -  displayName: Run
+             attributeName: runOrder
+             type: dropdownSelector
+             default: After
+             isRequired: false
+             options:
+              - "Before"
+              - "After"
+             enableIf: ""
+
+          -  type: toggleButton
+             attributeName: continueOnFailure
+             displayName: Continue On Failure
+             default: true
+             enableIf: ""
+
+        isRequired: false
+        enableIf: "false"
+name: View
+type: NodeType
