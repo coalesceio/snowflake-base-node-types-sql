@@ -23,9 +23,9 @@ FROM {{ ref('SRC', 'NATION_COPY2') }} "NATION_COPY2"
 SELECT
      0 AS "PSTG_NATION_COPY1_KEY",
      "N_NATIONKEY" AS "N_NATIONKEY",
-     "N_NAME"::VARCHAR(30) AS "N_NAME",
+     "N_NAME"::VARCHAR(30) AS "N_NAME" @nullable(false),
      "N_REGIONKEY" AS "N_REGIONKEY" @description("Region"),
-     "N_COMMENT" AS "N_COMMENT",
+     "N_COMMENT" AS "N_COMMENT" @defaultValue("NA"),
      "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
      1 AS "SYSTEM_VERSION",
      'Y' AS "SYSTEM_CURRENT_FLAG",
