@@ -35,7 +35,7 @@ USING (
     {{- sources[0].join }}
 
     {%- if config.groupByAll %} GROUP BY ALL {%- endif %}
-    {{ sortorder_by_colv() }}
+    {{ sortorder_by_col_v2() }}
 ) AS "SRC"
 ON
 
