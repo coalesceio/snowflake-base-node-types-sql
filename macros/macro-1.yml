@@ -444,7 +444,7 @@ macroString: |-
   {%- endmacro -%}
 
   {#====================================================================================================
-      Macro Name : sortorder_by_colv
+      Macro Name : sortorder_by_col_v2
 
       Description:
           Generates an ORDER BY clause using the configured sort columns and
@@ -466,7 +466,7 @@ macroString: |-
       Example Output:
           ORDER BY "CUSTOMER_ID" ASC, "LOAD_DATE" DESC
   ====================================================================================================#}
-  {%- macro sortorder_by_colv() -%}
+  {%- macro sortorder_by_col_v2() -%}
       {%- if config.orderby -%}
           {%- set ns = namespace(orderByClause='') -%}
           {%- set orderByItems = config.orderbycolumn.get('items', []) if config.orderbycolumn is mapping

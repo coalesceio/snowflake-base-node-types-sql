@@ -168,7 +168,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                 {%- endfor %}
                 {{ get_clause(joinclause) }}
                 {%- if config.groupByAll %} GROUP BY ALL {%- endif %}
-                {{ sortorder_by_colv() }}
+                {{ sortorder_by_col_v2() }}
             )
 
             UNION ALL
@@ -222,7 +222,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                 {%- endif %}
                 {{  get_clause(joinclause)  }}
                 {%- if config.groupByAll %} GROUP BY ALL {%- endif %}
-                {{ sortorder_by_colv() }}
+                {{ sortorder_by_col_v2() }}
             )
 
             UNION ALL
@@ -278,7 +278,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                 {%- endif %}
                 {{  get_clause(joinclause)  }}
                 {%- if config.groupByAll %} GROUP BY ALL {%- endif %}
-                {{ sortorder_by_colv() }}
+                {{ sortorder_by_col_v2() }}
             )
 
             {%- if not lastModifiedComparison %}
@@ -358,7 +358,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                         
                         {{  get_clause(joinclause)  }}
                         {%- if config.groupByAll %} GROUP BY ALL {%- endif %}
-                        {{ sortorder_by_colv() }}
+                        {{ sortorder_by_col_v2() }}
                     ) 
                 {%- endif %}
             {%- endif %}
@@ -399,7 +399,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                 {%- endif %}
 
                 {%- if config.groupByAll or lastModifiedComparison %} GROUP BY ALL {%- endif %}
-                {{ sortorder_by_colv() }}
+                {{ sortorder_by_col_v2() }}
             )
         {%- endif %}
 
