@@ -1,6 +1,5 @@
 @id("2940e54e-7357-4fee-845d-111a1d3aaf94")
 @nodeType("664")
-@materializationType("view")
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY",
      "N_NAME" AS "N_NAME",
