@@ -786,7 +786,7 @@ The SQL Work Node type has three configuration groups:
 
 | |
 |---|
-| <img width="441" height="474" alt="image" src="https://github.com/user-attachments/assets/ed2cd106-7a03-4ef3-9237-fb803eaf0bf4" /> |
+| <img width="432" height="627" alt="image" src="https://github.com/user-attachments/assets/60108733-6a85-41b0-ae41-f458e3a69776" /> |
 
 | **Property** | **Description** |
 |---------|-------------|
@@ -802,7 +802,7 @@ The SQL Work Node type has three configuration groups:
 
 | |
 |---|
-| <img width="451" height="416" alt="image" src="https://github.com/user-attachments/assets/8a2e5186-c6e4-4db7-a7c1-ff363f1e3a22" /> |
+| <img width="452" height="412" alt="image" src="https://github.com/user-attachments/assets/dd51a395-befb-43e4-bd5c-f2fb34741d4e" /> |
 
 | **Property** | **Description** |
 |---------|-------------|
