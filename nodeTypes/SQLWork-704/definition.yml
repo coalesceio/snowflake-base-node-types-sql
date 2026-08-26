@@ -54,7 +54,7 @@ metadata:
               type: string
               description: Determines whether the test is executed before or after the load operation.
               isRequired: false
-              default: Before
+              default: After
               options:
                 - Before
                 - After
