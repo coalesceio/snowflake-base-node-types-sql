@@ -41,7 +41,7 @@ macroString: |-
           {%- set ns = namespace(cnt=0) -%}
           {%- for test in config.tests | default([]) -%}
               {%- if test is mapping and test.parameters is defined -%}
-                  {%- if test.parameters[1] | default("Before") == runOrder -%}
+                  {%- if test.parameters[1] | default("After") == runOrder -%}
                       {%- set ns.cnt = ns.cnt + 1 -%}
                       {{ test_stage(
                           ('Pre Load Test ' if runOrder == 'Before' else 'Post Load Test ') ~ ns.cnt,
