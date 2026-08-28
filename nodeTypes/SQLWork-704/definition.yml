@@ -37,15 +37,6 @@ metadata:
               isRequired: true
               example: 'SELECT 1'
 
-            - name: runOrder
-              type: string
-              description: Determines whether the test is executed before or after the load operation.
-              isRequired: false
-              default: Before
-              options:
-                - Before
-                - After
-
             - name: continueOnFailure
               type: boolean
               description: Determines whether execution continues when the test fails.
@@ -55,6 +46,14 @@ metadata:
               options:
                 - true
                 - false
+            - name: runOrder
+              type: string
+              description: Determines whether the test is executed before or after the load operation.
+              isRequired: false
+              default: Before
+              options:
+                - Before
+                - After 
 
         - name: preSQL
           description: SQL statement to execute before data load operation. 𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
