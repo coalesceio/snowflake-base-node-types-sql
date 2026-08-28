@@ -1,0 +1,73 @@
+fileVersion: 1
+id: 6931f7dd-ae91-4c19-b82a-675546fe725a
+name: ORDERS_TEST
+operation:
+  database: ""
+  deployEnabled: true
+  description: ""
+  locationName: SRC
+  metadata:
+    columns:
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 0c117239-1f68-4e3d-8945-f4b7ac640e00
+          stepCounter: 6931f7dd-ae91-4c19-b82a-675546fe725a
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: ORDER_ID
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: e1dd7f64-4194-4546-9bb4-eb19243ec17c
+          stepCounter: 6931f7dd-ae91-4c19-b82a-675546fe725a
+        config: {}
+        dataType: VARCHAR(16777216)
+        defaultValue: ""
+        description: ""
+        name: CUSTOMER_NAME
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: d3cb783c-c064-4fa5-9f8c-e3988f352187
+          stepCounter: 6931f7dd-ae91-4c19-b82a-675546fe725a
+        config: {}
+        dataType: VARIANT
+        defaultValue: ""
+        description: ""
+        name: ORDER_DATA
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+  name: ORDERS_TEST
+  schema: ""
+  sqlType: Source
+  type: sourceInput
+  version: 1
+type: Node

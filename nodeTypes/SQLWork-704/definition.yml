@@ -15,19 +15,6 @@ metadata:
     annotations:
         node:
 
-        - name: materializationType
-          description: Materialization selector
-          isRequired: false
-          parameters:
-            - name: type
-              type: string
-              description: Object type to create
-              isRequired: true
-              default: table
-              options:
-              - table
-              - view
-
         - name: truncateBefore
           type: boolean
           description: 𝗧𝗥𝗨𝗡𝗖𝗔𝗧𝗘 the target table before inserting. 𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
@@ -90,29 +77,6 @@ metadata:
             example: 'SELECT 1'
 
         column:
-        - name: description
-          description: Adds column description.
-          isRequired: false
-          parameters:
-          - name: descText
-            isRequired: true
-            type: string
-            description: Column description
-
-        - name: notNull
-          type: boolean
-          description: Enforce 𝗡𝗢𝗧 𝗡𝗨𝗟𝗟 on the target column. 𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
-          isRequired: false
-          default: true
-
-        - name: defaultValue
-          description: 𝗗𝗘𝗙𝗔𝗨𝗟𝗧 applied when the source column value is 𝗡𝗨𝗟𝗟. 𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
-          isRequired: false
-          parameters:
-            - name: value
-              description: Specify a default value appropriate for the column data type. Compatible data types can have values without quotes.
-              type: string
-              isRequired: true
 
         - name: inHash
           description: Marks columns for hash key generation. Use the 𝐠𝐞𝐭_𝐡𝐚𝐬𝐡() macro to generate the hash column from the marked columns. 𝗦𝗲𝗲 𝗱𝗼𝗰𝘂𝗺𝗲𝗻𝘁𝗮𝘁𝗶𝗼𝗻 𝗳𝗼𝗿 𝗱𝗲𝘁𝗮𝗶𝗹𝘀.

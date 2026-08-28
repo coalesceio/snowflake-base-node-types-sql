@@ -23,12 +23,12 @@ macroString: |-
                       {%- for test in column.tests | default([]) -%}
                           {%- if test is mapping and test.parameters is defined -%}
                               {%- if test.parameters[0] | trim | lower == "null" -%}
-                                  {%- set templateString = "SELECT 1 FROM " +  ref(node.location.name, node.name)  + " WHERE " + column.name + " IS NULL " -%}                      
+                                  {%- set templateString = "SELECT 1 FROM " +  ref(node.location.name, node.name)  + ' WHERE "' + column.name + '" IS NULL ' -%}                      
                                   {{ test_stage("Column Test: " + column.name + " - " + test.parameters[0] | lower) }}
                                   {{ templateString }}
                               {%- endif -%}
                               {%- if test.parameters[0] | trim | lower == "unique" -%}
-                                  {%- set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + " GROUP BY " + column.name +  " HAVING COUNT(*) > 1" -%}                      
+                                  {%- set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + ' GROUP BY "' + column.name +  '" HAVING COUNT(*) > 1' -%}                      
                                   {{ test_stage("Column Test: " + column.name + " - " + test.parameters[0] | lower) }}
                                   {{ templateString }}
                               {%- endif -%}
