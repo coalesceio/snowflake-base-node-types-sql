@@ -54,6 +54,18 @@ metadata:
               options:
                 - Before
                 - After 
+        
+        - name: columnRunOrder
+          description: Determines whether the column test is executed before or after the load operation. Applicable only when 𝘁𝗲𝘀𝘁𝘀𝗘𝗻𝗮𝗯𝗹𝗲𝗱 is enabled.
+          parameters:
+          - name: runOrder
+            type: string
+            description: Order for column test execution
+            isRequired: false
+            default: After
+            options:
+              - Before
+              - After
 
         - name: preSQL
           description: SQL statement to execute before data load operation. 𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
@@ -94,20 +106,58 @@ metadata:
               example: 1
 
         - name: tests
-          description: Column level tests for data quality requirements. Either or both tests can be specified based on validation requirements. Order of specification does not matter. Applicable only when @𝘁𝗲𝘀𝘁𝘀𝗘𝗻𝗮𝗯𝗹𝗲𝗱 is applied.
+          description: Column level tests for data quality requirements. For all tests, the last two arguments will be <runOrder> and <continueOnFailure>, defaulting to After and true, respectively. Applicable only when 𝘁𝗲𝘀𝘁𝘀𝗘𝗻𝗮𝗯𝗹𝗲𝗱 is applied.
           allowsMultiple: true
           isRequired: false
           parameters:
-            - name: type
+            - name: testArgs
               type: string
               description: |
                 Column level data quality requirement type.
                 ➤ 𝐮𝐧𝐢𝐪𝐮𝐞: Checks to ensure all values are 𝗨𝗡𝗜𝗤𝗨𝗘.
                 ➤ 𝐧𝐮𝐥𝐥: Ensures the column contains no 𝗡𝗨𝗟𝗟 values. |
+                ➤ 𝗲𝗺𝗽𝘁𝘆: Checks to ensure all values are 𝗻𝗼𝗻-𝗘𝗺𝗽𝘁𝘆.
+                ➤ 𝗮𝗰𝗰𝗲𝗽𝘁𝗲𝗱𝗩𝗮𝗹𝘂𝗲𝘀: Checks to ensure values are within 𝗔𝗹𝗹𝗼𝘄𝗲𝗱 𝗩𝗮𝗹𝘂𝗲𝘀. 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("acceptedValues", [ValueList])
+                ➤ 𝗿𝗲𝗷𝗲𝗰𝘁𝗲𝗱𝗩𝗮𝗹𝘂𝗲𝘀: Checks to ensure any value is in 𝗗𝗶𝘀𝗮𝗹𝗹𝗼𝘄𝗲𝗱 𝗩𝗮𝗹𝘂𝗲𝘀. 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("rejectedValues", [ValueList])
+                ➤ 𝘃𝗮𝗹𝘂𝗲𝗥𝗮𝗻𝗴𝗲: Checks to ensure all values are within 𝗔𝗹𝗹𝗼𝘄𝗲𝗱 𝗥𝗮𝗻𝗴𝗲. 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("valueRange", <minValue>, <maxValue>)
+                ➤ 𝗺𝗶𝗻𝗩𝗮𝗹𝘂𝗲: Checks to ensure all values are above or equal to the 𝗠𝗶𝗻𝗶𝗺𝘂𝗺 𝗩𝗮𝗹𝘂𝗲. 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("minValue", <minValue>)
+                ➤ 𝗺𝗮𝘅𝗩𝗮𝗹𝘂𝗲: Checks to ensure all values are below or equal to the 𝗠𝗮𝘅𝗶𝗺𝘂𝗺 𝗩𝗮𝗹𝘂𝗲. 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("maxValue", <maxValue>)
+                ➤ 𝗳𝗿𝗲𝘀𝗵𝗻𝗲𝘀𝘀: Checks to ensure data is within the 𝗔𝗹𝗹𝗼𝘄𝗲𝗱 𝗙𝗿𝗲𝘀𝗵𝗻𝗲𝘀𝘀 𝗪𝗶𝗻𝗱𝗼𝘄. 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("freshness", <number>, "<minute | day | hour>")
+                ➤ 𝗿𝗲𝗹𝗮𝘁𝗶𝘃𝗲𝗧𝗶𝗺𝗲: Checks a column's value against a 𝗿𝗲𝗹𝗮𝘁𝗶𝘃𝗲 𝘁𝗶𝗺𝗲 𝘃𝗮𝗹𝘂𝗲 using a comparison operator.hour>". 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("relativeTime", "< | > | <= | >= | = | !=", <timestamp expression>)
+                ➤ 𝗿𝘂𝗹𝗲𝘀: Checks whether a row satisfies a 𝗰𝘂𝘀𝘁𝗼𝗺 𝗦𝗤𝗟 𝗿𝘂𝗹𝗲. Rows that do not satisfy the rule are returned as test failures. 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("rules", "<SQL rule>", "<rule name>")
+                ➤ 𝗾𝘂𝗲𝗿𝘆: Executes a 𝗰𝘂𝘀𝘁𝗼𝗺 𝗦𝗤𝗟 𝗾𝘂𝗲𝗿𝘆 as a column test. The query should return the rows that fail the test. 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("query", "<SQL query>", "<test name>")
+                ➤ 𝗿𝗲𝗹𝗮𝘁𝗶𝗼𝗻𝘀𝗵𝗶𝗽: Checks whether values in a 𝗰𝗵𝗶𝗹𝗱 𝗰𝗼𝗹𝘂𝗺𝗻 have matching values in a specified 𝗽𝗮𝗿𝗲𝗻𝘁 𝗰𝗼𝗹𝘂𝗺𝗻. Rows where the child value has no corresponding parent value are returned as test failures. 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("relationship", "<parent location>", "<parent node>", "<parent column>", "<test name>")
               isRequired: true
               parameters:
               options:
                 - 'unique'
                 - 'null'
+                - 'empty'
+                - 'acceptedValues'
+                - 'rejectedValues'
+                - 'valueRange'
+                - 'minValue'
+                - 'maxValue'
+                - 'freshness'
+
+
+            - name: runOrder
+              type: string
+              description: Determines whether the test is executed before or after the load operation.
+              isRequired: false
+              default: After
+              options:
+                - Before
+                - After
+
+            - name: continueOnFailure
+              type: boolean
+              description: Determines whether execution continues when the test fails.
+              isRequired: false
+              default: true
+              parameters:
+              options:
+                - true
+                - false
 name: SQL Work
 type: NodeType

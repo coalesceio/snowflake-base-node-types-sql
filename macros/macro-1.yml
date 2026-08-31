@@ -16,6 +16,12 @@ macroString: |-
   ========================================================================= #}
   {%- macro run_tests(runOrder) -%}
 
+      {%- if config.columnRunOrder is defined
+          and config.columnRunOrder.parameters is defined
+          and config.columnRunOrder.parameters | length > 0 -%}
+          {%- set configRunOrder = config.columnRunOrder.parameters[0] -%}
+      {%- endif -%}
+
       {%- if get_boolean_config("testsEnabled") == "true" %}
           {%- if runOrder == 'After' -%}
               {%- for column in columns -%}
@@ -24,12 +30,71 @@ macroString: |-
                           {%- if test is mapping and test.parameters is defined -%}
                               {%- if test.parameters[0] | trim | lower == "null" -%}
                                   {%- set templateString = "SELECT 1 FROM " +  ref(node.location.name, node.name)  + ' WHERE "' + column.name + '" IS NULL ' -%}                      
-                                  {{ test_stage("Column Test: " + column.name + " - " + test.parameters[0] | lower) }}
+                                  {{ test_stage("Column Test: " + column.name + " - " + test.parameters[0], test.parameters[1] | default(true) }}
                                   {{ templateString }}
                               {%- endif -%}
                               {%- if test.parameters[0] | trim | lower == "unique" -%}
                                   {%- set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + ' GROUP BY "' + column.name +  '" HAVING COUNT(*) > 1' -%}                      
-                                  {{ test_stage("Column Test: " + column.name + " - " + test.parameters[0] | lower) }}
+                                  {{ test_stage("Column Test: " + column.name + " - " + test.parameters[0], test.parameters[1] | default(true)) }}
+                                  {{ templateString }}
+                              {%- endif -%}
+                              {%- if test.parameters[0] | trim | lower == "empty" -%}
+                                  {%- set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + " WHERE " + column.name + " IS NOT NULL AND TRIM(CAST( " + column.name + " AS STRING)) = ''" -%}                      
+                                  {{ test_stage("Column Test: " + column.name + " - " + test.parameters[0], test.parameters[1] | default(true)) }}
+                                  {{ templateString }}
+                              {%- endif -%}
+                              {%- if test.parameters[0] | trim | lower == "acceptedvalues" -%}
+                                  {%- set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + " WHERE " + column.name + " IS NOT NULL AND " + column.name + " NOT IN (" -%}
+                                  {%- set accepted = test.parameters[1] if test.parameters[1] is sequence and test.parameters[1] is not mapping else [] %}
+                                  {%- set templateString = templateString + test.parameters[1] + ")" -%}
+                                  {{ test_stage("Column Test: " + column.name + " - " + test.parameters[0], test.parameters[2] | default(true)) }}
+                                  {{ templateString }}
+                              {%- endif -%}
+                              {%- if test.parameters[0] | trim | lower == "rejectedvalues" -%}
+                                  {%- set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + " WHERE " + column.name + " IS NOT NULL AND " + column.name + " IN (" -%}
+                                  {%- set accepted = test.parameters[1] if test.parameters[1] is sequence and test.parameters[1] is not mapping else [] %}
+                                  {%- set templateString = templateString + test.parameters[1] + ")" -%}
+                                  {{ test_stage("Column Test: " + column.name + " - " + test.parameters[0], test.parameters[2] | default(true)) }}
+                                  {{ templateString }}
+                              {%- endif -%}
+                              {%- if test.parameters[0] | trim | lower == "valuerange" -%}
+                                  {%- set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + " WHERE " + column.name + " IS NOT NULL AND (" + column.name + " < " + test.parameters[1] | string + " OR " + column.name + " > " + test.parameters[2] | string + ")" -%}
+                                  {{ test_stage("Column Test: " + column.name + " - " + test.parameters[0], test.parameters[3] | default(true)) }}
+                                  {{ templateString }}
+                              {%- endif -%}
+                              {%- if test.parameters[0] | trim | lower == "minvalue" -%}
+                                  {%- set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + " WHERE " + column.name + " IS NOT NULL AND " + column.name + " < " + test.parameters[1] | string -%}
+                                  {{ test_stage("Column Test: " + column.name + " - " + test.parameters[0], test.parameters[2] | default(true)) }}
+                                  {{ templateString }}
+                              {%- endif -%}
+                              {%- if test.parameters[0] | trim | lower == "maxvalue" -%}
+                                  {%- set templateString = "SELECT 1 FROM " + ref(node.location.name, node.name) + " WHERE " + column.name + " IS NOT NULL AND " + column.name + " > " + test.parameters[1] | string -%}
+                                  {{ test_stage("Column Test: " + column.name + " - " + test.parameters[0], test.parameters[2] | default(true)) }}
+                                  {{ templateString }}
+                              {%- endif -%}
+                              {%- if test.parameters[0] | trim | lower == "freshness" -%}
+                                  {%- set templateString = "SELECT MAX(" + column.name + ") AS LATEST_VALUE FROM " + ref(node.location.name, node.name) + " HAVING MAX(" + column.name + ") IS NULL OR MAX(" + column.name + ") < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL " + test.parameters[1] | string + " " + (test.parameters[2] | default("DAY", true)) + ")" -%}
+                                  {{ test_stage("Column Test: " + column.name + " - " + test.parameters[0], test.parameters[3] | default(true)) }}
+                                  {{ templateString }}
+                              {%- endif -%}
+                              {%- if test.parameters[0] | trim | lower == "relativetime" -%}
+                                  {%- set templateString = "SELECT " + column.name + ", " + test.parameters[2] + " FROM " + ref(node.location.name, node.name) + " WHERE " + column.name + " IS NOT NULL AND " + test.parameters[2] + " IS NOT NULL AND NOT (" + column.name + " " + test.parameters[1] + " " + test.parameters[2] + ")" -%}
+                                  {{ test_stage("Column Test: " + column.name + " - " + test.parameters[0], test.parameters[3] | default(true)) }}
+                                  {{ templateString }}
+                              {%- endif -%}
+                              {%- if test.parameters[0] | trim | lower == "rules" -%}
+                                  {%- set templateString = "SELECT * FROM " + ref(node.location.name, node.name) + " WHERE NOT (" + test.parameters[1] + ")" -%}
+                                  {{ test_stage("Column Test: " + column.name + " - " + (test.parameters[2] | default(test.parameters[0], true)), test.parameters[3] | default(true)) }}
+                                  {{ templateString }}
+                              {%- endif -%}
+                              {%- if test.parameters[0] | trim | lower == "query" -%}
+                                  {%- set templateString = test.parameters[1] -%}
+                                  {{ test_stage("Column Test: " + column.name + " - " + (test.parameters[2] | default(test.parameters[0], true)), test.parameters[3] | default(true)) }}
+                                  {{ templateString }}
+                              {%- endif -%}
+                              {%- if test.parameters[0] | trim | lower == "relationship" -%}
+                                  {%- set templateString = "SELECT `CHILD`." + column.name + " FROM " + ref(node.location.name, node.name) + " `CHILD` LEFT JOIN " + ref_no_link(test.parameters[1], test.parameters[2]) + " `PARENT` ON `CHILD`." + column.name + " = `PARENT`." + test.parameters[3] + " WHERE `CHILD`." + column.name + " IS NOT NULL AND `PARENT`." + test.parameters[3] + " IS NULL" -%}
+                                  {{ test_stage("Column Test: " + column.name + " - " + (test.parameters[4] | default(test.parameters[0], true)), test.parameters[5] | default(true)) }}
                                   {{ templateString }}
                               {%- endif -%}
                           {%- endif -%}
