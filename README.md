@@ -1,3 +1,5 @@
+> **Preview:** This node type is available via the Marketplace; however, it is currently supported only in the Coalesce Desktop App and may not function as expected in the web app.
+
 # V2 NodeTypes
 
 The V2 nodes is a transformation tool within Coalesce that lets developers write custom, hand-coded SQL instead of using the standard graphical column-mapping interface. It is ideal for complex transformations, advanced window functions, or multi-step logic that is difficult to represent with the standard UI, and ships with a built-in library of column- and node-level data quality tests. While it provides maximum flexibility, it shifts the responsibility of column definition and logic maintenance to the SQL author.
