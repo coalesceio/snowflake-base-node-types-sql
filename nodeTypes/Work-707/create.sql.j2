@@ -2,8 +2,7 @@
     Copyright (c) 2026 Coalesce. All rights reserved.
 This script and its associated documentation are confidential and proprietary to Coalesce.
 Unauthorized reproduction, distribution, or disclosure of this material is strictly prohibited.
-Coalesce permits you to copy and modify this script for the purposes of using with Coalesce but
-does not permit copying or modification for any other purpose.  
+Coalesce permits you to copy and modify this script for the purposes of using with Coalesce but does not permit copying or modification for any other purpose.  
 #}
 {# == Node Type Name           : Work  == #}
 {# == Node Type Description    : This node creates work table or view  == #}
@@ -16,44 +15,34 @@ does not permit copying or modification for any other purpose.
 	CREATE OR REPLACE {{ node.materializationType }} {{ ref_no_link(node.location.name, node.name) }}
 	(
 		{%- for col in columns %}
-
-            {%- set nullParams = col.nullable.parameters | default([]) %}
-            {%- set defaultValueParams = col.defaultValue.parameters | default([]) %}
-            {%- set descriptionParams = col.description.parameters | default([]) %}
-
 			"{{ col.name }}" {{ col.dataType }}
-			{%- if nullParams and (nullParams[0] in ['false', false]) %} NOT NULL {%- endif %}
-			{%- if defaultValueParams and defaultValueParams[0] is not none %} DEFAULT {{ get_default(col.dataType, defaultValueParams[0]) }} {%- endif %}
-			{%- if descriptionParams and descriptionParams[0] | length > 0 %} COMMENT '{{ descriptionParams[0] | escape }}' {%- endif %}
+			{%- if col.nullable == false %} NOT NULL {%- endif %}
+			{%- if col.defaultValue %} DEFAULT {{ col.defaultValue }} {%- endif %}
+			{%- if col.description | trim | length > 0 %} COMMENT '{{ col.description | escape }}' {%- endif %}
 			{%- if not loop.last -%}, {%- endif %}
 		{%- endfor %}
 	)
-	{%- if node.description | length > 0 %} COMMENT = '{{ node.description | escape }}' {%- endif %}
+	{%- if node.description | trim | length > 0 %} COMMENT = '{{ node.description | escape }}' {%- endif %}
 
-{%- elif node.materializationType | lower == 'view' %}
+{%- elif node.materializationType == 'view' %}
 
     {# CreateSQL for View #}
     {{ stage('Create ' + node.materializationType ) }}
     CREATE OR REPLACE {{ node.materializationType }} {{ ref_no_link(node.location.name, node.name) }}
     (
         {%- for col in columns %}
-
-            {%- set descriptionParams = col.description.parameters | default([]) %}
-
             "{{ col.name }}"
-            {%- if descriptionParams and descriptionParams[0] | length > 0 %} COMMENT '{{ descriptionParams[0] | escape }}' {%- endif %}
+            {%- if col.description | trim | length > 0 %} COMMENT '{{ col.description | escape }}' {%- endif %}
             {%- if not loop.last -%}, {%- endif %}
         {%- endfor %}
     )
     {%- if node.description | length > 0 %} COMMENT = '{{ node.description | escape }}' {%- endif %}
-    AS    
+    AS
     {{ sources[0].cteString }}
-    SELECT {%- if config.selectDistinct %} DISTINCT {%- endif %}
+    SELECT
     {%- for col in sources[0].columns %}
-        {{ get_source_transform(col) }} AS "{{ col.name }}"
+        {{ get_source_transform_v2(col) }} AS "{{ col.name }}"
         {%- if not loop.last -%}, {%- endif %}
     {%- endfor %}
-
     {{ sources[0].join }}
-
 {%- endif %}
