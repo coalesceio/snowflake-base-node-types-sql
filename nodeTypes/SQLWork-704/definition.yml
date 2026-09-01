@@ -176,15 +176,17 @@ metadata:
             Fails on rows outside the inclusive range.
             Both bounds are pasted into the SQL verbatim, so write a number as "0" and a date as "DATE '2026-01-01'".
             Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
-            parameters:
-              - name: min
-                type: string
-                isRequired: true
-                example: "0"
-              - name: max
-                type: string
-                isRequired: true
-                example: "100"
+          parameters:
+            - name: min
+              type: string
+              description: Inclusive lower bound the column value must not fall below.
+              isRequired: true
+              example: "0"
+            - name: max
+              type: string
+              description: Inclusive upper bound the column value must not exceed.
+              isRequired: true
+              example: "100"
 
         - name: min_value
           description: >-
@@ -195,6 +197,7 @@ metadata:
           parameters:
             - name: min
               type: string
+              description: Inclusive lower bound the column value must not fall below.
               isRequired: true
               example: "0"
 
@@ -207,6 +210,7 @@ metadata:
           parameters:
             - name: max
               type: string
+              description: Inclusive upper bound the column value must not exceed.
               isRequired: true
               example: "100"
 
@@ -240,12 +244,14 @@ metadata:
           parameters:
             - name: operator
               type: string
+              description: Comparison operator used to compare this column against the other column.
               isRequired: true
               options: ["<", "<=", ">", ">=", "=", "<>"]
               example: "="
-            
+
             - name: column
               type: string
+              description: Name of the other date/time column on this node to compare against.
               isRequired: true
               example: "<other_column>"
 name: SQL Work
