@@ -31,8 +31,8 @@ macroString: |-
                       FROM {{ target }}
                       WHERE {{ colName }} IS NULL
                   {%- endif -%}
-                  {%- if col.unique is defined -%}
-                      {{ test_stage(col.name + ': unique', columnContinueOnFailure) }}
+                  {%- if col.uniqueness is defined -%}
+                      {{ test_stage(col.name + ': uniqueness', columnContinueOnFailure) }}
                       SELECT {{ colName }}
                       FROM {{ target }}
                       GROUP BY {{ colName }}

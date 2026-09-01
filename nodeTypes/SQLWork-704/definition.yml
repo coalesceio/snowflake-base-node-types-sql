@@ -128,7 +128,7 @@ metadata:
             Presence enables the test — remove the annotation to turn it off.
             Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and  either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
 
-        - name: unique
+        - name: uniqueness
           description: >- 
             Column-level data quality test.
             Fails when a value appears on more than one row.
@@ -245,6 +245,5 @@ metadata:
               type: string
               isRequired: true
               example: "<other_column>"
-
 name: SQL Work
 type: NodeType
