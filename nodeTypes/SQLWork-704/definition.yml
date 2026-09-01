@@ -89,7 +89,8 @@ metadata:
             example: 'SELECT 1'
 
         - name: postSQL
-          description: SQL statement to execute after the data load operation — e.g. updating dependent tables, cleaning up temp objects, or logging load completion.
+          description: >-
+            SQL statement to execute after the data load operation — e.g. updating dependent tables, cleaning up temp objects, or logging load completion.
                 Repeat the annotation to run multiple statements in the order they appear.
                 𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
           allowsMultiple: true
@@ -123,27 +124,27 @@ metadata:
 
         - name: not_null
           description: >-
-            Column-level data quality test.
+            🚦 Column-level data quality test.
             Fails on rows where the column is 𝗡𝗨𝗟𝗟.
             Presence enables the test — remove the annotation to turn it off.
             Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and  either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
 
         - name: uniqueness
           description: >- 
-            Column-level data quality test.
+            🚦 Column-level data quality test.
             Fails when a value appears on more than one row.
             Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
 
         - name: empty
           description: >-
-            Column-level data quality test.
+            🚦 Column-level data quality test.
             Fails on rows where the column trims to the empty string;
             𝗡𝗨𝗟𝗟 values pass this test and are instead caught by not_null.
             Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
 
         - name: accepted_values
           description: >-
-            Column-level data quality test.
+            🚦 Column-level data quality test.
             Fails on rows whose value is outside the allow list.
             Repeat the annotation once per permitted value.
             Each value is pasted into the SQL verbatim, so quote it to match the column's data
@@ -157,7 +158,7 @@ metadata:
 
         - name: rejected_values
           description: >-
-            Column-level data quality test.
+            🚦 Column-level data quality test.
             Fails on rows whose value is in the deny list.
             Repeat the annotation once per forbidden value. Each value is pasted into the SQL verbatim, so quote it to match the column's data type — a number as rejected_values("<num>"), a string as
             rejected_values("'<string>'").
@@ -171,7 +172,7 @@ metadata:
 
         - name: min_max
           description: >-
-            Column-level data quality test.
+            🚦 Column-level data quality test.
             Fails on rows outside the inclusive range.
             Both bounds are pasted into the SQL verbatim, so write a number as "0" and a date as "DATE '2026-01-01'".
             Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
@@ -187,7 +188,7 @@ metadata:
 
         - name: min_value
           description: >-
-            Column-level data quality test.
+            🚦 Column-level data quality test.
             Fails on rows below the bound.
             Pasted into the SQL verbatim — see min_max.
             Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
@@ -199,7 +200,7 @@ metadata:
 
         - name: max_value
           description: >-
-            Column-level data quality test.
+            🚦 Column-level data quality test.
             Fails on rows above the bound.
             Pasted into the SQL verbatim — see min_max.
             Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
@@ -211,12 +212,14 @@ metadata:
 
         - name: freshness
           description: >-
-            Column-level data quality test.
+            🚦 Column-level data quality test.
             Checks that the data is fresh — fails when the column's value is older than the given interval, or when the table has no rows at all.
             𝗡𝗼𝘁𝗲: on a DATE column the value is truncated to midnight.
             Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
           parameters:
             - name: interval
+              description: >-
+                How far back from now the newest value is allowed to be, expressed in the unit given by 𝘂𝗻𝗶𝘁.
               type: number
               isRequired: true
               example: 1
@@ -228,7 +231,7 @@ metadata:
 
         - name: relative_time
           description: >-
-            Column-level data quality test.
+            🚦 Column-level data quality test.
             Compares this column against another date/time column on the same node using the
             given operator.
             E.g. @relative_time("<=", "END_DATE") fails any row where this column's value is not less than or equal to END_DATE.
