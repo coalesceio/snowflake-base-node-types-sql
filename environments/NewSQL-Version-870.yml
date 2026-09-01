@@ -7,5 +7,5 @@ mappingDefinitions:
   TARGET:
     database: PRANJAL_DEV
     schema: TEST_DB
-name: NewSQL-Version
+name: "[NewSQL-Version]"
 type: Environment
