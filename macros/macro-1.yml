@@ -81,7 +81,7 @@ macroString: |-
                       SELECT MAX(CAST({{ colName }} AS DATETIME)) AS "LATEST_VALUE"
                       FROM {{ target }}
                       HAVING MAX(CAST({{ colName }} AS DATETIME)) IS NULL
-                          OR MAX(CAST({{ colName }} AS DATETIME)) < DATETIME_SUB(CURRENT_DATETIME(), INTERVAL {{ col.freshness.parameters[0] }} {{ col.freshness.parameters[1] | default('DAY', true) }})
+                          OR MAX(CAST({{ colName }} AS DATETIME)) < DATEADD({{ col.freshness.parameters[1] | default('DAY', true) }}, -{{ col.freshness.parameters[0] }}, CURRENT_TIMESTAMP())
                   {%- endif -%}
                   {%- if col.relative_time is defined and col.relative_time.parameters is defined -%}
                       {%- set other = '"' + col.relative_time.parameters[1] + '"' -%}
@@ -202,16 +202,16 @@ macroString: |-
               {%- set algo_end = ', 256)' -%}
           {%- endif -%}
 
-          TO_HEX(
-                {{ algo_start }}
-                    {%- for c in sorted_cols -%}
-                        IFNULL(CAST({{ c.column }} AS STRING), 'null')
-                        {%- if not loop.last -%}
-                            || {%- if delimiter != '' -%} '{{ delimiter }}' || {%- endif -%}
-                        {%- endif -%}
-                    {%- endfor -%}
-                {{ algo_end }}
-          )
+          CAST(
+              {{ algo_start }}
+                  {%- for c in sorted_cols -%}
+                      NVL(CAST({{ c.column }} AS VARCHAR), 'null')
+                      {%- if not loop.last %}
+                          || {%- if delimiter != '' %} '{{ delimiter }}' || {% endif -%}
+                      {%- endif -%}
+                  {%- endfor -%}
+              {{ algo_end }}
+          AS STRING)
       {%- endif -%}
   {%- endmacro -%}
 
