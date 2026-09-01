@@ -36,8 +36,8 @@ The Work Node type has three configuration groups:
 
 | **Property** | **Description** |
 |---------|-------------|
-| `@id(id)` ***(reserved)*** | Unique identifier for the node.<br/>Static and auto-generated when the node is created — not meant to be edited.<br/>Example: `@id("48249bc7-a597-4502-b298-341512817135")` |
-| `@nodeType(type)` ***(reserved)*** | Identifies the node's type.<br/>Set automatically based on the node type chosen when the node is created.<br/>Example: `@nodeType("705")` |
+| `@id(id)` ***(reserved)*** | Unique identifier for the node.<br/>Static and auto-generated when the node is created — not meant to be edited. |
+| `@nodeType(type)` ***(reserved)*** | Identifies the node's type.<br/>Set automatically based on the node type chosen when the node is created.|
 | `@description(text)` ***(reserved)*** | Node-level description.<br/>Can be edited via this annotation or in the node description field below the node name in the UI.<br/>Example: `@description("Table description")` |
 | `@materializationType(type)` ***(reserved)*** | Table/View.<br/>*Not specified in the SQL editor → defaults to **Table**.*<br/>Example: `@materializationType("View")` |
 | `@writeMode("truncateInsert \| append")` | Controls how data is written to the target table.<br/>**truncateInsert** — clears the table before loading, replacing its contents entirely.<br/>**append** — inserts the new rows alongside whatever is already there.<br/>*Not specified in the SQL editor → defaults to **truncateInsert**.*<br/>**Note:** Ignored on Views.<br/>Example: `@writeMode("append")` |
@@ -66,7 +66,7 @@ This applies to `@tests`, `@preSQL`, and `@postSQL`.
 |---------|-------------|
 | `@notNull` ***(reserved)*** | Marks column as NOT NULL.<br/>**Note:** Ignored on Views.<br/>Example: `@notNull` |
 | `@description(<text>)` ***(reserved)*** | Adds column description.<br/>Example: `@description("timestamp column")` |
-| `@defaultValue(<value>)` ***(reserved)*** | Adds default value.<br/>Quote to match the column's data type - <br/>number: `defaultValue("<num>")`<br/>string: `defaultValue("'<string>'")`<br/>**Note:** Ignored on Views.<br/>Example: `@defaultValue("20")` |
+| `@defaultValue(<value>)` ***(reserved)*** | Adds default value.<br/>Quote to match the column's data type - <br/>number: `defaultValue("<num>")`<br/>string: `defaultValue("'<string>'")`<br/>**Note:** Ignored on Views.<br/>Example: `@defaultValue("20")` `@defaultValue("'NA'")` |
 | `@inHash(<hashName>, <hashOrder>)`**¹** | ***(repeatable)*** Marks a column as an input to a generated hash key.<br/>**hashName** — columns sharing the same value are grouped together into the same hash.<br/>**hashOrder** — this column's position within that group.<br/>Call `get_hash("<hashName>")` elsewhere in the SELECT to produce the hash column from the marked columns.<br/>Example: `@inHash("GH_COL1", 1)` |
 
 <img width="792" height="824" alt="image" src="https://github.com/user-attachments/assets/b8559c63-db38-4c09-ad5b-5ae12fb0c870" />
