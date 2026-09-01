@@ -1,0 +1,15 @@
+fileVersion: 2
+id: 6fda2820-4404-4b60-bad3-cf0edd7dab92
+isDisabled: false
+metadata:
+  defaultStorageLocation: null
+  error: null
+  nodeMetadataSpec: |-
+    capitalized: SQL Insert
+    short: INS
+    plural: SQL Inserts
+    tagColor: '#2EB67D'
+
+    enableCTESupport: true
+name: SQL Insert
+type: NodeType

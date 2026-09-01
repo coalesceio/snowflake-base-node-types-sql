@@ -1,6 +1,6 @@
 fileVersion: 1
 id: Fact
-isDisabled: false
+isDisabled: true
 metadata:
   defaultStorageLocation: null
   error: null

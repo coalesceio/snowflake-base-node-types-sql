@@ -1,11 +1,5 @@
 fileVersion: 1
 id: "871"
-mappingDefinitions:
-  SRC:
-    database: TANVI_DEV
-    schema: SOURCE
-  TARGET:
-    database: TANVI_DEV
-    schema: QA
+mappingDefinitions: {}
 name: SQLWork_NewVersion
 type: Environment
