@@ -38,12 +38,6 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     {%- endif %}
 
 
-	{# == Truncate data before data insertion  == #}
-    {%- if get_boolean_config("truncateBefore") == "true" %}
-        {{ stage('Truncate ' + node.materializationType) }}
-        TRUNCATE IF EXISTS {{ ref_no_link(node.location.name, node.name) }}
-    {%- endif %}
-
 	{# == Insert data from sources into Work table  == #}
     {{ stage('Load ' + node.materializationType + ' using Insert') }}
     INSERT {{ insertMode }} INTO  {{ ref_no_link(node.location.name, node.name) }}
