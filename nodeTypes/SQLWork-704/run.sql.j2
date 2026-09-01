@@ -31,10 +31,10 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     {%- endif %}
 
     {# == Set insert mode keyword based on writeMode == #}
-    {%- if writeMode == 'truncateInsert' %}
-        {%- set insertMode = 'OVERWRITE' %}
-    {%- else %}
+    {%- if writeMode == 'append' %}
         {%- set insertMode = '' %}
+    {%- else %}
+        {%- set insertMode = 'OVERWRITE' %}
     {%- endif %}
 
 
