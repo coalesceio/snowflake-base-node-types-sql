@@ -23,6 +23,21 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
         {%- endif %}
     {%- endfor %}
 
+    {# == Determine write mode: truncateInsert (default) or append == #}
+    {%- if config.writeMode is defined and config.writeMode.parameters is defined and config.writeMode.parameters | length > 0 %}
+        {%- set writeMode = config.writeMode.parameters[0] | trim %}
+    {%- else %}
+        {%- set writeMode = 'truncateInsert' %}
+    {%- endif %}
+
+    {# == Set insert mode keyword based on writeMode == #}
+    {%- if writeMode == 'truncateInsert' %}
+        {%- set insertMode = 'OVERWRITE' %}
+    {%- else %}
+        {%- set insertMode = '' %}
+    {%- endif %}
+
+
 	{# == Truncate data before data insertion  == #}
     {%- if get_boolean_config("truncateBefore") == "true" %}
         {{ stage('Truncate ' + node.materializationType) }}
@@ -31,7 +46,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
 	{# == Insert data from sources into Work table  == #}
     {{ stage('Load ' + node.materializationType + ' using Insert') }}
-    INSERT INTO {{ ref_no_link(node.location.name, node.name) }}
+    INSERT {{ insertMode }} INTO  {{ ref_no_link(node.location.name, node.name) }}
     (
         {%- for col in sources[0].columns %}
             "{{ col.name }}"
@@ -61,7 +76,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 {%- else %}
 	{{ stage('Load Skipped for View') }}
 	-- The node {{node.name}} is materialized as View. Therefore, a Load operation is not supported.
-	SELECT 1 AS INFO_MESSAGE WHERE FALSE
+	SELECT 1 FROM UNNSET([1]) AS INFO_MESSAGE WHERE FALSE
 {%- endif %}
 
 {# == To run data quality tests after data insertion == #}

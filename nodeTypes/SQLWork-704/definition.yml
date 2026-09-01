@@ -15,20 +15,39 @@ metadata:
     annotations:
         node:
 
-        - name: truncateBefore
-          type: boolean
-          description: 𝗧𝗥𝗨𝗡𝗖𝗔𝗧𝗘 the target table before inserting. 𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
-          isRequired: false      
-          default: true
-
-        - name: testsEnabled
-          type: boolean
-          description: Controls whether configured tests are executed.
+        - name: writeMode
+          description: >-
+            Controls how data is written to the target table. 
+            𝘁𝗿𝘂𝗻𝗰𝗮𝘁𝗲𝗜𝗻𝘀𝗲𝗿𝘁 clears the table before loading, replacing its contents entirely;
+            𝗮𝗽𝗽𝗲𝗻𝗱 inserts the new rows alongside whatever is already there.
+            If not specified in the SQL, defaults to 𝘁𝗿𝘂𝗻𝗰𝗮𝘁𝗲𝗜𝗻𝘀𝗲𝗿𝘁. 
+            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
           isRequired: false
-          default: true
+          parameters:
+            - name: mode
+              type: string
+              description: Whether to 𝗧𝗥𝗨𝗡𝗖𝗔𝗧𝗘 the target table before inserting, or 𝗔𝗣𝗣𝗘𝗡𝗗 to it.
+              isRequired: true
+              default: truncateInsert
+              example: append
+              options:
+                - truncateInsert
+                - append
+
+        - name: disableTests
+          type: boolean
+          description: >-
+            Controls whether configured tests are skipped.
+            Useful while developing a node — skip node-level and column-level tests without deleting them, so you can iterate on the SQL first and turn tests back on once the logic is settled.
+          isRequired: false
+          default: false
 
         - name: tests
-          description: The test fails if the query returns any records. Applicable only when 𝘁𝗲𝘀𝘁𝘀𝗘𝗻𝗮𝗯𝗹𝗲𝗱 is enabled.
+          description: >-
+            Node-level data quality test.
+            Runs the given 𝗾𝘂𝗲𝗿𝘆𝗦𝗤𝗟 against the target and fails the test if it returns any records — write the query so it selects only the rows that violate your condition.
+            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗿𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+            Skipped entirely when 𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗧𝗲𝘀𝘁𝘀 is set.
           allowsMultiple: true
           parameters:
             - name: querySQL
@@ -46,29 +65,48 @@ metadata:
               options:
                 - true
                 - false
+
             - name: runOrder
               type: string
               description: Determines whether the test is executed before or after the load operation.
               isRequired: false
-              default: Before
+              default: After
               options:
                 - Before
-                - After 
-        
-        - name: columnRunOrder
-          description: Determines whether the column test is executed before or after the load operation. Applicable only when 𝘁𝗲𝘀𝘁𝘀𝗘𝗻𝗮𝗯𝗹𝗲𝗱 is enabled.
-          parameters:
-          - name: runOrder
-            type: string
-            description: Order for column test execution
-            isRequired: false
-            default: After
-            options:
-              - Before
-              - After
+                - After
+
+            - name: columnRunOrder
+              description: >-
+                Determines whether column-level tests (𝘂𝗻𝗶𝗾𝘂𝗲, 𝗻𝗼𝘁_𝗻𝘂𝗹𝗹, 𝗲𝗺𝗽𝘁𝘆, 𝗮𝗰𝗰𝗲𝗽𝘁𝗲𝗱_𝘃𝗮𝗹𝘂𝗲𝘀, etc.) run 𝗕𝗲𝗳𝗼𝗿𝗲 the load — checking existing/source data before it lands in the target — or 𝗔𝗳𝘁𝗲𝗿 the load, validating the freshly written rows.
+                Applies node-wide to every column test on this node;
+                When not specified in the SQL, defaults to 𝗔𝗳𝘁𝗲𝗿.
+              parameters:
+                - name: runOrder
+                  type: string
+                  description: Order for column test execution
+                  isRequired: true
+                  default: After
+                  example: Before
+                  options:
+                    - Before
+                    - After
+
+            - name: columnContinueOnFailure
+              description: >-
+                Determines whether the run carries on with the remaining stages when a column test returns rows, or halts the run right there.
+                Applies node-wide to every column test on this node;
+                On (continues) unless you write @columnContinueOnFailure(false).
+              parameters:
+                - name: isEnabled
+                  type: boolean
+                  default: true
+                  example: false
 
         - name: preSQL
-          description: SQL statement to execute before data load operation. 𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+          description: >-
+            SQL statement to execute before the data load operation — e.g. staging setup, dropping temp tables, or capturing pre-load state.
+            Repeat the annotation to run multiple statements in the order they appear.
+            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
           allowsMultiple: true
           parameters:
           - name: querySQL
@@ -78,7 +116,9 @@ metadata:
             example: 'SELECT 1'
 
         - name: postSQL
-          description: SQL statement to execute after data load operation. 𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+          description: SQL statement to execute after the data load operation — e.g. updating dependent tables, cleaning up temp objects, or logging load completion.
+                Repeat the annotation to run multiple statements in the order they appear.
+                𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
           allowsMultiple: true
           parameters:
           - name: querySQL
@@ -90,74 +130,213 @@ metadata:
         column:
 
         - name: inHash
-          description: Marks columns for hash key generation. Use the 𝐠𝐞𝐭_𝐡𝐚𝐬𝐡() macro to generate the hash column from the marked columns. 𝗦𝗲𝗲 𝗱𝗼𝗰𝘂𝗺𝗲𝗻𝘁𝗮𝘁𝗶𝗼𝗻 𝗳𝗼𝗿 𝗱𝗲𝘁𝗮𝗶𝗹𝘀.
+          description: >-
+                Marks a column as an input to a generated hash key, grouped by 𝗵𝗮𝘀𝗵𝗡𝗮𝗺𝗲 and ordered within that group by 𝗵𝗮𝘀𝗵𝗢𝗿𝗱𝗲𝗿.
+                Mark every column that should feed a given hash with the same 𝗵𝗮𝘀𝗵𝗡𝗮𝗺𝗲, then call the 𝐠𝐞𝐭_𝐡𝐚𝐬𝐡("<hashName>") macro elsewhere in the SELECT to produce the actual hash column from those marked columns.
+                𝗦𝗲𝗲 𝗱𝗼𝗰𝘂𝗺𝗲𝗻𝘁𝗮𝘁𝗶𝗼𝗻 𝗳𝗼𝗿 𝗱𝗲𝘁𝗮𝗶𝗹𝘀.
           allowsMultiple: true
           parameters:
             - name: hashName
               isRequired: true
               type: string
-              description: Common name assigned to the generated hash.
+              description: Group hash name shared by every column feeding the same hash.
               example: GH_COL
 
             - name: hashOrder
               isRequired: true
               type: number
-              description: Order of columns used to calculate the hash.
+              description: Position of this column within its hash group, lowest first.
               example: 1
 
-        - name: tests
-          description: Column level tests for data quality requirements. For all tests, the last two arguments will be <runOrder> and <continueOnFailure>, defaulting to After and true, respectively. Applicable only when 𝘁𝗲𝘀𝘁𝘀𝗘𝗻𝗮𝗯𝗹𝗲𝗱 is applied.
+        - name: not_null
+          description: >-
+            Column-level data quality test.
+            Fails on rows where the column is 𝗡𝗨𝗟𝗟.
+            Presence enables the test — remove the annotation to turn it off.
+            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and  either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+
+        - name: unique
+          description: >- 
+            Column-level data quality test.
+            Fails when a value appears on more than one row.
+            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+
+        - name: empty
+          description: >-
+            Column-level data quality test.
+            Fails on rows where the column trims to the empty string;
+            𝗡𝗨𝗟𝗟 values pass this test and are instead caught by not_null.
+            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+
+        - name: accepted_values
+          description: >-
+            Column-level data quality test.
+            Fails on rows whose value is outside the allow list.
+            Repeat the annotation once per permitted value.
+            Each value is pasted into the SQL verbatim, so quote it to match the column's data
+            type — a number as accepted_values("<num>"), a string as accepted_values("'<string>'").
+            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
           allowsMultiple: true
-          isRequired: false
           parameters:
-            - name: testArgs
+            - name: value
               type: string
-              description: |
-                Column level data quality requirement type.
-                ➤ 𝐮𝐧𝐢𝐪𝐮𝐞: Checks to ensure all values are 𝗨𝗡𝗜𝗤𝗨𝗘.
-                ➤ 𝐧𝐮𝐥𝐥: Ensures the column contains no 𝗡𝗨𝗟𝗟 values. |
-                ➤ 𝗲𝗺𝗽𝘁𝘆: Checks to ensure all values are 𝗻𝗼𝗻-𝗘𝗺𝗽𝘁𝘆.
-                ➤ 𝗮𝗰𝗰𝗲𝗽𝘁𝗲𝗱𝗩𝗮𝗹𝘂𝗲𝘀: Checks to ensure values are within 𝗔𝗹𝗹𝗼𝘄𝗲𝗱 𝗩𝗮𝗹𝘂𝗲𝘀. 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("acceptedValues", [ValueList])
-                ➤ 𝗿𝗲𝗷𝗲𝗰𝘁𝗲𝗱𝗩𝗮𝗹𝘂𝗲𝘀: Checks to ensure any value is in 𝗗𝗶𝘀𝗮𝗹𝗹𝗼𝘄𝗲𝗱 𝗩𝗮𝗹𝘂𝗲𝘀. 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("rejectedValues", [ValueList])
-                ➤ 𝘃𝗮𝗹𝘂𝗲𝗥𝗮𝗻𝗴𝗲: Checks to ensure all values are within 𝗔𝗹𝗹𝗼𝘄𝗲𝗱 𝗥𝗮𝗻𝗴𝗲. 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("valueRange", <minValue>, <maxValue>)
-                ➤ 𝗺𝗶𝗻𝗩𝗮𝗹𝘂𝗲: Checks to ensure all values are above or equal to the 𝗠𝗶𝗻𝗶𝗺𝘂𝗺 𝗩𝗮𝗹𝘂𝗲. 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("minValue", <minValue>)
-                ➤ 𝗺𝗮𝘅𝗩𝗮𝗹𝘂𝗲: Checks to ensure all values are below or equal to the 𝗠𝗮𝘅𝗶𝗺𝘂𝗺 𝗩𝗮𝗹𝘂𝗲. 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("maxValue", <maxValue>)
-                ➤ 𝗳𝗿𝗲𝘀𝗵𝗻𝗲𝘀𝘀: Checks to ensure data is within the 𝗔𝗹𝗹𝗼𝘄𝗲𝗱 𝗙𝗿𝗲𝘀𝗵𝗻𝗲𝘀𝘀 𝗪𝗶𝗻𝗱𝗼𝘄. 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("freshness", <number>, "<minute | day | hour>")
-                ➤ 𝗿𝗲𝗹𝗮𝘁𝗶𝘃𝗲𝗧𝗶𝗺𝗲: Checks a column's value against a 𝗿𝗲𝗹𝗮𝘁𝗶𝘃𝗲 𝘁𝗶𝗺𝗲 𝘃𝗮𝗹𝘂𝗲 using a comparison operator.hour>". 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("relativeTime", "< | > | <= | >= | = | !=", <timestamp expression>)
-                ➤ 𝗿𝘂𝗹𝗲𝘀: Checks whether a row satisfies a 𝗰𝘂𝘀𝘁𝗼𝗺 𝗦𝗤𝗟 𝗿𝘂𝗹𝗲. Rows that do not satisfy the rule are returned as test failures. 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("rules", "<SQL rule>", "<rule name>")
-                ➤ 𝗾𝘂𝗲𝗿𝘆: Executes a 𝗰𝘂𝘀𝘁𝗼𝗺 𝗦𝗤𝗟 𝗾𝘂𝗲𝗿𝘆 as a column test. The query should return the rows that fail the test. 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("query", "<SQL query>", "<test name>")
-                ➤ 𝗿𝗲𝗹𝗮𝘁𝗶𝗼𝗻𝘀𝗵𝗶𝗽: Checks whether values in a 𝗰𝗵𝗶𝗹𝗱 𝗰𝗼𝗹𝘂𝗺𝗻 have matching values in a specified 𝗽𝗮𝗿𝗲𝗻𝘁 𝗰𝗼𝗹𝘂𝗺𝗻. Rows where the child value has no corresponding parent value are returned as test failures. 𝗘𝘅𝗮𝗺𝗽𝗹𝗲: tests("relationship", "<parent location>", "<parent node>", "<parent column>", "<test name>")
               isRequired: true
-              parameters:
-              options:
-                - 'unique'
-                - 'null'
-                - 'empty'
-                - 'acceptedValues'
-                - 'rejectedValues'
-                - 'valueRange'
-                - 'minValue'
-                - 'maxValue'
-                - 'freshness'
 
-
-            - name: runOrder
+        - name: rejected_values
+          description: >-
+            Column-level data quality test.
+            Fails on rows whose value is in the deny list.
+            Repeat the annotation once per forbidden value. Each value is pasted into the SQL verbatim, so quote it to match the column's data type — a number as rejected_values("<num>"), a string as
+            rejected_values("'<string>'").
+            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+          allowsMultiple: true
+          parameters:
+            - name: value
               type: string
-              description: Determines whether the test is executed before or after the load operation.
-              isRequired: false
-              default: After
-              options:
-                - Before
-                - After
+              isRequired: true
+              example: "'<string>'"
 
-            - name: continueOnFailure
-              type: boolean
-              description: Determines whether execution continues when the test fails.
+        - name: min_max
+          description: >-
+            Column-level data quality test.
+            Fails on rows outside the inclusive range.
+            Both bounds are pasted into the SQL verbatim, so write a number as "0" and a date as "DATE '2026-01-01'".
+            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+            parameters:
+              - name: min
+                type: string
+                isRequired: true
+                example: "0"
+              - name: max
+                type: string
+                isRequired: true
+                example: "100"
+
+        - name: min_value
+          description: >-
+            Column-level data quality test.
+            Fails on rows below the bound.
+            Pasted into the SQL verbatim — see min_max.
+            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+          parameters:
+            - name: min
+              type: string
+              isRequired: true
+              example: "0"
+
+        - name: max_value
+          description: >-
+            Column-level data quality test.
+            Fails on rows above the bound.
+            Pasted into the SQL verbatim — see min_max.
+            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+          parameters:
+            - name: max
+              type: string
+              isRequired: true
+              example: "100"
+
+        - name: freshness
+          description: >-
+            Column-level data quality test.
+            Checks that the data is fresh — fails when the column's value is older than the given interval, or when the table has no rows at all.
+            𝗡𝗼𝘁𝗲: on a DATE column the value is truncated to midnight.
+            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+          parameters:
+            - name: interval
+              type: number
+              isRequired: true
+              example: 1
+
+            - name: unit
+              type: string
+              options: [SECOND, MINUTE, HOUR, DAY, WEEK, MONTH, YEAR]
+              default: DAY
+
+        - name: relative_time
+          description: >-
+            Column-level data quality test.
+            Compares this column against another date/time column on the same node using the
+            given operator.
+            E.g. @relative_time("<=", "END_DATE") fails any row where this column's value is not less than or equal to END_DATE.
+            A row with either side 𝗡𝗨𝗟𝗟 is left out of the check and passes.
+            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+          parameters:
+            - name: operator
+              type: string
+              isRequired: true
+              options: ["<", "<=", ">", ">=", "=", "<>"]
+              example: "="
+            
+            - name: column
+              type: string
+              isRequired: true
+              example: "<other_column>"
+
+        - name: business_rule
+          description: >-
+            Column-level data quality test.
+            Runs a custom SQL boolean expression against every row and fails whichever ones don't
+            satisfy it.
+            The expression is pasted verbatim into a WHERE NOT (...) clause against
+            the target table.
+            Repeat the annotation to add multiple independent rules.
+            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+          allowsMultiple: true
+          parameters:
+            - name: expression
+              type: string
+              isRequired: true
+              example: "TOTAL_AMOUNT = QUANTITY * UNIT_PRICE"
+            - name: label
+              type: string
+              description: Stage name for this rule. Defaults to business_rule.
               isRequired: false
-              default: true
-              parameters:
-              options:
-                - true
-                - false
+              example: "<total amount test>"
+
+        - name: business_query
+          description: >-
+            Column-level data quality test.
+            Runs a complete SQL query, pasted into the SQL verbatim — write it to select only the rows that fail check.
+            Repeat the annotation to add multiple independent checks.
+            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+          allowsMultiple: true
+          parameters:
+            - name: query
+              type: string
+              isRequired: true
+              example: "SELECT ORDER_ID FROM {{ this }} GROUP BY ORDER_ID HAVING COUNT(*) > 1"
+            - name: label
+              type: string
+              isRequired: false
+              description: Stage name for this query. Defaults to business_query.
+              example: "<duplicate order ID test>"
+
+        - name: relationship
+          description: >-
+            Column-level data quality test. Referential integrity — fails on rows 𝗻𝗼𝗻-𝗡𝗨𝗟𝗟 value has no
+            match in the parent column.
+            E.g. @relationship("SRC", "CUSTOMER", "C_CUSTKEY").
+            Repeat the annotation to add multiple independent checks. Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or
+            continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+          allowsMultiple: true
+          parameters:
+            - name: location
+              description: >-
+                Name of the Storage Location the parent node lives in, as shown under
+                Annotations > General > Storage Location in the node editor (e.g. SRC, TARGET).
+              type: string
+              isRequired: true
+              example: "<storage_loc>"
+            - name: node
+              description: Name of the parent node/table to check against, within the given 𝗹𝗼𝗰𝗮𝘁𝗶𝗼𝗻.
+              type: string
+              isRequired: true
+              example: "<parent_node>"
+            - name: column
+              description: Name of the column in the parent 𝗻𝗼𝗱𝗲 that this column's value must match.
+              type: string
+              isRequired: true
+              example: "<parent_node>"
 name: SQL Work
 type: NodeType
