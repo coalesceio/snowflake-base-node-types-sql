@@ -127,20 +127,20 @@ metadata:
             🚦 Column-level data quality test.
             Fails on rows where the column is 𝗡𝗨𝗟𝗟.
             Presence enables the test — remove the annotation to turn it off.
-            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and  either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
 
         - name: uniqueness
           description: >- 
             🚦 Column-level data quality test.
             Fails when a value appears on more than one row.
-            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
 
         - name: empty
           description: >-
             🚦 Column-level data quality test.
             Fails on rows where the column trims to the empty string;
             𝗡𝗨𝗟𝗟 values pass this test and are instead caught by not_null.
-            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
 
         - name: accepted_values
           description: >-
@@ -149,7 +149,7 @@ metadata:
             Repeat the annotation once per permitted value.
             Each value is pasted into the SQL verbatim, so quote it to match the column's data
             type — a number as accepted_values("<num>"), a string as accepted_values("'<string>'").
-            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           allowsMultiple: true
           parameters:
             - name: value
@@ -162,7 +162,7 @@ metadata:
             Fails on rows whose value is in the deny list.
             Repeat the annotation once per forbidden value. Each value is pasted into the SQL verbatim, so quote it to match the column's data type — a number as rejected_values("<num>"), a string as
             rejected_values("'<string>'").
-            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           allowsMultiple: true
           parameters:
             - name: value
@@ -175,7 +175,7 @@ metadata:
             🚦 Column-level data quality test.
             Fails on rows outside the inclusive range.
             Both bounds are pasted into the SQL verbatim, so write a number as "0" and a date as "DATE '2026-01-01'".
-            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
             parameters:
               - name: min
                 type: string
@@ -191,7 +191,7 @@ metadata:
             🚦 Column-level data quality test.
             Fails on rows below the bound.
             Pasted into the SQL verbatim — see min_max.
-            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: min
               type: string
@@ -203,7 +203,7 @@ metadata:
             🚦 Column-level data quality test.
             Fails on rows above the bound.
             Pasted into the SQL verbatim — see min_max.
-            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: max
               type: string
@@ -215,7 +215,7 @@ metadata:
             🚦 Column-level data quality test.
             Checks that the data is fresh — fails when the column's value is older than the given interval, or when the table has no rows at all.
             𝗡𝗼𝘁𝗲: on a DATE column the value is truncated to midnight.
-            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: interval
               description: >-
@@ -236,7 +236,7 @@ metadata:
             given operator.
             E.g. @relative_time("<=", "END_DATE") fails any row where this column's value is not less than or equal to END_DATE.
             A row with either side 𝗡𝗨𝗟𝗟 is left out of the check and passes.
-            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗰𝗼𝗹𝘂𝗺𝗻𝗥𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗹𝘂𝗺𝗻𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: operator
               type: string
