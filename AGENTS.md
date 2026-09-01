@@ -23,7 +23,12 @@ If the file is absent, use `coa` from your PATH. Prefer `--json` output; `coa --
 
 ## Authoring nodes
 
-Run `coa describe node-types` before authoring V2 (`.sql`) nodes — they need a custom node type
-definition under `nodeTypes/`, and a fresh workspace ships none. `coa describe` covers the file
-layout and commands. Verify with `coa validate`, `coa plan`, and `coa run`.
+Once `data.yml` declares a platform, the app writes that platform's default node types into
+`nodeTypes/`. Source nodes are always V1 (`.yml`). For transformation nodes, use V2 (`.sql`) when a
+V2 node type (`fileVersion: 2`) exists in `nodeTypes/` for the type; otherwise author them as V1
+(`.yml`). Run `coa describe sql-format` for both file shapes. Verify with `coa validate`,
+`coa plan`, and `coa run`.
+
+The `Source` node type is built in and never lives in `nodeTypes/` — `coa sources add` output
+resolves to it automatically. Do not author a `Source` definition; the built-in always wins.
 <!-- coalesce:agent-guide:end -->
