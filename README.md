@@ -24,7 +24,7 @@ The Work Node type has three configuration groups:
 
 #### Work General Options
 
-<img width="709" height="328" alt="image" src="https://github.com/user-attachments/assets/50467269-acbb-400c-a6fa-8b139350f582" />
+<img width="742" height="299" alt="image" src="https://github.com/user-attachments/assets/a6223058-34ac-432e-9e10-abc4e1b6c0d2" />
 
 | **Property** | **Description** |
 |----------|-------------|
@@ -76,7 +76,7 @@ This applies to `@tests`, `@preSQL`, and `@postSQL`.
 | **Property** | **Description** |
 |---------|-------------|
 | `@not_null` | Fails on rows where the column is NULL.<br/>Example: `@not_null` |
-| `@uniqueness` | Fails when a value appears on more than one row.<br/>Example: `@uniqueness` |
+| `@unique` | Fails when a value appears on more than one row.<br/>Example: `@unique` |
 | `@empty` | Fails on rows where the column trims to the empty string.<br/>NULL values pass this test — they're caught by `@not_null` instead.<br/>Example: `@empty` |
 | `@accepted_values("<value>")` | ***(repeatable)*** Fails on rows whose value is outside the allow list.<br/>Repeat once per permitted value.<br/>Quote to match the column's data type — <br/>number: `accepted_values("<num>")`<br/>string: `accepted_values("'<string>'")`.<br/>Example: `@accepted_values("'ALGERIA'")` |
 | `@rejected_values("<value>")` | ***(repeatable)*** Fails on rows whose value is in the deny list.<br/>Repeat once per forbidden value.<br/>Same quoting rules as `accepted_values`.<br/>Example: `@rejected_values("'NA'")` |
@@ -161,13 +161,10 @@ Users should be aware of the following technical constraints when using SQL:
 This node only supports data retrieval and transformation logic. DML or DDL commands such as `CREATE`, `MERGE`, `DELETE`, `UPDATE`, or `TRUNCATE` are not supported and will cause execution failures.
 
 * **Support for `DISTINCT`, `LATERAL FLATTEN`, `UNION`, and `UNION ALL`**:  
-Node V2 supports the full range of Snowflake set operator constructs: `UNION`, `UNION ALL`, `INTERSECT`, `EXCEPT`, `BY NAME`, and others.
+`DISTINCT`, `UNION`, and `UNION ALL` are fully supported when used within **Common Table Expressions (CTEs)**. While these keywords can also be used in standard `SELECT` statements without generating an error, they may not parsed correctly by the platform. As a result, subsequent clauses (such as `JOIN`s) may be interpreted as part of a standard join structure, causing the generated SQL to differ from the intended query and potentially leading to inconsistent data loads. To ensure the SQL is parsed and executed as expected, always implement these operations inside a CTE.
 
 * **Other Keywords**:  
 **GROUP BY, ORDER BY and HAVING** clauses can be included as part of the join query and will be parsed and processed accordingly.
-
-* **Multisource**:
-Multisource UI support will **not** be added in node V2 — it's a UI-heavy concept that doesn't map well onto SQL.
 
 ---
 
@@ -184,7 +181,7 @@ The following patterns represent common ways to use the SQL Node.<br/>
 @preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)")
 @postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('WRK_NATION', CURRENT_TIMESTAMP())")
 SELECT
-     "N_NATIONKEY" AS "N_NATIONKEY" @not_null @uniqueness @min_value("0") @max_value("100")  @accepted_values("1") @inHash("GH_COL1", 2),
+     "N_NATIONKEY" AS "N_NATIONKEY" @not_null @unique @min_value("0") @max_value("100")  @accepted_values("1") @inHash("GH_COL1", 2),
      "N_NAME" AS "N_NAME" @not_null @empty @accepted_values("'ALGERIA'") @accepted_values("'ARGENTINA'") @inHash("GH_COL1", 1),
      "N_REGIONKEY" AS "N_REGIONKEY" @min_max("0", "4") @notNull @defaultValue("20"),
      "N_COMMENT" AS "N_COMMENT" @rejected_values("'NA'"),

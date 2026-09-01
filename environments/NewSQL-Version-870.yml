@@ -1,0 +1,11 @@
+fileVersion: 1
+id: "870"
+mappingDefinitions:
+  SRC:
+    database: PRANJAL_DEV
+    schema: SOURCE_DB
+  TARGET:
+    database: PRANJAL_DEV
+    schema: TEST_DB
+name: "[NewSQL-Version]"
+type: Environment

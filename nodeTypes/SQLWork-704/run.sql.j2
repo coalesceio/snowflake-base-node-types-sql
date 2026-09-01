@@ -1,0 +1,77 @@
+{#
+    Copyright (c) 2026 Coalesce. All rights reserved.
+This script and its associated documentation are confidential and proprietary to Coalesce.
+Unauthorized reproduction, distribution, or disclosure of this material is strictly prohibited.
+Coalesce permits you to copy and modify this script for the purposes of using with Coalesce but does not permit copying or modification for any other purpose.  
+#}
+{# == Node Type Name           : SQL Work  == #}
+{# == Node Type Description    : Loads the table with custom SQL logic  == #}
+{#---------------------------------------------------------------------------------------------#}
+
+{# == To run data quality tests before data insertion == #}
+{{ run_tests('Before') }}
+
+{%- if node.materializationType == 'table' %}
+
+    {#== Pre-SQL ==#}
+    {%- set ns = namespace(cnt=0) %}
+    {%- for sql in config.preSQL %}
+        {%- if sql is mapping and sql.parameters is defined %}
+            {%- set ns.cnt = ns.cnt + 1 %}
+            {{ stage('Pre-SQL '  ~ ns.cnt )}}
+            {{ sql.parameters[0] }}
+        {%- endif %}
+    {%- endfor %}
+
+    {# == Determine write mode: truncateInsert (default) or append == #}
+    {%- if config.writeMode is defined and config.writeMode.parameters is defined and config.writeMode.parameters | length > 0 %}
+        {%- set writeMode = config.writeMode.parameters[0] | trim %}
+    {%- else %}
+        {%- set writeMode = 'truncateInsert' %}
+    {%- endif %}
+
+    {# == Set insert mode keyword based on writeMode == #}
+    {%- if writeMode == 'append' %}
+        {%- set insertMode = '' %}
+    {%- else %}
+        {%- set insertMode = 'OVERWRITE' %}
+    {%- endif %}
+
+
+	{# == Insert data from sources into Work table  == #}
+    {{ stage('Load ' + node.materializationType + ' using Insert') }}
+    INSERT {{ insertMode }} INTO  {{ ref_no_link(node.location.name, node.name) }}
+    (
+        {%- for col in sources[0].columns %}
+            "{{ col.name }}"
+            {%- if not loop.last -%},{%- endif %}
+        {%- endfor %}
+    )
+    {{ sources[0].cteString }}
+    (
+        SELECT
+        {%- for col in sources[0].columns %}
+            {{ get_source_transform_v2(col) }} AS "{{ col.name }}"
+            {%- if not loop.last -%}, {%- endif %}
+        {%- endfor %}
+        {{ sources[0].join }}
+    )
+
+    {#== Post-SQL ==#}
+    {%- set ns = namespace(cnt=0) %}
+    {%- for sql in config.postSQL %}
+        {%- if sql is mapping and sql.parameters is defined %}
+            {%- set ns.cnt = ns.cnt + 1 %}
+            {{ stage('Post-SQL '  ~ ns.cnt ) }}
+            {{ sql.parameters[0] }}
+        {%- endif %}
+    {%- endfor %}
+
+{%- else %}
+	{{ stage('Load Skipped for View') }}
+	-- The node {{node.name}} is materialized as View. Therefore, a Load operation is not supported.
+	SELECT 1 FROM UNNSET([1]) AS INFO_MESSAGE WHERE FALSE
+{%- endif %}
+
+{# == To run data quality tests after data insertion == #}
+{{ run_tests('After') }}
