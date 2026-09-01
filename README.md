@@ -1,140 +1,144 @@
-# Base Node Types - SQL Package
+> **Preview:** This node type is available via the Marketplace; however, it is currently supported only in the Coalesce Desktop App and may not function as expected in the web app.
 
-## SQL Node Types
+# V2 NodeTypes
 
-The SQL Node is a powerful transformation tool within Coalesce that allows developers to write custom, hand-coded SQL instead of using the standard graphical column-mapping interface. It is ideal for complex transformations, advanced window functions, or multi-step logic that is difficult to represent with the standard UI. While it provides maximum flexibility, it shifts the responsibility of column definition and logic maintenance to the SQL author.
+The V2 nodes is a transformation tool within Coalesce that lets developers write custom, hand-coded SQL instead of using the standard graphical column-mapping interface. It is ideal for complex transformations, advanced window functions, or multi-step logic that is difficult to represent with the standard UI, and ships with a built-in library of column- and node-level data quality tests. While it provides maximum flexibility, it shifts the responsibility of column definition and logic maintenance to the SQL author.
 
-The Base Node Types - SQL Package includes:
+## Coalesce Base Node Types V2 Package
+
+The Coalesce Base Node Types V2 Package includes:
 
 * [Work](#work)
-* [Persistent Stage](#persistent-stage)
-* [Dimension](#dimension)
-* [Fact](#fact)
-* [Factless Fact](#factless-fact)
-* [View](#view)
-* [Code](#code)
 
-The key differences between these nodes are outlined below.
+## Work
 
-### Node Configuration
+The Work node is a general-purpose transformation node within Coalesce, used to materialize intermediate or staging-layer tables and views as part of a larger transformation pipeline. It sits between raw source data and downstream modeled objects, giving developers a flexible landing point to shape, clean, and validate data — complete with a built-in library of column- and node-level data quality tests — before it flows further into the pipeline.
 
-* Node properties
+### Work Node Configuration
 
-#### Node Properties
+The Work Node type has three configuration groups:
 
-| **Setting** | **Description** |
+* [General](#sql-work-general-options)
+* [Node Annotations](#sql-work-node-annotations)
+* [Column Annotations](#sql-work-column-annotations)
+
+#### Work General Options
+
+<img width="742" height="299" alt="image" src="https://github.com/user-attachments/assets/a6223058-34ac-432e-9e10-abc4e1b6c0d2" />
+
+| **Property** | **Description** |
 |----------|-------------|
-| **Storage Location** | Storage Location where the work will be created |
+| **Storage Location** | Storage Location where the Work table or view will be created |
 
-### Node Options
+### Work Node Annotations
 
-| Options |   Work   | Dimension | Persistent Stage | Fact | Factless Fact | View | Description |
-|----------|-------------|-----------|------------------|------|---------------|------|-------------|
-| **Create As** | Table/View | Table/View | Table | Table/View | Table | View | |
-| **Truncate Before** | ✅ | ✅ | ✅ | ✅ | ✅ |  | **True**: Truncates target before load.<br/>**False**: Table is not truncated before data load. |
-| **Distinct** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **True**: Group By All is hidden and DISTINCT data is processed.<br/>**False**: Group By All is visible. |
-| **Group By All** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **True**: DISTINCT is hidden and data is grouped by all columns.<br/>**False**: DISTINCT is visible. |
-| **Order By** | ✅ | ✅ | ✅ | ✅ | ✅ |  | **True**: Sort column and sort order drop down are visible and are required to form order by clause<br/>**False**: Sort column and sort order drop down are invisible |
-| **Insert Zero Key Record⁵** |  | ✅ |  |  |  |  | Enables insertion of a zero key (ghost) record. |
-| **Business Key** |  | ✅ | ✅ | ✅ |  |  | Required column for both SCD Type 1 and Type 2.<br/>**Note:** Geometry and Geography data type columns are not supported as business key columns. |
-| **Last Modified Based Incremental Load**² |  | ✅ | ✅ | ✅ |  |  | **True**: When enabled we can do timestamp based/Integer based CDC<br/>**False**: Regular CDC based on Change tracking columns is done. |
-| **Lookback Days**¹ |  | ✅ | ✅ | ✅ |  |  | Specifies the number of days to look back from the last successful load when extracting incremental data |
-| **Last Modified Column**¹ |  | ✅ | ✅ | ✅ |  |  | Column used for incremental loading. Supported data types include NUMERIC and TIMESTAMP-related columns. |
-| **Enable SCD Type2**¹ |  | ✅ | ✅ |  |  |  | **True**: SCD Type2 - CDC is based on timestamp/ID column chosen.<br/>**False**: SCD Type1 - CDC is based on timestamp/ID column chosen. |
-| **Change Tracking** |  | ✅ | ✅ |  |  |  | *Only when Last Modified Based Incremental Load is OFF*<br/>Required column/s for SCD Type 2 |
+<img width="793" height="612" alt="image" src="https://github.com/user-attachments/assets/db09c345-979b-4b4e-a628-19451e4435d3" />
 
-### Control Options
+| **Property** | **Description** |
+|---------|-------------|
+| `@id(id)` ***(reserved)*** | Unique identifier for the node.<br/>Static and auto-generated when the node is created — not meant to be edited. |
+| `@nodeType(type)` ***(reserved)*** | Identifies the node's type.<br/>Set automatically based on the node type chosen when the node is created.|
+| `@description(text)` ***(reserved)*** | Node-level description.<br/>Can be edited via this annotation or in the node description field below the node name in the UI.<br/>Example: `@description("Table description")` |
+| `@materializationType(type)` ***(reserved)*** | Table/View.<br/>*Not specified in the SQL editor → defaults to **Table**.*<br/>Example: `@materializationType("View")` |
+| `@writeMode("truncateInsert \| append")` | Controls how data is written to the target table.<br/>**truncateInsert** — clears the table before loading, replacing its contents entirely.<br/>**append** — inserts the new rows alongside whatever is already there.<br/>*Not specified in the SQL editor → defaults to **truncateInsert**.*<br/>**Note:** Ignored on Views.<br/>Example: `@writeMode("append")` |
+| `@disableTests` | Controls whether configured tests are skipped.<br/>*Specified in the SQL editor → all node- and column-level tests are skipped.*<br/>*Not specified in the SQL editor → tests run normally.*<br/>To turn tests back on, remove the annotation. Useful while developing a node — iterate on the SQL first, then re-enable once the logic is settled.<br/>Example: `@disableTests` |
+| `@tests(querySQL, continueOnFailure?, runOrder?)` | ***(repeatable)*** Node-level data quality test.<br/>Runs `querySQL` against the target; fails if it returns any records.<br/>Skipped entirely when **@disableTests** is set.<br/>Example: `@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")` |
+| `@preSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `before` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)")` |
+| `@postSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `after` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('WRK_NATION', CURRENT_TIMESTAMP())")` |
 
-| Options | Work | Dimension | Persistent Stage | Fact | Factless Fact | View | Description |
-|----------|------|-----------|------------------|------|---------------|------|-------------|
-| **Enable tests⁴** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Determines if tests are enabled. <br/>Tests can be defined using @tests annotations at both the node and column levels.|
-| **Pre-SQL** | ✅ | ✅ | ✅ | ✅ | ✅ |  | SQL to execute before data insert operation |
-| **Post-SQL** | ✅ | ✅ | ✅ | ✅ | ✅ |  | SQL to execute after data insert operation |
+>**Note:** Quote style matters for **case-sensitive** identifiers.
 
-### Column-Level Annotations
+Default — outer `"..."` double quotes, identifier unquoted:
+```
+@preSQL(" SELECT 1 FROM {{ this }} GROUP BY N_NAME HAVING COUNT(*) > 1 ")
+```
+If the column name's casing must be preserved exactly, swap the outer quotes to `'...'` single quotes, and wrap the identifier itself in `"..."` double quotes:
+```
+@preSQL(' SELECT 1 FROM {{ this }} GROUP BY "N_Name" HAVING COUNT(*) > 1 ')
+```
+This applies to `@tests`, `@preSQL`, and `@postSQL`.
 
-| Annotation | Work | Dimension | Persistent Stage | Fact | Factless Fact | View | Description |
-|------------|------|-----------|------------------|------|---------------|------|-------------|
-| `@nullable("false")`<br/>`@nullable(false)` | ✅ | ✅ | ✅ | ✅ | ✅ |  | Marks column as NOT NULL |
-| `@description("<text>")` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Adds column description |
-| `@defaultValue("<text>")`<br/>`@defaultValue(<number>)`<br/>`@defaultValue(<bool>)` | ✅ | ✅ | ✅ | ✅ | ✅ |  | Adds default value |
-| `@tests("null", "unique")` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Column tests are more restrictive and apply directly to individual columns.<br/><br/>**Supported Tests**<br/>- **null** → Checks for NULL values<br/>- **unique** → Checks to ensure all values are unique |
-| `@inHash("<hash_order>\|<hash_name>")` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Generates a hash key by combining and hashing the values of columns associated with a given hash group, ensuring consistent change detection and key generation.<br/>**Default:** Uses `SHA1` algorithm. |
-| `@zeroKey("<text>")`<br/>`@zeroKey(<number>)`<br/>`@zeroKey(<bool>)`<br/>`@zeroKey(<timestamp>)` |  | ✅ |  |  |  |  | Provides override zero key value(ghost record) to the column |
+### Work Column Annotations
+
+<img width="790" height="365" alt="image" src="https://github.com/user-attachments/assets/5ee65e14-e87f-4c72-9209-3c561f0cc57f" />
+
+| **Property** | **Description** |
+|---------|-------------|
+| `@notNull` ***(reserved)*** | Marks column as NOT NULL.<br/>**Note:** Ignored on Views.<br/>Example: `@notNull` |
+| `@description(<text>)` ***(reserved)*** | Adds column description.<br/>Example: `@description("timestamp column")` |
+| `@defaultValue(<value>)` ***(reserved)*** | Adds default value.<br/>Quote to match the column's data type - <br/>number: `defaultValue("<num>")`<br/>string: `defaultValue("'<string>'")`<br/>**Note:** Ignored on Views.<br/>Example: `@defaultValue("20")` `@defaultValue("'NA'")` |
+| `@inHash(<hashName>, <hashOrder>)`**¹** | ***(repeatable)*** Marks a column as an input to a generated hash key.<br/>**hashName** — columns sharing the same value are grouped together into the same hash.<br/>**hashOrder** — this column's position within that group.<br/>Call `get_hash("<hashName>")` elsewhere in the SELECT to produce the hash column from the marked columns.<br/>Example: `@inHash("GH_COL1", 1)` |
+
+<img width="792" height="824" alt="image" src="https://github.com/user-attachments/assets/b8559c63-db38-4c09-ad5b-5ae12fb0c870" />
+
+🚦**Column-level data quality tests** — applicable only when `@disableTests` is not set. Each runs **After** the load and continues the run on failure. *Not specified in the SQL editor → test is off.*
+
+| **Property** | **Description** |
+|---------|-------------|
+| `@not_null` | Fails on rows where the column is NULL.<br/>Example: `@not_null` |
+| `@uniqueness` | Fails when a value appears on more than one row.<br/>Example: `@uniqueness` |
+| `@empty` | Fails on rows where the column trims to the empty string.<br/>NULL values pass this test — they're caught by `@not_null` instead.<br/>Example: `@empty` |
+| `@accepted_values("<value>")` | ***(repeatable)*** Fails on rows whose value is outside the allow list.<br/>Repeat once per permitted value.<br/>Quote to match the column's data type — <br/>number: `accepted_values("<num>")`<br/>string: `accepted_values("'<string>'")`.<br/>Example: `@accepted_values("'ALGERIA'")` |
+| `@rejected_values("<value>")` | ***(repeatable)*** Fails on rows whose value is in the deny list.<br/>Repeat once per forbidden value.<br/>Same quoting rules as `accepted_values`.<br/>Example: `@rejected_values("'NA'")` |
+| `@min_max("<min>", "<max>")` | Fails on rows outside the inclusive range.<br/>Bounds are pasted into the SQL verbatim —<br/>number: `"0"`,<br/>date: `"DATE '2026-01-01'"`.<br/>Example: `@min_max("0", "4")` |
+| `@min_value("<min>")` | Fails on rows below the bound.<br/>Value formatting — see `min_max`.<br/>Example: `@min_value("0")` |
+| `@max_value("<max>")` | Fails on rows above the bound.<br/>Value formatting — see `min_max`.<br/>Example: `@max_value("100")` |
+| `@freshness(<interval>, "<unit>")` | Fails when the newest value in the column is older than the given interval, or the table is empty.<br/>**interval** — how far back from now the newest value is allowed to be, expressed in the unit given by **unit**.<br/>**unit** — SECOND, MINUTE, HOUR, DAY, WEEK, MONTH, or YEAR (defaults to DAY).<br/>**Note:** on a DATE column the value is truncated to midnight.<br/>Example: `@freshness(7, "DAY")` |
+| `@relative_time("<operator>", "<other_column>")` | Compares this column against another date/time column on the same node.<br/>e.g. `@relative_time("<=", "END_DATE")` fails rows where this column's value is not `<=` END_DATE.<br/>Either side NULL → row is skipped (passes).<br/>Example: `@relative_time("<", "L_M_2")` |
 
 ---
 
-#### Notes
+### Notes
 
-- ¹ Enabled only if Last Modified Based Incremental Load is ON
-- ² For timestamp-based incremental loads, a *validation test checks* the selected Last Modified column for NULL values before the merge. If NULL values are detected, the merge is stopped; otherwise, processing continues.
-- ³ Changing the surrogate key value after deployment is not recommended.
-- ⁴ Tests are performed only when `Enable tests` is ON
-    ```text
-    @tests("<SQL Query>", "<Run Order>", <Continue On Failure>)
+- Verify that all **column datatypes** are successfully resolved before creating the object. Columns with an `UNKNOWN` datatype may cause stage generation or runtime failures.
+
+- **¹** The hash transformation uses the reusable `get_hash()` macro:
+
+    ```SQL
+    {{ get_hash(<hash_name>, <algo>, <delimiter>) }}
     ```
+
     | Parameter | Description |
     |-----------|-------------|
-    | SQL Query | SQL statement to execute as a validation test. The test fails if the query returns any records. |
-    | Run Order | `Before` or `After`. Determines whether the test is executed before or after the load operation. |
-    | Continue On Failure | `true` or `false`. Determines whether execution continues when the test fails. |
-    
-    **Examples**
-    
-    ```text
-    @tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "Before", true)
-    
-    @tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", "After", true)
-    ```
-- ⁵ Applicable to **Dimension** nodes only.
-    | Option | Description |
-    |----------|-------------|
-    | **Default Surrogate Key Value**³ | Default surrogate key value used for the zero key record. |
-    | **Default String Value** | Default value used for string columns in the zero key record. |
-    | **Default Date/Time/Timestamp Value** | Default value used for date, time, and timestamp columns in the zero key record. |
-    | **Default Boolean Value** | Default value used for boolean columns in the zero key record. |
-- Verify that all **column datatypes** are successfully resolved before creating the object. Columns with an `UNKNOWN` datatype may cause stage generation or runtime failures.
-- If a **Dim and PStage node** is renamed, ensure that the surrogate key column is also renamed to follow the `{{NODE_NAME}}_KEY` naming convention. Failure to do so may result in the surrogate key attribute being lost, which can impact the expected behavior of the flow.
-- `@nullable` defaults to **true**. Use `@nullable("false")` to enforce NOT NULL.
-- **Column-level** `@zeroKey` takes precedence over **node-level** configuration. If `@zeroKey` is not defined at the column level, the node-level `@zeroKey` configuration is applied based on the column data type else `NULL` is applied by default.
-- Once the surrogate-zero key value is defined, it is **not advisable** to change it in future deployments or redeployments. Modifying the surrogate-zero key can lead to unintended behavior, such as new records being inserted instead of updating existing ones, causing data inconsistencies.
-- The hash transformation can be defined either using the reusable macro or by writing the full hash expression explicitly. Both approaches are supported and will produce the same result. Choose the macro approach for better reusability and cleaner code, or use the explicit expression when custom logic is required.
+    | `hash_name` | Hash name used across columns to identify the columns included in the hash. |
+    | `algo` | **(optional)** Hashing algorithm to use. Supported values include `SHA1` and `SHA256`. Defaults to `SHA1`. |
+    | `delimiter` | **(optional)** Delimiter used to separate column values when generating the hash. Defaults to `\|\|` and can be customized. |
 
     #### Examples:
     
     Using hash macro(default-SHA1)
     ```sql
-    <col_name> AS <col_name> @inHash("1|GH_COL"),
+    <col_name> AS <col_name> @inHash("GH_COL", 1),
     {{ get_hash('GH_COL') }}::STRING AS "GH_COL"
     ```
     Using hash macro(MD5)
     ```sql
-    <col_name> AS <col_name> @inHash("1|GH_COL"),
-    {{ get_hash('GH_COL', 'MD5') }}::STRING AS "GH_COL"<SHA256
+    <col_name> AS <col_name> @inHash("GH_COL", 1),
+    {{ get_hash('GH_COL', 'MD5') }}::STRING AS "GH_COL"
     ```
     Using hash macro(SHA256)
     ```sql
-    <col_name> AS <col_name> @inHash("1|GH_COL"),
+    <col_name> AS <col_name> @inHash("GH_COL", 1),
     {{ get_hash('GH_COL', 'SHA256') }}::STRING AS "GH_COL"
     ```
     Using hash macro(algo=SHA256, delimeter='~' )
     ```sql
-    <col_name> AS <col_name> @inHash("1|GH_COL"),
-    {{ get_hash('GH_COL', 'SHA256', '~') }}::STRING AS "GH_COL"
+    <col_name> AS <col_name> @inHash("GH_COL", 1),
+    {{ get_hash('GH_COL', algo='SHA256', delimiter='~') }}::STRING AS "GH_COL"
     ```
     Using multiple keys hash macro
     ```sql
-    <col_name1> AS <col_name1> @inHash("1|GH_COL"),
-    <col_name2> AS <col_name2> @inHash("2|GH_COL"),
+    <col_name1> AS <col_name1> @inHash("GH_COL", 1),
+    <col_name2> AS <col_name2> @inHash("GH_COL", 2),
     {{ get_hash('GH_COL') }}::STRING AS "GH_COL_COMBINED"
     ```
     Using multiple hash macros
     ```sql
-    <col_name1> AS <col_name1> @inHash("1|GH_COL1", "2|GH_COL2"),
-    <col_name2> AS <col_name2> @inHash("2|GH_COL1"),
-    <col_name3> AS <col_name3> @inHash("1|GH_COL2"),
+    <col_name1> AS <col_name1> @inHash("GH_COL1", 1, "GH_COL2", 2),
+    <col_name2> AS <col_name2> @inHash("GH_COL1", 2),
+    <col_name3> AS <col_name3> @inHash("GH_COL2", 1),
     {{ get_hash('GH_COL1') }}::STRING AS "GH_COL_COMBINED1",
-    {{ get_hash('GH_COL2') }}::STRING AS "GH_COL_COMBINED2"
+    {{ get_hash('GH_COL2', delimiter='~') }}::STRING AS "GH_COL_COMBINED2"
     ```
     Using explicit expression:
     ```sql
@@ -144,33 +148,6 @@ The key differences between these nodes are outlined below.
       ) AS STRING
     )::STRING AS "GH_Key"
     ```
----
-
-## Supported Load Strategies
-
-| Node Type | Insert | Change Tracking (SCD1) | Change Tracking (SCD2) | Last Modified (SCD1) | Last Modified (SCD2) | Merge-Insert Only |
-|------------|:------:|:----------------------:|:----------------------:|:--------------------:|:--------------------:|:-----------:|
-| **Work** | ✅ |  |  |  |  |  |
-| **Dimension** |  | ✅ | ✅ | ✅ | ✅ |  |
-| **Persistent Stage** | ✅ | ✅ | ✅ | ✅ | ✅ |  |
-| **Fact** | ✅ | ✅ |  | ✅ |  |  |
-| **Factless Fact** |  |  |  |  |  | ✅ |
-| **View** | NA | NA | NA | NA | NA | NA |
-
-> **Note:** Load strategy is determined by the node type and selected configuration options. It is not a user-configurable setting.
-----
-
-## Standard System Columns
-
-| Column Name | Definition | Annotation |
-|------------|-----------|-----------|
-| "<NODE_NAME>_SKEY" | "<NODE_NAME>_SKEY"::NUMBER AS "<NODE_NAME>_SKEY" | @isSurrogateKey |
-| SYSTEM_VERSION | "SYSTEM_VERSION"::NUMBER AS "SYSTEM_VERSION" | @isSystemVersion |
-| SYSTEM_CURRENT_FLAG | "SYSTEM_CURRENT_FLAG"::VARCHAR AS "SYSTEM_CURRENT_FLAG" | @isSystemCurrentFlag |
-| SYSTEM_CREATE_DATE | CAST(CURRENT_TIMESTAMP AS TIMESTAMP) | @isSystemCreateDate |
-| SYSTEM_END_DATE | CAST('2999-12-31 00:00:00' AS TIMESTAMP) | @isSystemEndDate |
-| SYSTEM_UPDATE_DATE | CAST(CURRENT_TIMESTAMP AS TIMESTAMP) | @isSystemUpdateDate |
-
 ---
 
 ### Known Limitations
@@ -183,74 +160,16 @@ Users should be aware of the following technical constraints when using SQL:
 * **SELECT Statements Only**:  
 This node only supports data retrieval and transformation logic. DML or DDL commands such as `CREATE`, `MERGE`, `DELETE`, `UPDATE`, or `TRUNCATE` are not supported and will cause execution failures.
 
-* **Support for `DISTINCT`, `UNION`, and `UNION ALL`**:  
-`DISTINCT`, `UNION`, and `UNION ALL` are fully supported when used within **Common Table Expressions (CTEs)**. While these keywords can also be used in standard `SELECT` statements without generating an error, they may not parsed correctly by the platform. As a result, subsequent clauses (such as `JOIN`s) may be interpreted as part of a standard join structure, causing the generated SQL to differ from the intended query and potentially leading to inconsistent data loads. To ensure the SQL is parsed and executed as expected, always implement these operations inside a CTE.
+* **Support for `DISTINCT`, `LATERAL FLATTEN`, `UNION`, and `UNION ALL`**:  
+Node V2 supports the full range of Snowflake set operator constructs: `UNION`, `UNION ALL`, `INTERSECT`, `EXCEPT`, `BY NAME`, and others.
 
-###  SQL Node Deployment
+* **Other Keywords**:  
+**GROUP BY, ORDER BY and HAVING** clauses can be included as part of the join query and will be parsed and processed accordingly.
 
-####  SQL Node Initial Deployment
+* **Multisource**:
+Multisource UI support will **not** be added in node V2 — it's a UI-heavy concept that doesn't map well onto SQL.
 
-When deployed for the first time into an environment the SQL Node of materialization type table/View will execute the below stage:
-
-| **Stage** | **Description** |
-|-----------|----------------|
-| **Create SQL Node Table** | This will execute a CREATE OR REPLACE statement and create a table in the target environment |
-
-| **Stage** | **Description** |
-|-----------|----------------|
-| **Create SQL Node View** | This will execute a CREATE OR REPLACE statement and create a view in the target environment |
-
-####  SQL Node Redeployment
-
-After the SQL Node with materialization type table has been deployed for the first time into a target environment, subsequent deployments may result in either altering the  SQL Table or recreating the  SQL table.
-
-#### Altering the SQL Node Tables
-
-A few types of column or table changes will result in an ALTER statement to modify the  SQL Table in the target environment, whether these changes are made individually or all together:
-
-* Changing table names
-* Dropping existing columns
-* Altering column data types
-* Adding new columns
-
-The following stages are executed:
-
-| **Stage** | **Description** |
-|-----------|----------------|
-| **Clone Table** | Creates an internal table |
-| **Rename Table\| Alter Column \| Delete Column \| Add Column \| Edit table description** | Alter table statement is executed to perform the alter operation |
-| **Swap Cloned Table** | Upon successful completion of all updates, the clone replaces the main table ensuring that no data is lost |
-| **Delete Table** | Drops the internal table |
-
-#### Recreating the SQL Node Views
-
-Any of the following changes to views will result in deleting and recreating the view.
-
-* View definition
-* Adding table description
-* Renaming the view
-
-This is executed in two stages:
-
-| **Stage** | **Description** |
-|-----------|----------------|
-| **Drop View** | Existing view is dropped |
-| **Create View** | New view is created |
-
-###  SQL Node Undeployment
-
-If a  SQL Node of materialization type table is deleted from a Workspace, that Workspace is committed to Git and that commit deployed to a higher level environment then the WorkTable in the target environment will be dropped.
-
-| **Stage** | **Description** |
-|-----------|----------------|
-| **Delete Table** | Coalesce Internal table is dropped |
-| **Delete Table** | Existing is dropped |
-
-| **Stage** | **Description** |
-|-----------|----------------|
-| **Drop View** | Existing view is dropped |
-
------------
+---
 
 ### Usage Examples 
 
@@ -258,24 +177,23 @@ The following patterns represent common ways to use the SQL Node.<br/>
 
 **Sample node with Annotations**
 ```sql
-
+@writeMode("append")
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1")
+@tests("SELECT 1 FROM {{ this }} WHERE N_REGIONKEY IS NULL", true, "Before")
+@description("Table description")
+@preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)")
+@postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('WRK_NATION', CURRENT_TIMESTAMP())")
 SELECT
-    0 AS "MRG_ALL_ANNOT_KEY" @zeroKey(0),
-     NATION."N_NATIONKEY" AS "N_NATIONKEY" @nullable("false") @inHash("1|GH_COL"),
-     NATION."N_NAME" AS "N_NAME" @defaultValue("NA"),
-     NATION."N_REGIONKEY" AS "N_REGIONKEY" @description("region key"),
-     NATION."N_COMMENT" AS "N_COMMENT" @inHash("2|GH_COL"),
-     NATION."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" @tests("null", "unique"),
-     {{ get_hash('GH_COL') }}::STRING AS "GH_COL",
-    "SYSTEM_CURRENT_FLAG"::VARCHAR AS "SYSTEM_CURRENT_FLAG",
-    "SYSTEM_VERSION"::NUMBER AS "SYSTEM_VERSION",
-    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE",
-    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE",
-    CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE"
-FROM {{ ref('SRC', 'NATION') }} "NATION"
+     "N_NATIONKEY" AS "N_NATIONKEY" @not_null @uniqueness @min_value("0") @max_value("100")  @accepted_values("1") @inHash("GH_COL1", 2),
+     "N_NAME" AS "N_NAME" @not_null @empty @accepted_values("'ALGERIA'") @accepted_values("'ARGENTINA'") @inHash("GH_COL1", 1),
+     "N_REGIONKEY" AS "N_REGIONKEY" @min_max("0", "4") @notNull @defaultValue("20"),
+     "N_COMMENT" AS "N_COMMENT" @rejected_values("'NA'"),
+     "LAST_MODIFIED" AS L_M_1 @freshness(7, "DAY") @relative_time("<", "L_M_2") @description("timestamp column"),
+     "LAST_MODIFIED" AS L_M_2,
+     CAST({{ get_hash('GH_COL1') }} AS STRING) AS "GH_COL1" @description("Hash Column")
+FROM {{ ref('SOURCE_DATA', 'NATION') }} "NATION"
 ```
-**Basic Transformation & Cleaning**
-Standard pattern for renaming columns and handling nulls.
+**Basic Transformation & Cleaning** - Standard pattern for renaming columns and handling nulls.
 
 ```sql
 SELECT
@@ -287,9 +205,7 @@ SELECT
 FROM {{ ref('SRC', 'ORDERS') }} "ORDERS"
 WHERE "O_ORDERSTATUS" != 'F'
 ```
-
-- **Using CTEs (Common Table Expressions)** <br/>
-For more complex, multi-step logic.
+**Using CTEs (Common Table Expressions)** - For more complex, multi-step logic
 
 ```sql
 WITH PRIORITY_COUNTS AS (
@@ -301,8 +217,7 @@ WITH PRIORITY_COUNTS AS (
 )
 SELECT * FROM PRIORITY_COUNTS
 ```
-
-- **Multi-CTE Transformation With Window Functions** <br/>
+**Multi-CTE Transformation With Window Functions** <br/>
 Complex transformations that would otherwise require multiple nodes can be written as a single SQL statement. Coalesce tracks lineage through each CTE and down to the source tables
 ```sql
 WITH ORDERED_ORDERS AS (
@@ -336,12 +251,11 @@ F.O_CUSTKEY,
 F.FIRST_ORDER_ID,
 F.FIRST_PURCHASE_DATE,
 F.FIRST_ORDER_VALUE,
-F.O_ORDERSTATUS @nullable(false),
+F.O_ORDERSTATUS @notNull,
 CURRENT_TIMESTAMP() AS REFRESHED_AT,
 'Initial Customer Purchase' AS RECORD_TYPE
 FROM FIRST_ORDERS F
 ```
-
 **Using Recursive CTE - Date Series**
 ```sql
 WITH RECURSIVE RCTE_FNL AS (
@@ -353,10 +267,8 @@ WITH RECURSIVE RCTE_FNL AS (
   )
 SELECT "date_s"
 FROM RCTE_FNL
-
 ```
 **Using Recursive CTE - Classic Employee**
-
 ```sql
 WITH RECURSIVE RCTE_FINAL AS (
 
@@ -387,7 +299,6 @@ SELECT
     "TITLE"::VARCHAR AS "TITLE"
 FROM RCTE_FINAL
 ```
-
 **Using CTE for multisource combine**
 ```sql
 WITH ALL_NATIONS AS (
@@ -397,7 +308,6 @@ WITH ALL_NATIONS AS (
     SELECT *
     FROM {{ ref('SOURCE_DATA', 'NATION_COPY2') }}
 )
-
 SELECT * FROM ALL_NATIONS
 ```
 
@@ -417,58 +327,80 @@ SELECT * FROM ALL_NATIONS
   
 - If a CTE is referenced in templates that may include joins, always use a **table alias** and qualify all column references with that alias. This prevents ambiguous column errors and ensures the template remains extensible as additional joins are introduced.
 
-----
+---
 
-## Code
+### Work Deployment
 
-### Work
+#### Work Initial Deployment
 
-| **Component** | **Link** |
-|--------------|-----------|
-| **Node definition** | [definition.yml]() |
-| **Create Template** | [create.sql.j2]() |
-| **Run Template** | [run.sql.j2]() |
+When deployed for the first time into an Environment the Work Node of materialization type table will execute the below stage:
 
-### Dimension
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Create Work Table** | This will execute a CREATE OR REPLACE statement and create a table in the target Environment |
+| **Create Work View** | This will execute a CREATE OR REPLACE statement and create a view in the target Environment |
 
-| **Component** | **Link** |
-|--------------|-----------|
-| **Node definition** | [definition.yml]() |
-| **Create Template** | [create.sql.j2]() |
-| **Run Template** | [run.sql.j2]() |
+#### Work Redeployment
 
-### Persistent Stage
+After the Work Node with materialization type table has been deployed for the first time into a target Environment, subsequent deployments may result in either altering the Work Table or recreating the Work table.
 
-| **Component** | **Link** |
-|--------------|-----------|
-| **Node definition** | [definition.yml]() |
-| **Create Template** | [create.sql.j2]() |
-| **Run Template** | [run.sql.j2]() |
+#### Altering the Work Tables
 
-### Fact
+A few types of column or table changes will result in an ALTER statement to modify the Work Table in the target Environment, whether these changes are made individually or all together:
 
-| **Component** | **Link** |
-|--------------|-----------|
-| **Node definition** | [definition.yml]() |
-| **Create Template** | [create.sql.j2]() |
-| **Run Template** | [run.sql.j2]() |
+* Changing table names
+* Dropping existing columns
+* Altering column data types
+* Adding new columns
 
+The following stages are executed:
 
-### Factless Fact
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Clone Table** | Creates an internal table |
+| **Rename Table\| Alter Column \| Delete Column \| Add Column \| Edit table description** | Alter table statement is executed to perform the alter operation |
+| **Swap Cloned Table** | Upon successful completion of all updates, the clone replaces the main table ensuring that no data is lost |
+| **Delete Table** | Drops the internal table |
 
-| **Component** | **Link** |
-|--------------|-----------|
-| **Node definition** | [definition.yml]() |
-| **Create Template** | [create.sql.j2]() |
-| **Run Template** | [run.sql.j2]() |
+> **Note:** Renaming a column results in the existing column being dropped and a new column being created. This operation may lead to data loss and should be performed with caution.
 
+#### Recreating the Work Tables
 
-### View
+If the materialization type is changed from Table to View, then the following stages are executed:
 
-| **Component** | **Link** |
-|--------------|-----------|
-| **Node definition** | [definition.yml]() |
-| **Create Template** | [create.sql.j2]() |
-| **Run Template** | [run.sql.j2]() |
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Delete Table** | Drops the existing table |
+| **Create View** | Recreates the node as a view |
 
-[Macros](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/macros/macro-1.yml)
+#### Recreating the Work Views
+
+The subsequent deployment of the Work Node of materialization type view with changes in view definition, adding table description or renaming view results in deleting the existing view and recreating the view.
+
+The following stages are executed:
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Delete View** | Removes existing view |
+| **Create View** | Creates new view with updated definition |
+
+### Removing a Work Node
+
+If a Work Node of materialization type table is deleted from a SQL Workspace, that SQL Workspace is committed to Git and that commit deployed to a higher-level Environment, then the Work Table in the target Environment will be dropped.
+
+This is executed in two stages:
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Delete Table** | Coalesce Internal table is dropped |
+| **Delete Table** | Target table in BigQuery is dropped |
+
+If a Work Node of materialization type view is deleted from a Workspace, that Workspace is committed to Git and that commit deployed to a higher-level Environment, then the WorkView in the target Environment will be dropped.
+
+The stage executed:
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Delete View** | Drops the existing Work view from the target Environment |
+
+---
