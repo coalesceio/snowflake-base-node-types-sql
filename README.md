@@ -166,6 +166,9 @@ This node only supports data retrieval and transformation logic. DML or DDL comm
 * **Other Keywords**:  
 **GROUP BY, ORDER BY and HAVING** clauses can be included as part of the join query and will be parsed and processed accordingly.
 
+* **Reserved Keywords as Annotation Names**:  
+Avoid naming custom annotations after words that are reserved keywords in the platform's SQL grammar — e.g. `UNIQUE`, `AS`, `PRIMARY`. The parser may fail to parse such annotations and throw a validation error.
+
 ---
 
 ### Usage Examples 
