@@ -24,7 +24,7 @@ The Work Node type has three configuration groups:
 
 #### Work General Options
 
-<img width="742" height="299" alt="image" src="https://github.com/user-attachments/assets/a6223058-34ac-432e-9e10-abc4e1b6c0d2" />
+<img width="745" height="302" alt="image" src="https://github.com/user-attachments/assets/bf4ced93-3b7d-434c-aee4-8757aa7c37ab" />
 
 | **Property** | **Description** |
 |----------|-------------|
