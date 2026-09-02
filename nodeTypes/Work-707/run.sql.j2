@@ -31,7 +31,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     {%- endif %}
 
     {# == Set insert mode keyword based on writeMode == #}
-    {%- if writeMode == 'append' %}
+    {%- if writeMode | lower == 'append' %}
         {%- set insertMode = '' %}
     {%- else %}
         {%- set insertMode = 'OVERWRITE' %}
@@ -49,7 +49,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     )
     {{ sources[0].cteString }}
     (
-        SELECT
+        SELECT {{ sources[0].selectModifier | default('', true) }}
         {%- for col in sources[0].columns %}
             {{ get_source_transform(col) }} AS "{{ col.name }}"
             {%- if not loop.last -%}, {%- endif %}

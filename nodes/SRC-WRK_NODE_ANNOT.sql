@@ -1,6 +1,5 @@
 @id("7b5614ad-1afa-4378-a8b0-181ab7c34a61")
 @nodeType("707")
-@writeMode("truncateInsert")
 @disableTests("false")
 @tests("SELECT 1 FROM {{ this }} WHERE 1 = 0")
 @preSQL("SELECT 1")

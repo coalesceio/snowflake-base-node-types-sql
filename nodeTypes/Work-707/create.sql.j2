@@ -39,7 +39,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     {%- if node.description | length > 0 %} COMMENT = '{{ node.description | escape }}' {%- endif %}
     AS
     {{ sources[0].cteString }}
-    SELECT
+    SELECT {{ sources[0].selectModifier | default('', true) }}
     {%- for col in sources[0].columns %}
         {{ get_source_transform(col) }} AS "{{ col.name }}"
         {%- if not loop.last -%}, {%- endif %}
