@@ -214,6 +214,23 @@ SELECT
 FROM {{ ref('SRC', 'ORDERS') }} "ORDERS"
 WHERE "O_ORDERSTATUS" != 'F'
 ```
+
+**Aggregate Functions inside a CTE**
+
+```sql
+WITH "ORDER_COUNTS" AS (
+    SELECT
+        MOD("ORDER_ID", 25) AS "NATION_KEY",
+        COUNT(*) AS "ORDER_COUNT"
+    FROM {{ ref('SRC', 'ORDERS_TEST') }}
+    GROUP BY MOD("ORDER_ID", 25)
+)
+SELECT
+     "NATION_KEY" AS "NATION_KEY",
+     "ORDER_COUNT" AS "ORDER_COUNT"
+FROM "ORDER_COUNTS"
+```
+
 **Using CTEs (Common Table Expressions)** - For more complex, multi-step logic
 
 ```sql
@@ -277,36 +294,45 @@ WITH RECURSIVE RCTE_FNL AS (
 SELECT "date_s"
 FROM RCTE_FNL
 ```
-**Using Recursive CTE - Classic Employee**
+**Using Recursive CTE**
 ```sql
-WITH RECURSIVE RCTE_FINAL AS (
-
-    -- Anchor clause: top-level employees (no manager)
+WITH RECURSIVE "NATION_MANAGERS" AS (
     SELECT
-        "EMPLOYEES_RECUR"."EMPLOYEE_ID"  AS "EMPLOYEE_ID",
-        1                                AS "LEVEL",
-        "EMPLOYEES_RECUR"."TITLE"        AS "TITLE",
-        "EMPLOYEES_RECUR"."MANAGER_ID"   AS "MANAGER_ID"
-    FROM {{ ref('SRC', 'EMPLOYEES_RECUR') }} AS "EMPLOYEES_RECUR"
-    WHERE "EMPLOYEES_RECUR"."MANAGER_ID" IS NULL
+        "N_NATIONKEY" AS "NATION_ID",
+        "N_NAME" AS "NATION_NAME",
+        CASE WHEN "N_NATIONKEY" = 0 THEN NULL ELSE "N_NATIONKEY" - 1 END AS "MANAGER_ID"
+    FROM {{ ref('SRC', 'NATION_TEST') }}
+),
+"NATION_CHAIN" AS (
+    SELECT
+        "NATION_ID",
+        "NATION_NAME",
+        "MANAGER_ID",
+        1 AS "ORG_LEVEL",
+        CAST("NATION_NAME" AS STRING) AS "PATH"
+    FROM "NATION_MANAGERS"
+    WHERE "MANAGER_ID" IS NULL
 
     UNION ALL
 
-    -- Recursive clause: employees reporting to someone in the CTE
     SELECT
-        "EMPLOYEES_RECUR"."EMPLOYEE_ID"  AS "EMPLOYEE_ID",
-        "RCTE_FINAL"."LEVEL" + 1         AS "LEVEL",
-        "EMPLOYEES_RECUR"."TITLE"        AS "TITLE",
-        "EMPLOYEES_RECUR"."MANAGER_ID"   AS "MANAGER_ID"
-    FROM {{ ref('SRC', 'EMPLOYEES_RECUR') }} AS "EMPLOYEES_RECUR"
-    JOIN RCTE_FINAL
-        ON "EMPLOYEES_RECUR"."MANAGER_ID" = "RCTE_FINAL"."EMPLOYEE_ID"
+        "N"."NATION_ID",
+        "N"."NATION_NAME",
+        "N"."MANAGER_ID",
+        "C"."ORG_LEVEL" + 1,
+        "C"."PATH" || ' -> ' || "N"."NATION_NAME"
+    FROM "NATION_MANAGERS" "N"
+    JOIN "NATION_CHAIN" "C" ON "N"."MANAGER_ID" = "C"."NATION_ID"
 )
-
 SELECT
-    "LEVEL"          AS "LEVEL",
-    "TITLE"::VARCHAR AS "TITLE"
-FROM RCTE_FINAL
+     "NC"."NATION_ID" AS "NATION_ID",
+     "NC"."NATION_NAME" AS "NATION_NAME",
+     "NC"."ORG_LEVEL" AS "ORG_LEVEL",
+     "NC"."PATH" AS "PATH",
+     COUNT("O"."ORDER_ID") AS "ORDER_COUNT"
+FROM "NATION_CHAIN" "NC"
+JOIN {{ ref('SRC', 'ORDERS_TEST') }} "O" ON "NC"."NATION_ID" = MOD("O"."ORDER_ID", 25)
+GROUP BY "NC"."NATION_ID", "NC"."NATION_NAME", "NC"."ORG_LEVEL", "NC"."PATH"
 ```
 **Using CTE for multisource combine**
 ```sql
