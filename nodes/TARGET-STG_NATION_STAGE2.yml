@@ -1,0 +1,76 @@
+fileVersion: 1
+id: d98f4d77-5439-49c0-9022-aa5b314762d3
+name: STG_NATION_STAGE2
+operation:
+  config:
+    insertStrategy: INSERT
+    postSQL: ""
+    preSQL: ""
+  database: ""
+  deployEnabled: true
+  description: ""
+  isMultisource: false
+  locationName: TARGET
+  materializationType: table
+  metadata:
+    appliedNodeTests: []
+    columns:
+      - appliedColumnTests: {}
+        columnReference:
+          columnCounter: ac682803-707d-4bc2-bee3-04cf1c35541f
+          stepCounter: d98f4d77-5439-49c0-9022-aa5b314762d3
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: N_NATIONKEY
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - appliedColumnTests: {}
+        columnReference:
+          columnCounter: 63e31f27-d4e4-42a6-bbd1-ae1a811869f9
+          stepCounter: d98f4d77-5439-49c0-9022-aa5b314762d3
+        config: {}
+        dataType: VARCHAR(25)
+        defaultValue: ""
+        description: ""
+        name: N_NAME
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+      - appliedColumnTests: {}
+        columnReference:
+          columnCounter: 11f28975-f0b2-49ba-88ea-b592f45fdc19
+          stepCounter: d98f4d77-5439-49c0-9022-aa5b314762d3
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: N_REGIONKEY
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+    enabledColumnTestIDs: []
+    sourceMapping:
+      - aliases:
+          WRK_NATION_STAGE_RENAMED: 3fc0b050-3eb4-420f-9d1a-561ab12a10ed
+        dependencies:
+          - locationName: TARGET
+            nodeName: WRK_NATION_STAGE_RENAMED_1
+        join:
+          joinCondition: FROM {{ ref('TARGET', 'WRK_NATION_STAGE_RENAMED_1') }} WRK_NATION_STAGE_RENAMED
+        name: STG_NATION_STAGE2
+        noLinkRefs: []
+  name: STG_NATION_STAGE2
+  schema: ""
+  sqlType: Stage
+  type: sql
+  version: 1
+type: Node

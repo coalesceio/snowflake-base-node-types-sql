@@ -1,0 +1,82 @@
+fileVersion: 1
+id: a30a2f7a-cb3c-4355-b83f-6d2f32a94c0a
+name: STG_NATION_STAGE_RENAMED
+operation:
+  config:
+    insertStrategy: INSERT
+    postSQL: ""
+    preSQL: ""
+    testsEnabled: true
+    truncateBefore: true
+  database: ""
+  deployEnabled: true
+  description: V1 Stage -> V2 Work -> V1 Stage pipeline example
+  isMultisource: false
+  locationName: SRC
+  materializationType: table
+  metadata:
+    appliedNodeTests: []
+    columns:
+      - appliedColumnTests: {}
+        columnReference:
+          columnCounter: b82977f5-7ba6-4257-a075-f79200a627a3
+          stepCounter: a30a2f7a-cb3c-4355-b83f-6d2f32a94c0a
+        config: {}
+        dataType: NUMBER(38,0)
+        description: ""
+        name: N_NATIONKEY
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: N_NATIONKEY
+                stepCounter: 3fc0b050-3eb4-420f-9d1a-561ab12a10ed
+            transform: ""
+      - appliedColumnTests: {}
+        columnReference:
+          columnCounter: 6587667e-15c1-42fd-8425-6ecb1478d249
+          stepCounter: a30a2f7a-cb3c-4355-b83f-6d2f32a94c0a
+        config: {}
+        dataType: VARCHAR(25)
+        description: ""
+        name: N_NAME
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: N_NAME
+                stepCounter: 3fc0b050-3eb4-420f-9d1a-561ab12a10ed
+            transform: ""
+      - appliedColumnTests: {}
+        columnReference:
+          columnCounter: 6f774623-220f-4aa3-acd5-c9fd6e09ea8b
+          stepCounter: a30a2f7a-cb3c-4355-b83f-6d2f32a94c0a
+        config: {}
+        dataType: NUMBER(38,0)
+        description: ""
+        name: N_REGIONKEY
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: N_REGIONKEY
+                stepCounter: 3fc0b050-3eb4-420f-9d1a-561ab12a10ed
+            transform: ""
+    cteString: ""
+    enabledColumnTestIDs: []
+    sourceMapping:
+      - aliases:
+          WRK_NATION_STAGE_RENAMED: 3fc0b050-3eb4-420f-9d1a-561ab12a10ed
+        customSQL:
+          customSQL: ""
+        dependencies:
+          - locationName: TARGET
+            nodeName: WRK_NATION_STAGE_RENAMED_1
+        join:
+          joinCondition: FROM {{ ref('TARGET', 'WRK_NATION_STAGE_RENAMED_1') }} "WRK_NATION_STAGE_RENAMED"
+        name: STG_NATION_STAGE_RENAMED
+        noLinkRefs: []
+  name: STG_NATION_STAGE_RENAMED
+  overrideSQL: false
+  schema: ""
+  sqlType: Stage
+  type: sql
+  version: 1
+type: Node
