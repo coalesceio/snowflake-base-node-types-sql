@@ -1,0 +1,13 @@
+fileVersion: 1
+id: 9e58d015-4ed7-4563-83ae-8910169f2a68
+name: PIPELINE-V2
+steps:
+  - 0f634ca5-6574-4c32-8e01-80aed244adde
+  - 43a14a5a-65c1-4372-afbf-d9d83c897590
+  - 51c834a0-1274-4e98-a9f8-518b7399a1b7
+  - 6c9f36fd-4d44-41d4-8180-8fa4f397502c
+  - 867f61d3-e774-4106-858f-2addd737bf0b
+  - cea69a3a-e4eb-434c-9f80-7d1473a31999
+  - d3b08967-49a9-42b3-bfe8-f71388a8443d
+  - f8c4f361-435b-4973-bca8-0f6a127072cd
+type: Subgraph

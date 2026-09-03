@@ -23,6 +23,6 @@ WITH RECURSIVE OrgChart AS (
     FROM {{ ref('SRC', 'EMPLOYEES') }} E
     JOIN OrgChart OC ON E.MANAGER_ID = OC.EMPLOYEE_ID
 )
-SELECT * FROM 
+SELECT * ,'Recursive cte' as heading FROM 
 OrgChart 
 ORDER BY ORG_LEVEL;

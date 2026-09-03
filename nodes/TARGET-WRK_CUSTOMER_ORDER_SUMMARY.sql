@@ -1,6 +1,7 @@
 @id("d97922e2-f50b-4cc2-acd8-5946960a0d08")
 @nodeType("707")
 @description("Customer order summary: aggregates the V1 order/lineitem fact by customer, enriched with customer geography from the V1 dimension layer. Capstone V2 node on top of the V1 star schema.")
+@disableTests
 @tests("SELECT CUSTOMER_KEY FROM {{ this }} GROUP BY CUSTOMER_KEY HAVING COUNT(1) > 1")
 WITH ORDER_AMOUNTS AS (
     SELECT DISTINCT

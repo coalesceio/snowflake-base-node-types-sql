@@ -84,6 +84,26 @@ operation:
               - columnCounter: PATH
                 stepCounter: acc95404-30cf-4e74-b7db-a46f74cbe015
             transform: ""
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: e4465bcd-9575-49fc-9ca9-5835fd1b4eba
+          stepCounter: d801b447-0527-4bdd-acf7-a46401f412c4
+        config: {}
+        dataType: VARCHAR
+        defaultValue: ""
+        description: ""
+        keyColumnType: None
+        name: HEADING
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: HEADING
+                stepCounter: acc95404-30cf-4e74-b7db-a46f74cbe015
+            transform: ""
+        systemColumnType: None
     cteString: ""
     enabledColumnTestIDs: []
     sourceMapping:
