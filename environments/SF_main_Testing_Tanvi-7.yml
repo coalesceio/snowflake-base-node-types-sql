@@ -7,5 +7,5 @@ mappingDefinitions:
   TARGET:
     database: TANVI_DEV
     schema: QA
-name: main_Testing_Tanvi
+name: SF_main_Testing_Tanvi
 type: Environment
