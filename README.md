@@ -1,12 +1,10 @@
-> **Preview:** This node type is available via the Marketplace; however, it is currently supported only in the Coalesce Desktop App and may not function as expected in the web app.
+# SQL-Interface NodeTypes
 
-# V2 NodeTypes
+The SQL-Interface nodes is a transformation tool within Coalesce that lets developers write custom, hand-coded SQL instead of using the standard graphical column-mapping interface. It is ideal for complex transformations, advanced window functions, or multi-step logic that is difficult to represent with the standard UI, and ships with a built-in library of column- and node-level data quality tests. While it provides maximum flexibility, it shifts the responsibility of column definition and logic maintenance to the SQL author.
 
-The V2 nodes is a transformation tool within Coalesce that lets developers write custom, hand-coded SQL instead of using the standard graphical column-mapping interface. It is ideal for complex transformations, advanced window functions, or multi-step logic that is difficult to represent with the standard UI, and ships with a built-in library of column- and node-level data quality tests. While it provides maximum flexibility, it shifts the responsibility of column definition and logic maintenance to the SQL author.
+## Coalesce Base Node Types - SQL Package
 
-## Coalesce Base Node Types V2 Package
-
-The Coalesce Base Node Types V2 Package includes:
+The Coalesce Base Node Types - SQL Package includes:
 
 * [Work](#work)
 
@@ -18,9 +16,9 @@ The Work node is a general-purpose transformation node within Coalesce, used to 
 
 The Work Node type has three configuration groups:
 
-* [General](#sql-work-general-options)
-* [Node Annotations](#sql-work-node-annotations)
-* [Column Annotations](#sql-work-column-annotations)
+* [General](#work-general-options)
+* [Node Annotations](#work-node-annotations)
+* [Column Annotations](#work-column-annotations)
 
 #### Work General Options
 
@@ -91,6 +89,15 @@ This applies to `@tests`, `@preSQL`, and `@postSQL`.
 ### Notes
 
 - Verify that all **column datatypes** are successfully resolved before creating the object. Columns with an `UNKNOWN` datatype may cause stage generation or runtime failures.
+
+- Any keyword that is valid immediately after **SELECT** is accepted in the final **SELECT** clause (right after any CTEs) — for example **DISTINCT** or **ALL**. This does not extend to keywords like `DEFAULT` that, while valid SQL keywords elsewhere, don't fit in a `SELECT` clause.
+
+    ```sql
+    SELECT DISTINCT TOP 10
+         "N_REGIONKEY" AS "N_REGIONKEY",
+         "N_NAME" AS "N_NAME"
+    FROM {{ ref('SRC', 'NATION') }} "NATION"
+    ```
 
 - **¹** The hash transformation uses the reusable `get_hash()` macro:
 
@@ -169,8 +176,8 @@ Users should be aware of the following technical constraints when using SQL:
 * **SELECT Statements Only**:  
 This node only supports data retrieval and transformation logic. DML or DDL commands such as `CREATE`, `MERGE`, `DELETE`, `UPDATE`, or `TRUNCATE` are not supported and will cause execution failures.
 
-* **Support for `DISTINCT`, `LATERAL FLATTEN`, `UNION`, and `UNION ALL`**:  
-`DISTINCT`, `UNION`, and `UNION ALL` are fully supported when used within **Common Table Expressions (CTEs)**. While these keywords can also be used in standard `SELECT` statements without generating an error, they may not parsed correctly by the platform. As a result, subsequent clauses (such as `JOIN`s) may be interpreted as part of a standard join structure, causing the generated SQL to differ from the intended query and potentially leading to inconsistent data loads. To ensure the SQL is parsed and executed as expected, always implement these operations inside a CTE.
+* **Support for `LATERAL FLATTEN`, `UNION`, and `UNION ALL`**:  
+`UNION`, and `UNION ALL` are fully supported when used within **Common Table Expressions (CTEs)**. While these keywords can also be used in standard `SELECT` statements without generating an error, they may not parsed correctly by the platform. As a result, subsequent clauses (such as `JOIN`s) may be interpreted as part of a standard join structure, causing the generated SQL to differ from the intended query and potentially leading to inconsistent data loads. To ensure the SQL is parsed and executed as expected, always implement these operations inside a CTE.
 
 * **Other Keywords**:  
 **GROUP BY, ORDER BY and HAVING** clauses can be included as part of the join query and will be parsed and processed accordingly.
@@ -200,6 +207,18 @@ SELECT
      "LAST_MODIFIED" AS L_M_1 @freshness(7, "DAY") @relative_time("<", "L_M_2") @description("timestamp column"),
      "LAST_MODIFIED" AS L_M_2,
      CAST({{ get_hash('GH_COL1') }} AS STRING) AS "GH_COL1" @description("Hash Column")
+FROM {{ ref('SOURCE_DATA', 'NATION') }} "NATION"
+```
+**Sample node with DISTINCT**
+```sql
+@writeMode("append")
+@description("Table description")
+SELECT DISTINCT
+     "N_NATIONKEY" AS "N_NATIONKEY",
+     "N_NAME" AS "N_NAME",
+     "N_REGIONKEY" AS "N_REGIONKEY",
+     "N_COMMENT" AS "N_COMMENT",
+     "LAST_MODIFIED" AS L_M @freshness(7, "DAY")
 FROM {{ ref('SOURCE_DATA', 'NATION') }} "NATION"
 ```
 **Basic Transformation & Cleaning** - Standard pattern for renaming columns and handling nulls.
