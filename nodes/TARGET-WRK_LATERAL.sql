@@ -3,7 +3,7 @@
 WITH ProductData AS (
     SELECT 1 AS ID, 'Electronics,Sale,Refurbished' AS Tags
 )
-SELECT 
+SELECT DISTINCT
     ID, 
     CAST(s.VALUE AS STRING)AS Tag_Name,
     CAST(s.INDEX AS NUMBER) AS Tag_Order
