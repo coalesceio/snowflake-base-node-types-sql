@@ -7,4 +7,4 @@ SELECT
      "N_COMMENT" AS "N_COMMENT",
      "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP"
 FROM {{ ref('SRC', 'NATION_TEST') }} "NATION_TEST"
-WHERE {{ parameters.nationkey }} > 1
+WHERE {{ parameters.nationkey }} > 2
