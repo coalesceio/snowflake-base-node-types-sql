@@ -176,7 +176,7 @@ Users should be aware of the following technical constraints when using SQL:
 * **SELECT Statements Only**:  
 This node only supports data retrieval and transformation logic. DML or DDL commands such as `CREATE`, `MERGE`, `DELETE`, `UPDATE`, or `TRUNCATE` are not supported and will cause execution failures.
 
-* **Support for `LATERAL FLATTEN`, `UNION`, and `UNION ALL`**:  
+* **Support for `UNION`, and `UNION ALL`**:  
 `UNION`, and `UNION ALL` are fully supported when used within **Common Table Expressions (CTEs)**. While these keywords can also be used in standard `SELECT` statements without generating an error, they may not parsed correctly by the platform. As a result, subsequent clauses (such as `JOIN`s) may be interpreted as part of a standard join structure, causing the generated SQL to differ from the intended query and potentially leading to inconsistent data loads. To ensure the SQL is parsed and executed as expected, always implement these operations inside a CTE.
 
 * **Other Keywords**:  
