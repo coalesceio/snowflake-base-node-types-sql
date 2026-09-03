@@ -28,6 +28,8 @@ The Work Node type has three configuration groups:
 |----------|-------------|
 | **Storage Location** | Storage Location where the Work table or view will be created |
 
+> **Note:** `Deploy Enabled` (the setting that lets a Node be excluded from — or dropped during — redeployment based on a TRUE/FALSE toggle) is **not supported** on this node types.
+
 ### Work Node Annotations
 
 <img width="793" height="612" alt="image" src="https://github.com/user-attachments/assets/db09c345-979b-4b4e-a628-19451e4435d3" />
@@ -168,7 +170,7 @@ This applies to `@tests`, `@preSQL`, and `@postSQL`.
 
 ### Known Limitations
 
-Users should be aware of the following technical constraints when using SQL:
+Users should be aware of the following technical constraints when using SQL-first nodes:
 
 * **Parsable SQL Only**:
  The node only supports SQL that can be fully parsed by the platform’s engine. Non-standard SQL or vendor-specific "semantic views" that bypass standard parsing will not work.
