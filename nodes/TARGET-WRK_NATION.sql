@@ -6,6 +6,7 @@
 @description("Nation table")
 @preSQL("SELECT 1 FROM {{ this }} GROUP BY N_NAME HAVING COUNT(*) > 1")
 @postSQL("SELECT 1 FROM {{ this }} GROUP BY N_NAME HAVING COUNT(*) > 2")
+@materializationType("Tableview")
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY" @notNull @uniqueness @min_value("0") @max_value("100") @accepted_values("1") @inHash("GH_COL1", 2),
      "N_NAME" AS "N_NAME" @not_null @empty @accepted_values("'ALGERIA'") @accepted_values("'ARGENTINA'") @inHash("GH_COL1", 1),

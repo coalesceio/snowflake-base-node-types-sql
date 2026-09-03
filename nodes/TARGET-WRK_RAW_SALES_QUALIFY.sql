@@ -1,6 +1,6 @@
 @id("d5701e06-33d2-49f9-9baa-88b497cc6527")
 @nodeType("707")
-SELECT 
+SELECT DISTINCT
     Salesperson, 
     Sale_Date, 
     SUM(Amount) AS Total_Daily_Sales
