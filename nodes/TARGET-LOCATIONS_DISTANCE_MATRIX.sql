@@ -1,5 +1,5 @@
 @id("2458e365-07f6-4d66-9518-f4202b255021")
-@nodeType("704")
+@nodeType("707")
 @description("Pairwise distance in kilometers between every distinct pair of locations, via a self cross join on LOCATIONS")
 SELECT
      L1."LOCATION_ID" AS "LOCATION_ID_1",
