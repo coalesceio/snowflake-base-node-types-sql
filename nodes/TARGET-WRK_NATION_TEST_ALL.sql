@@ -5,8 +5,6 @@
 @disableTests
 @tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")
 @tests("SELECT 1 FROM {{ this }} WHERE N_REGIONKEY IS NULL", true, "Before")
-@preSQL("DELETE FROM {{ this }} WHERE L_M_1 < DATEADD(DAY, -90, CURRENT_DATE())")
-@postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('WRK_NATION_ALL_ANNOTATIONS', CURRENT_TIMESTAMP())")
 SELECT DISTINCT
      -- NUMBER column: full numeric test coverage
      "N_NATIONKEY" AS "N_NATIONKEY" @notNull @not_null @uniqueness @min_value("0") @max_value("100") @accepted_values("1") @accepted_values("2") @inHash("GH_COL1", 2) @description("Nation key"),
