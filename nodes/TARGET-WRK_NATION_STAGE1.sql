@@ -7,4 +7,4 @@ SELECT
      "N_NATIONKEY" AS "N_NATIONKEY" @not_null @uniqueness,
      "N_NAME" AS "N_NAME" @not_null,
      "N_REGIONKEY" AS "N_REGIONKEY" @min_max("0", "4")
-FROM {{ ref('TARGET', 'STG_NATION_STAGE1') }} "STG_NATION_STAGE1"
+FROM {{ ref('TARGET', 'STG_NATION_STAGE_RENAME') }} "STG_NATION_STAGE_RENAME"
