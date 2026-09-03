@@ -5,7 +5,7 @@
 @disableTests
 @tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")
 @tests("SELECT 1 FROM {{ this }} WHERE N_REGIONKEY IS NULL", true, "Before")
-@preSQL("DELETE FROM {{ this }} WHERE N_LOAD_TIMESTAMP < DATEADD(DAY, -90, CURRENT_DATE())")
+@preSQL("DELETE FROM {{ this }} WHERE L_M_1 < DATEADD(DAY, -90, CURRENT_DATE())")
 @postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('WRK_NATION_ALL_ANNOTATIONS', CURRENT_TIMESTAMP())")
 SELECT DISTINCT
      -- NUMBER column: full numeric test coverage
