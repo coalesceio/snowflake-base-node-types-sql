@@ -1,0 +1,70 @@
+fileVersion: 1
+id: 6f0b1f49-24cc-4fb8-ae78-f153d10e60a1
+name: STG_NATION_APAC
+operation:
+  database: ""
+  schema: ""
+  description: ""
+  deployEnabled: true
+  locationName: TARGET
+  name: STG_NATION_APAC
+  sqlType: Stage
+  type: sql
+  version: 1
+  materializationType: table
+  config:
+    insertStrategy: INSERT
+    truncateBefore: true
+    testsEnabled: true
+  metadata:
+    columns:
+      - name: N_NATIONKEY
+        dataType: NUMBER(38,0)
+        description: ""
+        defaultValue: ""
+        nullable: true
+        transform: ""
+        columnReference:
+          stepCounter: 6f0b1f49-24cc-4fb8-ae78-f153d10e60a1
+          columnCounter: 463f058c-40a3-488e-90a0-a40d521b292a
+        sourceColumnReferences:
+          - transform: "WRK_NATION_APAC.\"N_NATIONKEY\""
+            columnReferences:
+              - stepCounter: bef59018-6a23-4505-87b5-070ca420ff81
+                columnCounter: f909fc45-fa7c-49ac-a52c-6cb231bc5803
+      - name: N_NAME
+        dataType: VARCHAR(25)
+        description: ""
+        defaultValue: ""
+        nullable: true
+        transform: ""
+        columnReference:
+          stepCounter: 6f0b1f49-24cc-4fb8-ae78-f153d10e60a1
+          columnCounter: 8e5ae242-34a7-4f19-8913-6326f6fd9338
+        sourceColumnReferences:
+          - transform: "WRK_NATION_APAC.\"N_NAME\""
+            columnReferences:
+              - stepCounter: bef59018-6a23-4505-87b5-070ca420ff81
+                columnCounter: f909fc45-fa7c-49ac-a52c-6cb231bc5803
+      - name: N_REGIONKEY
+        dataType: NUMBER(38,0)
+        description: ""
+        defaultValue: ""
+        nullable: true
+        transform: ""
+        columnReference:
+          stepCounter: 6f0b1f49-24cc-4fb8-ae78-f153d10e60a1
+          columnCounter: 081003d5-bc55-4ee8-8f43-d16c27c9a1cd
+        sourceColumnReferences:
+          - transform: "WRK_NATION_APAC.\"N_REGIONKEY\""
+            columnReferences:
+              - stepCounter: bef59018-6a23-4505-87b5-070ca420ff81
+                columnCounter: f909fc45-fa7c-49ac-a52c-6cb231bc5803
+    sourceMapping:
+      - name: WRK_NATION_APAC
+        dependencies:
+          - locationName: TARGET
+            nodeName: WRK_NATION_APAC
+        join:
+          joinCondition: "FROM {{ ref('TARGET', 'WRK_NATION_APAC') }} WRK_NATION_APAC"
+type: Node
