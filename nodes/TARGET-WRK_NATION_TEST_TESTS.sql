@@ -3,7 +3,7 @@
 @tests("SELECT 1", true, "After")
 @preSQL("SELECT 1")
 SELECT
-     "N_NATIONKEY" AS "N_NATIONKEY" @uniqueness,
+     "N_NATIONKEY" AS "N_NATIONKEY" @empty,
      "N_NAME" AS "N_NAME",
      "N_REGIONKEY" AS "N_REGIONKEY",
      "N_COMMENT" AS "N_COMMENT",

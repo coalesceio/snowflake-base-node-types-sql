@@ -3,7 +3,7 @@
 @materializationType("view")
 @tests("SELECT 1", true, "After")
 SELECT
-     "N_NATIONKEY" AS "N_NATIONKEY" @uniqueness,
+     "N_NATIONKEY" AS "N_NATIONKEY",
      "N_NAME" AS "N_NAME",
      "N_REGIONKEY" AS "N_REGIONKEY",
      "N_COMMENT" AS "N_COMMENT",
