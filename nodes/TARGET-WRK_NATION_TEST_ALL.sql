@@ -1,4 +1,4 @@
-@id("36151e99-2923-4d84-b338-56d7df3be40c")
+@id("87e9ebb0-856f-43b7-b7ba-efe100a16742")
 @nodeType("707")
 @description("V2 Work node demonstrating every supported annotation")
 @writeMode("append")
