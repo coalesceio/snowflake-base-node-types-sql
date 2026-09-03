@@ -59,12 +59,13 @@ operation:
         transform: ""
     enabledColumnTestIDs: []
     sourceMapping:
-      - aliases: {}
+      - aliases:
+          WRK_NATION_STAGE_RENAMED: 3fc0b050-3eb4-420f-9d1a-561ab12a10ed
         dependencies:
           - locationName: TARGET
-            nodeName: WRK_NATION_STAGE1
+            nodeName: WRK_NATION_STAGE_RENAMED
         join:
-          joinCondition: FROM {{ ref('TARGET', 'WRK_NATION_STAGE1') }} WRK_NATION_STAGE1
+          joinCondition: FROM {{ ref('TARGET', 'WRK_NATION_STAGE_RENAMED') }} WRK_NATION_STAGE_RENAMED
         name: STG_NATION_STAGE2
         noLinkRefs: []
   name: STG_NATION_STAGE2
