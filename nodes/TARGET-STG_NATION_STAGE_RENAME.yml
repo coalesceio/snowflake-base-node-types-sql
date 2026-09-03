@@ -1,6 +1,6 @@
 fileVersion: 1
 id: 7360d887-ebe2-4215-8096-65664ee33954
-name: STG_NATION_STAGE1
+name: STG_NATION_STAGE_RENAME
 operation:
   config:
     insertStrategy: INSERT
@@ -71,9 +71,9 @@ operation:
             nodeName: NATION_TEST
         join:
           joinCondition: FROM {{ ref('SRC', 'NATION_TEST') }} NATION_TEST
-        name: STG_NATION_STAGE1
+        name: STG_NATION_STAGE_RENAME
         noLinkRefs: []
-  name: STG_NATION_STAGE1
+  name: STG_NATION_STAGE_RENAME
   schema: ""
   sqlType: Stage
   type: sql
