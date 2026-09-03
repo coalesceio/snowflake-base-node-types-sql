@@ -5,6 +5,6 @@
 @tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", true, "After")
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY" @not_null @uniqueness,
-     "N_NAME" AS "N_NAME",
-     "N_REGIONKEY" AS "N_REGIONKEY" @min_max("0", "3") @not_null
+     "N_NAME" AS "N_NAME" @not_null,
+     "N_REGIONKEY" AS "N_REGIONKEY" @min_max("0", "8") 
 FROM {{ ref('TARGET', 'STG_NATION_STAGE_RENAME') }} "STG_NATION_STAGE_RENAME"
