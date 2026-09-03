@@ -9,7 +9,7 @@ operation:
     testsEnabled: true
     truncateBefore: true
   database: ""
-  deployEnabled: false
+  deployEnabled: true
   description: V1 Stage -> V2 Work -> V1 Stage pipeline example
   isMultisource: false
   locationName: SRC
