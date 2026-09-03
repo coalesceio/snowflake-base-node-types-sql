@@ -1,11 +1,11 @@
 fileVersion: 1
-id: de40cbbc-658a-4897-b180-9b612a780ac0
-name: ORDERS_TEST
+id: 81f21194-0011-4eba-911d-03d38d781057
+name: LOCATIONS
 operation:
   database: ""
   deployEnabled: true
   description: ""
-  locationName: SRC
+  locationName: TARGET
   metadata:
     columns:
       - acceptedValues:
@@ -13,13 +13,13 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: e5676dc8-2156-46e1-bbfc-187ae9d5265c
-          stepCounter: de40cbbc-658a-4897-b180-9b612a780ac0
+          columnCounter: 9765c9f7-4842-4df8-b54b-b4fc86dd73fd
+          stepCounter: 81f21194-0011-4eba-911d-03d38d781057
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
         description: ""
-        name: ORDER_ID
+        name: LOCATION_ID
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -32,13 +32,13 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: ed06b547-3715-44e3-ab2d-85e7de9993d4
-          stepCounter: de40cbbc-658a-4897-b180-9b612a780ac0
+          columnCounter: f27a9a38-f9c5-4bd5-a3f6-eb0d3c6e5ec2
+          stepCounter: 81f21194-0011-4eba-911d-03d38d781057
         config: {}
         dataType: VARCHAR(16777216)
         defaultValue: ""
         description: ""
-        name: CUSTOMER_NAME
+        name: LOCATION_NAME
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -51,13 +51,13 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: b676a7fe-d190-42b8-9573-e5077e35159d
-          stepCounter: de40cbbc-658a-4897-b180-9b612a780ac0
+          columnCounter: 47843aa0-ea49-47e9-a342-2617baa6b1d3
+          stepCounter: 81f21194-0011-4eba-911d-03d38d781057
         config: {}
-        dataType: VARIANT
+        dataType: GEOGRAPHY
         defaultValue: ""
         description: ""
-        name: ORDER_DATA
+        name: LOCATION
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -65,7 +65,7 @@ operation:
             transform: ""
         transform: ""
         uniqueKey: false
-  name: ORDERS_TEST
+  name: LOCATIONS
   schema: ""
   sqlType: Source
   type: sourceInput

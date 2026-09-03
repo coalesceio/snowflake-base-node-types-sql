@@ -1,11 +1,11 @@
 fileVersion: 1
-id: d74f7ec6-b61f-41dd-a851-e99080244d23
-name: NATION_TEST
+id: 51c834a0-1274-4e98-a9f8-518b7399a1b7
+name: RAW_SALES
 operation:
   database: ""
   deployEnabled: true
   description: ""
-  locationName: SRC
+  locationName: TARGET
   metadata:
     columns:
       - acceptedValues:
@@ -13,13 +13,13 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 98d6c927-b2e5-4e77-b556-4e20aaac61db
-          stepCounter: d74f7ec6-b61f-41dd-a851-e99080244d23
+          columnCounter: 96859253-cb91-40d4-8afe-6f2d86ea4c71
+          stepCounter: 51c834a0-1274-4e98-a9f8-518b7399a1b7
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
         description: ""
-        name: N_NATIONKEY
+        name: SALES_ID
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -32,13 +32,13 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 5a1e95bd-9374-40a7-b945-3f5461e41992
-          stepCounter: d74f7ec6-b61f-41dd-a851-e99080244d23
+          columnCounter: 2e69c801-b811-4e42-839b-bf65524be600
+          stepCounter: 51c834a0-1274-4e98-a9f8-518b7399a1b7
         config: {}
-        dataType: VARCHAR(25)
+        dataType: VARCHAR(50)
         defaultValue: ""
         description: ""
-        name: N_NAME
+        name: SALESPERSON
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -51,13 +51,13 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 7216fad9-445a-47a1-bb19-91a309b32a3c
-          stepCounter: d74f7ec6-b61f-41dd-a851-e99080244d23
+          columnCounter: be1183e9-0734-4516-87a8-96543929f287
+          stepCounter: 51c834a0-1274-4e98-a9f8-518b7399a1b7
         config: {}
-        dataType: NUMBER(38,0)
+        dataType: DATE
         defaultValue: ""
         description: ""
-        name: N_REGIONKEY
+        name: SALE_DATE
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -70,13 +70,13 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 808b2a57-b25a-46c7-895b-74d1d3ef5f61
-          stepCounter: d74f7ec6-b61f-41dd-a851-e99080244d23
+          columnCounter: e2cfd715-6ea3-4863-bab2-9c9a88059be2
+          stepCounter: 51c834a0-1274-4e98-a9f8-518b7399a1b7
         config: {}
-        dataType: VARCHAR(152)
+        dataType: NUMBER(10,2)
         defaultValue: ""
         description: ""
-        name: N_COMMENT
+        name: AMOUNT
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -89,13 +89,13 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 635abf70-ceff-4751-80fa-77454f9665ad
-          stepCounter: d74f7ec6-b61f-41dd-a851-e99080244d23
+          columnCounter: 36b97a4b-e751-4f6f-9763-a1315af1adbb
+          stepCounter: 51c834a0-1274-4e98-a9f8-518b7399a1b7
         config: {}
-        dataType: TIMESTAMP_LTZ(9)
+        dataType: VARCHAR(2)
         defaultValue: ""
         description: ""
-        name: N_LOAD_TIMESTAMP
+        name: QUARTER
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -103,7 +103,26 @@ operation:
             transform: ""
         transform: ""
         uniqueKey: false
-  name: NATION_TEST
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: e3a4b86c-c1e8-4591-9e6f-5f1569905bb5
+          stepCounter: 51c834a0-1274-4e98-a9f8-518b7399a1b7
+        config: {}
+        dataType: VARCHAR(20)
+        defaultValue: ""
+        description: ""
+        name: REGION
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+  name: RAW_SALES
   schema: ""
   sqlType: Source
   type: sourceInput

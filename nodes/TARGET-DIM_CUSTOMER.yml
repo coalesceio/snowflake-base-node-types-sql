@@ -1,0 +1,98 @@
+fileVersion: 1
+id: acaa6d1d-d67b-4707-844a-9ec80fb52fd7
+name: DIM_CUSTOMER
+operation:
+  config:
+    postSQL: ""
+    preSQL: ""
+    testsEnabled: true
+  database: ""
+  deployEnabled: true
+  description: "Customer dimension, SCD Type 1 keyed on CUSTOMER_KEY"
+  isMultisource: false
+  locationName: TARGET
+  materializationType: table
+  metadata:
+    columns:
+      - columnReference:
+          columnCounter: 6c8762e1-f32b-49e5-bc69-c0c5ed234844
+          stepCounter: acaa6d1d-d67b-4707-844a-9ec80fb52fd7
+        dataType: NUMBER(38,0)
+        description: "Business key: unique customer identifier"
+        isBusinessKey: true
+        name: CUSTOMER_KEY
+        nullable: false
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: 6daf8df0-8fe0-4dc9-bcef-328b56af73d8
+                stepCounter: 26ca41a8-3b98-4227-a1a0-cff60e797a6b
+            transform: ""
+      - columnReference:
+          columnCounter: 3b793a80-f353-416f-bc87-a20152f75352
+          stepCounter: acaa6d1d-d67b-4707-844a-9ec80fb52fd7
+        dataType: VARCHAR(25)
+        description: "Customer name"
+        name: CUSTOMER_NAME
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: 4a0a3675-20cb-41b9-8e05-60782042fc71
+                stepCounter: 26ca41a8-3b98-4227-a1a0-cff60e797a6b
+            transform: ""
+      - columnReference:
+          columnCounter: 9b870e26-c1aa-4a46-bedd-28704b6a6ea5
+          stepCounter: acaa6d1d-d67b-4707-844a-9ec80fb52fd7
+        dataType: NUMBER(38,0)
+        description: "Foreign key to the customer's nation"
+        name: NATION_KEY
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: 1a776481-d19c-442e-9c5f-5c75ee124223
+                stepCounter: 26ca41a8-3b98-4227-a1a0-cff60e797a6b
+            transform: ""
+      - columnReference:
+          columnCounter: ca529f53-d541-4002-b5c4-5614cce7986f
+          stepCounter: acaa6d1d-d67b-4707-844a-9ec80fb52fd7
+        dataType: NUMBER(12,2)
+        description: "Customer account balance"
+        name: ACCT_BAL
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: a33984a9-b862-4e5e-afc7-19424b6a376d
+                stepCounter: 26ca41a8-3b98-4227-a1a0-cff60e797a6b
+            transform: ""
+      - columnReference:
+          columnCounter: 7b448d5a-3c68-47d4-91df-6dd7aa16a2c5
+          stepCounter: acaa6d1d-d67b-4707-844a-9ec80fb52fd7
+        dataType: VARCHAR(10)
+        description: "Market segment"
+        name: MKT_SEGMENT
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: 4402ec04-76c5-4c1e-979f-3548007cfa5f
+                stepCounter: 26ca41a8-3b98-4227-a1a0-cff60e797a6b
+            transform: ""
+    cteString: ""
+    enabledColumnTestIDs: []
+    sourceMapping:
+      - aliases:
+          CUSTOMER: 26ca41a8-3b98-4227-a1a0-cff60e797a6b
+        customSQL:
+          customSQL: ""
+        dependencies:
+          - locationName: TARGET
+            nodeName: STG_CUSTOMER
+        join:
+          joinCondition: FROM {{ ref('TARGET', 'STG_CUSTOMER') }} "CUSTOMER"
+        name: DIM_CUSTOMER
+        noLinkRefs: []
+  name: DIM_CUSTOMER
+  overrideSQL: false
+  schema: ""
+  sqlType: Dimension
+  type: sql
+  version: 1
+type: Node

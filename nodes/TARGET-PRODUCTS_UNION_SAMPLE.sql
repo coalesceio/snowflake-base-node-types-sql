@@ -1,0 +1,17 @@
+@id("fad8de0d-0062-4dd2-9cc5-c34d9a69b3b5")
+@nodeType("704")
+SELECT
+     "PRODUCT_ID" AS "PRODUCT_ID",
+     "PRODUCT_NAME" AS "PRODUCT_NAME",
+     "BRAND" AS "BRAND",
+     "COLOUR" AS "COLOUR"
+FROM {{ ref('SRC', 'PRODUCTS') }}
+
+UNION ALL
+
+SELECT
+     "PRODUCT_ID" AS "PRODUCT_ID",
+     "PRODUCT_NAME" AS "PRODUCT_NAME",
+     "BRAND" AS "BRAND",
+     "COLOUR" AS "COLOUR"
+FROM {{ ref('SRC', 'PRODUCTS_GROCERY') }}

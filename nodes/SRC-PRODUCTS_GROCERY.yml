@@ -1,6 +1,6 @@
 fileVersion: 1
-id: de40cbbc-658a-4897-b180-9b612a780ac0
-name: ORDERS_TEST
+id: 47f1f86b-9c86-4292-8c37-aa4a4d1f6aea
+name: PRODUCTS_GROCERY
 operation:
   database: ""
   deployEnabled: true
@@ -13,13 +13,32 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: e5676dc8-2156-46e1-bbfc-187ae9d5265c
-          stepCounter: de40cbbc-658a-4897-b180-9b612a780ac0
+          columnCounter: 9adf1fa6-7396-41ef-83af-829489645a56
+          stepCounter: 47f1f86b-9c86-4292-8c37-aa4a4d1f6aea
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
         description: ""
-        name: ORDER_ID
+        name: PRODUCT_ID
+        nullable: false
+        primaryKey: true
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 89b1690e-9795-433b-ad1b-d3520e05737d
+          stepCounter: 47f1f86b-9c86-4292-8c37-aa4a4d1f6aea
+        config: {}
+        dataType: VARCHAR(255)
+        defaultValue: ""
+        description: ""
+        name: PRODUCT_NAME
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -32,13 +51,13 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: ed06b547-3715-44e3-ab2d-85e7de9993d4
-          stepCounter: de40cbbc-658a-4897-b180-9b612a780ac0
+          columnCounter: a18a8f8a-f590-4f0d-8c5f-feda3ef5206a
+          stepCounter: 47f1f86b-9c86-4292-8c37-aa4a4d1f6aea
         config: {}
-        dataType: VARCHAR(16777216)
+        dataType: VARCHAR(100)
         defaultValue: ""
         description: ""
-        name: CUSTOMER_NAME
+        name: BRAND
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -51,13 +70,13 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: b676a7fe-d190-42b8-9573-e5077e35159d
-          stepCounter: de40cbbc-658a-4897-b180-9b612a780ac0
+          columnCounter: a9f25cf3-cf37-4ea8-9ca8-de1ecc528b95
+          stepCounter: 47f1f86b-9c86-4292-8c37-aa4a4d1f6aea
         config: {}
-        dataType: VARIANT
+        dataType: VARCHAR(50)
         defaultValue: ""
         description: ""
-        name: ORDER_DATA
+        name: COLOUR
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -65,7 +84,7 @@ operation:
             transform: ""
         transform: ""
         uniqueKey: false
-  name: ORDERS_TEST
+  name: PRODUCTS_GROCERY
   schema: ""
   sqlType: Source
   type: sourceInput

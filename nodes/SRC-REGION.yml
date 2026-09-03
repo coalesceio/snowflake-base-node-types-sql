@@ -1,6 +1,6 @@
 fileVersion: 1
-id: de40cbbc-658a-4897-b180-9b612a780ac0
-name: ORDERS_TEST
+id: 867f61d3-e774-4106-858f-2addd737bf0b
+name: REGION
 operation:
   database: ""
   deployEnabled: true
@@ -13,13 +13,13 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: e5676dc8-2156-46e1-bbfc-187ae9d5265c
-          stepCounter: de40cbbc-658a-4897-b180-9b612a780ac0
+          columnCounter: 7cb46e4c-0f26-4360-9830-4754a3bd2227
+          stepCounter: 867f61d3-e774-4106-858f-2addd737bf0b
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
         description: ""
-        name: ORDER_ID
+        name: R_REGIONKEY
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -32,13 +32,13 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: ed06b547-3715-44e3-ab2d-85e7de9993d4
-          stepCounter: de40cbbc-658a-4897-b180-9b612a780ac0
+          columnCounter: c5cc52c4-6916-40b6-bad9-1a4f71d236b3
+          stepCounter: 867f61d3-e774-4106-858f-2addd737bf0b
         config: {}
-        dataType: VARCHAR(16777216)
+        dataType: VARCHAR(25)
         defaultValue: ""
         description: ""
-        name: CUSTOMER_NAME
+        name: R_NAME
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -51,13 +51,13 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: b676a7fe-d190-42b8-9573-e5077e35159d
-          stepCounter: de40cbbc-658a-4897-b180-9b612a780ac0
+          columnCounter: e35108ec-5514-4662-be9e-bbe06a58cfb3
+          stepCounter: 867f61d3-e774-4106-858f-2addd737bf0b
         config: {}
-        dataType: VARIANT
+        dataType: VARCHAR(152)
         defaultValue: ""
         description: ""
-        name: ORDER_DATA
+        name: R_COMMENT
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -65,7 +65,26 @@ operation:
             transform: ""
         transform: ""
         uniqueKey: false
-  name: ORDERS_TEST
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: ac5315fd-0a53-4f70-819e-94bd9233008c
+          stepCounter: 867f61d3-e774-4106-858f-2addd737bf0b
+        config: {}
+        dataType: TIMESTAMP_LTZ(9)
+        defaultValue: ""
+        description: ""
+        name: R_LOAD_TIMESTAMP
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+  name: REGION
   schema: ""
   sqlType: Source
   type: sourceInput

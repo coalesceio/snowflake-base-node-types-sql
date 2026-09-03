@@ -1,6 +1,6 @@
 fileVersion: 1
-id: d74f7ec6-b61f-41dd-a851-e99080244d23
-name: NATION_TEST
+id: cea69a3a-e4eb-434c-9f80-7d1473a31999
+name: NATION
 operation:
   database: ""
   deployEnabled: true
@@ -13,8 +13,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 98d6c927-b2e5-4e77-b556-4e20aaac61db
-          stepCounter: d74f7ec6-b61f-41dd-a851-e99080244d23
+          columnCounter: 4c3e76fd-e8ca-46a7-80f6-00736f9c30c8
+          stepCounter: cea69a3a-e4eb-434c-9f80-7d1473a31999
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
@@ -32,8 +32,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 5a1e95bd-9374-40a7-b945-3f5461e41992
-          stepCounter: d74f7ec6-b61f-41dd-a851-e99080244d23
+          columnCounter: e7ca4997-f888-42aa-90a5-e480c30c36c9
+          stepCounter: cea69a3a-e4eb-434c-9f80-7d1473a31999
         config: {}
         dataType: VARCHAR(25)
         defaultValue: ""
@@ -51,8 +51,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 7216fad9-445a-47a1-bb19-91a309b32a3c
-          stepCounter: d74f7ec6-b61f-41dd-a851-e99080244d23
+          columnCounter: 612d79aa-4abd-4009-9e98-90db8862353e
+          stepCounter: cea69a3a-e4eb-434c-9f80-7d1473a31999
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
@@ -70,8 +70,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 808b2a57-b25a-46c7-895b-74d1d3ef5f61
-          stepCounter: d74f7ec6-b61f-41dd-a851-e99080244d23
+          columnCounter: 54ab24b2-f23e-4c59-9c4d-ec503dbc05f8
+          stepCounter: cea69a3a-e4eb-434c-9f80-7d1473a31999
         config: {}
         dataType: VARCHAR(152)
         defaultValue: ""
@@ -89,8 +89,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 635abf70-ceff-4751-80fa-77454f9665ad
-          stepCounter: d74f7ec6-b61f-41dd-a851-e99080244d23
+          columnCounter: c0519e76-42e9-48e2-996e-8443f9aab5f7
+          stepCounter: cea69a3a-e4eb-434c-9f80-7d1473a31999
         config: {}
         dataType: TIMESTAMP_LTZ(9)
         defaultValue: ""
@@ -103,7 +103,26 @@ operation:
             transform: ""
         transform: ""
         uniqueKey: false
-  name: NATION_TEST
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: e5c815ad-d9ef-4b25-a162-1ba68c69138f
+          stepCounter: cea69a3a-e4eb-434c-9f80-7d1473a31999
+        config: {}
+        dataType: TIMESTAMP_NTZ(9)
+        defaultValue: ""
+        description: ""
+        name: UPDATE_TIME
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+  name: NATION
   schema: ""
   sqlType: Source
   type: sourceInput

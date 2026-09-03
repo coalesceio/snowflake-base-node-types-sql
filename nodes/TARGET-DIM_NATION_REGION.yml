@@ -1,0 +1,89 @@
+fileVersion: 1
+id: 1cc6aaa6-a453-4b45-9ac4-a9f4a5fe43cf
+name: DIM_NATION_REGION
+operation:
+  config:
+    postSQL: ""
+    preSQL: ""
+    testsEnabled: true
+  database: ""
+  deployEnabled: true
+  description: "Geography dimension: nation joined with its region, SCD Type 1 keyed on NATION_KEY"
+  isMultisource: false
+  locationName: TARGET
+  materializationType: table
+  metadata:
+    columns:
+      - columnReference:
+          columnCounter: bf781335-0c87-45dc-9f22-0a2123e37dc4
+          stepCounter: 1cc6aaa6-a453-4b45-9ac4-a9f4a5fe43cf
+        dataType: NUMBER(38,0)
+        description: "Business key: unique nation identifier"
+        isBusinessKey: true
+        name: NATION_KEY
+        nullable: false
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: 32fa1809-0dc0-4c2e-82c5-d4de9799f952
+                stepCounter: 8ce14e96-fedc-4b8d-9ac0-b3890c0c5101
+            transform: ""
+      - columnReference:
+          columnCounter: f3e774bd-b9ad-4537-be4a-cf411c4b4ad2
+          stepCounter: 1cc6aaa6-a453-4b45-9ac4-a9f4a5fe43cf
+        dataType: VARCHAR(25)
+        description: "Nation name"
+        name: NATION_NAME
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: 379d633a-413e-40d8-9082-4b76c9d9a9e6
+                stepCounter: 8ce14e96-fedc-4b8d-9ac0-b3890c0c5101
+            transform: ""
+      - columnReference:
+          columnCounter: d72fe4af-9f09-420b-ad5f-818ed07dedf8
+          stepCounter: 1cc6aaa6-a453-4b45-9ac4-a9f4a5fe43cf
+        dataType: NUMBER(38,0)
+        description: "Foreign key to the nation's region"
+        name: REGION_KEY
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: e5d7683a-5a29-4af9-b720-40eebad5088d
+                stepCounter: dcd3742d-b841-4f39-825f-6a48f948b10b
+            transform: ""
+      - columnReference:
+          columnCounter: 28cc25e8-204f-4ccc-a05c-403a79373927
+          stepCounter: 1cc6aaa6-a453-4b45-9ac4-a9f4a5fe43cf
+        dataType: VARCHAR(25)
+        description: "Region name"
+        name: REGION_NAME
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: 208d5c20-7e4c-4a42-ae66-6f3b74cff693
+                stepCounter: dcd3742d-b841-4f39-825f-6a48f948b10b
+            transform: ""
+    cteString: ""
+    enabledColumnTestIDs: []
+    sourceMapping:
+      - aliases:
+          NATION: 8ce14e96-fedc-4b8d-9ac0-b3890c0c5101
+          REGION: dcd3742d-b841-4f39-825f-6a48f948b10b
+        customSQL:
+          customSQL: ""
+        dependencies:
+          - locationName: TARGET
+            nodeName: STG_NATION
+          - locationName: TARGET
+            nodeName: STG_REGION
+        join:
+          joinCondition: FROM {{ ref('TARGET', 'STG_NATION') }} "NATION" JOIN {{ ref('TARGET', 'STG_REGION') }} "REGION" ON "NATION"."N_REGIONKEY" = "REGION"."R_REGIONKEY"
+        name: DIM_NATION_REGION
+        noLinkRefs: []
+  name: DIM_NATION_REGION
+  overrideSQL: false
+  schema: ""
+  sqlType: Dimension
+  type: sql
+  version: 1
+type: Node

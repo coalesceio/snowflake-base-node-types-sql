@@ -1,0 +1,75 @@
+fileVersion: 1
+id: 8ce14e96-fedc-4b8d-9ac0-b3890c0c5101
+name: STG_NATION
+operation:
+  config:
+    insertStrategy: INSERT
+    postSQL: ""
+    preSQL: ""
+    testsEnabled: true
+    truncateBefore: true
+  database: ""
+  deployEnabled: true
+  description: ""
+  isMultisource: false
+  locationName: TARGET
+  materializationType: table
+  metadata:
+    columns:
+      - columnReference:
+          columnCounter: 32fa1809-0dc0-4c2e-82c5-d4de9799f952
+          stepCounter: 8ce14e96-fedc-4b8d-9ac0-b3890c0c5101
+        dataType: NUMBER(38,0)
+        description: ""
+        name: N_NATIONKEY
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: 4c3e76fd-e8ca-46a7-80f6-00736f9c30c8
+                stepCounter: cea69a3a-e4eb-434c-9f80-7d1473a31999
+            transform: ""
+      - columnReference:
+          columnCounter: 379d633a-413e-40d8-9082-4b76c9d9a9e6
+          stepCounter: 8ce14e96-fedc-4b8d-9ac0-b3890c0c5101
+        dataType: VARCHAR(25)
+        description: ""
+        name: N_NAME
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: e7ca4997-f888-42aa-90a5-e480c30c36c9
+                stepCounter: cea69a3a-e4eb-434c-9f80-7d1473a31999
+            transform: ""
+      - columnReference:
+          columnCounter: 4d49252f-11c9-43ae-b53d-7165d8298921
+          stepCounter: 8ce14e96-fedc-4b8d-9ac0-b3890c0c5101
+        dataType: NUMBER(38,0)
+        description: ""
+        name: N_REGIONKEY
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: 612d79aa-4abd-4009-9e98-90db8862353e
+                stepCounter: cea69a3a-e4eb-434c-9f80-7d1473a31999
+            transform: ""
+    cteString: ""
+    enabledColumnTestIDs: []
+    sourceMapping:
+      - aliases:
+          NATION: cea69a3a-e4eb-434c-9f80-7d1473a31999
+        customSQL:
+          customSQL: ""
+        dependencies:
+          - locationName: SRC
+            nodeName: NATION
+        join:
+          joinCondition: FROM {{ ref('SRC', 'NATION') }} "NATION"
+        name: STG_NATION
+        noLinkRefs: []
+  name: STG_NATION
+  overrideSQL: false
+  schema: ""
+  sqlType: Stage
+  type: sql
+  version: 1
+type: Node

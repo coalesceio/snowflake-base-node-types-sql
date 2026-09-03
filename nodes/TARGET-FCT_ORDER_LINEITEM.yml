@@ -1,0 +1,174 @@
+fileVersion: 1
+id: 3a9e5542-be6c-4f78-a1da-f6f1f47395ff
+name: FCT_ORDER_LINEITEM
+operation:
+  config:
+    postSQL: ""
+    preSQL: ""
+    testsEnabled: true
+  database: ""
+  deployEnabled: true
+  description: "Order line item fact, one row per lineitem, keyed on ORDER_KEY + LINE_NUMBER"
+  isMultisource: false
+  locationName: TARGET
+  materializationType: table
+  metadata:
+    columns:
+      - columnReference:
+          columnCounter: eaf36b41-f799-4b9d-a01c-026f963613d5
+          stepCounter: 3a9e5542-be6c-4f78-a1da-f6f1f47395ff
+        dataType: NUMBER(38,0)
+        description: "Business key (part 1): order identifier"
+        isBusinessKey: true
+        name: ORDER_KEY
+        nullable: false
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: b7a1044c-a73d-4211-940e-fa262afcd3bd
+                stepCounter: cfb71a18-1df3-4c91-92e3-a0037c194193
+            transform: ""
+      - columnReference:
+          columnCounter: a6868a34-0bf4-4838-87fa-e9afd977f808
+          stepCounter: 3a9e5542-be6c-4f78-a1da-f6f1f47395ff
+        dataType: NUMBER(38,0)
+        description: "Business key (part 2): line number within the order"
+        isBusinessKey: true
+        name: LINE_NUMBER
+        nullable: false
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: bc29b774-b62e-4a69-811d-4318d2e60070
+                stepCounter: b7d85903-7aa6-4896-b63b-a6d558247286
+            transform: ""
+      - columnReference:
+          columnCounter: b59f42d6-c323-470a-81b6-c60e46bf6adc
+          stepCounter: 3a9e5542-be6c-4f78-a1da-f6f1f47395ff
+        dataType: NUMBER(38,0)
+        description: "Foreign key to DIM_CUSTOMER.CUSTOMER_KEY"
+        name: CUSTOMER_KEY
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: 845f8973-025b-41cb-b103-458256018ca2
+                stepCounter: cfb71a18-1df3-4c91-92e3-a0037c194193
+            transform: ""
+      - columnReference:
+          columnCounter: bf5573e3-c0e0-4f2f-a56a-80d554233b9b
+          stepCounter: 3a9e5542-be6c-4f78-a1da-f6f1f47395ff
+        dataType: VARCHAR(1)
+        description: "Order status"
+        name: ORDER_STATUS
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: 332b8589-35c9-4379-915e-83eaf6270ff7
+                stepCounter: cfb71a18-1df3-4c91-92e3-a0037c194193
+            transform: ""
+      - columnReference:
+          columnCounter: 76d83d38-3bf8-47c0-9dad-b932e7086427
+          stepCounter: 3a9e5542-be6c-4f78-a1da-f6f1f47395ff
+        dataType: DATE
+        description: "Date the order was placed"
+        name: ORDER_DATE
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: 38bf7bbb-e31c-4f30-adb3-3bbca7731603
+                stepCounter: cfb71a18-1df3-4c91-92e3-a0037c194193
+            transform: ""
+      - columnReference:
+          columnCounter: 0faa9022-954d-4bb8-b0bf-080c5aed7734
+          stepCounter: 3a9e5542-be6c-4f78-a1da-f6f1f47395ff
+        dataType: VARCHAR(15)
+        description: "Order priority"
+        name: ORDER_PRIORITY
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: 49c75adc-f990-40ed-af5e-ee080474455e
+                stepCounter: cfb71a18-1df3-4c91-92e3-a0037c194193
+            transform: ""
+      - columnReference:
+          columnCounter: fb41e62e-a583-4f38-a774-e982ab3e8aa2
+          stepCounter: 3a9e5542-be6c-4f78-a1da-f6f1f47395ff
+        dataType: NUMBER(12,2)
+        description: "Total price of the order this line item belongs to"
+        name: ORDER_TOTAL_PRICE
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: f42e21e4-2ebc-4aac-8e55-e7cb8285377e
+                stepCounter: cfb71a18-1df3-4c91-92e3-a0037c194193
+            transform: ""
+      - columnReference:
+          columnCounter: 30f57f18-d968-4dec-b369-af64131bef18
+          stepCounter: 3a9e5542-be6c-4f78-a1da-f6f1f47395ff
+        dataType: NUMBER(12,2)
+        description: "Quantity ordered on this line"
+        name: LINE_QUANTITY
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: 8b987180-ef11-4f2f-a5ec-44e6330966f2
+                stepCounter: b7d85903-7aa6-4896-b63b-a6d558247286
+            transform: ""
+      - columnReference:
+          columnCounter: 1d98e82e-2365-4c40-b96f-f46158036ced
+          stepCounter: 3a9e5542-be6c-4f78-a1da-f6f1f47395ff
+        dataType: NUMBER(12,2)
+        description: "Extended price for this line (quantity x unit price)"
+        name: LINE_EXTENDED_PRICE
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: 858e8749-845d-4e26-95b3-24038b6a842f
+                stepCounter: b7d85903-7aa6-4896-b63b-a6d558247286
+            transform: ""
+      - columnReference:
+          columnCounter: 859450d4-5aaf-45e0-b0ce-db92fd7dfada
+          stepCounter: 3a9e5542-be6c-4f78-a1da-f6f1f47395ff
+        dataType: NUMBER(12,2)
+        description: "Discount applied to this line"
+        name: LINE_DISCOUNT
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: 24717a5a-7af0-43cf-a27b-8e63d21e22ca
+                stepCounter: b7d85903-7aa6-4896-b63b-a6d558247286
+            transform: ""
+      - columnReference:
+          columnCounter: 329db7dc-00d7-4036-8b3d-a01fc316962e
+          stepCounter: 3a9e5542-be6c-4f78-a1da-f6f1f47395ff
+        dataType: NUMBER(12,2)
+        description: "Tax applied to this line"
+        name: LINE_TAX
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: f0ddc06b-bdfd-4c05-bf2c-58cfd1224654
+                stepCounter: b7d85903-7aa6-4896-b63b-a6d558247286
+            transform: ""
+    cteString: ""
+    enabledColumnTestIDs: []
+    sourceMapping:
+      - aliases:
+          ORDERS: cfb71a18-1df3-4c91-92e3-a0037c194193
+          LINEITEM: b7d85903-7aa6-4896-b63b-a6d558247286
+        customSQL:
+          customSQL: ""
+        dependencies:
+          - locationName: TARGET
+            nodeName: STG_ORDERS
+          - locationName: TARGET
+            nodeName: STG_LINEITEM
+        join:
+          joinCondition: FROM {{ ref('TARGET', 'STG_ORDERS') }} "ORDERS" JOIN {{ ref('TARGET', 'STG_LINEITEM') }} "LINEITEM" ON "ORDERS"."O_ORDERKEY" = "LINEITEM"."L_ORDERKEY"
+        name: FCT_ORDER_LINEITEM
+        noLinkRefs: []
+  name: FCT_ORDER_LINEITEM
+  overrideSQL: false
+  schema: ""
+  sqlType: Fact
+  type: sql
+  version: 1
+type: Node

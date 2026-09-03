@@ -1,0 +1,73 @@
+fileVersion: 1
+id: ac43b8ec-8fde-4979-81be-50cce4510b53
+name: ORDERS_SAMPLE_FLAT
+operation:
+  database: ""
+  deployEnabled: true
+  description: ""
+  locationName: SRC
+  metadata:
+    columns:
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: d145cd8d-7dca-46b2-a2b3-b8e15a8fd78b
+          stepCounter: ac43b8ec-8fde-4979-81be-50cce4510b53
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: ORDER_ID
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 3a4a191c-f67e-4f90-99cd-aa137cd2a8f5
+          stepCounter: ac43b8ec-8fde-4979-81be-50cce4510b53
+        config: {}
+        dataType: VARCHAR(16777216)
+        defaultValue: ""
+        description: ""
+        name: CUSTOMER_NAME
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: a1a4416e-3833-4b1e-93bb-75de03a2ee99
+          stepCounter: ac43b8ec-8fde-4979-81be-50cce4510b53
+        config: {}
+        dataType: VARIANT
+        defaultValue: ""
+        description: ""
+        name: ORDER_DATA
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+  name: ORDERS_SAMPLE_FLAT
+  schema: ""
+  sqlType: Source
+  type: sourceInput
+  version: 1
+type: Node
