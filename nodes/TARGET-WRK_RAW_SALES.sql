@@ -1,7 +1,7 @@
 @id("1483866f-d2ec-4af9-8ebd-f0001f9bc62c")
 @nodeType("707")
 SELECT 
-Salesperson, 
+CAST(Salesperson AS VARCHAR(500)), 
 CAST(Sale_Date AS DATE), 
 CAST(Total_Daily_Sales AS NUMERIC)
 FROM (
