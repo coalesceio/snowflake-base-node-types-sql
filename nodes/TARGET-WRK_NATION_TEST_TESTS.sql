@@ -1,0 +1,11 @@
+@id("80a05326-a83a-477c-ab93-20a89874ee9e")
+@nodeType("707")
+@tests("SELECT 1", true, "After")
+@preSQL("SELECT 1")
+SELECT
+     "N_NATIONKEY" AS "N_NATIONKEY" @uniqueness,
+     "N_NAME" AS "N_NAME",
+     "N_REGIONKEY" AS "N_REGIONKEY",
+     "N_COMMENT" AS "N_COMMENT",
+     "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP"
+FROM {{ ref('SRC', 'NATION_TEST') }} "NATION_TEST"
