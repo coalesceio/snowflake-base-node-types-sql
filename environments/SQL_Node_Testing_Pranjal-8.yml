@@ -6,6 +6,6 @@ mappingDefinitions:
     schema: SOURCE_DB
   TARGET:
     database: PRANJAL_DEV
-    schema: TARGET_DB
+    schema: TEST_DB
 name: SQL_Node_Testing_Pranjal
 type: Environment
