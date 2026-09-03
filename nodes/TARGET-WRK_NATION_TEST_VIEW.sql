@@ -2,8 +2,8 @@
 @nodeType("707")
 @materializationType("view")
 SELECT
-     "N_NATIONKEY" AS "N_NATIONKEY" @not_null,
-     "N_NAME" AS "N_NAME",
+     "N_NATIONKEY" AS "N_NATIONKEY" ,
+     "N_NAME" AS "N_NAME" @not_null,
      "N_REGIONKEY" AS "N_REGIONKEY",
      "N_COMMENT" AS "N_COMMENT",
      "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP"
