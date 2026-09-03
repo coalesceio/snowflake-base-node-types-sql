@@ -1,7 +1,6 @@
 @id("36151e99-2923-4d84-b338-56d7df3be40c")
 @nodeType("707")
 @description("V2 Work node demonstrating every supported annotation")
-@materializationType("Table")
 @writeMode("append")
 @disableTests
 @tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")
