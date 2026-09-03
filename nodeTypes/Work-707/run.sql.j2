@@ -70,7 +70,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 {%- else %}
 	{{ stage('Load Skipped for View') }}
 	-- The node {{node.name}} is materialized as View. Therefore, a Load operation is not supported.
-	SELECT 1 FROM UNNSET([1]) AS INFO_MESSAGE WHERE FALSE
+	SELECT 1 AS INFO_MESSAGE WHERE FALSE
 {%- endif %}
 
 {# == To run data quality tests after data insertion == #}
