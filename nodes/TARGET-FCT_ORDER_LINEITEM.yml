@@ -175,17 +175,17 @@ operation:
     enabledColumnTestIDs: []
     sourceMapping:
       - aliases:
-          LINEITEM: b7d85903-7aa6-4896-b63b-a6d558247286
-          ORDERS: cfb71a18-1df3-4c91-92e3-a0037c194193
+          STG_LINEITEM: b7d85903-7aa6-4896-b63b-a6d558247286
+          STG_ORDERS: cfb71a18-1df3-4c91-92e3-a0037c194193
         customSQL:
           customSQL: ""
         dependencies:
           - locationName: TARGET
-            nodeName: STG_ORDERS
-          - locationName: TARGET
             nodeName: STG_LINEITEM
+          - locationName: TARGET
+            nodeName: STG_ORDERS
         join:
-          joinCondition: FROM {{ ref('TARGET', 'STG_ORDERS') }} "ORDERS" JOIN {{ ref('TARGET', 'STG_LINEITEM') }} "LINEITEM" ON "ORDERS"."O_ORDERKEY" = "LINEITEM"."L_ORDERKEY"
+          joinCondition: FROM {{ ref('TARGET', 'STG_ORDERS') }} "STG_ORDERS" JOIN {{ ref('TARGET', 'STG_LINEITEM') }} "STG_LINEITEM" ON "STG_ORDERS"."O_ORDERKEY" = "STG_LINEITEM"."L_ORDERKEY"
         name: FCT_ORDER_LINEITEM
         noLinkRefs: []
   name: FCT_ORDER_LINEITEM

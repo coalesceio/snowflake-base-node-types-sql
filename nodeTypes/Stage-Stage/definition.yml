@@ -1,6 +1,6 @@
 fileVersion: 1
 id: Stage
-isDisabled: true
+isDisabled: false
 metadata:
   defaultStorageLocation: null
   error: null

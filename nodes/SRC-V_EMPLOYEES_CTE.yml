@@ -1,0 +1,107 @@
+fileVersion: 1
+id: d801b447-0527-4bdd-acf7-a46401f412c4
+name: V_EMPLOYEES_CTE
+operation:
+  config:
+    insertStrategy: UNION
+    selectDistinct: false
+  database: ""
+  deployEnabled: true
+  description: ""
+  isMultisource: false
+  locationName: SRC
+  materializationType: view
+  metadata:
+    appliedNodeTests: []
+    columns:
+      - appliedColumnTests: {}
+        columnReference:
+          columnCounter: 1e7e05dd-6f44-4a38-a6bd-de355e41a396
+          stepCounter: d801b447-0527-4bdd-acf7-a46401f412c4
+        config: {}
+        dataType: NUMBER(38,0)
+        description: ""
+        name: EMPLOYEE_ID
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: EMPLOYEE_ID
+                stepCounter: acc95404-30cf-4e74-b7db-a46f74cbe015
+            transform: ""
+      - appliedColumnTests: {}
+        columnReference:
+          columnCounter: 9eff295c-374e-4470-bddd-d7516dfe102d
+          stepCounter: d801b447-0527-4bdd-acf7-a46401f412c4
+        config: {}
+        dataType: VARCHAR(16777216)
+        description: ""
+        name: TITLE
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: TITLE
+                stepCounter: acc95404-30cf-4e74-b7db-a46f74cbe015
+            transform: ""
+      - appliedColumnTests: {}
+        columnReference:
+          columnCounter: a06b790f-5fe1-4cdb-8b5b-d32b23f50c32
+          stepCounter: d801b447-0527-4bdd-acf7-a46401f412c4
+        config: {}
+        dataType: NUMBER(38,0)
+        description: ""
+        name: MANAGER_ID
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: MANAGER_ID
+                stepCounter: acc95404-30cf-4e74-b7db-a46f74cbe015
+            transform: ""
+      - appliedColumnTests: {}
+        columnReference:
+          columnCounter: 79f87aa2-6b01-493b-a730-200f57589ec2
+          stepCounter: d801b447-0527-4bdd-acf7-a46401f412c4
+        config: {}
+        dataType: INTEGER
+        description: ""
+        name: ORG_LEVEL
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: ORG_LEVEL
+                stepCounter: acc95404-30cf-4e74-b7db-a46f74cbe015
+            transform: ""
+      - appliedColumnTests: {}
+        columnReference:
+          columnCounter: afe6daa4-2ee6-4723-a873-7cff4a9f04ee
+          stepCounter: d801b447-0527-4bdd-acf7-a46401f412c4
+        config: {}
+        dataType: STRING
+        description: ""
+        name: PATH
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: PATH
+                stepCounter: acc95404-30cf-4e74-b7db-a46f74cbe015
+            transform: ""
+    cteString: ""
+    enabledColumnTestIDs: []
+    sourceMapping:
+      - aliases:
+          WRK_EMPLOYEES_CTE: acc95404-30cf-4e74-b7db-a46f74cbe015
+        customSQL:
+          customSQL: ""
+        dependencies:
+          - locationName: TARGET
+            nodeName: WRK_EMPLOYEES_CTE
+        join:
+          joinCondition: FROM {{ ref('TARGET', 'WRK_EMPLOYEES_CTE') }} "WRK_EMPLOYEES_CTE"
+        name: V_EMPLOYEES_CTE
+        noLinkRefs: []
+  name: V_EMPLOYEES_CTE
+  overrideSQL: false
+  schema: ""
+  sqlType: View
+  type: sql
+  version: 1
+type: Node

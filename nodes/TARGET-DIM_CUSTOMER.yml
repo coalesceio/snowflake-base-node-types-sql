@@ -90,14 +90,14 @@ operation:
     enabledColumnTestIDs: []
     sourceMapping:
       - aliases:
-          CUSTOMER: 26ca41a8-3b98-4227-a1a0-cff60e797a6b
+          STG_CUSTOMER: 26ca41a8-3b98-4227-a1a0-cff60e797a6b
         customSQL:
           customSQL: ""
         dependencies:
           - locationName: TARGET
             nodeName: STG_CUSTOMER
         join:
-          joinCondition: FROM {{ ref('TARGET', 'STG_CUSTOMER') }} "CUSTOMER"
+          joinCondition: FROM {{ ref('TARGET', 'STG_CUSTOMER') }} "STG_CUSTOMER"
         name: DIM_CUSTOMER
         noLinkRefs: []
   name: DIM_CUSTOMER

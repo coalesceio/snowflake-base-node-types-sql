@@ -76,8 +76,8 @@ operation:
     enabledColumnTestIDs: []
     sourceMapping:
       - aliases:
-          NATION: 8ce14e96-fedc-4b8d-9ac0-b3890c0c5101
-          REGION: dcd3742d-b841-4f39-825f-6a48f948b10b
+          STG_NATION: 8ce14e96-fedc-4b8d-9ac0-b3890c0c5101
+          STG_REGION: dcd3742d-b841-4f39-825f-6a48f948b10b
         customSQL:
           customSQL: ""
         dependencies:
@@ -86,7 +86,7 @@ operation:
           - locationName: TARGET
             nodeName: STG_REGION
         join:
-          joinCondition: FROM {{ ref('TARGET', 'STG_NATION') }} "NATION" JOIN {{ ref('TARGET', 'STG_REGION') }} "REGION" ON "NATION"."N_REGIONKEY" = "REGION"."R_REGIONKEY"
+          joinCondition: FROM {{ ref('TARGET', 'STG_NATION') }} "STG_NATION" JOIN {{ ref('TARGET', 'STG_REGION') }} "STG_REGION" ON "STG_NATION"."N_REGIONKEY" = "STG_REGION"."R_REGIONKEY"
         name: DIM_NATION_REGION
         noLinkRefs: []
   name: DIM_NATION_REGION

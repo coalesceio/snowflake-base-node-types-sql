@@ -1,6 +1,6 @@
 fileVersion: 1
 id: View
-isDisabled: true
+isDisabled: false
 metadata:
   defaultStorageLocation: null
   error: null

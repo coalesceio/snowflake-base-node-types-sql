@@ -1,0 +1,11 @@
+fileVersion: 1
+id: "9"
+mappingDefinitions:
+  SRC:
+    database: ANANDHIS_DEV
+    schema: SOURCE_DATA
+  TARGET:
+    database: ANANDHIS_QA
+    schema: TARGET
+name: Testing_ANAN
+type: Environment
