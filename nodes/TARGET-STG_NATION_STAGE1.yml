@@ -1,0 +1,67 @@
+fileVersion: 1
+id: 7360d887-ebe2-4215-8096-65664ee33954
+name: STG_NATION_STAGE1
+operation:
+  database: ""
+  schema: ""
+  description: ""
+  deployEnabled: true
+  locationName: TARGET
+  name: STG_NATION_STAGE1
+  sqlType: Stage
+  type: sql
+  version: 1
+  materializationType: table
+  config: {}
+  metadata:
+    columns:
+      - name: N_NATIONKEY
+        dataType: NUMBER(38,0)
+        description: ""
+        defaultValue: ""
+        nullable: true
+        transform: ""
+        columnReference:
+          stepCounter: 7360d887-ebe2-4215-8096-65664ee33954
+          columnCounter: 4be146c0-072b-4b33-aed3-049cfc6812a8
+        sourceColumnReferences:
+          - transform: ""
+            columnReferences:
+              - stepCounter: 8b00d860-7771-410c-97cb-908f25601e4a
+                columnCounter: 3d7bb4d8-9d4a-4845-b9b0-35b9f1c3db83
+      - name: N_NAME
+        dataType: VARCHAR(25)
+        description: ""
+        defaultValue: ""
+        nullable: true
+        transform: ""
+        columnReference:
+          stepCounter: 7360d887-ebe2-4215-8096-65664ee33954
+          columnCounter: 641dc8a0-1d9c-4561-be2b-790f80c9a23d
+        sourceColumnReferences:
+          - transform: ""
+            columnReferences:
+              - stepCounter: 8b00d860-7771-410c-97cb-908f25601e4a
+                columnCounter: 110c9a95-2584-4477-8062-499c4b398834
+      - name: N_REGIONKEY
+        dataType: NUMBER(38,0)
+        description: ""
+        defaultValue: ""
+        nullable: true
+        transform: ""
+        columnReference:
+          stepCounter: 7360d887-ebe2-4215-8096-65664ee33954
+          columnCounter: 78b6eacb-ef0c-4945-8ccb-66459dd5e1cf
+        sourceColumnReferences:
+          - transform: ""
+            columnReferences:
+              - stepCounter: 8b00d860-7771-410c-97cb-908f25601e4a
+                columnCounter: af433bd8-dd7b-44e6-8494-36f9b4653133
+    sourceMapping:
+      - name: NATION_TEST
+        dependencies:
+          - locationName: SRC
+            nodeName: NATION_TEST
+        join:
+          joinCondition: "FROM {{ ref('SRC', 'NATION_TEST') }} NATION_TEST"
+type: Node
