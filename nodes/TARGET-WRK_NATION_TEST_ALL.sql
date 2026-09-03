@@ -2,7 +2,7 @@
 @nodeType("707")
 @description("V2 Work node demonstrating every supported annotation")
 @writeMode("append")
-@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false)
 @tests("SELECT 1 FROM {{ this }} WHERE N_REGIONKEY IS NULL", true, "Before")
 SELECT DISTINCT
      -- NUMBER column: full numeric test coverage
