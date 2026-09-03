@@ -1,5 +1,5 @@
 @id("fd989544-ad43-468e-b626-ec911fb765d7")
-@nodeType("704")
+@nodeType("707")
 @description("Line item detail joined to orders and customers, enriched with each customer's average order amount")
 WITH CUSTOMER_ORDER_AVG AS (
     SELECT
