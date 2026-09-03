@@ -132,14 +132,14 @@ operation:
     enabledColumnTestIDs: []
     sourceMapping:
       - aliases:
-          WRK_NATION_TEST_004: 9c54fff3-3505-416a-a32f-f97fe5d73672
+          WRK_NATION_TEST_004_RENAME: 9c54fff3-3505-416a-a32f-f97fe5d73672
         customSQL:
           customSQL: ""
         dependencies:
           - locationName: TARGET
-            nodeName: WRK_NATION_TEST_004
+            nodeName: WRK_NATION_TEST_004_RENAME
         join:
-          joinCondition: FROM  {{ ref('TARGET', 'WRK_NATION_TEST_004') }} WRK_NATION_TEST_004
+          joinCondition: FROM  {{ ref('TARGET', 'WRK_NATION_TEST_004_RENAME') }} WRK_NATION_TEST_004_RENAME
         name: STG_NATION_TEST_005
         noLinkRefs: []
   name: STG_NATION_TEST_005
