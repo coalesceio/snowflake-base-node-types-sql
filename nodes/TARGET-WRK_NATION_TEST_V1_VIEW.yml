@@ -111,7 +111,9 @@ operation:
           - locationName: SRC
             nodeName: NATION_TEST
         join:
-          joinCondition: FROM  {{ ref('SRC', 'NATION_TEST') }} NATION_TEST
+          joinCondition: |-
+            FROM  {{ ref('SRC', 'NATION_TEST') }} NATION_TEST
+            WHERE "N_NATIONKEY" > 1
         name: WRK_NATION_TEST_V1_VIEW
         noLinkRefs: []
   name: WRK_NATION_TEST_V1_VIEW
