@@ -1,7 +1,7 @@
 @id("2a77fc94-f426-4db8-ae12-db44553ba07a")
 @nodeType("707")
 @materializationType("view")
-SELECT DISTINCT
+SELECT
      "N_NATIONKEY" AS "N_NATIONKEY" ,
      "N_NAME" AS "N_NAME" @not_null,
      "N_REGIONKEY" AS "N_REGIONKEY",
