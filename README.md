@@ -301,18 +301,6 @@ CURRENT_TIMESTAMP() AS REFRESHED_AT,
 'Initial Customer Purchase' AS RECORD_TYPE
 FROM FIRST_ORDERS F
 ```
-**Using Recursive CTE - Date Series**
-```sql
-WITH RECURSIVE RCTE_FNL AS (
-    SELECT TO_DATE('2025-01-01') AS "date_s"
-    UNION ALL
-    SELECT DATEADD(day, 1, "date_s") AS "date_s"
-    FROM RCTE_FNL
-    where "date_s" < TO_DATE('2025-01-10')
-  )
-SELECT "date_s"
-FROM RCTE_FNL
-```
 **Using Recursive CTE**
 ```sql
 WITH RECURSIVE "NATION_MANAGERS" AS (
@@ -353,6 +341,18 @@ FROM "NATION_CHAIN" "NC"
 JOIN {{ ref('SRC', 'ORDERS_TEST') }} "O" ON "NC"."NATION_ID" = MOD("O"."ORDER_ID", 25)
 GROUP BY "NC"."NATION_ID", "NC"."NATION_NAME", "NC"."ORG_LEVEL", "NC"."PATH"
 ```
+**Using Recursive CTE - Date Series**
+```sql
+WITH RECURSIVE RCTE_FNL AS (
+    SELECT TO_DATE('2025-01-01') AS "date_s"
+    UNION ALL
+    SELECT DATEADD(day, 1, "date_s") AS "date_s"
+    FROM RCTE_FNL
+    where "date_s" < TO_DATE('2025-01-10')
+  )
+SELECT "date_s"
+FROM RCTE_FNL
+```
 **Using CTE for multisource combine**
 ```sql
 WITH ALL_NATIONS AS (
@@ -371,7 +371,7 @@ SELECT * FROM ALL_NATIONS
 
 - **Conditional Logic via CASE Statements:** Support for complex business rules and data categorization using standard CASE WHEN syntax to create derived columns based on multiple logical conditions.
 
- - **Flexible Projection (SELECT * with Expressions):** Enhanced projection capabilities that allow for selecting all columns from a source (`SELECT *`) while simultaneously appending new calculated expressions, timestamps, or metadata in the same statement.
+ - **Flexible Projection (SELECT * with Expressions):** Enhanced projection capabilities that allow for selecting all columns from a source (`SELECT *`) while simultaneously appending new calculated expressions, timestamps, or metadata in the same statement.<br/>**Note:** Column-level annotations (e.g. `@not_null`, `@inHash`) can only be attached to columns that are explicitly listed in the `SELECT` clause — they cannot be applied to columns pulled in via `SELECT *`.
 
 - **Nested Subqueries:** Support for correlated and non-correlated subqueries within SELECT, FROM, or WHERE clauses, enabling granular filtering and complex lookups that don't require separate nodes.
 
