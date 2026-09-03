@@ -1,0 +1,44 @@
+fileVersion: 1
+id: 701381d4-fe1e-4242-ba24-23558a414b4e
+name: WRK_RAW_SALES1
+operation:
+  config: {}
+  database: ""
+  deployEnabled: true
+  description: ""
+  isMultisource: false
+  locationName: TARGET
+  materializationType: table
+  metadata:
+    appliedNodeTests: []
+    columns: []
+    cteString: ""
+    enabledColumnTestIDs: []
+    sourceMapping:
+      - aliases: {}
+        customSQL:
+          customSQL: |-
+            @id("701381d4-fe1e-4242-ba24-23558a414b4e")
+            @nodeType("704")
+            SELECT
+                 "SALES_ID" AS "SALES_ID",
+                 "SALESPERSON" AS "SALESPERSON",
+                 "SALE_DATE" AS "SALE_DATE",
+                 "AMOUNT" AS "AMOUNT",
+                 "QUARTER" AS "QUARTER",
+                 "REGION" AS "REGION"
+            FROM {{ ref('TARGET', 'RAW_SALES') }} "RAW_SALES"
+        dependencies:
+          - locationName: TARGET
+            nodeName: RAW_SALES
+        join:
+          joinCondition: FROM {{ ref('TARGET', 'RAW_SALES') }} "RAW_SALES"
+        name: WRK_RAW_SALES1
+        noLinkRefs: []
+  name: WRK_RAW_SALES1
+  overrideSQL: false
+  schema: ""
+  sqlType: "704"
+  type: sql
+  version: 1
+type: Node

@@ -15,10 +15,13 @@ operation:
   locationName: TARGET
   materializationType: table
   metadata:
+    appliedNodeTests: []
     columns:
-      - columnReference:
+      - appliedColumnTests: {}
+        columnReference:
           columnCounter: 32fa1809-0dc0-4c2e-82c5-d4de9799f952
           stepCounter: 8ce14e96-fedc-4b8d-9ac0-b3890c0c5101
+        config: {}
         dataType: NUMBER(38,0)
         description: ""
         name: N_NATIONKEY
@@ -28,9 +31,11 @@ operation:
               - columnCounter: 4c3e76fd-e8ca-46a7-80f6-00736f9c30c8
                 stepCounter: cea69a3a-e4eb-434c-9f80-7d1473a31999
             transform: ""
-      - columnReference:
+      - appliedColumnTests: {}
+        columnReference:
           columnCounter: 379d633a-413e-40d8-9082-4b76c9d9a9e6
           stepCounter: 8ce14e96-fedc-4b8d-9ac0-b3890c0c5101
+        config: {}
         dataType: VARCHAR(25)
         description: ""
         name: N_NAME
@@ -40,9 +45,11 @@ operation:
               - columnCounter: e7ca4997-f888-42aa-90a5-e480c30c36c9
                 stepCounter: cea69a3a-e4eb-434c-9f80-7d1473a31999
             transform: ""
-      - columnReference:
+      - appliedColumnTests: {}
+        columnReference:
           columnCounter: 4d49252f-11c9-43ae-b53d-7165d8298921
           stepCounter: 8ce14e96-fedc-4b8d-9ac0-b3890c0c5101
+        config: {}
         dataType: NUMBER(38,0)
         description: ""
         name: N_REGIONKEY

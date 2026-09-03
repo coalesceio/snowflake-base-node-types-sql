@@ -1,0 +1,43 @@
+fileVersion: 1
+id: d3b08967-49a9-42b3-bfe8-f71388a8443d
+name: WRK_REGION
+operation:
+  config: {}
+  database: ""
+  deployEnabled: true
+  description: ""
+  isMultisource: false
+  locationName: TARGET
+  materializationType: table
+  metadata:
+    appliedNodeTests: []
+    columns: []
+    cteString: ""
+    enabledColumnTestIDs: []
+    sourceMapping:
+      - aliases: {}
+        customSQL:
+          customSQL: |
+            @id("d3b08967-49a9-42b3-bfe8-f71388a8443d")
+            @nodeType("704")
+            @testsEnabled
+            SELECT
+                 "R_REGIONKEY" AS "R_REGIONKEY" @description("Unique identifier for the region") @tests("unique"),
+                 "R_NAME" AS "R_NAME" @description("Region name") @defaultValue("'EMEA'"),
+                 "R_COMMENT" AS "R_COMMENT" @description("Free-text comment about the region"),
+                 "R_LOAD_TIMESTAMP" AS "R_LOAD_TIMESTAMP" @description("Timestamp when the record was loaded")
+            FROM {{ ref('SRC', 'REGION') }} "REGION"
+        dependencies:
+          - locationName: SRC
+            nodeName: REGION
+        join:
+          joinCondition: FROM {{ ref('SRC', 'REGION') }} "REGION"
+        name: WRK_REGION
+        noLinkRefs: []
+  name: WRK_REGION
+  overrideSQL: false
+  schema: ""
+  sqlType: "704"
+  type: sql
+  version: 1
+type: Node

@@ -1,0 +1,48 @@
+fileVersion: 1
+id: 0a046c2b-701f-441f-898b-2de44ea2390c
+name: RAW_SALES_INFO
+operation:
+  config: {}
+  database: ""
+  deployEnabled: true
+  description: ""
+  isMultisource: false
+  locationName: TARGET
+  materializationType: view
+  metadata:
+    appliedNodeTests: []
+    columns: []
+    cteString: ""
+    enabledColumnTestIDs: []
+    sourceMapping:
+      - aliases: {}
+        customSQL:
+          customSQL: |
+            @id("0a046c2b-701f-441f-898b-2de44ea2390c")
+            @nodeType("704")
+            @materializationType("view")
+            SELECT
+                 "SALES_ID" AS "SALES_ID",
+                 "SALESPERSON" AS "SALESPERSON",
+                 "SALE_DATE" AS "SALE_DATE",
+                 "AMOUNT" AS "AMOUNT",
+                 "QUARTER" AS "QUARTER",
+                 "REGION" AS "REGION"
+            FROM {{ ref('TARGET', 'RAW_SALES') }} "RAW_SALES"
+            WHERE "AMOUNT" > 1000
+        dependencies:
+          - locationName: TARGET
+            nodeName: RAW_SALES
+        join:
+          joinCondition: |-
+            FROM {{ ref('TARGET', 'RAW_SALES') }} "RAW_SALES"
+            WHERE "AMOUNT" > 1000
+        name: RAW_SALES_INFO
+        noLinkRefs: []
+  name: RAW_SALES_INFO
+  overrideSQL: false
+  schema: ""
+  sqlType: "704"
+  type: sql
+  version: 1
+type: Node

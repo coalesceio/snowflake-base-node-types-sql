@@ -1,0 +1,45 @@
+fileVersion: 1
+id: 9a4c5413-2ea8-4c30-a918-233a663b15a1
+name: WRK_EMPLOYEES
+operation:
+  config: {}
+  database: ""
+  deployEnabled: true
+  description: ""
+  isMultisource: false
+  locationName: TARGET
+  materializationType: table
+  metadata:
+    appliedNodeTests: []
+    columns: []
+    cteString: ""
+    enabledColumnTestIDs: []
+    sourceMapping:
+      - aliases: {}
+        customSQL:
+          customSQL: |-
+            @id("9a4c5413-2ea8-4c30-a918-233a663b15a1")
+            @nodeType("704")
+            SELECT
+                 e.EMPLOYEE_ID AS "emp_id",
+                 m.EMPLOYEE_ID  AS "man_id"
+            FROM {{ ref('SRC', 'EMPLOYEES') }} e
+            LEFT JOIN {{ ref('SRC', 'EMPLOYEES') }}  m 
+                ON e.Manager_ID = m.Employee_ID;
+        dependencies:
+          - locationName: SRC
+            nodeName: EMPLOYEES
+        join:
+          joinCondition: |-
+            FROM {{ ref('SRC', 'EMPLOYEES') }} e
+            LEFT JOIN {{ ref('SRC', 'EMPLOYEES') }}  m 
+                ON e.Manager_ID = m.Employee_ID
+        name: WRK_EMPLOYEES
+        noLinkRefs: []
+  name: WRK_EMPLOYEES
+  overrideSQL: false
+  schema: ""
+  sqlType: "704"
+  type: sql
+  version: 1
+type: Node

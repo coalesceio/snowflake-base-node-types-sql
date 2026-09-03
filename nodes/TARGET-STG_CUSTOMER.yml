@@ -15,10 +15,13 @@ operation:
   locationName: TARGET
   materializationType: table
   metadata:
+    appliedNodeTests: []
     columns:
-      - columnReference:
+      - appliedColumnTests: {}
+        columnReference:
           columnCounter: 6daf8df0-8fe0-4dc9-bcef-328b56af73d8
           stepCounter: 26ca41a8-3b98-4227-a1a0-cff60e797a6b
+        config: {}
         dataType: NUMBER(38,0)
         description: ""
         name: C_CUSTKEY
@@ -28,9 +31,11 @@ operation:
               - columnCounter: 971de6c4-36df-4ea1-bfd3-4ffd2d3f5c50
                 stepCounter: fd3ca7fa-30a4-451e-b97d-6adf1e21068e
             transform: ""
-      - columnReference:
+      - appliedColumnTests: {}
+        columnReference:
           columnCounter: 4a0a3675-20cb-41b9-8e05-60782042fc71
           stepCounter: 26ca41a8-3b98-4227-a1a0-cff60e797a6b
+        config: {}
         dataType: VARCHAR(25)
         description: ""
         name: C_NAME
@@ -40,9 +45,11 @@ operation:
               - columnCounter: 37c4ce50-dc52-4dc9-bac4-7c2a132d7fc3
                 stepCounter: fd3ca7fa-30a4-451e-b97d-6adf1e21068e
             transform: ""
-      - columnReference:
+      - appliedColumnTests: {}
+        columnReference:
           columnCounter: 1a776481-d19c-442e-9c5f-5c75ee124223
           stepCounter: 26ca41a8-3b98-4227-a1a0-cff60e797a6b
+        config: {}
         dataType: NUMBER(38,0)
         description: ""
         name: C_NATIONKEY
@@ -52,9 +59,11 @@ operation:
               - columnCounter: 61158e6b-7caf-4a51-b2eb-6a512c74710f
                 stepCounter: fd3ca7fa-30a4-451e-b97d-6adf1e21068e
             transform: ""
-      - columnReference:
+      - appliedColumnTests: {}
+        columnReference:
           columnCounter: a33984a9-b862-4e5e-afc7-19424b6a376d
           stepCounter: 26ca41a8-3b98-4227-a1a0-cff60e797a6b
+        config: {}
         dataType: NUMBER(12,2)
         description: ""
         name: C_ACCTBAL
@@ -64,9 +73,11 @@ operation:
               - columnCounter: 366ac86f-b534-4197-8346-10003b6a9304
                 stepCounter: fd3ca7fa-30a4-451e-b97d-6adf1e21068e
             transform: ""
-      - columnReference:
+      - appliedColumnTests: {}
+        columnReference:
           columnCounter: 4402ec04-76c5-4c1e-979f-3548007cfa5f
           stepCounter: 26ca41a8-3b98-4227-a1a0-cff60e797a6b
+        config: {}
         dataType: VARCHAR(10)
         description: ""
         name: C_MKTSEGMENT

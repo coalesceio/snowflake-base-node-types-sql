@@ -1,0 +1,41 @@
+fileVersion: 1
+id: 8843c3e0-31bd-4320-9126-953876a46287
+name: WRK_ORDERS
+operation:
+  config: {}
+  database: ""
+  deployEnabled: true
+  description: ""
+  isMultisource: false
+  locationName: TARGET
+  materializationType: table
+  metadata:
+    appliedNodeTests: []
+    columns: []
+    cteString: ""
+    enabledColumnTestIDs: []
+    sourceMapping:
+      - aliases: {}
+        customSQL:
+          customSQL: |
+            @id("8843c3e0-31bd-4320-9126-953876a46287")
+            @nodeType("704")
+            SELECT
+                 "ORDER_ID" AS "ORDER_ID",
+                 "CUSTOMER_NAME" AS "CUSTOMER_NAME",
+                 "ORDER_DATA" AS "ORDER_DATA"
+            FROM {{ ref('SRC', 'ORDERS') }} "ORDERS"
+        dependencies:
+          - locationName: SRC
+            nodeName: ORDERS
+        join:
+          joinCondition: FROM {{ ref('SRC', 'ORDERS') }} "ORDERS"
+        name: WRK_ORDERS
+        noLinkRefs: []
+  name: WRK_ORDERS
+  overrideSQL: false
+  schema: ""
+  sqlType: "704"
+  type: sql
+  version: 1
+type: Node

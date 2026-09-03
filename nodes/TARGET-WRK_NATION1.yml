@@ -1,0 +1,44 @@
+fileVersion: 1
+id: 99182268-c84a-43b3-99ff-461aa9d23e70
+name: WRK_NATION1
+operation:
+  config: {}
+  database: ""
+  deployEnabled: true
+  description: ""
+  isMultisource: false
+  locationName: TARGET
+  materializationType: table
+  metadata:
+    appliedNodeTests: []
+    columns: []
+    cteString: ""
+    enabledColumnTestIDs: []
+    sourceMapping:
+      - aliases: {}
+        customSQL:
+          customSQL: |-
+            @id("99182268-c84a-43b3-99ff-461aa9d23e70")
+            @nodeType("704")
+            SELECT
+                 "N_NATIONKEY" AS "N_NATIONKEY",
+                 "N_NAME" AS "N_NAME",
+                 "N_REGIONKEY" AS "N_REGIONKEY",
+                 "N_COMMENT" AS "N_COMMENT",
+                 "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP",
+                 "UPDATE_TIME" AS "UPDATE_TIME"
+            FROM {{ ref('SRC', 'NATION') }} "NATION"
+        dependencies:
+          - locationName: SRC
+            nodeName: NATION
+        join:
+          joinCondition: FROM {{ ref('SRC', 'NATION') }} "NATION"
+        name: WRK_NATION1
+        noLinkRefs: []
+  name: WRK_NATION1
+  overrideSQL: false
+  schema: ""
+  sqlType: "704"
+  type: sql
+  version: 1
+type: Node

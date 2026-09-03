@@ -15,10 +15,13 @@ operation:
   locationName: TARGET
   materializationType: table
   metadata:
+    appliedNodeTests: []
     columns:
-      - columnReference:
+      - appliedColumnTests: {}
+        columnReference:
           columnCounter: 2c2c6c6d-d4a6-4c97-80e9-309c489e63b6
           stepCounter: b7d85903-7aa6-4896-b63b-a6d558247286
+        config: {}
         dataType: NUMBER(38,0)
         description: ""
         name: L_ORDERKEY
@@ -28,9 +31,11 @@ operation:
               - columnCounter: a3794144-e593-47c0-a096-1d34bdc24a30
                 stepCounter: be3dddcc-186d-48ae-99a1-72535d92c225
             transform: ""
-      - columnReference:
+      - appliedColumnTests: {}
+        columnReference:
           columnCounter: bc29b774-b62e-4a69-811d-4318d2e60070
           stepCounter: b7d85903-7aa6-4896-b63b-a6d558247286
+        config: {}
         dataType: NUMBER(38,0)
         description: ""
         name: L_LINENUMBER
@@ -40,9 +45,11 @@ operation:
               - columnCounter: 60d77e40-5ce6-4304-83c4-b233a3768858
                 stepCounter: be3dddcc-186d-48ae-99a1-72535d92c225
             transform: ""
-      - columnReference:
+      - appliedColumnTests: {}
+        columnReference:
           columnCounter: 8b987180-ef11-4f2f-a5ec-44e6330966f2
           stepCounter: b7d85903-7aa6-4896-b63b-a6d558247286
+        config: {}
         dataType: NUMBER(12,2)
         description: ""
         name: L_QUANTITY
@@ -52,9 +59,11 @@ operation:
               - columnCounter: 6018aea1-538c-40d7-ad5c-f92885a6a5f4
                 stepCounter: be3dddcc-186d-48ae-99a1-72535d92c225
             transform: ""
-      - columnReference:
+      - appliedColumnTests: {}
+        columnReference:
           columnCounter: 858e8749-845d-4e26-95b3-24038b6a842f
           stepCounter: b7d85903-7aa6-4896-b63b-a6d558247286
+        config: {}
         dataType: NUMBER(12,2)
         description: ""
         name: L_EXTENDEDPRICE
@@ -64,9 +73,11 @@ operation:
               - columnCounter: 56c62ae3-3527-4e1b-8f95-8bc5f76bdd71
                 stepCounter: be3dddcc-186d-48ae-99a1-72535d92c225
             transform: ""
-      - columnReference:
+      - appliedColumnTests: {}
+        columnReference:
           columnCounter: 24717a5a-7af0-43cf-a27b-8e63d21e22ca
           stepCounter: b7d85903-7aa6-4896-b63b-a6d558247286
+        config: {}
         dataType: NUMBER(12,2)
         description: ""
         name: L_DISCOUNT
@@ -76,9 +87,11 @@ operation:
               - columnCounter: 720cef65-204f-4aac-ab77-009a56860fe0
                 stepCounter: be3dddcc-186d-48ae-99a1-72535d92c225
             transform: ""
-      - columnReference:
+      - appliedColumnTests: {}
+        columnReference:
           columnCounter: f0ddc06b-bdfd-4c05-bf2c-58cfd1224654
           stepCounter: b7d85903-7aa6-4896-b63b-a6d558247286
+        config: {}
         dataType: NUMBER(12,2)
         description: ""
         name: L_TAX

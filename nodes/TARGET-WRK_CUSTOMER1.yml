@@ -1,0 +1,47 @@
+fileVersion: 1
+id: 5098d21c-917b-4a79-99ca-fa69ea13f1ac
+name: WRK_CUSTOMER1
+operation:
+  config: {}
+  database: ""
+  deployEnabled: true
+  description: ""
+  isMultisource: false
+  locationName: TARGET
+  materializationType: table
+  metadata:
+    appliedNodeTests: []
+    columns: []
+    cteString: ""
+    enabledColumnTestIDs: []
+    sourceMapping:
+      - aliases: {}
+        customSQL:
+          customSQL: |-
+            @id("5098d21c-917b-4a79-99ca-fa69ea13f1ac")
+            @nodeType("704")
+            SELECT
+                 "C_CUSTKEY" AS "C_CUSTKEY" @inHash("C_CUSTKEY", 1) ,
+                 "C_NAME" AS "C_NAME" @inHash("C_NAME", 2),
+                 "C_ADDRESS" AS "C_ADDRESS",
+                 "C_NATIONKEY" AS "C_NATIONKEY",
+                 "C_PHONE" AS "C_PHONE",
+                 "C_ACCTBAL" AS "C_ACCTBAL",
+                 "C_MKTSEGMENT" AS "C_MKTSEGMENT",
+                 "C_COMMENT" AS "C_COMMENT",
+                 "C_LOAD_TIMESTAMP" AS "C_LOAD_TIMESTAMP"
+            FROM {{ ref('TARGET', 'WRK_CUSTOMER') }} "WRK_CUSTOMER"
+        dependencies:
+          - locationName: TARGET
+            nodeName: WRK_CUSTOMER
+        join:
+          joinCondition: FROM {{ ref('TARGET', 'WRK_CUSTOMER') }} "WRK_CUSTOMER"
+        name: WRK_CUSTOMER1
+        noLinkRefs: []
+  name: WRK_CUSTOMER1
+  overrideSQL: false
+  schema: ""
+  sqlType: "704"
+  type: sql
+  version: 1
+type: Node
