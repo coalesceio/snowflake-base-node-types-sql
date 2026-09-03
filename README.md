@@ -187,6 +187,9 @@ This node only supports data retrieval and transformation logic. DML or DDL comm
 * **Reserved Keywords as Annotation Names**:  
 Avoid naming custom annotations after words that are reserved keywords in the platform's SQL grammar — e.g. `UNIQUE`, `AS`, `PRIMARY`. The parser may fail to parse such annotations and throw a validation error.
 
+* **Switching Between V1 and V2 Node Types**:  
+Converting an existing V1 (`.yml`) node to a V2 (`.sql`) node, or vice versa, is not supported.
+
 ---
 
 ### Usage Examples 
