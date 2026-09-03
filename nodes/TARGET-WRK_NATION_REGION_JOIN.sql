@@ -5,8 +5,8 @@
 WITH JON_CTE AS
 (SELECT
      N.*,
-     R."R_NAME" AS "REGION_NAME" @description("Region name"),
-     R."R_COMMENT" AS "REGION_COMMENT" @description("Free-text comment about the region"),
+     R."R_NAME" AS "REGION_NAME" ,
+     R."R_COMMENT" AS "REGION_COMMENT",
      'ABCD' AS CONSTANT
 FROM {{ ref('TARGET', 'WRK_NATION') }} N
 JOIN {{ ref('TARGET', 'WRK_REGION') }} R ON N."N_REGIONKEY" = R."R_REGIONKEY"

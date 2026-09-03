@@ -3,6 +3,7 @@ id: c024c92d-5780-45e3-a74c-d921890de339
 name: PIPIELINE-V2-V1-V2
 steps:
   - 67cd01c1-de18-40c4-8cef-a5d3a9c33b12
+  - 9a7ad486-570f-4a56-89b2-3f00febb39a0
   - acc95404-30cf-4e74-b7db-a46f74cbe015
   - d801b447-0527-4bdd-acf7-a46401f412c4
 type: Subgraph
