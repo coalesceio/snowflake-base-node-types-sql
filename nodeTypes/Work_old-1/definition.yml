@@ -1,0 +1,169 @@
+fileVersion: 2
+id: "1"
+isDisabled: false
+metadata:
+  defaultStorageLocation: null
+  error: null
+  nodeMetadataSpec: |-
+    capitalized: SQL Work
+    short: WRK
+    plural: Works
+    tagColor: '#2EB67D'
+
+    enableCTESupport: true
+
+    config:
+    - groupName: General Options
+      items:
+      - type: materializationSelector
+        isRequired: true
+        default: table
+        options:
+        - table
+        - view
+
+      - displayName: Truncate Before
+        attributeName: truncateBefore
+        type: toggleButton
+        default: true
+        enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+      - displayName: Distinct
+        attributeName: selectDistinct
+        type: toggleButton
+        enableIf: "{% if config.groupByAll %} false {% else %} true {% endif %}"
+        default: false
+        
+      - displayName: Group By All
+        attributeName: groupByAll
+        type: toggleButton
+        default: false
+        enableIf: "{% if config.selectDistinct %} false {% else %} true {% endif %}"
+
+      - displayName: Order By
+        attributeName: orderby
+        type: toggleButton
+        default: false
+        enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+      - type: tabular
+        displayName: 'ℹ️ Columns are sorted in the order they are defined'
+        attributeName: orderbycolumn
+        columns:
+
+          -  type: columnDropdownSelector
+             displayName: Sort Column
+             attributeName: sortColName
+
+          -  type: dropdownSelector
+             displayName: Sort Order
+             attributeName: sortOrder
+             default: desc
+             options:
+              - desc
+              - asc
+      
+        isRequired: false
+        enableIf:  "{% if node.materializationType != 'view' and config.orderby %} true {% else %} false {% endif %}"
+
+    - groupName: Control Options
+      items:
+
+      - type: label
+        attributeName: noteColumnTests
+        syntax: html
+        displayName: ℹ️ Use annotation @tests on nodes/columns. Refer to the documentation for more information.
+        enableIf: "{% if config.testsEnabled %} true {% else %} false {% endif %}"
+
+      - displayName: Enable Tests
+        attributeName: testsEnabled
+        type: toggleButton
+        default: false
+
+      - type: tabular
+        displayName: 'ⓘ Test fails if the query returns any records'
+        attributeName: tests
+        columns:
+
+          -  displayName: Test
+             attributeName: templateString
+             type: textBox
+             syntax: sql
+             isRequired: false
+             enableIf: ""
+
+          -  displayName: Run
+             attributeName: runOrder
+             type: dropdownSelector
+             default: After
+             isRequired: false
+             options:
+              - "Before"
+              - "After"
+             enableIf: ""
+
+          -  type: toggleButton
+             attributeName: continueOnFailure
+             displayName: Continue On Failure
+             default: true
+             enableIf: ""
+
+        isRequired: false
+        enableIf: "false"
+
+      - displayName: Pre-SQL
+        attributeName: preSQL
+        type: textBox
+        syntax: sql
+        isRequired: false
+        enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+      - displayName: Post-SQL
+        attributeName: postSQL
+        type: textBox
+        syntax: sql
+        isRequired: false
+        enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+
+    - groupName: Column Annotations Help
+      enableIf: "{% if node.materializationType == 'view' %} false {% else %} true {% endif %}"
+      items:
+
+      - type: note
+        attributeName: restrictedEdit
+        displayName: ⛔ The section below is read-only and provided for reference purposes only
+        enableIf: "true"
+
+      - displayName: Allowed Column Annotations
+        attributeName: col_annots
+        type: textBox
+        isRequired: false
+        syntax: sql
+        enableIf: "true"
+        default: "
+        ⚠️ For more information, please refer to the documentation available in the Marketplace.\n\n
+        ℹ️ Not NULL\n
+        ✦ @nullable(\"false\")\n
+          ➜ Marks column as NOT NULL\n
+        ━━━━━━━━━━━━━━━━━━━\n\n
+        ℹ️ Column Description\n
+        ✦ @description(\"<text>\")\n
+          ➜ Adds column description\n
+        ━━━━━━━━━━━━━━━━━━━\n\n
+        ℹ️ Column Default Value\n
+        ✦ @defaultValue(\"<text>\")\n
+        ✦ @defaultValue(<number>)\n
+        ✦ @defaultValue(<bool>)\n
+          ➜ Adds default value\n
+        ━━━━━━━━━━━━━━━━━━━\n\n
+        ℹ️ Column Level Tests\n
+        ✦ @tests(\"null\", \"unique\")\n
+          ➜ Checks NULL / UNIQUE values\n
+        ━━━━━━━━━━━━━━━━━━━\n\n
+        ℹ️ Hash Columns\n
+        ✦ @inHash(\"<hash_order>|<hash_name>\")\n
+          ➜ Generates hash key from columns\n
+          ➜ Use it along with macro {{ get_hash('<hash_name>') }}\n
+        ━━━━━━━━━━━━━━━━━━━\n\n"
+name: Work_old
+type: NodeType
