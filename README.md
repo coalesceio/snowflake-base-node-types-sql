@@ -164,8 +164,16 @@ This applies to `@tests`, `@preSQL`, and `@postSQL`.
     | Parameter | Description |
     |-----------|-------------|
     | querySQL | SQL statement to execute as a validation test. The test fails if the query returns any records. |
-    | continueOnFailure |**(optional)** `true` or `false`. Determines whether execution continues when the test fails. |
-    | runOrder |**(optional)** `Before` or `After`. Determines whether the test is executed before or after the load operation. |
+    | continueOnFailure |**(optional)** `true`(default) or `false`. Determines whether execution continues when the test fails. |
+    | runOrder |**(optional)** `Before` or `After`(default). Determines whether the test is executed before or after the load operation. |
+    
+    **Examples**
+    
+    ```text
+    @tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", true, "Before")
+    @tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", false)
+    @tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1")
+    ```
 ---
 
 ### Known Limitations
