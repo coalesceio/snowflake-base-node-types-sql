@@ -472,3 +472,7 @@ The stage executed:
 * [Create Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Work-707/create.sql.j2)
 * [Run Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Work-707/run.sql.j2)
 
+#### Macro
+
+* [Macro](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/macros/macro-1.yml)
+
