@@ -76,7 +76,7 @@ This applies to `@tests`, `@preSQL`, and `@postSQL`.
 | **Property** | **Description** |
 |---------|-------------|
 | `@not_null` | Fails on rows where the column is NULL.<br/>Example: `@not_null` |
-| `@unique` | Fails when a value appears on more than one row.<br/>Example: `@unique` |
+| `@uniqueness` | Fails when a value appears on more than one row.<br/>Example: `@uniqueness` |
 | `@empty` | Fails on rows where the column trims to the empty string.<br/>NULL values pass this test — they're caught by `@not_null` instead.<br/>Example: `@empty` |
 | `@accepted_values("<value>")` | ***(repeatable)*** Fails on rows whose value is outside the allow list.<br/>Repeat once per permitted value.<br/>Quote to match the column's data type — <br/>number: `accepted_values("<num>")`<br/>string: `accepted_values("'<string>'")`.<br/>Example: `@accepted_values("'ALGERIA'")` |
 | `@rejected_values("<value>")` | ***(repeatable)*** Fails on rows whose value is in the deny list.<br/>Repeat once per forbidden value.<br/>Same quoting rules as `accepted_values`.<br/>Example: `@rejected_values("'NA'")` |
@@ -205,7 +205,7 @@ The following patterns represent common ways to use the SQL Node.<br/>
 @preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)")
 @postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('WRK_NATION', CURRENT_TIMESTAMP())")
 SELECT
-     "N_NATIONKEY" AS "N_NATIONKEY" @not_null @unique @min_value("0") @max_value("100")  @accepted_values("1") @inHash("GH_COL1", 2),
+     "N_NATIONKEY" AS "N_NATIONKEY" @not_null @uniqueness @min_value("0") @max_value("100")  @accepted_values("1") @inHash("GH_COL1", 2),
      "N_NAME" AS "N_NAME" @not_null @empty @accepted_values("'ALGERIA'") @accepted_values("'ARGENTINA'") @inHash("GH_COL1", 1),
      "N_REGIONKEY" AS "N_REGIONKEY" @min_max("0", "4") @notNull @defaultValue("20"),
      "N_COMMENT" AS "N_COMMENT" @rejected_values("'NA'"),
