@@ -42,7 +42,7 @@ The Work Node type has three configuration groups:
 | `@materializationType(type)` ***(reserved)*** | table/view.<br/>Value is strictly case-sensitive — must be lowercase `table` or `view`.<br/>*Not specified in the SQL editor → defaults to **table**.*<br/>Example: `@materializationType("view")` |
 | `@writeMode("truncateInsert \| append")` | **truncateInsert** — replaces the table's contents entirely via a single `INSERT OVERWRITE INTO` statement (atomic — no separate truncate step). <br/>**append** — inserts the new rows via `INSERT INTO`, alongside whatever is already there.<br/>*Not specified in the SQL editor → defaults to **truncateInsert**.*<br/>**Note:** Ignored on Views.<br/>Example: `@writeMode("append")` |
 | `@disableTests`**²** | Controls whether configured tests are skipped.<br/>*Specified in the SQL editor → all node- and column-level tests are skipped.*<br/>*Not specified in the SQL editor → tests run normally.*<br/>To turn tests back on, remove the annotation. Useful while developing a node — iterate on the SQL first, then re-enable once the logic is settled.<br/>Example: `@disableTests` |
-| `@tests(querySQL, continueOnFailure?, runOrder?)` | ***(repeatable)*** Node-level data quality test.<br/>Runs `querySQL` against the target; fails if it returns any records.<br/>Skipped entirely when **@disableTests** is set.<br/>[Refer to this for more details.](https://github.com/coalesceio/snowflake-base-node-types-sql/edit/main/README.md#examples-1)<br/>Example: `@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")` |
+| `@tests(querySQL, continueOnFailure?, runOrder?)` | ***(repeatable)*** Node-level data quality test.<br/>Runs `querySQL` against the target; fails if it returns any records.<br/>Skipped entirely when **@disableTests** is set.<br/>[Refer to this for more details.](https://github.com/coalesceio/snowflake-base-node-types-sql/edit/main/README.md#tests-examples)<br/>Example: `@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")` |
 | `@preSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `before` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)")` |
 | `@postSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `after` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('WRK_NATION', CURRENT_TIMESTAMP())")` |
 
@@ -167,7 +167,7 @@ This applies to `@tests`, `@preSQL`, and `@postSQL`.
     | continueOnFailure |**(optional)** `true`(default) or `false`. Determines whether execution continues when the test fails. |
     | runOrder |**(optional)** `Before` or `After`(default). Determines whether the test is executed before or after the load operation. |
     
-    #### Examples
+    #### tests() Examples
     
     ```text
     @tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", true, "Before")
