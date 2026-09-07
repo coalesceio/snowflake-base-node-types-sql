@@ -1,5 +1,5 @@
-@id("87e9ebb0-856f-43b7-b7ba-efe100a16742")
-@nodeType("707")
+@id("74c19a9d-07ef-404d-a717-9fec84501041")
+@nodeType("Latest:::707")
 @description("V2 Work node demonstrating every supported annotation")
 @tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false)
 @tests("SELECT 1 FROM {{ this }} WHERE N_REGIONKEY IS NULL", true, "Before")
