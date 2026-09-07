@@ -104,7 +104,7 @@ This applies to `@tests`, `@preSQL`, and `@postSQL`.
 - **¹** The hash transformation uses the reusable `get_hash()` macro:
 
     ```SQL
-    {{ get_hash(<hash_name>, <algo>, <delimiter>) }}
+    {{ get_hash("<hash_name>", "<algo>", "<delimiter>") }}
     ```
 
     | Parameter | Description |
