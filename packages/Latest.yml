@@ -3,7 +3,7 @@ config:
     nodeTypes:
       "707":
         defaultStorageLocation: null
-        isDisabled: false
+        isDisabled: true
   packageVariables: ""
 fileVersion: 1
 id: "@coalesce/snowflake/base-node-types-sql"
