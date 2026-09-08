@@ -1,41 +1,36 @@
 {#
-    Copyright (c) 2023 Coalesce. All rights reserved.
+    Copyright (c) 2026 Coalesce. All rights reserved.
 This script and its associated documentation are confidential and proprietary to Coalesce.
 Unauthorized reproduction, distribution, or disclosure of this material is strictly prohibited.
-Coalesce permits you to copy and modify this script for the purposes of using with Coalsce but
-does not permit copying or modification for any other purpose.  
+Coalesce permits you to copy and modify this script for the purposes of using with Coalesce but does not permit copying or modification for any other purpose.  
 #}
-{# == Node Type Version        : 1  == #}
 {# == Node Type Name           : Dimension  == #}
-{# == Node Type Description    :This node loads data into work table using config options distinct,groupby all,order by ,multi-source  == #}
+{# == Node Type Description    : Loads the table with custom SQL logic  == #}
+{#---------------------------------------------------------------------------------------------#}
 
 
 {# == Check if last modified comparison toggle is enabled  #}
 
 {% set has_business_key = columns | selectattr("isBusinessKey") | list | length > 0 %}
-{% set use_last_modified = config.lastModifiedComparison | default(false) %}
+{% set last_modified_columns = columns | selectattr("isLastModified") | list %}
+{% set use_last_modified = last_modified_columns | length > 0 %}
 
 {# == Variable check to identify type of dimension == #}
 
-{% set is_type_2 = config.type2Dimension | default(false) if use_last_modified else (columns | selectattr("isChangeTracking") | list | length > 0) %}
-{%if config.lastModifiedComparison%}
- {% set last_modified_col = config.lastModifiedColumn.name | default('') %}
+{% set is_type_2 = (last_modified_columns[0].isLastModified.parameters[0] | default('1', true) | string == '2') if use_last_modified else (columns | selectattr("isChangeTracking") | list | length > 0) %}
+{%if use_last_modified%}
+ {% set last_modified_col = last_modified_columns[0].name | default('') %}
 {%endif%}
 
-{%if config.lastModifiedComparison  and 'TIMESTAMP' in (config.lastModifiedColumn.dataType | upper)  %}
+{%if use_last_modified  and 'TIMESTAMP' in (last_modified_columns[0].dataType | upper)  %}
      {%set isTimestampComparison = true %}
    {%else%}
      {%set isTimestampComparison = false %}
 {%endif%}
 
 {# == To run data quality tests before data insertion == #}
+{{ run_tests('Before') }}
 
-    {% for test in node.tests if config.testsEnabled %}
-        {% if test.runOrder == 'Before' %}
-            {{ test_stage(test.name, test.continueOnFailure) }}
-            {{ test.templateString }}
-        {% endif %}
-    {% endfor %}
 {% if isTimestampComparison  %}
 
 {{ test_stage(
@@ -76,19 +71,22 @@ does not permit copying or modification for any other purpose.
 
 {% endif %}																														
 {% if node.materializationType == 'table' %}									 
-{# == Queries to be excuted before data insertion  == #}
+    {#== Pre-SQL ==#}
+    {%- set ns = namespace(cnt=0) %}
+    {%- for sql in config.preSQL %}
+        {%- if sql is mapping and sql.parameters is defined %}
+            {%- set ns.cnt = ns.cnt + 1 %}
+            {{ stage('Pre-SQL '  ~ ns.cnt )}}
+            {{ sql.parameters[0] }}
+        {%- endif %}
+    {%- endfor %}
 
-	{% if config.preSQL %}			
-		{{ stage('Pre-SQL') }}
-		{{ config.preSQL }}
-	{% endif %}
-
- {# == Truncate data before data insertion  == #}
-
-    {% if config.truncateBefore %}
+    {# == Truncate the target table before loading, if truncateBefore is set == #}
+    {%- if get_boolean_config("truncateBefore") == "true" %}
         {{ stage('Truncate Dimension Table') }}
         TRUNCATE IF EXISTS {{ ref_no_link(node.location.name, node.name) }}
-    {% endif %}
+    {%- endif %}
+
 			{% if config.insertZeroKey %}
 				{% if config.insertZeroKeyAdvanced == true %}
 				{%- set ns = namespace(varColumnNameDefault = [],varColumnValueDefault=[]) %}
@@ -209,7 +207,7 @@ does not permit copying or modification for any other purpose.
             )
 
             UNION ALL
-           {%if config.lastModifiedComparison %}
+           {%if use_last_modified %}
                   /* Insert new records with incremented version/latest timestamp based on last modified column */
             {%else%}
                  /* New Row Needing To Be Inserted Due To Type-2 Column Changes */
@@ -238,14 +236,14 @@ does not permit copying or modification for any other purpose.
                 {{ get_source_transform(col) }} = "DIM"."{{ col.name }}"
             {% endfor %}
             WHERE "DIM"."{{ get_value_by_column_attribute("isSystemCurrentFlag") }}" = 'Y'
-            {%if config.lastModifiedComparison %} 
+            {%if use_last_modified %} 
             {% for col in source.columns if col.name == last_modified_col -%}
                 AND
                   {{ get_source_transform(col) }} > "DIM"."{{last_modified_col}}"
 
             {% endfor %}  
             {%endif%}
-            {% if not config.lastModifiedComparison %}
+            {% if not use_last_modified %}
              {% for col in source.columns if (col.isChangeTracking == true) %}
                 {% if loop.first %}
                     AND (
@@ -297,7 +295,7 @@ does not permit copying or modification for any other purpose.
             {{ sortorder_by_colv() }}
             )
             UNION ALL
-           {%if config.lastModifiedComparison %}
+           {%if use_last_modified %}
                    /* Rows Needing To Be Expired 
                     In this case, only two columns are merged (version and end date) */
             {%else%}
@@ -328,13 +326,13 @@ does not permit copying or modification for any other purpose.
                 {{ get_source_transform(col) }} = "DIM"."{{ col.name }}"
             {% endfor %}
             WHERE "DIM"."{{ get_value_by_column_attribute("isSystemCurrentFlag") }}" = 'Y'
-            {%if config.lastModifiedComparison %} 
+            {%if use_last_modified %} 
             {% for col in source.columns if col.name == last_modified_col -%}
                     AND
                   {{ get_source_transform(col) }} > "DIM"."{{last_modified_col}}"
             {% endfor %}  
             {%endif%}
-            {%if not config.lastModifiedComparison%}
+            {%if not use_last_modified%}
             {% for col in source.columns if (col.isChangeTracking == true) %}
                 {% if loop.first %}
                     AND (
@@ -401,7 +399,7 @@ does not permit copying or modification for any other purpose.
             %}
                 {# Skip Section #}
             {% else %}
-               {%if not config.lastModifiedComparison %}
+               {%if not use_last_modified %}
               UNION ALL
               /* Rows Needing To Be Updated Due To Changes To Non-Type-2 columns
               This case merges only when there are changes in non-type-2 column updates, but no changes in type-2 columns*/
@@ -590,7 +588,7 @@ does not permit copying or modification for any other purpose.
                     {%- if not loop.last %}, {% endif %}
                 {% endfor %}
                 {{ get_clause(joinclause,'from')}}
-                  {%if config.lastModifiedComparison%}
+                  {%if use_last_modified%}
                    LEFT JOIN {{ ref_no_link(node.location.name, node.name) }} "DIM" ON
                    {% for col in source.columns if col.isBusinessKey -%}
                                 {% if not loop.first %}
@@ -603,7 +601,7 @@ does not permit copying or modification for any other purpose.
                    {% if clause %}
                       {{ ("WHERE " ~ clause.strip()[3:].strip()) if clause.strip().upper().startswith('AND') else clause }}
                    {% endif %}
-                 {% if config.groupByAll or config.lastModifiedComparison %}
+                 {% if config.groupByAll or use_last_modified %}
                  GROUP BY ALL
                  {% endif %}
 
@@ -622,7 +620,7 @@ does not permit copying or modification for any other purpose.
                 "SRC"."{{ col.name }}" = "TGT"."{{ col.name }}"
             {% endfor %}
             WHEN MATCHED 
-             {%if not config.lastModifiedComparison%}
+             {%if not use_last_modified%}
                 {% for col in columns if not (   col.isBusinessKey or
                                                         col.isSurrogateKey or
                                                         col.isSystemVersion or
