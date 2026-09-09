@@ -1,5 +1,5 @@
 fileVersion: 2
-id: "710"
+id: 441c7b93-1edc-4387-bd1e-4eabe79c8e36
 isDisabled: false
 metadata:
   defaultStorageLocation: null
@@ -11,44 +11,6 @@ metadata:
     plural: Dimensions
 
     enableCTESupport: true
-
-    systemColumns:
-
-    - displayName: '{{NODE_NAME}}_KEY'
-      transform: "0"
-      dataType: NUMBER
-      placement: beginning
-      attributeName: isSurrogateKey
-
-    - displayName: SYSTEM_VERSION
-      transform: "1"
-      dataType: NUMBER
-      placement: end
-      attributeName: isSystemVersion
-
-    - displayName: SYSTEM_CURRENT_FLAG
-      transform: "'Y'"
-      dataType: VARCHAR
-      placement: end
-      attributeName: isSystemCurrentFlag
-
-    - displayName: SYSTEM_CREATE_DATE
-      transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
-      dataType: TIMESTAMP
-      placement: end
-      attributeName: isSystemCreateDate
-
-    - displayName: SYSTEM_UPDATE_DATE
-      transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
-      dataType: TIMESTAMP
-      placement: end
-      attributeName: isSystemUpdateDate
-
-    - displayName: SYSTEM_END_DATE
-      transform: CAST('2999-12-31 00:00:00' AS TIMESTAMP)
-      dataType: TIMESTAMP
-      placement: end
-      attributeName: isSystemEndDate
 
     annotations:
         node:
@@ -169,48 +131,6 @@ metadata:
 
         column:
 
-        - name: isSurrogateKey
-          description: >-
-            Marks this column as the node's surrogate key. Required on every table-materialized node.
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻: 0 AS "{{NODE_NAME}}_KEY" @isSurrogateKey
-            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
-          isRequired: true
-
-        - name: isSystemVersion
-          description: >-
-            Marks this column as the SCD version number, incremented each time a business key gets a new version.
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻: 1 AS "SYSTEM_VERSION" @isSystemVersion
-            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
-          isRequired: true
-
-        - name: isSystemCurrentFlag
-          description: >-
-            Marks this column as the SCD "is current" flag — 'Y' on the active version of a row, overwritten to 'N' when it's expired.
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻: 'Y' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag
-            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
-          isRequired: true
-
-        - name: isSystemCreateDate
-          description: >-
-            Marks this column as the timestamp a row version was first created.
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻: CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate
-            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
-          isRequired: true
-
-        - name: isSystemUpdateDate
-          description: >-
-            Marks this column as the timestamp a row was last updated.
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻: CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
-            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
-          isRequired: true
-
-        - name: isSystemEndDate
-          description: >-
-            Marks this column as the SCD Type 2 expiration timestamp — a far-future sentinel while the row is current, set to the actual expiry time once superseded.
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻: CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
-            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
-          isRequired: true
-
         - name: isBusinessKey
           description: >-
             Marks a column as part of the business key used to match existing rows during the merge.
@@ -279,6 +199,54 @@ metadata:
               type: number
               description: Position of this column within its hash group, lowest first.
               example: 1
+
+        - name: isSurrogateKey
+          description: >-
+            Marks this column as the node's surrogate key. Required on every table-materialized node.
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻: 0 AS "{{NODE_NAME}}_KEY" @isSurrogateKey
+            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+            𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
+          isRequired: true
+
+        - name: isSystemVersion
+          description: >-
+            Marks this column as the SCD version number, incremented each time a business key gets a new version.
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻: 1 AS "SYSTEM_VERSION" @isSystemVersion
+            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+            𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
+          isRequired: true
+
+        - name: isSystemCurrentFlag
+          description: >-
+            Marks this column as the SCD "is current" flag — 'Y' on the active version of a row, overwritten to 'N' when it's expired.
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻: 'Y' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag
+            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+            𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
+          isRequired: true
+
+        - name: isSystemCreateDate
+          description: >-
+            Marks this column as the timestamp a row version was first created.
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻: CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate
+            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+            𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
+          isRequired: true
+
+        - name: isSystemUpdateDate
+          description: >-
+            Marks this column as the timestamp a row was last updated.
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻: CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
+            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+            𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
+          isRequired: true
+
+        - name: isSystemEndDate
+          description: >-
+            Marks this column as the SCD Type 2 expiration timestamp — a far-future sentinel while the row is current, set to the actual expiry time once superseded.
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻: CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
+            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+            𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
+          isRequired: true
 
         - name: not_null
           description: >-
@@ -412,5 +380,32 @@ metadata:
               description: Name of the other date/time column on this node to compare against.
               isRequired: true
               example: "<other_column>"
-name: Dimension
+
+    sqlInitializationTemplate: |
+          {%- macro ref_raw(location_name, node_name) -%}
+            {% raw %}{{ ref('{% endraw %}{{ location_name }}{% raw %}', '{% endraw %}{{ node_name }}{% raw %}') }}{% endraw %}
+          {%- endmacro -%}
+          {%- set ns = namespace(lines=[]) -%}
+          {%- set ns.lines = ns.lines + ['"0" AS "{{NODE_NAME}}_KEY" @isSurrogateKey'] -%}
+          {%- for dep in sources[0].dependencies -%}
+            {%- for col in dep.columns -%}
+              {%- set ns.lines = ns.lines + ['"' ~ col.name ~ '" AS "' ~ col.name ~ '"'-%}
+            {%- endfor -%}
+          {%- endfor -%}
+          {%- set ns.lines = ns.lines + ['1 AS "SYSTEM_VERSION" @isSystemVersion'] -%}
+          {%- set ns.lines = ns.lines + ['"Y" AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag'] -%}
+          {%- set ns.lines = ns.lines + ['CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate'] -%}
+          {%- set ns.lines = ns.lines + ['CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate'] -%}
+          {%- set ns.lines = ns.lines + ['CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemEndDate'] -%}
+          SELECT
+          {{ ns.lines | join(',\n') }}
+          {% for dep in sources[0].dependencies -%}
+            {%- if loop.first -%}
+              FROM {{ ref_raw(dep.node.location.name, dep.node.name) }} "{{ dep.node.name }}"
+            {%- else %}
+              INNER JOIN {{ ref_raw(dep.node.location.name, dep.node.name) }} "{{ dep.node.name }}"
+              ON "{{ sources[0].dependencies[0].node.name }}".JOIN_COLUMN = "{{ dep.node.name }}".JOIN_COLUMN
+            {%- endif -%}
+          {%- endfor %}
+name: Dimension(sqlInitialization)
 type: NodeType

@@ -1,219 +1,528 @@
 fileVersion: 1
 id: "1"
 macroString: |-
-  {# ========================================================================
-  Purpose          : Executes data quality tests associated with the node
-                      and its columns, based on the configured run order.
-                      Supports running tests either before or after data
-                      insertion, and respects the test continuation
-                      behavior on failure.
-  Input Parameters : runOrder (String)
-                      - Determines when the tests should be executed.
-                          Expected values: 'Before' or 'After'
-  Returns          : Rendered SQL statements for executing the applicable
-                      node-level and column-level data quality tests.
-                      No output is generated if tests are disabled.
-  ========================================================================= #}
-  {%- macro run_tests(runOrder) -%}
+  {#====================================================================================================
+    Description:
+        Returns a zero-key value for a given column based on:
+        1. Column-level zeroKey (highest priority)
+        2. Config-level zeroKey (matched using column dataType)
+        3. If no match is found → returns NULL
 
-      {%- set columnContinueOnFailure = true -%}
+        The macro ONLY resolves and formats the zero-key value.
+        It does not handle system columns or any business logic.
 
-      {%- if get_boolean_config("disableTests") != "true" -%}
-          {%- if runOrder == "After" -%}
-              {%- for col in columns -%}
-                  {%- set colName = '"' + col.name + '"' -%}
-                  {%- set accepted = col.accepted_values if (col.accepted_values is sequence and col.accepted_values is not mapping) else [] -%}
-                  {%- set rejected = col.rejected_values if (col.rejected_values is sequence and col.rejected_values is not mapping) else [] -%}
-                  {%- set target = ref(node.location.name, node.name) -%}
-                  {%- if col.not_null is defined -%}
-                      {{ test_stage(col.name + ': not_null', columnContinueOnFailure) }}
-                      SELECT {{ colName }}
-                      FROM {{ target }}
-                      WHERE {{ colName }} IS NULL
-                  {%- endif -%}
-                  {%- if col.uniqueness is defined -%}
-                      {{ test_stage(col.name + ': uniqueness', columnContinueOnFailure) }}
-                      SELECT {{ colName }}
-                      FROM {{ target }}
-                      GROUP BY {{ colName }}
-                      HAVING COUNT(*) > 1
-                  {%- endif -%}
-                  {%- if col.empty is defined -%}
-                      {{ test_stage(col.name + ': empty', columnContinueOnFailure) }}
-                      SELECT {{ colName }}
-                      FROM {{ target }}
-                      WHERE {{ colName }} IS NOT NULL AND TRIM({{ colName }}) = ''
-                  {%- endif -%}
-                  {%- if accepted | length > 0 -%}
-                      {{ test_stage(col.name + ': accepted_values', columnContinueOnFailure) }}
-                      SELECT {{ colName }}
-                      FROM {{ target }}
-                      WHERE {{ colName }} IS NOT NULL
-                      AND {{ colName }} NOT IN ({%- for v in accepted -%} {{ v.parameters[0] }} {%- if not loop.last -%}, {%- endif -%}{%- endfor -%})
-                  {%- endif -%}
-                  {%- if rejected | length > 0 -%}
-                      {{ test_stage(col.name + ': rejected_values', columnContinueOnFailure) }}
-                      SELECT {{ colName }}
-                      FROM {{ target }}
-                      WHERE {{ colName }} IN ({%- for v in rejected -%} {{ v.parameters[0] }} {%- if not loop.last -%}, {%- endif -%}{%- endfor -%})
-                  {%- endif -%}
-                  {%- if col.min_max is defined and col.min_max.parameters is defined -%}
-                      {{ test_stage(col.name + ': min_max', columnContinueOnFailure) }}
-                      SELECT {{ colName }}
-                      FROM {{ target }}
-                      WHERE {{ colName }} IS NOT NULL
-                      AND ({{ colName }} < {{ col.min_max.parameters[0] }} OR {{ colName }} > {{ col.min_max.parameters[1] }})
-                  {%- endif -%}
-                  {%- if col.min_value is defined and col.min_value.parameters is defined -%}
-                      {{ test_stage(col.name + ': min_value', columnContinueOnFailure) }}
-                      SELECT {{ colName }}
-                      FROM {{ target }}
-                      WHERE {{ colName }} IS NOT NULL AND {{ colName }} < {{ col.min_value.parameters[0] }}
-                  {%- endif -%}
-                  {%- if col.max_value is defined and col.max_value.parameters is defined -%}
-                      {{ test_stage(col.name + ': max_value', columnContinueOnFailure) }}
-                      SELECT {{ colName }}
-                      FROM {{ target }}
-                      WHERE {{ colName }} IS NOT NULL AND {{ colName }} > {{ col.max_value.parameters[0] }}
-                  {%- endif -%}
-                  {%- if col.freshness is defined and col.freshness.parameters is defined -%}
-                      {{ test_stage(col.name + ': freshness', columnContinueOnFailure) }}
-                      SELECT MAX(CAST({{ colName }} AS DATETIME)) AS "LATEST_VALUE"
-                      FROM {{ target }}
-                      HAVING MAX(CAST({{ colName }} AS DATETIME)) IS NULL
-                          OR MAX(CAST({{ colName }} AS DATETIME)) < DATEADD({{ col.freshness.parameters[1] | default('DAY', true) }}, -{{ col.freshness.parameters[0] }}, CURRENT_TIMESTAMP())
-                  {%- endif -%}
-                  {%- if col.relative_time is defined and col.relative_time.parameters is defined -%}
-                      {%- set other = '"' + col.relative_time.parameters[1] + '"' -%}
-                      {{ test_stage(col.name + ': relative_time', columnContinueOnFailure) }}
-                      SELECT {{ colName }}, {{ other }}
-                      FROM {{ target }}
-                      WHERE {{ colName }} IS NOT NULL AND {{ other }} IS NOT NULL
-                      AND NOT ({{ colName }} {{ col.relative_time.parameters[0] }} {{ other }})
-                  {%- endif -%}
-              {%- endfor -%}
-          {%- endif -%}
+    Inputs:
+        col (object)
 
-          {%- set ns = namespace(cnt=0) -%}
-          {%- for test in config.tests | default([]) -%}
-              {%- if test is mapping and test.parameters is defined -%}
-                  {%- if test.parameters[2] | default("After") == runOrder -%}
-                      {%- set ns.cnt = ns.cnt + 1 -%}
-                      {{ test_stage(
-                          ('Pre Load Test ' if runOrder == 'Before' else 'Post Load Test ') ~ ns.cnt,
-                          test.parameters[1] | default(true)
-                      ) }}
-                      {{ test.parameters[0] }}
-                  {%- endif -%}
-              {%- endif -%}
-          {%- endfor -%}
+    Output:
+        Returns a SQL-compatible literal based on resolved zeroKey:
+            - NUMBER    → 0
+            - BOOLEAN   → TRUE / FALSE
+            - STRING    → 'DEFAULT'
+            - TIME      → TO_TIMESTAMP('1999-12-31')
+            - No match  → NULL
+    ====================================================================================================#}
+    {%- macro resolve_zero_key(col) -%}
 
-      {%- endif -%}
-  {%- endmacro -%}
+        {%- set ns = namespace(zk_type=none, zk_value=none) -%}
 
-  {#===================================================================================================
-  Description:
-  Generates a deterministic hash value by combining and hashing all column values associated with the given `hash_name` using the `@inHash` annotation.
+        {# -------------------------------
+        STEP 1: Column-level zeroKey
+        -------------------------------- #}
+        {%- if col.zeroKey is defined 
+            and col.zeroKey.parameters is defined 
+            and col.zeroKey.parameters | trim | length > 0 -%}
 
-  Input: `hash_name` (string) - The hash group identifier used in `@inHash("<hash_name>")` to group columns for hashing.
+            {%- set ns.zk_value = col.zeroKey.parameters[0] -%}
 
-  Output: - Returns a SQL expression of type `STRING`:
-          - A SHA1 hash of concatenated column values  
-          - Returns `NULL` if no columns are mapped to the given hash group
-  ====================================================================================================#}
-  {%- macro get_hash(hash_name, algo='SHA1', delimiter='||') -%}
+        {# -------------------------------
+        STEP 2: Config-level zeroKey (match datatype)
+        -------------------------------- #}
+        {%- else -%}
+            {%- set zkParams = config.zeroKey.parameters if (config.zeroKey is defined and config.zeroKey.parameters is defined) else [] -%}
+            {%- if col.dataType | upper == 'VARIANT' -%}
+                {%- set ns.zk_type = 'variant' -%}
+                {%- set ns.zk_value = none -%}
+            {%- elif col.dataType[:3] | upper in ('VAR', 'CHA', 'STR') -%}
+                {%- set ns.zk_type = 'string' -%}
+                {%- set ns.zk_value = zkParams[1] if zkParams | length > 1 else 'UNKNOWN' -%}
+            {%- elif col.dataType[:3] | upper in ('NUM',' INT', 'DEC', 'FLO') -%}
+                {%- set ns.zk_type = 'numeric' -%}
+                {%- set ns.zk_value = zkParams[0] if zkParams | length > 1 else 0 -%}
+            {%- elif col.dataType | upper == 'BOOLEAN' -%}
+                {%- set ns.zk_type = 'boolean' -%}
+                {%- set ns.zk_value = zkParams[3] if zkParams | length > 3 else true -%}
+            {%- elif col.dataType[:4] | upper in ('DATE', 'TIME', 'TIMESTAMP') -%}
+                {%- set ns.zk_type = 'datetime' -%}
+                {%- set ns.zk_value = zkParams[2] if zkParams | length > 2 else '1900-01-01 00:00:00' -%}
+            {%- endif -%}
+        {%- endif -%}
 
-      {%- set cols = namespace(items=[]) -%}
-      {%- set algo_upper = algo | upper -%}
+        {# -------------------------------
+        STEP 3: Return formatted value
+        -------------------------------- #}
+        {%- if ns.zk_type == 'numeric' -%}
+            {{ ns.zk_value }}
+        {%- elif ns.zk_type == 'variant' -%}
+            PARSE_JSON('null')
+        {%- elif ns.zk_value is not none -%}
+            {%- if ns.zk_type == 'boolean' -%}
+                {{ ns.zk_value | upper }}
 
-      {# Collect columns participating in this hash #}
-      {%- for col in sources[0].columns -%}
+            {%- elif ns.zk_type == 'datetime' -%}
+                TO_TIMESTAMP('{{ ns.zk_value }}')
 
-          {%- if col.inHash is defined -%}
-              {%- for p in col.inHash -%}
-                  {%- set parts = p.parameters[0] %}
-                  {%- set position = p.parameters[1] | int -%}
-                  {%- set hash = p.parameters[0] -%}
+            {%- elif ns.zk_type == 'string' -%}
+                '{{ ns.zk_value }}'
 
-                  {%- if hash == hash_name -%}
-                      {%- set cols.items = cols.items + [{
-                          "position": position,
-                          "column": get_source_transform(col)
-                      }] -%}
-                  {%- endif -%}
-              {%- endfor -%}
-          {%- endif -%}
-      {%- endfor -%}
+            {%- else -%}
+                '{{ ns.zk_value }}'
+            {%- endif -%}
 
-      {%- if cols.items | length == 0 -%}
-          NULL
-      {%- else -%}
-          {%- set sorted_cols = cols.items | sort(attribute='position') -%}
-          {# Define algo wrappers #}
-          {%- set algo_start = algo_upper + '(' -%}
-          {%- set algo_end = ')' -%}
+        {%- else -%}
+            NULL
+        {%- endif -%}
 
-          {%- if algo_upper == 'SHA256' -%}
-              {%- set algo_start = 'SHA2(' -%}
-              {%- set algo_end = ', 256)' -%}
-          {%- endif -%}
+    {%- endmacro -%}
 
-          CAST(
-              {{ algo_start }}
-                  {%- for c in sorted_cols -%}
-                      NVL(CAST({{ c.column }} AS VARCHAR), 'null')
-                      {%- if not loop.last %}
-                          || {%- if delimiter != '' %} '{{ delimiter }}' || {% endif -%}
-                      {%- endif -%}
-                  {%- endfor -%}
-              {{ algo_end }}
-          AS STRING)
-      {%- endif -%}
-  {%- endmacro -%}
+    {# ========================================================================
+    Purpose:
+        Returns the SQL expression to be used for a column transformation.
 
-  {#===================================================================================================
+    Input:
+        col
+            - transform: Column transform expression.
+            - sourceColumns[0].node.name: Source table name.
+            - sourceColumns[0].column.name: Source column name.
+
+    Logic:
+        1. If transform is not empty and matches the source column name
+        (ignoring double quotes), return a fully qualified source
+        column reference:
+            "SOURCE_TABLE"."SOURCE_COLUMN"
+
+        2. If transform is not empty and does not match the source column
+        name, return the transform expression as-is.
+
+        3. If transform is empty, return NULL.
+
+    Examples:
+        transform = '"N_NAME"'      -> "NATION_TEST"."N_NAME"
+        transform = 'N_NAME'        -> "NATION_TEST"."N_NAME"
+        transform = 'UPPER(N_NAME)' -> UPPER(N_NAME)
+        transform = ''              -> NULL
+    ========================================================================#}
+    {%- macro get_source_transform_v2(col) -%}
+        {%- set transform = col.transform | trim -%}
+        {%- if transform != '' -%}
+            {%- if col.sourceColumns
+                    and col.sourceColumns[0].node
+                    and transform | replace('"', '')
+                        == col.sourceColumns[0].column.name -%}
+
+                "{{ col.sourceColumns[0].node.name }}"."{{ col.sourceColumns[0].column.name }}"
+            {%- else -%}
+                {{ transform }}
+            {%- endif -%}
+        {%- else -%}
+            NULL
+        {%- endif -%}
+    {%- endmacro -%}
+
+    {# ====================================================================================================
+    Description:
+    Generates a datatype-aware equality comparison between a source and target expression.
+    Designed for use in WHERE / JOIN conditions where different Snowflake datatypes
+    require different comparison logic.
+
+    Inputs:
+    - src_expr (string):
+        Source column or expression (e.g., SRC."COL1")
+
+    - tgt_expr (string):
+        Target column or expression (e.g., "DIM"."COL1")
+
+    - data_type (string):
+        Datatype of the column (e.g., VARCHAR, NUMBER, GEOGRAPHY, GEOMETRY)
+
+    Output:
+    - Returns a SQL boolean condition that evaluates to TRUE when source and target values are equal
+    ====================================================================================================#}
+    {%- macro safe_equals(src_expr, tgt_expr, data_type) -%}
+
+        {%- set dt = data_type | upper -%}
+
+        {%- if 'GEOGRAPHY' in dt -%}
+            (
+                ST_DISTANCE(
+                    COALESCE({{ src_expr }}, TO_GEOGRAPHY('POINT(0 0)')),
+                    COALESCE({{ tgt_expr }}, TO_GEOGRAPHY('POINT(0 0)'))
+                ) = 0
+            )
+        {%- elif 'GEOMETRY' in dt -%}
+            (
+                ST_DISTANCE(
+                    COALESCE({{ src_expr }}, TO_GEOMETRY('POINT(0 0)')),
+                    COALESCE({{ tgt_expr }}, TO_GEOMETRY('POINT(0 0)'))
+                ) = 0
+            )
+        {%- else -%}
+            {{ src_expr }} = {{ tgt_expr }}
+        {%- endif -%}
+    {%- endmacro -%}
+
+    {#====================================================================================================
+    Description:
+    Generates a datatype-aware comparison to detect differences between a source and
+    target expression. Typically used in MERGE statements or change tracking logic
+    to identify when a column value has changed.
+
+    Inputs:
+    - src_expr (string):
+        Source column or expression (e.g., SRC."COL1")
+
+    - tgt_expr (string):
+        Target column or expression (e.g., "DIM"."COL1")
+
+    - data_type (string):
+        Datatype of the column (e.g., VARCHAR, NUMBER, GEOGRAPHY, GEOMETRY)
+
+    Output:
+    - Returns a SQL boolean condition that evaluates to TRUE when source and target values are different
+    ====================================================================================================#}
+    {%- macro safe_compare(src_expr, tgt_expr, data_type) -%}
+
+        {%- set dt = data_type | upper -%}
+
+        {%- if 'GEOGRAPHY' in dt -%}
+            (
+                ST_DISTANCE(
+                    COALESCE({{ src_expr }}, TO_GEOGRAPHY('POINT(0 0)')),
+                    COALESCE({{ tgt_expr }}, TO_GEOGRAPHY('POINT(0 0)'))
+                ) > 0
+            )
+        {%- elif 'GEOMETRY' in dt -%}
+            (
+                ST_DISTANCE(
+                    COALESCE({{ src_expr }}, TO_GEOMETRY('POINT(0 0)')),
+                    COALESCE({{ tgt_expr }}, TO_GEOMETRY('POINT(0 0)'))
+                ) > 0
+            )
+        {%- else -%}
+            {{ src_expr }} IS DISTINCT FROM {{ tgt_expr }}
+        {%- endif -%}
+
+    {%- endmacro -%}
+
+
+    {# ========================================================================
+    Description:
+    Parses a SQL join clause string and splits it into two logical parts:
+    1. FROM/JOIN portion
+    2. Remaining clause (WHERE / GROUP BY / QUALIFY / ORDER BY)
+
+    This is useful when dynamically injecting additional conditions into an
+    existing query without breaking its structure.
+
+    Inputs:
+    - joinclause (string):
+        Full SQL clause containing JOIN + optional filters and clauses.
+        May include comments (both block /* */ and line --).
+
+    - ret_clause (string):
+        Specifies which part to return:
+        - 'from' → returns only the FROM/JOIN portion
+        - anything else → returns the remaining clause
+
+    Output:
+    - Cleaned and trimmed SQL string based on requested clause
+    ========================================================================#}
+    {%- macro get_clause( joinclause , ret_clause ) -%}
+
+        {#  STEP 1: Remove Block Comments /* ... */ #}
+        {#  We split by the start of the comment and only keep the part after the end of the comment #}
+        {%- set ns_block = namespace(text="") -%}
+        {%- set block_parts = joinclause.split('/*') -%}
+        {%- set ns_block.text = block_parts[0] -%} {# The text before the very first /* #}
+        
+        {%- for part in block_parts[1:] -%}
+            {%- if '*/' in part -%}
+                {# Split by the first occurrence of */ and take everything after it #}
+                {%- set after_comment = part.split('*/', 1)[1] -%}
+                {%- set ns_block.text = ns_block.text ~ ' ' ~ after_comment  -%}
+            {%- endif -%}
+        {%- endfor -%}
+
+        {# STEP 2: Remove Line Comments #}
+        {%- set ns_line = namespace(clean_lines=[]) -%}
+        {%- for line in ns_block.text.split('\n') -%}
+            {%- set active_part = line.split('--')[0] -%}
+            {%- set ns_line.clean_lines = ns_line.clean_lines + [active_part] -%}
+        {%- endfor  -%}
+        
+        {# Rejoin everything and normalize whitespace for searching #}
+        {%- set cleaned_join_clause = ns_line.clean_lines | join(' ')  -%}
+        {%- set search_string = ' ' ~ cleaned_join_clause.lower().replace('\t', ' ').replace('\r', ' ') ~ ' '  -%}
+
+        {# STEP 3: Identify Keyword Split Point (Priority: WHERE > GROUP > QUALIFY > ORDER) #}
+        {%- set found_keyword = '' -%}
+        {%- set split_index = -1 -%}
+
+        {%- if ' where ' in search_string -%}
+            {%- set found_keyword = 'where'  -%}
+            {%- set split_index = search_string.find(' where ') -%}
+        {%- elif ' group by ' in search_string -%}
+            {%- set found_keyword = 'group by' -%}
+            {%- set split_index = search_string.find(' group by ') -%}
+        {%- elif ' qualify ' in search_string -%}
+            {%- set found_keyword = 'qualify' -%}
+            {%- set split_index = search_string.find(' qualify ') -%}
+        {%- elif ' order by ' in search_string -%}
+            {%- set found_keyword = 'order by' -%}
+            {%- set split_index = search_string.find(' order by ') -%}
+        {%- endif -%}
+
+        {# STEP 4: Perform the Split #}
+        {%- if split_index >= 0 -%}
+            {# split_index maps directly to cleaned_join_clause because we replaced chars 1-to-1 #}
+            {%- set from_part = cleaned_join_clause[:split_index] -%}
+            
+            {# offset = keyword length + 1 space #}
+            {%- set offset = found_keyword|length + 1 -%}
+            {%- set remainder = cleaned_join_clause[split_index + offset:] -%}
+
+            {%- if found_keyword == 'where' -%}
+                {%- set add_part = 'AND ' ~ remainder -%}
+            {%- else -%}
+                {%- set add_part = found_keyword ~ ' ' ~ remainder -%}
+            {%- endif -%}
+        {%- else -%}
+            {%- set from_part = cleaned_join_clause -%}
+            {%- set add_part = '' -%}
+        {%- endif -%}
+
+        {# STEP 5: Return Result #}
+        {%- if ret_clause == 'from' -%}
+            {{ from_part | trim }}
+        {%- else -%}
+            {{ add_part | trim }}
+        {%- endif -%}
+
+    {%- endmacro -%}
+
+    {# ========================================================================
+    Purpose          : Executes data quality tests associated with the node
+                        and its columns, based on the configured run order.
+                        Supports running tests either before or after data
+                        insertion, and respects the test continuation
+                        behavior on failure.
+    Input Parameters : runOrder (String)
+                        - Determines when the tests should be executed.
+                            Expected values: 'Before' or 'After'
+    Returns          : Rendered SQL statements for executing the applicable
+                        node-level and column-level data quality tests.
+                        No output is generated if tests are disabled.
+    ========================================================================= #}
+    {%- macro run_tests(runOrder) -%}
+
+        {%- set columnContinueOnFailure = true -%}
+
+        {%- if get_boolean_config("disableTests") != "true" -%}
+            {%- if runOrder == "After" -%}
+                {%- for col in columns -%}
+                    {%- set colName = '"' + col.name + '"' -%}
+                    {%- set accepted = col.accepted_values if (col.accepted_values is sequence and col.accepted_values is not mapping) else [] -%}
+                    {%- set rejected = col.rejected_values if (col.rejected_values is sequence and col.rejected_values is not mapping) else [] -%}
+                    {%- set target = ref(node.location.name, node.name) -%}
+                    {%- if col.not_null is defined -%}
+                        {{ test_stage(col.name + ': not_null', columnContinueOnFailure) }}
+                        SELECT {{ colName }}
+                        FROM {{ target }}
+                        WHERE {{ colName }} IS NULL
+                    {%- endif -%}
+                    {%- if col.uniqueness is defined -%}
+                        {{ test_stage(col.name + ': uniqueness', columnContinueOnFailure) }}
+                        SELECT {{ colName }}
+                        FROM {{ target }}
+                        GROUP BY {{ colName }}
+                        HAVING COUNT(*) > 1
+                    {%- endif -%}
+                    {%- if col.empty is defined -%}
+                        {{ test_stage(col.name + ': empty', columnContinueOnFailure) }}
+                        SELECT {{ colName }}
+                        FROM {{ target }}
+                        WHERE {{ colName }} IS NOT NULL AND TRIM({{ colName }}) = ''
+                    {%- endif -%}
+                    {%- if accepted | length > 0 -%}
+                        {{ test_stage(col.name + ': accepted_values', columnContinueOnFailure) }}
+                        SELECT {{ colName }}
+                        FROM {{ target }}
+                        WHERE {{ colName }} IS NOT NULL
+                        AND {{ colName }} NOT IN ({%- for v in accepted -%} {{ v.parameters[0] }} {%- if not loop.last -%}, {%- endif -%}{%- endfor -%})
+                    {%- endif -%}
+                    {%- if rejected | length > 0 -%}
+                        {{ test_stage(col.name + ': rejected_values', columnContinueOnFailure) }}
+                        SELECT {{ colName }}
+                        FROM {{ target }}
+                        WHERE {{ colName }} IN ({%- for v in rejected -%} {{ v.parameters[0] }} {%- if not loop.last -%}, {%- endif -%}{%- endfor -%})
+                    {%- endif -%}
+                    {%- if col.min_max is defined and col.min_max.parameters is defined -%}
+                        {{ test_stage(col.name + ': min_max', columnContinueOnFailure) }}
+                        SELECT {{ colName }}
+                        FROM {{ target }}
+                        WHERE {{ colName }} IS NOT NULL
+                        AND ({{ colName }} < {{ col.min_max.parameters[0] }} OR {{ colName }} > {{ col.min_max.parameters[1] }})
+                    {%- endif -%}
+                    {%- if col.min_value is defined and col.min_value.parameters is defined -%}
+                        {{ test_stage(col.name + ': min_value', columnContinueOnFailure) }}
+                        SELECT {{ colName }}
+                        FROM {{ target }}
+                        WHERE {{ colName }} IS NOT NULL AND {{ colName }} < {{ col.min_value.parameters[0] }}
+                    {%- endif -%}
+                    {%- if col.max_value is defined and col.max_value.parameters is defined -%}
+                        {{ test_stage(col.name + ': max_value', columnContinueOnFailure) }}
+                        SELECT {{ colName }}
+                        FROM {{ target }}
+                        WHERE {{ colName }} IS NOT NULL AND {{ colName }} > {{ col.max_value.parameters[0] }}
+                    {%- endif -%}
+                    {%- if col.freshness is defined and col.freshness.parameters is defined -%}
+                        {{ test_stage(col.name + ': freshness', columnContinueOnFailure) }}
+                        SELECT MAX(CAST({{ colName }} AS DATETIME)) AS "LATEST_VALUE"
+                        FROM {{ target }}
+                        HAVING MAX(CAST({{ colName }} AS DATETIME)) IS NULL
+                            OR MAX(CAST({{ colName }} AS DATETIME)) < DATEADD({{ col.freshness.parameters[1] | default('DAY', true) }}, -{{ col.freshness.parameters[0] }}, CURRENT_TIMESTAMP())
+                    {%- endif -%}
+                    {%- if col.relative_time is defined and col.relative_time.parameters is defined -%}
+                        {%- set other = '"' + col.relative_time.parameters[1] + '"' -%}
+                        {{ test_stage(col.name + ': relative_time', columnContinueOnFailure) }}
+                        SELECT {{ colName }}, {{ other }}
+                        FROM {{ target }}
+                        WHERE {{ colName }} IS NOT NULL AND {{ other }} IS NOT NULL
+                        AND NOT ({{ colName }} {{ col.relative_time.parameters[0] }} {{ other }})
+                    {%- endif -%}
+                {%- endfor -%}
+            {%- endif -%}
+
+            {%- set ns = namespace(cnt=0) -%}
+            {%- for test in config.tests | default([]) -%}
+                {%- if test is mapping and test.parameters is defined -%}
+                    {%- if test.parameters[2] | default("After") == runOrder -%}
+                        {%- set ns.cnt = ns.cnt + 1 -%}
+                        {{ test_stage(
+                            ('Pre Load Test ' if runOrder == 'Before' else 'Post Load Test ') ~ ns.cnt,
+                            test.parameters[1] | default(true)
+                        ) }}
+                        {{ test.parameters[0] }}
+                    {%- endif -%}
+                {%- endif -%}
+            {%- endfor -%}
+
+        {%- endif -%}
+    {%- endmacro -%}
+
+    {#===================================================================================================
+    Description:
+    Generates a deterministic hash value by combining and hashing all column values associated with the given `hash_name` using the `@inHash` annotation.
+
+    Input: `hash_name` (string) - The hash group identifier used in `@inHash("<hash_name>")` to group columns for hashing.
+
+    Output: - Returns a SQL expression of type `STRING`:
+            - A SHA1 hash of concatenated column values  
+            - Returns `NULL` if no columns are mapped to the given hash group
+    ====================================================================================================#}
+    {%- macro get_hash(hash_name, algo='SHA1', delimiter='||') -%}
+
+        {%- set cols = namespace(items=[]) -%}
+        {%- set algo_upper = algo | upper -%}
+
+        {# Collect columns participating in this hash #}
+        {%- for col in sources[0].columns -%}
+
+            {%- if col.inHash is defined -%}
+                {%- for p in col.inHash -%}
+                    {%- set parts = p.parameters[0] %}
+                    {%- set position = p.parameters[1] | int -%}
+                    {%- set hash = p.parameters[0] -%}
+
+                    {%- if hash == hash_name -%}
+                        {%- set cols.items = cols.items + [{
+                            "position": position,
+                            "column": get_source_transform(col)
+                        }] -%}
+                    {%- endif -%}
+                {%- endfor -%}
+            {%- endif -%}
+        {%- endfor -%}
+
+        {%- if cols.items | length == 0 -%}
+            NULL
+        {%- else -%}
+            {%- set sorted_cols = cols.items | sort(attribute='position') -%}
+            {# Define algo wrappers #}
+            {%- set algo_start = algo_upper + '(' -%}
+            {%- set algo_end = ')' -%}
+
+            {%- if algo_upper == 'SHA256' -%}
+                {%- set algo_start = 'SHA2(' -%}
+                {%- set algo_end = ', 256)' -%}
+            {%- endif -%}
+
+            CAST(
+                {{ algo_start }}
+                    {%- for c in sorted_cols -%}
+                        NVL(CAST({{ c.column }} AS VARCHAR), 'null')
+                        {%- if not loop.last %}
+                            || {%- if delimiter != '' %} '{{ delimiter }}' || {% endif -%}
+                        {%- endif -%}
+                    {%- endfor -%}
+                {{ algo_end }}
+            AS STRING)
+        {%- endif -%}
+    {%- endmacro -%}
+
+    {#===================================================================================================
     get_boolean_config(flag)
 
     Description:
-      Extracts the boolean value of a configuration flag, supporting both
-      annotation formats:
+        Extracts the boolean value of a configuration flag, supporting both
+        annotation formats:
         - @flag
         - @flag(true) / @flag(false)
 
     Input:
-      flag: Name of the boolean configuration flag, e.g. "truncateBefore",
+        flag: Name of the boolean configuration flag, e.g. "truncateBefore",
             "testsEnabled", or "clusterDefined".
 
     Examples:
-      @truncateBefore
+        @truncateBefore
         -> config["truncateBefore"] = true
         -> Output: true
 
-      @truncateBefore(true)
+        @truncateBefore(true)
         -> config["truncateBefore"] = { parameters: [true] }
         -> Output: true
 
-      @truncateBefore(false)
+        @truncateBefore(false)
         -> config["truncateBefore"] = { parameters: [false] }
         -> Output: false
 
-      No annotation
+        No annotation
         -> config["truncateBefore"] is not defined
         -> Output: empty
 
     Usage:
-      {% if get_boolean_config("truncateBefore") | trim | lower == "true" %}
+        {% if get_boolean_config("truncateBefore") | trim | lower == "true" %}
         ...
-      {% endif %}
-  ====================================================================================================#}
-  {%- macro get_boolean_config(flag) -%}
-      {%- if config[flag] is defined -%}
-          {%- if config[flag] is boolean -%}
-              {{- config[flag] | trim | lower -}}
-          {%- elif config[flag].parameters is defined and config[flag].parameters|length > 0 -%}
-              {{- config[flag].parameters[0] | trim | lower -}}
-          {%- endif -%}
-      {%- endif -%}
-  {%- endmacro -%}
+        {% endif %}
+    ====================================================================================================#}
+    {%- macro get_boolean_config(flag) -%}
+        {%- if config[flag] is defined -%}
+            {%- if config[flag] is boolean -%}
+                {{- config[flag] | trim | lower -}}
+            {%- elif config[flag].parameters is defined and config[flag].parameters|length > 0 -%}
+                {{- config[flag].parameters[0] | trim | lower -}}
+            {%- endif -%}
+        {%- endif -%}
+    {%- endmacro -%}
 name: macro
 type: Macro

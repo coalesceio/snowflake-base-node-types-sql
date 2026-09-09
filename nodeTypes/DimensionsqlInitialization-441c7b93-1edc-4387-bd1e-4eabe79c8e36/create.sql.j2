@@ -16,6 +16,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 	(
 		{%- for col in columns %}
 			"{{ col.name }}" {{ col.dataType }}
+            {%- if col.isSurrogateKey %} identity {%- endif %}
 			{%- if col.nullable == false %} NOT NULL {%- endif %}
 			{%- if col.defaultValue %} DEFAULT {{ col.defaultValue }} {%- endif %}
 			{%- if col.description | trim | length > 0 %} COMMENT '{{ col.description | escape }}' {%- endif %}

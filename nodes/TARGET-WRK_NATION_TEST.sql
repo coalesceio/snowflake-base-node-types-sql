@@ -1,0 +1,9 @@
+@id("281397c5-8ec6-4cd4-b1ab-bbf097db5b7e")
+@nodeType("707")
+SELECT
+     "N_NATIONKEY" AS "N_NATIONKEY",
+     "N_NAME" AS "N_NAME",
+     "N_REGIONKEY" AS "N_REGIONKEY",
+     "N_COMMENT" AS "N_COMMENT",
+     "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP"
+FROM {{ ref('SRC', 'NATION_TEST') }} "NATION_TEST"
