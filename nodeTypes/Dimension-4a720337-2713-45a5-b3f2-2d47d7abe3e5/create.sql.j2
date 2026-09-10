@@ -19,6 +19,15 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
         SELECT 1
     {%- endif %}
 
+    {%- set lastModifiedCount = columns | selectattr("isLastModified") | list | length %}
+
+    {%- if lastModifiedCount > 1 %}
+        {# == isLastModified is only valid on 0 or 1 columns — fail the run if more than 1 is marked == #}
+        {{ test_stage('Invalid configuration: Last Modified Column', false) }}
+        -- @isLastModified may be applied to at most one column, but {{ lastModifiedCount }} columns were marked. Remove the annotation from all but one column.
+        SELECT 1
+    {%- endif %}
+
     {# CreateSQL for Table #}
     {{ stage('Create ' + node.materializationType ) }}
 	CREATE OR REPLACE {{ node.materializationType }} {{ ref_no_link(node.location.name, node.name) }}

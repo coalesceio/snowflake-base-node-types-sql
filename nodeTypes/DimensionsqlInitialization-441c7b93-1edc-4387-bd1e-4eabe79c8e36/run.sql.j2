@@ -14,6 +14,13 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
     {# == Check if last modified comparison is enabled  #}
     {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) %}
+
+    {%- if not hasBusinessKey %}
+        {{ test_stage("Missing Business Key", false) }}
+        -- Mark at least one column with @isBusinessKey to identify the dimension's natural/business key for SCD matching.
+        SELECT 1
+    {%- endif %}
+
     {%- set lastModifiedCount = columns | selectattr("isLastModified") | list | length %}
 
     {%- if lastModifiedCount > 1 %}
@@ -66,8 +73,15 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
         {%- endif %}
     {%- endfor %}
 
+    {# == Determine write mode: truncateInsert or append(default) == #}
+    {%- if config.writeMode is defined and config.writeMode.parameters is defined and config.writeMode.parameters | length > 0 %}
+        {%- set writeMode = config.writeMode.parameters[0] | trim %}
+    {%- else %}
+        {%- set writeMode = 'append' %}
+    {%- endif %}
+
 	{# == Truncate data before data insertion  == #}
-    {%- if get_boolean_config("truncateBefore") == "true" -%}
+    {%- if writeMode | lower != "append" -%}
         {{ stage('Truncate ' + node.materializationType) }}
         TRUNCATE IF EXISTS {{ ref_no_link(node.location.name, node.name) }}
     {%- endif %}

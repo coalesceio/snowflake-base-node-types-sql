@@ -1,14 +1,14 @@
 fileVersion: 2
 id: "710"
-isDisabled: false
+isDisabled: true
 metadata:
   defaultStorageLocation: null
   error: null
   nodeMetadataSpec: |-
     capitalized: Dimension 
     short: DIM
-    tagColor: '#1E339A'
     plural: Dimensions
+    tagColor: '#1E339A'
 
     enableCTESupport: true
 
@@ -53,14 +53,24 @@ metadata:
     annotations:
         node:
 
-        - name: truncateBefore
-          type: boolean
+        - name: writeMode
           description: >-
-            Controls whether the target table is truncated before loading with 𝗺𝗲𝗿𝗴𝗲.
-            If not mentioned, truncation is skipped.
+            Controls how data is written to the target table. 
+            𝘁𝗿𝘂𝗻𝗰𝗮𝘁𝗲𝗜𝗻𝘀𝗲𝗿𝘁 clears the table before loading, replacing its contents entirely;
+            𝗮𝗽𝗽𝗲𝗻𝗱 inserts the new rows alongside whatever is already there.
+            If not specified in the SQL, defaults to 𝗮𝗽𝗽𝗲𝗻𝗱.
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
           isRequired: false
-          default: false
+          parameters:
+            - name: mode
+              type: string
+              description: Whether to 𝗧𝗥𝗨𝗡𝗖𝗔𝗧𝗘 the target table before inserting, or 𝗔𝗣𝗣𝗘𝗡𝗗 to it.
+              isRequired: true
+              default: append
+              example: truncateInsert
+              options:
+                - truncateInsert
+                - append
 
         - name: zeroKey
           type: boolean
@@ -157,8 +167,8 @@ metadata:
         - name: postSQL
           description: >-
             SQL statement to execute after the data load operation — e.g. updating dependent tables, cleaning up temp objects, or logging load completion.
-                Repeat the annotation to run multiple statements in the order they appear.
-                𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+            Repeat the annotation to run multiple statements in the order they appear.
+            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
           allowsMultiple: true
           parameters:
           - name: querySQL
@@ -179,7 +189,7 @@ metadata:
         - name: isLastModified
           description: >-
             Marks the column used to detect newer source rows for an 𝗶𝗻𝗰𝗿𝗲𝗺𝗲𝗻𝘁𝗮𝗹 𝗹𝗼𝗮𝗱 𝗯𝗮𝘀𝗲𝗱 𝗼𝗻 𝗶𝘁𝘀 𝘁𝗶𝗺𝗲𝘀𝘁𝗮𝗺𝗽 — a row is pulled in whenever this column's value is newer than what's already in the target.
-            𝗗𝗮𝘁𝗮𝘁𝘆𝗽𝗲: 𝗗𝗔𝗧𝗘/𝗧𝗜𝗠𝗘 𝗼𝗿 𝗮𝗻𝘆 𝗶𝗻𝗰𝗿𝗲𝗺𝗲𝗻𝘁𝗶𝗻𝗴 𝗡𝗨𝗠𝗘𝗥𝗜𝗖 𝘁𝘆𝗽𝗲.
+            𝗗𝗮𝘁𝗮𝘁𝘆𝗽𝗲 - 𝗗𝗔𝗧𝗘/𝗧𝗜𝗠𝗘 𝗼𝗿 𝗮𝗻𝘆 𝗶𝗻𝗰𝗿𝗲𝗺𝗲𝗻𝘁𝗶𝗻𝗴 𝗡𝗨𝗠𝗘𝗥𝗜𝗖 𝘁𝘆𝗽𝗲.
             When applied 𝗮𝗹𝗼𝗻𝗴 𝘄𝗶𝘁𝗵 change tracking columns, this last-modified comparison 𝘁𝗮𝗸𝗲𝘀 𝗽𝗿𝗶𝗼𝗿𝗶𝘁𝘆 over the column-by-column SCD1/SCD2 change-tracking comparison.
             𝗖𝗮𝗻 𝗼𝗻𝗹𝘆 𝗯𝗲 𝗮𝗽𝗽𝗹𝗶𝗲𝗱 𝘁𝗼 𝗼𝗻𝗲 𝗰𝗼𝗹𝘂𝗺𝗻.
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
@@ -187,8 +197,8 @@ metadata:
           parameters:
             - name: scdType
               type: number
-              description: |-
-                Whether a changed row is updated in place or versioned:
+              description: >-
+                Whether a changed row is updated in place or versioned -
                 1 — 𝗼𝘃𝗲𝗿𝘄𝗿𝗶𝘁𝗲𝘀 the row in place.
                 2 — 𝗲𝘅𝗽𝗶𝗿𝗲𝘀 the row and 𝗶𝗻𝘀𝗲𝗿𝘁𝘀 𝗮 𝗻𝗲𝘄 𝘃𝗲𝗿𝘀𝗶𝗼𝗻.
               isRequired: false
@@ -196,10 +206,10 @@ metadata:
               options: [1, 2]
 
         - name: isChangeTracking
-          description: |-
+          description: >-
             Marks a column to be watched for changes that decide SCD type:
-            Marked on any column — 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮: a change expires the existing row and inserts a new version.
-            Not marked on any column — 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭: a change updates the row in place.
+            Marked on any column — 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 - a change expires the existing row and inserts a new version.
+            Not marked on any column — 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 - a change updates the row in place.
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝘄𝗵𝗲𝗻 𝗶𝘀𝗟𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱 𝗶𝘀 𝘀𝗲𝘁 — 𝗹𝗮𝘀𝘁-𝗺𝗼𝗱𝗶𝗳𝗶𝗲𝗱 𝗰𝗼𝗺𝗽𝗮𝗿𝗶𝘀𝗼𝗻 𝘁𝗮𝗸𝗲𝘀 𝗽𝗿𝗶𝗼𝗿𝗶𝘁𝘆.
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
           isRequired: false
@@ -207,8 +217,7 @@ metadata:
         - name: zeroKey
           description: >-
             Adds a custom zero key value (ghost record) to this column, overriding the node-level 𝘇𝗲𝗿𝗼𝗞𝗲𝘆 defaults for it.
-            The value is pasted into the SQL verbatim, so quote it to match the column's data type —
-            @zeroKey("'<text>'"), @zeroKey("<number>"), @zeroKey(<bool>), or @zeroKey(<timestamp>).
+            The value is pasted into the SQL verbatim, so quote it to match the column's data type.
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝘂𝗻𝗹𝗲𝘀𝘀 𝘇𝗲𝗿𝗼𝗞𝗲𝘆 𝗶𝘀 𝗲𝗻𝗮𝗯𝗹𝗲𝗱 𝗮𝘁 𝘁𝗵𝗲 𝗻𝗼𝗱𝗲 𝗹𝗲𝘃𝗲𝗹.
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
           isRequired: false
@@ -241,7 +250,7 @@ metadata:
         - name: isSurrogateKey
           description: >-
             Marks this column as the node's surrogate key. Required on every table-materialized node.
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻: 0 AS "{{NODE_NAME}}_KEY" @isSurrogateKey
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻 - 0 AS "{{NODE_NAME}}_KEY" @isSurrogateKey
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
             𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
           isRequired: true
@@ -257,7 +266,7 @@ metadata:
         - name: isSystemCurrentFlag
           description: >-
             Marks this column as the SCD "is current" flag — 'Y' on the active version of a row, overwritten to 'N' when it's expired.
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻: 'Y' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻 - 'Y' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
             𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
           isRequired: true
@@ -265,7 +274,7 @@ metadata:
         - name: isSystemCreateDate
           description: >-
             Marks this column as the timestamp a row version was first created.
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻: CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻 - CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
             𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
           isRequired: true
@@ -273,7 +282,7 @@ metadata:
         - name: isSystemUpdateDate
           description: >-
             Marks this column as the timestamp a row was last updated.
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻: CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻 - CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
             𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
           isRequired: true
@@ -281,7 +290,7 @@ metadata:
         - name: isSystemEndDate
           description: >-
             Marks this column as the SCD Type 2 expiration timestamp — a far-future sentinel while the row is current, set to the actual expiry time once superseded.
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻: CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻 - CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
             𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
           isRequired: true
