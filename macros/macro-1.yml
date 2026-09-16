@@ -653,7 +653,8 @@ macroString: |-
         {%- set hasSystemCreateDate = columns | selectattr("isSystemCreateDate") | list | length > 0 %}
         {%- if not isSimpleUpsert and not hasSystemCreateDate %}
             {{ test_stage("Missing System Create Date Column", false) }}
-            -- Mark a column with @isSystemCreateDate (e.g. CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate).
+            -- Mark a column with @isSystemCreateDate — for example:
+            -- CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate
             -- Required because @mergeStrategy("changeTracking"/"lastModified") does change detection against the existing target row: SYSTEM_CREATE_DATE is carried through unchanged from that row into CHANGE_DETECTION so its original insert timestamp is preserved on every update, and only stamped with CURRENT_TIMESTAMP the one time a business key is first inserted.
             SELECT 1
         {%- endif %}
@@ -665,7 +666,8 @@ macroString: |-
         {%- set hasSystemUpdateDate = columns | selectattr("isSystemUpdateDate") | list | length > 0 %}
         {%- if not isSimpleUpsert and not hasSystemUpdateDate %}
             {{ test_stage("Missing System Update Date Column", not type2Dimension) }}
-            -- Mark a column with @isSystemUpdateDate (e.g. CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate).
+            -- Mark a column with @isSystemUpdateDate — for example:
+            -- CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
             {%- if type2Dimension %}
             -- Required because this is an SCD Type 2 dimension: SYSTEM_UPDATE_DATE is carried through from the current target row into CHANGE_DETECTION/MERGE_ROWS so it can be stamped with CURRENT_TIMESTAMP whenever a new or changed version is inserted, marking when that version became active.
             {%- else %}
@@ -680,7 +682,8 @@ macroString: |-
             {%- set hasSystemVersion = columns | selectattr("isSystemVersion") | list | length > 0 %}
             {%- if not hasSystemVersion %}
                 {{ test_stage("Missing System Version Column", false) }}
-                -- Mark a column with @isSystemVersion (e.g. 1 AS "SYSTEM_VERSION" @isSystemVersion).
+                -- Mark a column with @isSystemVersion — for example:
+                -- 1 AS "SYSTEM_VERSION" @isSystemVersion
                 -- Required because this is an SCD Type 2 dimension (a versioned last-modified column, or an @isChangeTracking column, was found): SYSTEM_VERSION is what distinguishes successive versions of the same business key, and it's what the outer MERGE's ON clause uses (alongside the business key) to target the exact row version being expired or matched.
                 SELECT 1
             {%- endif %}
@@ -688,7 +691,8 @@ macroString: |-
             {%- set hasSystemCurrentFlag = columns | selectattr("isSystemCurrentFlag") | list | length > 0 %}
             {%- if not hasSystemCurrentFlag %}
                 {{ test_stage("Missing System Current Flag Column", false) }}
-                -- Mark a column with @isSystemCurrentFlag (e.g. "Y" AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag).
+                -- Mark a column with @isSystemCurrentFlag — for example:
+                -- 'Y' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag
                 -- Required because this is an SCD Type 2 dimension: the CHANGE_DETECTION CTE filters TARGET_CURRENT down to WHERE SYSTEM_CURRENT_FLAG = 'Y' to find the one active row per business key to compare the incoming source row against — without it there's no way to tell which of possibly several historical versions is the current one.
                 SELECT 1
             {%- endif %}
@@ -696,7 +700,8 @@ macroString: |-
             {%- set hasSystemEndDate = columns | selectattr("isSystemEndDate") | list | length > 0 %}
             {%- if not hasSystemEndDate %}
                 {{ test_stage("Missing System End Date Column", false) }}
-                -- Mark a column with @isSystemEndDate (e.g. CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate).
+                -- Mark a column with @isSystemEndDate — for example:
+                -- CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
                 -- Required because this is an SCD Type 2 dimension: SYSTEM_END_DATE is what gets set to the expiry timestamp when a changed row's prior version is expired, and to the far-future sentinel on every newly inserted current version — without it there's no way to bound how long each historical version was active.
                 SELECT 1
             {%- endif %}
