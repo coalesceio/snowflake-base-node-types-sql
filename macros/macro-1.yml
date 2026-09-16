@@ -524,5 +524,193 @@ macroString: |-
             {%- endif -%}
         {%- endif -%}
     {%- endmacro -%}
+
+    {#====================================================================================================
+    Description:
+        Validates a Dimension node's annotation configuration and stages a failing (or, for one
+        specific case, warning-only) test for anything wrong or missing, before any of the actual
+        create/run logic runs. Shared here so create.sql.j2 and run.sql.j2 both enforce the exact
+        same rules from a single place instead of duplicating the checks in each template.
+
+        Checks performed, in order:
+        1. @isBusinessKey — at least one column must be marked (hard fail).
+        2. @lastModifiedTracking — at most one column may be marked (hard fail).
+        3. @mergeStrategy — cross-checks between the explicit/inferred strategy and the
+           @lastModifiedTracking/@isChangeTracking annotations actually present (hard fail).
+        4. @isSystemCreateDate — required whenever the merge strategy is changeTracking/lastModified
+           (i.e. not a plain @upsert), since the SCD1/SCD2 merge logic looks this column up by
+           attribute and splices its name directly into generated SQL (hard fail).
+        5. @isSystemUpdateDate — same lookup-by-attribute dependency, but only for SCD Type 2;
+           for SCD Type 1 it's merely recommended (an audit-trail gap, not a broken merge), so
+           SCD Type 2 is a hard fail and SCD Type 1 is a warning.
+        6. @isSystemVersion / @isSystemCurrentFlag / @isSystemEndDate — required only for SCD
+           Type 2 dimensions, where each is looked up by attribute and spliced into the merge
+           (hard fail).
+        7. @isSurrogateKey — optional in general (a customer may manage it themselves, e.g. via
+           SEQ.NEXTVAL, in their own SELECT logic), but required when @zeroKey is configured,
+           since the zero-key MERGE needs a surrogate key column to match against (hard fail).
+
+    Inputs: none — reads columns/config from the surrounding node context directly.
+
+    Output: Rendered test_stage(...) calls (with their SELECT 1 probe body) for every check
+            that fails; nothing is rendered for checks that pass.
+    ====================================================================================================#}
+    {%- macro validate_dimension_requirements() -%}
+        {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) %}
+        {%- if not hasBusinessKey %}
+            {{ test_stage("Missing Business Key", false) }}
+            -- Mark at least one column with @isBusinessKey to identify the dimension's natural/business key for SCD matching.
+            SELECT 1
+        {%- endif %}
+
+        {%- set lastModifiedCount = columns | selectattr("lastModifiedTracking") | list | length %}
+        {%- set changeTrackingCount = columns | selectattr("isChangeTracking") | list | length %}
+
+        {%- set mergeStrategyExplicit = config.mergeStrategy is defined and config.mergeStrategy.parameters is defined and config.mergeStrategy.parameters | length > 0 %}
+        {%- if mergeStrategyExplicit %}
+            {%- set mergeStrategy = config.mergeStrategy.parameters[0] | trim %}
+        {%- elif lastModifiedCount > 0 %}
+            {# == No @mergeStrategy given — infer it the same way older nodes without the annotation
+                 always worked: an @lastModifiedTracking column present means last-modified comparison. == #}
+            {%- set mergeStrategy = 'lastModified' %}
+        {%- else %}
+            {%- set mergeStrategy = 'changeTracking' %}
+        {%- endif %}
+        {%- set isSimpleUpsert = mergeStrategy == 'upsert' %}
+        {%- set isLastModifiedStrategy = mergeStrategy == 'lastModified' %}
+        {%- set isChangeTrackingStrategy = mergeStrategy == 'changeTracking' %}
+
+        {#== The strict cross-checks below only apply when @mergeStrategy is set explicitly — an
+             inferred strategy is derived FROM whatever's marked, so it can never conflict with it. ==#}
+        {%- if mergeStrategyExplicit and isSimpleUpsert and (lastModifiedCount > 0 or changeTrackingCount > 0) %}
+            {{ test_stage('Invalid configuration: mergeStrategy', false) }}
+            -- @mergeStrategy("upsert") performs no change detection, so @isChangeTracking/@lastModifiedTracking columns are never read. Remove them, or switch mergeStrategy to "changeTracking"/"lastModified" to use them.
+            SELECT 1
+        {%- endif %}
+
+        {%- if isChangeTrackingStrategy and lastModifiedCount > 0 %}
+            {{ test_stage('Invalid configuration: mergeStrategy', false) }}
+            -- @mergeStrategy("changeTracking") does not use @lastModifiedTracking — that column would be silently ignored. Remove it, or switch mergeStrategy to "lastModified".
+            SELECT 1
+        {%- endif %}
+
+        {%- if isLastModifiedStrategy and lastModifiedCount == 0 %}
+            {{ test_stage('Invalid configuration: mergeStrategy', false) }}
+            -- @mergeStrategy("lastModified") requires exactly one column marked @lastModifiedTracking; none was found.
+            SELECT 1
+        {%- endif %}
+
+        {#== Cardinality only matters once we know lastModified is the strategy actually in effect —
+             under changeTracking/upsert, stray @lastModifiedTracking columns (any count) are already
+             flagged above as unused annotations; piling on a redundant "at most one" complaint about
+             columns that were mistakenly added in the first place would just be noise. ==#}
+        {%- if isLastModifiedStrategy and lastModifiedCount > 1 %}
+            {{ test_stage('Invalid configuration: Last Modified Column', false) }}
+            -- @lastModifiedTracking may be applied to at most one column, but {{ lastModifiedCount }} columns were marked. Remove the annotation from all but one column.
+            SELECT 1
+        {%- endif %}
+
+        {%- if isLastModifiedStrategy and changeTrackingCount > 0 %}
+            {{ test_stage('Invalid configuration: mergeStrategy', false) }}
+            -- @mergeStrategy("lastModified") does not use @isChangeTracking — those columns would be silently ignored (the last-modified comparison takes priority). Remove them, or switch mergeStrategy to "changeTracking" to use them.
+            SELECT 1
+        {%- endif %}
+
+        {%- set lastModifiedComparison = isLastModifiedStrategy and lastModifiedCount > 0 %}
+        {%- if hasBusinessKey %}
+            {%- if lastModifiedComparison %}
+                {#== lastModifiedCount > 1 is already flagged above as its own cardinality error —
+                     deriving scdType/type2Dimension from an arbitrary "first" pick among several
+                     mismarked columns would only cascade into further misleading errors (e.g.
+                     demanding SCD2 system columns based on a column that isn't even "the" one).
+                     Treat it as inconclusive (plain SCD1) until the cardinality is actually fixed. ==#}
+                {%- if lastModifiedCount == 1 %}
+                    {%- set lastModifiedCol = columns | selectattr("lastModifiedTracking") | first %}
+                    {%- set scdType = lastModifiedCol.lastModifiedTracking.parameters[0] | default(1, true) | string %}
+                    {%- if scdType not in ('1', '2') %}
+                        {{ test_stage('Invalid configuration: lastModifiedTracking scdType', false) }}
+                        -- @lastModifiedTracking's scdType parameter only accepts 1 or 2, but "{{ scdType }}" was given on column {{ lastModifiedCol.name }}. Use scdType(1) to overwrite in place, or scdType(2) to version the row.
+                        SELECT 1
+                    {%- endif %}
+                    {%- set type2Dimension = scdType == '2' %}
+                {%- else %}
+                    {%- set type2Dimension = false %}
+                {%- endif %}
+            {%- else %}
+                {%- set type2Dimension = changeTrackingCount > 0 %}
+            {%- endif %}
+        {%- else %}
+            {%- set type2Dimension = false %}
+        {%- endif %}
+        {%- if isSimpleUpsert %}
+            {# @upsert always forces plain SCD1 — no change detection, no versioning — regardless
+               of any @lastModifiedTracking/@isChangeTracking annotations present on the node. #}
+            {%- set type2Dimension = false %}
+        {%- endif %}
+
+        {#== System columns below are only read/written once change detection is active (i.e. not
+             a plain @upsert) — see the SCD1/SCD2 CTE blocks in run.sql.j2. ==#}
+        {%- set hasSystemCreateDate = columns | selectattr("isSystemCreateDate") | list | length > 0 %}
+        {%- if not isSimpleUpsert and not hasSystemCreateDate %}
+            {{ test_stage("Missing System Create Date Column", false) }}
+            -- Mark a column with @isSystemCreateDate (e.g. CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate).
+            -- Required because @mergeStrategy("changeTracking"/"lastModified") does change detection against the existing target row: SYSTEM_CREATE_DATE is carried through unchanged from that row into CHANGE_DETECTION so its original insert timestamp is preserved on every update, and only stamped with CURRENT_TIMESTAMP the one time a business key is first inserted.
+            SELECT 1
+        {%- endif %}
+
+        {#== SYSTEM_UPDATE_DATE: hard-required for SCD Type 2 (the merge looks it up by attribute
+             and stamps it on every inserted version); for SCD Type 1 it's only set inline per-row
+             if present, so its absence is a soft warning about lost update-audit info rather than
+             something that breaks the generated SQL. ==#}
+        {%- set hasSystemUpdateDate = columns | selectattr("isSystemUpdateDate") | list | length > 0 %}
+        {%- if not isSimpleUpsert and not hasSystemUpdateDate %}
+            {{ test_stage("Missing System Update Date Column", not type2Dimension) }}
+            -- Mark a column with @isSystemUpdateDate (e.g. CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate).
+            {%- if type2Dimension %}
+            -- Required because this is an SCD Type 2 dimension: SYSTEM_UPDATE_DATE is carried through from the current target row into CHANGE_DETECTION/MERGE_ROWS so it can be stamped with CURRENT_TIMESTAMP whenever a new or changed version is inserted, marking when that version became active.
+            {%- else %}
+            -- Recommended for SCD Type 1: without it there's no way to tell when a row's attributes were last changed — SYSTEM_CREATE_DATE is set once and never touched again. Not required for the merge to run correctly, so this is a warning rather than a hard failure.
+            {%- endif %}
+            SELECT 1
+        {%- endif %}
+
+        {#== The remaining system columns are only required for SCD Type 2 dimensions — SCD Type 1
+             tracks neither version history nor row expiry. ==#}
+        {%- if type2Dimension %}
+            {%- set hasSystemVersion = columns | selectattr("isSystemVersion") | list | length > 0 %}
+            {%- if not hasSystemVersion %}
+                {{ test_stage("Missing System Version Column", false) }}
+                -- Mark a column with @isSystemVersion (e.g. 1 AS "SYSTEM_VERSION" @isSystemVersion).
+                -- Required because this is an SCD Type 2 dimension (a versioned last-modified column, or an @isChangeTracking column, was found): SYSTEM_VERSION is what distinguishes successive versions of the same business key, and it's what the outer MERGE's ON clause uses (alongside the business key) to target the exact row version being expired or matched.
+                SELECT 1
+            {%- endif %}
+
+            {%- set hasSystemCurrentFlag = columns | selectattr("isSystemCurrentFlag") | list | length > 0 %}
+            {%- if not hasSystemCurrentFlag %}
+                {{ test_stage("Missing System Current Flag Column", false) }}
+                -- Mark a column with @isSystemCurrentFlag (e.g. "Y" AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag).
+                -- Required because this is an SCD Type 2 dimension: the CHANGE_DETECTION CTE filters TARGET_CURRENT down to WHERE SYSTEM_CURRENT_FLAG = 'Y' to find the one active row per business key to compare the incoming source row against — without it there's no way to tell which of possibly several historical versions is the current one.
+                SELECT 1
+            {%- endif %}
+
+            {%- set hasSystemEndDate = columns | selectattr("isSystemEndDate") | list | length > 0 %}
+            {%- if not hasSystemEndDate %}
+                {{ test_stage("Missing System End Date Column", false) }}
+                -- Mark a column with @isSystemEndDate (e.g. CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate).
+                -- Required because this is an SCD Type 2 dimension: SYSTEM_END_DATE is what gets set to the expiry timestamp when a changed row's prior version is expired, and to the far-future sentinel on every newly inserted current version — without it there's no way to bound how long each historical version was active.
+                SELECT 1
+            {%- endif %}
+        {%- endif %}
+
+        {#== A surrogate key column (@isSurrogateKey) is optional — a customer may instead manage
+             it themselves in their own SELECT logic (e.g. SEQ.NEXTVAL). It's only required when
+             @zeroKey needs a surrogate key column to match the zero record against. ==#}
+        {%- set hasSurrogateKey = columns | selectattr("isSurrogateKey") | list | length > 0 %}
+        {%- if config.zeroKey is defined and not hasSurrogateKey %}
+            {{ test_stage("Missing Surrogate Key", false) }}
+            -- @zeroKey requires a surrogate key column (@isSurrogateKey) to match the zero record against; none was found on this node.
+            SELECT 1
+        {%- endif %}
+    {%- endmacro -%}
 name: macro
 type: Macro

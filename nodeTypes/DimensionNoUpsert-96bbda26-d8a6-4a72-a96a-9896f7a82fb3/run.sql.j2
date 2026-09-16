@@ -12,59 +12,91 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
 {%- if node.materializationType == 'table' %}
 
-    {{ validate_dimension_requirements() }}
-
+    {# == Check if last modified comparison is enabled  #}
     {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) %}
-    {%- set hasSurrogateKey = columns | selectattr("isSurrogateKey") | list | length > 0 %}
-    {%- set lastModifiedCount = columns | selectattr("lastModifiedTracking") | list | length %}
-    {%- set changeTrackingCount = columns | selectattr("isChangeTracking") | list | length %}
 
-    {%- set mergeStrategyExplicit = config.mergeStrategy is defined and config.mergeStrategy.parameters is defined and config.mergeStrategy.parameters | length > 0 %}
-    {%- if mergeStrategyExplicit %}
-        {%- set mergeStrategy = config.mergeStrategy.parameters[0] | trim %}
-    {%- elif lastModifiedCount > 0 %}
-        {%- set mergeStrategy = 'lastModified' %}
-    {%- else %}
-        {%- set mergeStrategy = 'changeTracking' %}
+    {%- if not hasBusinessKey %}
+        {{ test_stage("Missing Business Key", false) }}
+        -- Mark at least one column with @isBusinessKey to identify the dimension's natural/business key for SCD matching.
+        SELECT 1
     {%- endif %}
-    {%- set isSimpleUpsert = mergeStrategy == 'upsert' %}
-    {%- set isLastModifiedStrategy = mergeStrategy == 'lastModified' %}
-    {%- set isChangeTrackingStrategy = mergeStrategy == 'changeTracking' %}
 
-    {%- set lastModifiedComparison = isLastModifiedStrategy and lastModifiedCount > 0 %}
+    {# == Surrogate key is required on every table-materialized dimension == #}
+    {%- set hasSurrogateKey = columns | selectattr("isSurrogateKey") | list | length > 0 %}
+    {%- if not hasSurrogateKey %}
+        {{ test_stage("Missing Surrogate Key", false) }}
+        -- Mark a column with @isSurrogateKey (e.g. 0 AS "{{ node.name }}_KEY" @isSurrogateKey) to serve as this dimension's surrogate key.
+        SELECT 1
+    {%- endif %}
+
+    {%- set lastModifiedCount = columns | selectattr("isLastModified") | list | length %}
+
+    {%- if lastModifiedCount > 1 %}
+        {# == isLastModified is only valid on 0 or 1 columns — fail the run if more than 1 is marked == #}
+        {{ test_stage('Invalid configuration: Last Modified Column', false) }}
+        -- @isLastModified may be applied to at most one column, but {{ lastModifiedCount }} columns were marked. Remove the annotation from all but one column.
+        SELECT 1
+    {%- endif %}
+
+    {%- set lastModifiedComparison = lastModifiedCount > 0 %}
     {%- if hasBusinessKey %}
         {%- if lastModifiedComparison %}
-            {%- set lastModifiedCol = columns | selectattr("lastModifiedTracking") | first %}
+            {%- set lastModifiedCol = columns | selectattr("isLastModified") | first %}
             {%- set lastModifiedColName = lastModifiedCol.name %}
-            {%- set scdType = lastModifiedCol.lastModifiedTracking.parameters[0] | default(1, true) | string %}
+            {%- set scdType = lastModifiedCol.isLastModified.parameters[0] | default(1, true) | string %}
             {%- set type2Dimension = scdType == '2' %}
             {%- set dt = lastModifiedCol.dataType | upper %}
             {%- set isTimeStamp = dt.startswith('TIME') or dt.startswith('DATE') %}
         {%- else %}
-            {%- set type2Dimension = changeTrackingCount > 0 %}
+            {%- set type2Dimension = columns | selectattr("isChangeTracking") | list | length > 0 | default(false) %}
         {%- endif %}
-    {%- else %}
-        {%- set type2Dimension = false %}
     {%- endif %}
 
-    {%- if isSimpleUpsert %}
-        {# @upsert always forces plain SCD1 — no change detection, no versioning — regardless
-           of any @lastModifiedTracking/@isChangeTracking annotations present on the node. #}
-        {%- set type2Dimension = false %}
-    {%- endif %}
-
+    {# == This node type always performs change detection (no plain upsert strategy exists here),
+         so SYSTEM_CREATE_DATE is always required. == #}
     {%- set hasSystemCreateDate = columns | selectattr("isSystemCreateDate") | list | length > 0 %}
-    {%- set hasSystemUpdateDate = columns | selectattr("isSystemUpdateDate") | list | length > 0 %}
+    {%- if not hasSystemCreateDate %}
+        {{ test_stage("Missing System Create Date Column", false) }}
+        -- Mark a column with @isSystemCreateDate (e.g. CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate).
+        SELECT 1
+    {%- endif %}
+
+    {#== The remaining system columns are only required for SCD Type 2 dimensions — SCD Type 1
+         tracks neither version history nor row expiry. ==#}
     {%- if type2Dimension %}
         {%- set hasSystemVersion = columns | selectattr("isSystemVersion") | list | length > 0 %}
+        {%- if not hasSystemVersion %}
+            {{ test_stage("Missing System Version Column", false) }}
+            -- Mark a column with @isSystemVersion (e.g. 1 AS "SYSTEM_VERSION" @isSystemVersion) — required for SCD Type 2 dimensions.
+            SELECT 1
+        {%- endif %}
+
         {%- set hasSystemCurrentFlag = columns | selectattr("isSystemCurrentFlag") | list | length > 0 %}
+        {%- if not hasSystemCurrentFlag %}
+            {{ test_stage("Missing System Current Flag Column", false) }}
+            -- Mark a column with @isSystemCurrentFlag (e.g. "Y" AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag) — required for SCD Type 2 dimensions.
+            SELECT 1
+        {%- endif %}
+
+        {%- set hasSystemUpdateDate = columns | selectattr("isSystemUpdateDate") | list | length > 0 %}
+        {%- if not hasSystemUpdateDate %}
+            {{ test_stage("Missing System Update Date Column", false) }}
+            -- Mark a column with @isSystemUpdateDate (e.g. CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate) — required for SCD Type 2 dimensions.
+            SELECT 1
+        {%- endif %}
+
         {%- set hasSystemEndDate = columns | selectattr("isSystemEndDate") | list | length > 0 %}
+        {%- if not hasSystemEndDate %}
+            {{ test_stage("Missing System End Date Column", false) }}
+            -- Mark a column with @isSystemEndDate (e.g. CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate) — required for SCD Type 2 dimensions.
+            SELECT 1
+        {%- endif %}
     {%- endif %}
 
     {%- set source = sources[0] %}
     {%- set joinclause = source.join %}
 
-    {%- if not isSimpleUpsert and lastModifiedComparison and isTimeStamp %}
+    {%- if lastModifiedComparison and isTimeStamp %}
         {# Test stage for checking NULL values in source - last modified column #} 
         {{ test_stage('Check NULL values for ' ~ lastModifiedColName ~ ' column', false) }}
         /* If NULL values are detected, this stage will fail and execution will be terminated */
@@ -102,6 +134,13 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     {%- if writeMode | lower != "append" -%}
         {{ stage('Truncate ' + node.materializationType) }}
         TRUNCATE IF EXISTS {{ ref_no_link(node.location.name, node.name) }}
+    {%- endif %}
+
+    {%- set hasSurrogateKey = columns | selectattr("isSurrogateKey") | list | length > 0 %}
+    {%- if config.zeroKey is defined and not hasSurrogateKey %}
+        {{ test_stage("Missing Surrogate Key", false) }}
+        -- @zeroKey requires a surrogate key column (@isSurrogateKey) to match the zero record against; none was found on this node.
+        SELECT 1
     {%- endif %}
 
     {%- if config.zeroKey is defined and hasSurrogateKey %}
@@ -157,9 +196,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
             )
     {%- endif %}
 
-    {%- if isSimpleUpsert %}
-        {{ stage('Load ' + node.materializationType + ' Using Merge - Upsert') }}
-    {%- elif lastModifiedComparison %}
+    {%- if lastModifiedComparison %}
         {#== Last Modified SCD ==#}
         {%- if type2Dimension %}
             {{ stage('Load ' + node.materializationType + ' Using Merge - Last Modified Comparison - SCD2') }}
@@ -324,19 +361,6 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
             {%- set sysCreateDateCol = get_value_by_column_attribute("isSystemCreateDate") %}
             {%- set firstBizKeyCol = (columns | selectattr("isBusinessKey") | first).name %}
 
-            {%- if isSimpleUpsert %}
-            {# @upsert compares nothing and needs nothing back from the target at all — the
-               outer MERGE's own MATCHED/NOT MATCHED branches already tell us insert-vs-update,
-               so this is a plain pass-through of the source's business key + attribute columns. #}
-            SELECT {{ source.selectModifier | default('', true) }}
-            {%- for col in source.columns if not (col.isSurrogateKey or col.isSystemVersion or col.isSystemCurrentFlag or col.isSystemCreateDate or col.isSystemUpdateDate or col.isSystemEndDate) %}
-                {{ get_source_transform(col) }} AS "{{ col.name }}"
-                {%- if not loop.last %}, {%- endif %}
-            {%- endfor %}
-            {{ get_clause(joinclause, 'from') }}
-            {{ get_clause(joinclause) }}
-            {%- else %}
-
             WITH "SOURCE_DATA" AS (
                 SELECT {{ source.selectModifier | default('', true) }}
                 {%- for col in source.columns if not (col.isSurrogateKey or col.isSystemVersion or col.isSystemCurrentFlag or col.isSystemCreateDate or col.isSystemUpdateDate or col.isSystemEndDate) %}
@@ -420,7 +444,6 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
             {%- endfor %}
             "CHANGE_TYPE"
             FROM "CHANGE_DETECTION"
-            {%- endif %}
         {%- endif %}
 
     ) AS "SRC"
@@ -444,8 +467,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
     {%- else %}
 
-        WHEN MATCHED
-        {%- if not isSimpleUpsert %} AND "SRC"."CHANGE_TYPE" = 'CHANGED'{%- endif %}
+        WHEN MATCHED AND "SRC"."CHANGE_TYPE" = 'CHANGED'
 
         THEN UPDATE SET
         {%- for col in columns if not (  col.isBusinessKey or
@@ -454,11 +476,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                                         col.isSystemCurrentFlag or
                                         col.isSystemStartDate or
                                         col.isSystemCreateDate) %}
-            {%- if isSimpleUpsert and col.isSystemUpdateDate %}
-            "TGT"."{{ col.name }}" = CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
-            {%- else %}
             "TGT"."{{ col.name }}" = "SRC"."{{ col.name }}"
-            {%- endif %}
             {%- if not loop.last %}, {%- endif %}
         {%- endfor %}
     {%- endif %}
@@ -473,17 +491,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     VALUES
     (
         {%- for col in columns if not col.isSurrogateKey %}
-            {%- if isSimpleUpsert and col.isSystemVersion %}
-            1
-            {%- elif isSimpleUpsert and col.isSystemCurrentFlag %}
-            'Y'
-            {%- elif isSimpleUpsert and (col.isSystemCreateDate or col.isSystemUpdateDate) %}
-            CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
-            {%- elif isSimpleUpsert and col.isSystemEndDate %}
-            CAST('2999-12-31 00:00:00' AS TIMESTAMP)
-            {%- else %}
             "SRC"."{{ col.name }}"
-            {%- endif %}
             {%- if not loop.last %}, {%- endif %}
         {%- endfor %}
     )

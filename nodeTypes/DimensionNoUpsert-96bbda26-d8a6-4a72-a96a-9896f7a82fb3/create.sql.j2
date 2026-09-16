@@ -10,7 +10,23 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
 {%- if node.materializationType == 'table' %}
 
-    {{ validate_dimension_requirements() }}
+    {# == Check if last modified comparison is enabled  #}
+    {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) %}
+
+    {%- if not hasBusinessKey %}
+        {{ test_stage("Missing Business Key", false) }}
+        -- Mark at least one column with @isBusinessKey to identify the dimension's natural/business key for SCD matching.
+        SELECT 1
+    {%- endif %}
+
+    {%- set lastModifiedCount = columns | selectattr("isLastModified") | list | length %}
+
+    {%- if lastModifiedCount > 1 %}
+        {# == isLastModified is only valid on 0 or 1 columns — fail the run if more than 1 is marked == #}
+        {{ test_stage('Invalid configuration: Last Modified Column', false) }}
+        -- @isLastModified may be applied to at most one column, but {{ lastModifiedCount }} columns were marked. Remove the annotation from all but one column.
+        SELECT 1
+    {%- endif %}
 
     {# CreateSQL for Table #}
     {{ stage('Create ' + node.materializationType ) }}

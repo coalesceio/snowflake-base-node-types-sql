@@ -390,7 +390,7 @@ metadata:
               isRequired: true
               example: "<other_column>"
 
-    sqlInitializationTemplate: |
+    sqlInitializationTemplate: |-
           {%- macro ref_raw(location_name, node_name) -%}
             {% raw %}{{ ref('{% endraw %}{{ location_name }}{% raw %}', '{% endraw %}{{ node_name }}{% raw %}') }}{% endraw %}
           {%- endmacro -%}
@@ -398,14 +398,14 @@ metadata:
           {%- set ns.lines = ns.lines + ['"0" AS "{{NODE_NAME}}_KEY" @isSurrogateKey'] -%}
           {%- for dep in sources[0].dependencies -%}
             {%- for col in dep.columns -%}
-              {%- set ns.lines = ns.lines + ['"' ~ col.name ~ '" AS "' ~ col.name ~ '"'-%}
+              {%- set ns.lines = ns.lines + ['"' ~ col.name ~ '" AS "' ~ col.name ~ '"'] -%}
             {%- endfor -%}
           {%- endfor -%}
           {%- set ns.lines = ns.lines + ['1 AS "SYSTEM_VERSION" @isSystemVersion'] -%}
           {%- set ns.lines = ns.lines + ['"Y" AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag'] -%}
           {%- set ns.lines = ns.lines + ['CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate'] -%}
           {%- set ns.lines = ns.lines + ['CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate'] -%}
-          {%- set ns.lines = ns.lines + ['CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemEndDate'] -%}
+          {%- set ns.lines = ns.lines + ["CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS \"SYSTEM_UPDATE_DATE\" @isSystemEndDate"] -%}
           SELECT
           {{ ns.lines | join(',\n') }}
           {% for dep in sources[0].dependencies -%}

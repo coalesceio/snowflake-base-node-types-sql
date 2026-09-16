@@ -1,5 +1,6 @@
 @id("b94bcc63-55f2-4c7b-9e59-f20db1bd3696")
 @nodeType("4a720337-2713-45a5-b3f2-2d47d7abe3e5")
+@mergeStrategy("lastModified")
 SELECT DISTINCT
     0 AS "DIM_NATION_KEY" @isSurrogateKey,
     N_NATIONKEY AS "N_NATIONKEY" @isBusinessKey,

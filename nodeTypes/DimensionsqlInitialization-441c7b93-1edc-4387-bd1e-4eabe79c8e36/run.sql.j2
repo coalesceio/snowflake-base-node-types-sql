@@ -21,6 +21,14 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
         SELECT 1
     {%- endif %}
 
+    {# == Surrogate key is required on every table-materialized dimension == #}
+    {%- set hasSurrogateKey = columns | selectattr("isSurrogateKey") | list | length > 0 %}
+    {%- if not hasSurrogateKey %}
+        {{ test_stage("Missing Surrogate Key", false) }}
+        -- Mark a column with @isSurrogateKey (e.g. 0 AS "{{ node.name }}_KEY" @isSurrogateKey) to serve as this dimension's surrogate key.
+        SELECT 1
+    {%- endif %}
+
     {%- set lastModifiedCount = columns | selectattr("isLastModified") | list | length %}
 
     {%- if lastModifiedCount > 1 %}
@@ -40,6 +48,24 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
             {%- set isTimeStamp = dt.startswith('TIME') or dt.startswith('DATE') %}
         {%- else %}
             {%- set type2Dimension = columns | selectattr("isChangeTracking") | list | length > 0 | default(false) %}
+        {%- endif %}
+    {%- endif %}
+
+    {#== SCD Type 2 merges look up SYSTEM_CURRENT_FLAG/SYSTEM_VERSION by attribute
+         (get_value_by_column_attribute) further down — both must exist on the node. ==#}
+    {%- if type2Dimension %}
+        {%- set hasSystemVersion = columns | selectattr("isSystemVersion") | list | length > 0 %}
+        {%- if not hasSystemVersion %}
+            {{ test_stage("Missing System Version Column", false) }}
+            -- Mark a column with @isSystemVersion (e.g. 1 AS "SYSTEM_VERSION" @isSystemVersion) — required for SCD Type 2 dimensions.
+            SELECT 1
+        {%- endif %}
+
+        {%- set hasSystemCurrentFlag = columns | selectattr("isSystemCurrentFlag") | list | length > 0 %}
+        {%- if not hasSystemCurrentFlag %}
+            {{ test_stage("Missing System Current Flag Column", false) }}
+            -- Mark a column with @isSystemCurrentFlag (e.g. "Y" AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag) — required for SCD Type 2 dimensions.
+            SELECT 1
         {%- endif %}
     {%- endif %}
 
