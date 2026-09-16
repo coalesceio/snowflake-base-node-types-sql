@@ -237,6 +237,17 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                             {{ safe_compare('"SOURCE_DATA"."' ~ col.name ~ '"', '"TARGET_CURRENT"."TGT_' ~ col.name ~ '"', col.dataType) }}
                             {%- endfor %}
                         ) THEN 'CHANGED'
+                        {%- set nonType2AttrCount = columns | rejectattr("isBusinessKey") | rejectattr("isSurrogateKey") | rejectattr("isSystemVersion") | rejectattr("isSystemCurrentFlag") | rejectattr("isSystemCreateDate") | rejectattr("isSystemUpdateDate") | rejectattr("isSystemEndDate") | rejectattr("isChangeTracking") | list | length %}
+                        {%- if nonType2AttrCount > 0 %}
+                        {# A plain (non-@isChangeTracking) attribute column differing does NOT trigger
+                             a new version — it's updated in place on the current row instead. #}
+                        WHEN (
+                            {%- for col in columns if not (col.isBusinessKey or col.isSurrogateKey or col.isSystemVersion or col.isSystemCurrentFlag or col.isSystemCreateDate or col.isSystemUpdateDate or col.isSystemEndDate or col.isChangeTracking) %}
+                            {%- if not loop.first %} OR {%- endif %}
+                            {{ safe_compare('"SOURCE_DATA"."' ~ col.name ~ '"', '"TARGET_CURRENT"."TGT_' ~ col.name ~ '"', col.dataType) }}
+                            {%- endfor %}
+                        ) THEN 'UPDATE_NON_TYPE2'
+                        {%- endif %}
                         {%- endif %}
                         ELSE 'NOCHANGE'
                     END AS "CHANGE_TYPE"
@@ -310,6 +321,29 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                 'UPDATE_OLD_SCD2_ROWS' AS "DML_OPERATION"
                 FROM "CHANGE_DETECTION"
                 WHERE "CHANGE_TYPE" = 'CHANGED'
+
+                {%- if not lastModifiedComparison and nonType2AttrCount > 0 %}
+                UNION ALL
+
+                /* Rows whose plain attribute columns changed but no @isChangeTracking column did —
+                   updated in place on the current version, no new version is inserted */
+                SELECT
+                {%- for col in columns if not col.isSurrogateKey %}
+                    {%- if col.isSystemCurrentFlag %}
+                    'Y'
+                    {%- elif col.isSystemUpdateDate %}
+                    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
+                    {%- elif col.isSystemEndDate %}
+                    CAST('2999-12-31 00:00:00' AS TIMESTAMP)
+                    {%- else %}
+                    "{{ col.name }}"
+                    {%- endif %}
+                    AS "{{ col.name }}",
+                {%- endfor %}
+                'UPDATE_NON_TYPE2_ROWS' AS "DML_OPERATION"
+                FROM "CHANGE_DETECTION"
+                WHERE "CHANGE_TYPE" = 'UPDATE_NON_TYPE2'
+                {%- endif %}
             )
             SELECT * FROM "MERGE_ROWS"
         {%- else -%}
