@@ -192,6 +192,7 @@ metadata:
                 Whether a changed row is updated in place or versioned -
                 1 — 𝗼𝘃𝗲𝗿𝘄𝗿𝗶𝘁𝗲𝘀 the row in place.
                 2 — 𝗲𝘅𝗽𝗶𝗿𝗲𝘀 the row and 𝗶𝗻𝘀𝗲𝗿𝘁𝘀 𝗮 𝗻𝗲𝘄 𝘃𝗲𝗿𝘀𝗶𝗼𝗻.
+                If @lastModifiedTracking is mentioned without this parameter at all (e.g. plain @lastModifiedTracking with no parentheses), defaults to 1.
               isRequired: false
               default: 1
               options: [1, 2]
@@ -239,61 +240,96 @@ metadata:
               example: 1
 
         - name: isSurrogateKey
-          description: >-
+          description: |-
             Marks this column as the node's surrogate key.
+
             𝗢𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 𝗮𝗻𝗱 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — the merge logic joins and detects changes entirely off the business key (@isBusinessKey); the surrogate key plays no part in either flow.
+
             𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗼𝗻𝗹𝘆 𝘄𝗵𝗲𝗻 the node-level @zeroKey is set, since the zero/ghost record is matched against the target by surrogate key value.
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻 - 0 AS "{{NODE_NAME}}_KEY" @isSurrogateKey
+
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
+            0 AS "{{NODE_NAME}}_KEY" @isSurrogateKey
+
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+
             𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
           isRequired: false
 
         - name: isSystemVersion
-          description: >-
+          description: |-
             Marks this column as the SCD version number, incremented each time a business key gets a new version.
+
             𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 (driven by @isChangeTracking or @lastModifiedTracking with scdType 2) — used both to detect a brand-new business key (no matching version in the target) and, alongside the business key, as the MERGE join key that pinpoints exactly which version row to expire.
+
             𝗢𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 — new-vs-existing is detected off the business key alone, so this column can be dropped entirely; if kept, it is always written as 1 and never incremented.
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻: 1 AS "SYSTEM_VERSION" @isSystemVersion
+
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
+            1 AS "SYSTEM_VERSION" @isSystemVersion
+
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+
             𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
           isRequired: false
 
         - name: isSystemCurrentFlag
-          description: >-
+          description: |-
             Marks this column as the SCD "is current" flag — 'Y' on the active version of a row, overwritten to 'N' when it's expired.
+
             𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — used to filter the target down to each business key's one current row before comparing it against the incoming source row.
+
             𝗡𝗼𝘁 𝘂𝘀𝗲𝗱 𝗮𝘁 𝗮𝗹𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 (one row per key, so there is no "current version" to filter to) — safe to omit; if kept, it is always written as 'Y'.
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻 - 'Y' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag
+
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
+            'Y' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag
+
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+
             𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
           isRequired: false
 
         - name: isSystemCreateDate
-          description: >-
+          description: |-
             Marks this column as the timestamp a row (or, under SCD Type 2, a specific row version) was first created.
+
             𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗯𝗼𝘁𝗵 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 𝗮𝗻𝗱 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — read back from the target and preserved unchanged on every row after its initial insert; never recomputed on a later update.
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻 - CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate
+
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
+            CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate
+
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+
             𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
           isRequired: true
 
         - name: isSystemUpdateDate
-          description: >-
+          description: |-
             Marks this column as the timestamp a row was last updated.
+
             𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — read back from the target and refreshed to the current timestamp whenever a row is inserted as a new version or its prior current version is expired.
+
             𝗢𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 — never read back from the target at all; if kept, it is simply recomputed to the current timestamp on every inserted or changed row.
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻 - CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
+
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
+            CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
+
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+
             𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
           isRequired: false
 
         - name: isSystemEndDate
-          description: >-
+          description: |-
             Marks this column as the SCD Type 2 expiration timestamp — a far-future sentinel while the row is current, set to the actual expiry time once superseded.
+
             𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — this is what makes a version's active window queryable; omitting it leaves expired versions with no expiry marker.
+
             𝗡𝗼𝘁 𝗮𝗽𝗽𝗹𝗶𝗰𝗮𝗯𝗹𝗲 𝘁𝗼 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 (no versioning, so nothing ever expires) — safe to omit entirely.
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻 - CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
+
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
+            CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
+
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+
             𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
           isRequired: false
 
@@ -442,10 +478,10 @@ metadata:
             {%- endfor -%}
           {%- endfor -%}
           {%- set ns.lines = ns.lines + ['1 AS "SYSTEM_VERSION" @isSystemVersion'] -%}
-          {%- set ns.lines = ns.lines + ['"Y" AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag'] -%}
+          {%- set ns.lines = ns.lines + ["'Y' AS \"SYSTEM_CURRENT_FLAG\" @isSystemCurrentFlag"] -%}
           {%- set ns.lines = ns.lines + ['CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate'] -%}
           {%- set ns.lines = ns.lines + ['CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate'] -%}
-          {%- set ns.lines = ns.lines + ["CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS \"SYSTEM_UPDATE_DATE\" @isSystemEndDate"] -%}
+          {%- set ns.lines = ns.lines + ["CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS \"SYSTEM_END_DATE\" @isSystemEndDate"] -%}
           SELECT
           {{ ns.lines | join(',\n') }}
           {% for dep in sources[0].dependencies -%}

@@ -36,7 +36,12 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
         {%- if lastModifiedComparison %}
             {%- set lastModifiedCol = columns | selectattr("lastModifiedTracking") | first %}
             {%- set lastModifiedColName = lastModifiedCol.name %}
-            {%- set scdType = lastModifiedCol.lastModifiedTracking.parameters[0] | default(1, true) | string %}
+            {#== @lastModifiedTracking with no scdType parameter at all (e.g. mentioned as a plain
+                 boolean annotation, @lastModifiedTracking with no parentheses) comes through as a
+                 bare `true`, not a mapping with .parameters — guard for that and fall back to the
+                 default scdType of 1 instead of erroring. ==#}
+            {%- set lastModifiedTrackingParams = lastModifiedCol.lastModifiedTracking.parameters if (lastModifiedCol.lastModifiedTracking is mapping and lastModifiedCol.lastModifiedTracking.parameters is defined) else [] %}
+            {%- set scdType = lastModifiedTrackingParams[0] | default(1, true) | string %}
             {%- set type2Dimension = scdType == '2' %}
             {%- set dt = lastModifiedCol.dataType | upper %}
             {%- set isTimeStamp = dt.startswith('TIME') or dt.startswith('DATE') %}
