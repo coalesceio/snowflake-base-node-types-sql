@@ -272,12 +272,8 @@ Requirement level of each column annotation, by resolved strategy/SCD type:
 | `@isSystemVersion` | System column | ⚪ Optional | 🔴 Required | ⚪ Optional¹ |
 | `@isSystemCurrentFlag` | System column | ⚪ Optional | 🔴 Required | ⚪ Optional¹ |
 | `@isSystemEndDate` | System column | ⚪ Optional | 🔴 Required | ⚪ Optional¹ |
-| `@lastModifiedTracking` | Change-detection driver | ⚪ Optional | ⚪ Optional | 🚫 Not allowed² |
-| `@isChangeTracking` | Change-detection driver | N/A³ | ⚪ Optional³ | 🚫 Not allowed² |
-| `@zeroKey` (column) | Ghost record override | ⚪ Optional⁴ | ⚪ Optional⁴ | ⚪ Optional⁴ |
-| `@inHash` | Utility | ⚪ Optional | ⚪ Optional | ⚪ Optional |
 
-**Legend:** 🔴 Required · 🟡 Recommended · ⚪ Optional · 🚫 Not allowed
+**Legend:** 🔴 Required · 🟡 Recommended · ⚪ Optional
 
 ¹ If present, Coalesce auto-populates it on insert/update with a sensible default (e.g. `SYSTEM_VERSION` → 1, `SYSTEM_CURRENT_FLAG` → `'Y'`) rather than reading it from the source — `upsert` never reads the target back to compare, so these aren't required for change detection.<br/>
 ² The run fails if either is present on an `upsert` node — they'd silently be ignored otherwise.<br/>
