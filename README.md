@@ -22,8 +22,8 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 | `@description` ***(reserved)*** | ✅ | ✅ | TBD |
 | `@materializationType` ***(reserved)*** | ✅ | ✅ | TBD |
 | `@writeMode` | ✅ (`truncateInsert` \| `append`) | ✅ (`truncateInsert` \| `append`) | TBD |
-| `@mergeStrategy` | ➖ Not applicable — Work has no change-detection/merge concept | ✅ (`upsert` \| `changeTracking` \| `lastModified`) | TBD |
-| `@zeroKey` (node-level) | ➖ Not applicable — no surrogate-key/ghost-record concept | ✅ | TBD |
+| `@mergeStrategy` | ➖ Not applicable | ✅ (`upsert` \| `changeTracking` \| `lastModified`) | TBD |
+| `@zeroKey` (node-level) | ➖ Not applicable | ✅ | TBD |
 | `@disableTests` | ✅ | ✅ | TBD |
 | `@tests` | ✅ | ✅ | TBD |
 | `@preSQL` | ✅ | ✅ | TBD |
@@ -33,16 +33,16 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 
 | Annotation | Work | Dimension | Fact |
 |---|---|---|---|
-| `@notNull` ***(reserved)*** | ✅ | ➖ Not defined for this node type — use system-column requirements instead | TBD |
-| `@description` ***(reserved)*** | ✅ | ➖ Not defined for this node type | TBD |
-| `@defaultValue` ***(reserved)*** | ✅ | ➖ Not defined for this node type | TBD |
+| `@notNull` ***(reserved)*** | ✅ | ✅ | TBD |
+| `@description` ***(reserved)*** | ✅ | ✅ | TBD |
+| `@defaultValue` ***(reserved)*** | ✅ | ✅ | TBD |
 | `@inHash` | ✅ | ✅ | TBD |
-| `@isBusinessKey` | ➖ Not applicable — Work has no merge/match concept | ✅ ***(required)*** | TBD |
+| `@isBusinessKey` | ➖ Not applicable | ✅ ***(required)*** | TBD |
 | `@lastModifiedTracking` | ➖ Not applicable | ✅ | TBD |
 | `@isChangeTracking` | ➖ Not applicable | ✅ | TBD |
 | `@zeroKey` (column-level) | ➖ Not applicable | ✅ | TBD |
 | `@isSurrogateKey` | ➖ Not applicable | ✅ *(agentic creation only)* | TBD |
-| `@isSystemVersion` | ➖ Not applicable — no SCD versioning | ✅ *(agentic creation only)* | TBD |
+| `@isSystemVersion` | ➖ Not applicable | ✅ *(agentic creation only)* | TBD |
 | `@isSystemCurrentFlag` | ➖ Not applicable | ✅ *(agentic creation only)* | TBD |
 | `@isSystemCreateDate` | ➖ Not applicable | ✅ *(agentic creation only)* | TBD |
 | `@isSystemUpdateDate` | ➖ Not applicable | ✅ *(agentic creation only)* | TBD |
