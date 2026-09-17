@@ -16,10 +16,10 @@ metadata:
         node:
 
         - name: writeMode
-          description: >-
+          description: |-
             Controls how data is written to the target table. 
-            𝘁𝗿𝘂𝗻𝗰𝗮𝘁𝗲𝗜𝗻𝘀𝗲𝗿𝘁 clears the table before loading, replacing its contents entirely;
-            𝗮𝗽𝗽𝗲𝗻𝗱 inserts the new rows alongside whatever is already there.
+            • 𝘁𝗿𝘂𝗻𝗰𝗮𝘁𝗲𝗜𝗻𝘀𝗲𝗿𝘁 clears the table before loading, replacing its contents entirely;
+            • 𝗮𝗽𝗽𝗲𝗻𝗱 inserts the new rows alongside whatever is already there.
             If not specified in the SQL, defaults to 𝗮𝗽𝗽𝗲𝗻𝗱.
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
           isRequired: false
@@ -37,19 +37,23 @@ metadata:
         - name: mergeStrategy
           description: |-
             Chooses how this dimension decides a row has changed, and therefore which column annotations it requires.
+
             𝘂𝗽𝘀𝗲𝗿𝘁
               • No change detection at all — a matched row is always updated, an unmatched row is inserted.
               • Doesn't assert any SCD type of its own — if the upstream SELECT/CTE already implements SCD1/SCD2 logic, this strategy just merges that result through as-is, without re-deriving or re-checking it.
               • Requires no 𝗶𝘀𝗖𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴/𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 columns — the run fails if either is present, since they'd silently be ignored.
+
             𝗰𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴
               • Compares columns marked 𝗶𝘀𝗖𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 (or, if none are marked, every plain attribute column) to detect a change.
               • 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 if any column is marked 𝗶𝘀𝗖𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴, otherwise 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭.
               • Requires no 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 column — the run fails if one is present.
+
             𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱
               • Compares a single 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 timestamp column against the target's stored value.
               • Requires exactly one column marked 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 — the run fails if none is present (𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 itself still rejects more than one).
               • 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 𝗼𝗿 𝟮 comes from that column's own 𝘀𝗰𝗱𝗧𝘆𝗽𝗲 parameter.
-            If not specified, defaults to 𝗰𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 for backward compatibility with nodes written before this annotation existed.
+
+            If not specified, defaults to 𝗰𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 - 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
           isRequired: false
           parameters:
@@ -65,7 +69,7 @@ metadata:
 
         - name: zeroKey
           type: boolean
-          description: >-
+          description: |-
             Inserts a default "zero key" record into the target — a placeholder row used to catch unresolved
             foreign key lookups. If not mentioned, the zero record is not inserted.
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
@@ -103,17 +107,16 @@ metadata:
 
         - name: disableTests
           type: boolean
-          description: >-
+          description: |-
             Controls whether configured tests are skipped.
             Useful while developing a node — skip node-level and column-level tests without deleting them, so you can iterate on the SQL first and turn tests back on once the logic is settled.
           isRequired: false
           default: false
 
         - name: tests
-          description: >-
+          description: |-
             Node-level data quality test.
             Runs the given 𝗾𝘂𝗲𝗿𝘆𝗦𝗤𝗟 against the target and fails the test if it returns any records — write the query so it selects only the rows that violate your condition.
-            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗿𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
             Skipped entirely when 𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗧𝗲𝘀𝘁𝘀 is set.
           allowsMultiple: true
           parameters:
@@ -143,7 +146,7 @@ metadata:
                 - After
 
         - name: preSQL
-          description: >-
+          description: |-
             SQL statement to execute before the data load operation — e.g. staging setup, dropping temp tables, or capturing pre-load state.
             Repeat the annotation to run multiple statements in the order they appear.
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
@@ -156,7 +159,7 @@ metadata:
             example: 'SELECT 1'
 
         - name: postSQL
-          description: >-
+          description: |-
             SQL statement to execute after the data load operation — e.g. updating dependent tables, cleaning up temp objects, or logging load completion.
             Repeat the annotation to run multiple statements in the order they appear.
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
@@ -171,47 +174,44 @@ metadata:
         column:
 
         - name: isBusinessKey
-          description: >-
+          description: |-
             Marks a column as part of the business key used to match existing rows during the merge.
-            This node picks its update strategy one of two mutually exclusive ways — 𝗰𝗵𝗮𝗻𝗴𝗲-𝘁𝗿𝗮𝗰𝗸𝗶𝗻𝗴 (via 𝗶𝘀𝗖𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴) or 𝗹𝗮𝘀𝘁-𝗺𝗼𝗱𝗶𝗳𝗶𝗲𝗱 (via 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴). If neither is used on any column, the node defaults to 𝗖𝗵𝗮𝗻𝗴𝗲-𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭.
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
           isRequired: true
 
         - name: lastModifiedTracking
-          description: >-
-            Marks the column used to detect newer source rows for an 𝗶𝗻𝗰𝗿𝗲𝗺𝗲𝗻𝘁𝗮𝗹 𝗹𝗼𝗮𝗱 𝗯𝗮𝘀𝗲𝗱 𝗼𝗻 𝗶𝘁𝘀 𝘁𝗶𝗺𝗲𝘀𝘁𝗮𝗺𝗽 — a row is pulled in whenever this column's value is newer than what's already in the target.
-            𝗗𝗮𝘁𝗮𝘁𝘆𝗽𝗲 - 𝗗𝗔𝗧𝗘/𝗧𝗜𝗠𝗘 𝗼𝗿 𝗮𝗻𝘆 𝗶𝗻𝗰𝗿𝗲𝗺𝗲𝗻𝘁𝗶𝗻𝗴 𝗡𝗨𝗠𝗘𝗥𝗜𝗖 𝘁𝘆𝗽𝗲.
-            When applied 𝗮𝗹𝗼𝗻𝗴 𝘄𝗶𝘁𝗵 change tracking columns, this last-modified comparison 𝘁𝗮𝗸𝗲𝘀 𝗽𝗿𝗶𝗼𝗿𝗶𝘁𝘆 over the column-by-column SCD1/SCD2 change-tracking comparison.
+          description: |-
+            Marks the column used to detect newer source rows for an 𝗶𝗻𝗰𝗿𝗲𝗺𝗲𝗻𝘁𝗮𝗹 𝗹𝗼𝗮𝗱.
+            𝗗𝗮𝘁𝗮𝘁𝘆𝗽𝗲 - DATE/TIME or any incrementing NUMERIC type.
             𝗖𝗮𝗻 𝗼𝗻𝗹𝘆 𝗯𝗲 𝗮𝗽𝗽𝗹𝗶𝗲𝗱 𝘁𝗼 𝗼𝗻𝗲 𝗰𝗼𝗹𝘂𝗺𝗻.
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
           isRequired: false
           parameters:
             - name: scdType
               type: number
-              description: >-
+              description: |-
                 Whether a changed row is updated in place or versioned -
                 1 — 𝗼𝘃𝗲𝗿𝘄𝗿𝗶𝘁𝗲𝘀 the row in place.
                 2 — 𝗲𝘅𝗽𝗶𝗿𝗲𝘀 the row and 𝗶𝗻𝘀𝗲𝗿𝘁𝘀 𝗮 𝗻𝗲𝘄 𝘃𝗲𝗿𝘀𝗶𝗼𝗻.
-                If @lastModifiedTracking is mentioned without this parameter at all (e.g. plain @lastModifiedTracking with no parentheses), defaults to 1.
+                If @lastModifiedTracking is mentioned without this parameter at all, defaults to 1.
               isRequired: false
               default: 1
               options: [1, 2]
 
         - name: isChangeTracking
-          description: >-
+          description: |-
             Marks a column to be watched for changes that decide SCD type:
-            Marked on any column — 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 - a change expires the existing row and inserts a new version.
-            Not marked on any column — 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 - a change updates the row in place.
-            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝘄𝗵𝗲𝗻 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 𝗶𝘀 𝘀𝗲𝘁 — 𝗹𝗮𝘀𝘁-𝗺𝗼𝗱𝗶𝗳𝗶𝗲𝗱 𝗰𝗼𝗺𝗽𝗮𝗿𝗶𝘀𝗼𝗻 𝘁𝗮𝗸𝗲𝘀 𝗽𝗿𝗶𝗼𝗿𝗶𝘁𝘆.
+            • Marked on any column — 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 - a change expires the existing row and inserts a new version.
+            • Not marked on any column — 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 - a change updates the row in place.
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
           isRequired: false
 
         - name: zeroKey
-          description: >-
-            Adds a custom zero key value (ghost record) to this column, overriding the node-level 𝘇𝗲𝗿𝗼𝗞𝗲𝘆 defaults for it.
-            The value is pasted into the SQL verbatim, so quote it to match the column's data type.
-            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝘂𝗻𝗹𝗲𝘀𝘀 𝘇𝗲𝗿𝗼𝗞𝗲𝘆 𝗶𝘀 𝗲𝗻𝗮𝗯𝗹𝗲𝗱 𝗮𝘁 𝘁𝗵𝗲 𝗻𝗼𝗱𝗲 𝗹𝗲𝘃𝗲𝗹.
-            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+          description: |-
+            • Adds a custom zero key value (ghost record) to this column, overriding the node-level 𝘇𝗲𝗿𝗼𝗞𝗲𝘆 defaults for it.
+            • The value is pasted into the SQL verbatim, so quote it to match the column's data type.
+            • 𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝘂𝗻𝗹𝗲𝘀𝘀 𝘇𝗲𝗿𝗼𝗞𝗲𝘆 𝗶𝘀 𝗲𝗻𝗮𝗯𝗹𝗲𝗱 𝗮𝘁 𝘁𝗵𝗲 𝗻𝗼𝗱𝗲 𝗹𝗲𝘃𝗲𝗹.
+            • 𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
           isRequired: false
           parameters:
             - name: value
@@ -221,10 +221,10 @@ metadata:
               example: "'<text>'"
 
         - name: inHash
-          description: >-
-                Marks a column as an input to a generated hash key, grouped by 𝗵𝗮𝘀𝗵𝗡𝗮𝗺𝗲 and ordered within that group by 𝗵𝗮𝘀𝗵𝗢𝗿𝗱𝗲𝗿.
-                Mark every column that should feed a given hash with the same 𝗵𝗮𝘀𝗵𝗡𝗮𝗺𝗲, then call the 𝐠𝐞𝐭_𝐡𝐚𝐬𝐡("<hashName>") macro elsewhere in the SELECT to produce the actual hash column from those marked columns.
-                𝗦𝗲𝗲 𝗱𝗼𝗰𝘂𝗺𝗲𝗻𝘁𝗮𝘁𝗶𝗼𝗻 𝗳𝗼𝗿 𝗱𝗲𝘁𝗮𝗶𝗹𝘀.
+          description: |-
+                • Marks a column as an input to a generated hash key, grouped by 𝗵𝗮𝘀𝗵𝗡𝗮𝗺𝗲 and ordered within that group by 𝗵𝗮𝘀𝗵𝗢𝗿𝗱𝗲𝗿.
+                • Mark every column that should feed a given hash with the same 𝗵𝗮𝘀𝗵𝗡𝗮𝗺𝗲, then call the 𝐠𝐞𝐭_𝐡𝐚𝐬𝐡("<hashName>") macro elsewhere in the SELECT to produce the actual hash column from those marked columns.
+                • 𝗦𝗲𝗲 𝗱𝗼𝗰𝘂𝗺𝗲𝗻𝘁𝗮𝘁𝗶𝗼𝗻 𝗳𝗼𝗿 𝗱𝗲𝘁𝗮𝗶𝗹𝘀.
           allowsMultiple: true
           parameters:
             - name: hashName
@@ -243,14 +243,14 @@ metadata:
           description: |-
             Marks this column as the node's surrogate key.
 
-            𝗢𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 𝗮𝗻𝗱 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — the merge logic joins and detects changes entirely off the business key (@isBusinessKey); the surrogate key plays no part in either flow.
-
-            𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗼𝗻𝗹𝘆 𝘄𝗵𝗲𝗻 the node-level @zeroKey is set, since the zero/ghost record is matched against the target by surrogate key value.
+            • 𝗢𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 — the merge logic joins and detects changes entirely off the business key (@isBusinessKey).
+            • 𝗥𝗲𝗰𝗼𝗺𝗺𝗲𝗻𝗱𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — a stable surrogate key per version is the standard way to support versioned business key. Not enforced — the merge itself doesn't require it.
+            • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗼𝗻𝗹𝘆 𝘄𝗵𝗲𝗻 the node-level @zeroKey is set, since the zero/ghost record is matched against the target by surrogate key value.
+  
+            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
 
             𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
             0 AS "{{NODE_NAME}}_KEY" @isSurrogateKey
-
-            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
 
             𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
           isRequired: false
@@ -259,7 +259,7 @@ metadata:
           description: |-
             Marks this column as the SCD version number, incremented each time a business key gets a new version.
 
-            𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 (driven by @isChangeTracking or @lastModifiedTracking with scdType 2) — used both to detect a brand-new business key (no matching version in the target) and, alongside the business key, as the MERGE join key that pinpoints exactly which version row to expire.
+            𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — shows which version of a row this is. Each time a business key's row changes, the expired row is kept and a new row is inserted with this value incremented by 1.
 
             𝗢𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 — new-vs-existing is detected off the business key alone, so this column can be dropped entirely; if kept, it is always written as 1 and never incremented.
 
@@ -277,7 +277,7 @@ metadata:
 
             𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — used to filter the target down to each business key's one current row before comparing it against the incoming source row.
 
-            𝗡𝗼𝘁 𝘂𝘀𝗲𝗱 𝗮𝘁 𝗮𝗹𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 (one row per key, so there is no "current version" to filter to) — safe to omit; if kept, it is always written as 'Y'.
+            𝗢𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 —  safe to omit; if kept, it is always written as 'Y'.
 
             𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
             'Y' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag
@@ -291,7 +291,7 @@ metadata:
           description: |-
             Marks this column as the timestamp a row (or, under SCD Type 2, a specific row version) was first created.
 
-            𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗯𝗼𝘁𝗵 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 𝗮𝗻𝗱 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — read back from the target and preserved unchanged on every row after its initial insert; never recomputed on a later update.
+            𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝘂𝗻𝗹𝗲𝘀𝘀 @mergeStrategy 𝗶𝘀 𝘂𝗽𝘀𝗲𝗿𝘁 — under 𝗰𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴/𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱 (𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 𝗼𝗿 𝟮), it's read back from the target and preserved unchanged on every row after its initial insert, never recomputed on a later update. Under 𝘂𝗽𝘀𝗲𝗿𝘁, no change detection reads the target at all, so this column isn't required.
 
             𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
             CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate
@@ -299,7 +299,7 @@ metadata:
             𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
 
             𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 𝗼𝗻𝗹𝘆 — manual creation adds this column automatically.
-          isRequired: true
+          isRequired: false
 
         - name: isSystemUpdateDate
           description: |-
@@ -307,7 +307,7 @@ metadata:
 
             𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — read back from the target and refreshed to the current timestamp whenever a row is inserted as a new version or its prior current version is expired.
 
-            𝗢𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 — never read back from the target at all; if kept, it is simply recomputed to the current timestamp on every inserted or changed row.
+            𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 — recomputed to the current timestamp on every inserted or changed row, so every row change carries an audit trail of when it was last updated.
 
             𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
             CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
@@ -323,7 +323,7 @@ metadata:
 
             𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — this is what makes a version's active window queryable; omitting it leaves expired versions with no expiry marker.
 
-            𝗡𝗼𝘁 𝗮𝗽𝗽𝗹𝗶𝗰𝗮𝗯𝗹𝗲 𝘁𝗼 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 (no versioning, so nothing ever expires) — safe to omit entirely.
+            𝗢𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 — (no versioning, so nothing ever expires) — safe to omit entirely.
 
             𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
             CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
@@ -334,27 +334,27 @@ metadata:
           isRequired: false
 
         - name: not_null
-          description: >-
+          description: |-
             🚦 Column-level data quality test.
             Fails on rows where the column is 𝗡𝗨𝗟𝗟.
             Presence enables the test — remove the annotation to turn it off.
             Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
 
         - name: uniqueness
-          description: >- 
+          description: |- 
             🚦 Column-level data quality test.
             Fails when a value appears on more than one row.
             Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
 
         - name: empty
-          description: >-
+          description: |-
             🚦 Column-level data quality test.
             Fails on rows where the column trims to the empty string;
             𝗡𝗨𝗟𝗟 values pass this test and are instead caught by not_null.
             Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
 
         - name: accepted_values
-          description: >-
+          description: |-
             🚦 Column-level data quality test.
             Fails on rows whose value is outside the allow list.
             Repeat the annotation once per permitted value.
@@ -368,7 +368,7 @@ metadata:
               isRequired: true
 
         - name: rejected_values
-          description: >-
+          description: |-
             🚦 Column-level data quality test.
             Fails on rows whose value is in the deny list.
             Repeat the annotation once per forbidden value. Each value is pasted into the SQL verbatim, so quote it to match the column's data type — a number as rejected_values("<num>"), a string as
@@ -382,7 +382,7 @@ metadata:
               example: "'<string>'"
 
         - name: min_max
-          description: >-
+          description: |-
             🚦 Column-level data quality test.
             Fails on rows outside the inclusive range.
             Both bounds are pasted into the SQL verbatim, so write a number as "0" and a date as "DATE '2026-01-01'".
@@ -400,7 +400,7 @@ metadata:
               example: "100"
 
         - name: min_value
-          description: >-
+          description: |-
             🚦 Column-level data quality test.
             Fails on rows below the bound.
             Pasted into the SQL verbatim — see min_max.
@@ -413,7 +413,7 @@ metadata:
               example: "0"
 
         - name: max_value
-          description: >-
+          description: |-
             🚦 Column-level data quality test.
             Fails on rows above the bound.
             Pasted into the SQL verbatim — see min_max.
@@ -426,14 +426,14 @@ metadata:
               example: "100"
 
         - name: freshness
-          description: >-
+          description: |-
             🚦 Column-level data quality test.
             Checks that the data is fresh — fails when the column's value is older than the given interval, or when the table has no rows at all.
             𝗡𝗼𝘁𝗲: on a DATE column the value is truncated to midnight.
             Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: interval
-              description: >-
+              description: |-
                 How far back from now the newest value is allowed to be, expressed in the unit given by 𝘂𝗻𝗶𝘁.
               type: number
               isRequired: true
@@ -445,7 +445,7 @@ metadata:
               default: DAY
 
         - name: relative_time
-          description: >-
+          description: |-
             🚦 Column-level data quality test.
             Compares this column against another date/time column on the same node using the
             given operator.

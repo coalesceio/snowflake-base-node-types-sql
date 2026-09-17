@@ -540,9 +540,8 @@ macroString: |-
         4. @isSystemCreateDate — required whenever the merge strategy is changeTracking/lastModified
            (i.e. not a plain @upsert), since the SCD1/SCD2 merge logic looks this column up by
            attribute and splices its name directly into generated SQL (hard fail).
-        5. @isSystemUpdateDate — same lookup-by-attribute dependency, but only for SCD Type 2;
-           for SCD Type 1 it's merely recommended (an audit-trail gap, not a broken merge), so
-           SCD Type 2 is a hard fail and SCD Type 1 is a warning.
+        5. @isSystemUpdateDate — same lookup-by-attribute dependency; required for both SCD
+           Type 2 and SCD Type 1 (hard fail either way).
         6. @isSystemVersion / @isSystemCurrentFlag / @isSystemEndDate — required only for SCD
            Type 2 dimensions, where each is looked up by attribute and spliced into the merge
            (hard fail).
@@ -696,10 +695,9 @@ macroString: |-
             }] %}
         {%- endif %}
 
-        {#== SYSTEM_UPDATE_DATE: hard-required for SCD Type 2 (the merge looks it up by attribute
-             and stamps it on every inserted version); for SCD Type 1 it's only set inline per-row
-             if present, so its absence is only a recommendation about lost update-audit info
-             rather than something that breaks the generated SQL. ==#}
+        {#== SYSTEM_UPDATE_DATE: hard-required for both SCD types — for Type 2 the merge looks it
+             up by attribute and stamps it on every inserted version; for Type 1 it's required so
+             every row change carries an audit trail of when it was last updated. ==#}
         {%- set hasSystemUpdateDate = columns | selectattr("isSystemUpdateDate") | list | length > 0 %}
         {%- if not isSimpleUpsert and not hasSystemUpdateDate %}
             {%- if type2Dimension %}
@@ -711,10 +709,10 @@ macroString: |-
                 }] %}
             {%- else %}
                 {%- set missingSystemColumns.items = missingSystemColumns.items + [{
-                    'required': false,
+                    'required': true,
                     'annotation': '@isSystemUpdateDate',
                     'example': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate',
-                    'reason': 'Recommended for SCD Type 1: without it there\'s no way to tell when a row\'s attributes were last changed — SYSTEM_CREATE_DATE is set once and never touched again. Not required for the merge to run correctly.'
+                    'reason': 'Required for SCD Type 1: without it there\'s no way to tell when a row\'s attributes were last changed — SYSTEM_CREATE_DATE is set once and never touched again.'
                 }] %}
             {%- endif %}
         {%- endif %}
