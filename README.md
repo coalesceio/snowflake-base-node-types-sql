@@ -11,6 +11,46 @@ The Coalesce Base Node Types - SQL Package includes:
 
 Concepts shared across every node type — quote style, hash columns, data quality tests, known limitations, and usage examples — are documented once in [Common Reference](#common-reference) and linked to from each node type below.
 
+## Node Type Comparison
+
+A side-by-side view of which annotations each node type supports, so it's easy to see what a given node type is missing compared to the others. `Fact` is a placeholder for when that node type is documented.
+
+### Node Annotations Matrix
+
+| Annotation | Work | Dimension | Fact |
+|---|---|---|---|
+| `@description` ***(reserved)*** | ✅ | ✅ | TBD |
+| `@materializationType` ***(reserved)*** | ✅ | ✅ | TBD |
+| `@writeMode` | ✅ (`truncateInsert` \| `append`) | ✅ (`truncateInsert` \| `append`) | TBD |
+| `@mergeStrategy` | ➖ Not applicable — Work has no change-detection/merge concept | ✅ (`upsert` \| `changeTracking` \| `lastModified`) | TBD |
+| `@zeroKey` (node-level) | ➖ Not applicable — no surrogate-key/ghost-record concept | ✅ | TBD |
+| `@disableTests` | ✅ | ✅ | TBD |
+| `@tests` | ✅ | ✅ | TBD |
+| `@preSQL` | ✅ | ✅ | TBD |
+| `@postSQL` | ✅ | ✅ | TBD |
+
+### Column Annotations Matrix
+
+| Annotation | Work | Dimension | Fact |
+|---|---|---|---|
+| `@notNull` ***(reserved)*** | ✅ | ➖ Not defined for this node type — use system-column requirements instead | TBD |
+| `@description` ***(reserved)*** | ✅ | ➖ Not defined for this node type | TBD |
+| `@defaultValue` ***(reserved)*** | ✅ | ➖ Not defined for this node type | TBD |
+| `@inHash` | ✅ | ✅ | TBD |
+| `@isBusinessKey` | ➖ Not applicable — Work has no merge/match concept | ✅ ***(required)*** | TBD |
+| `@lastModifiedTracking` | ➖ Not applicable | ✅ | TBD |
+| `@isChangeTracking` | ➖ Not applicable | ✅ | TBD |
+| `@zeroKey` (column-level) | ➖ Not applicable | ✅ | TBD |
+| `@isSurrogateKey` | ➖ Not applicable | ✅ *(agentic creation only)* | TBD |
+| `@isSystemVersion` | ➖ Not applicable — no SCD versioning | ✅ *(agentic creation only)* | TBD |
+| `@isSystemCurrentFlag` | ➖ Not applicable | ✅ *(agentic creation only)* | TBD |
+| `@isSystemCreateDate` | ➖ Not applicable | ✅ *(agentic creation only)* | TBD |
+| `@isSystemUpdateDate` | ➖ Not applicable | ✅ *(agentic creation only)* | TBD |
+| `@isSystemEndDate` | ➖ Not applicable | ✅ *(agentic creation only)* | TBD |
+| `@not_null` / `@uniqueness` / `@empty` / `@accepted_values` / `@rejected_values` / `@min_max` / `@min_value` / `@max_value` / `@freshness` / `@relative_time` | ✅ | ✅ | TBD |
+
+> **Legend:** ✅ Supported · ➖ Not applicable to this node type's model · **TBD** node type not yet documented.<br/>See [Column-Level Data Quality Tests](#column-level-data-quality-tests) for the shared quality-test annotations in the last row.
+
 ## Work
 
 The Work node is a general-purpose transformation node within Coalesce, used to materialize intermediate or staging-layer tables and views as part of a larger transformation pipeline. It sits between raw source data and downstream modeled objects, giving developers a flexible landing point to shape, clean, and validate data — complete with a built-in library of column- and node-level data quality tests — before it flows further into the pipeline.
@@ -199,6 +239,41 @@ The Dimension Node type has three configuration groups:
 | `@isSystemEndDate` | Marks this column as the SCD Type 2 expiration timestamp — a far-future sentinel while the row is current, set to the actual expiry time once superseded.<br/>Required for SCD Type 2 — this is what makes a version's active window queryable; omitting it leaves expired versions with no expiry marker.<br/>Optional for SCD Type 1 (no versioning, so nothing ever expires) — safe to omit entirely.<br/>**Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.<br/>Expected expression: `CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate` |
 
 🚦 The full set of column-level data quality tests (`@not_null`, `@uniqueness`, `@empty`, `@accepted_values`, `@rejected_values`, `@min_max`, `@min_value`, `@max_value`, `@freshness`, `@relative_time`) applies to Dimension columns exactly as described in [Column-Level Data Quality Tests](#column-level-data-quality-tests).
+
+---
+
+### Dimension SCD Type & System Column Requirements
+
+`@mergeStrategy` picks the change-detection strategy; which SCD type it resolves to (and therefore which system columns are required) depends on that strategy and, for `changeTracking`/`lastModified`, on which columns are marked:
+
+| `@mergeStrategy` | Resolves to | Driven by |
+|---|---|---|
+| `upsert` | Whatever SCD shape the upstream SELECT/CTE already implements — Coalesce doesn't detect or enforce SCD1/SCD2 here, it just merges the result through as-is | User's own SQL logic, not any column annotation |
+| `lastModified` | SCD1 or SCD2, from that column's own `scdType` parameter | `@lastModifiedTracking(scdType)` |
+| `changeTracking` (default) | SCD2 if any column is marked, otherwise SCD1 | `@isChangeTracking` |
+
+Requirement level of each column annotation, by resolved strategy/SCD type:
+
+| Annotation | Category | SCD1 (`changeTracking` / `lastModified`) | SCD2 (`changeTracking` / `lastModified`) | `upsert` |
+|---|---|:---:|:---:|:---:|
+| `@isBusinessKey` | Key | 🔴 Required | 🔴 Required | 🔴 Required |
+| `@isSurrogateKey` | Key | ⚪ Optional | 🟡 Recommended | ⚪ Optional |
+| `@isSystemCreateDate` | System column | 🔴 Required | 🔴 Required | ⚪ Optional¹ |
+| `@isSystemUpdateDate` | System column | 🔴 Required | 🔴 Required | ⚪ Optional¹ |
+| `@isSystemVersion` | System column | ⚪ Optional | 🔴 Required | ⚪ Optional¹ |
+| `@isSystemCurrentFlag` | System column | ⚪ Optional | 🔴 Required | ⚪ Optional¹ |
+| `@isSystemEndDate` | System column | ⚪ Optional | 🔴 Required | ⚪ Optional¹ |
+| `@lastModifiedTracking` | Change-detection driver | ⚪ Optional | ⚪ Optional | 🚫 Not allowed² |
+| `@isChangeTracking` | Change-detection driver | N/A³ | ⚪ Optional³ | 🚫 Not allowed² |
+| `@zeroKey` (column) | Ghost record override | ⚪ Optional⁴ | ⚪ Optional⁴ | ⚪ Optional⁴ |
+| `@inHash` | Utility | ⚪ Optional | ⚪ Optional | ⚪ Optional |
+
+**Legend:** 🔴 Required · 🟡 Recommended · ⚪ Optional · 🚫 Not allowed
+
+¹ If present, Coalesce auto-populates it on insert/update with a sensible default (e.g. `SYSTEM_VERSION` → 1, `SYSTEM_CURRENT_FLAG` → `'Y'`) rather than reading it from the source — `upsert` never reads the target back to compare, so these aren't required for change detection.<br/>
+² The run fails if either is present on an `upsert` node — they'd silently be ignored otherwise.<br/>
+³ Marking `@isChangeTracking` on any column is itself what makes the node SCD2 under `changeTracking`.<br/>
+⁴ Only meaningful if node-level `@zeroKey` is set.
 
 ---
 
