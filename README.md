@@ -21,9 +21,9 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 |---|---|---|---|
 | `@description` ***(reserved)*** | ✅ | ✅ | TBD |
 | `@materializationType` ***(reserved)*** | ✅ | ✅ | TBD |
-| `@writeMode` | ✅ (`truncateInsert` \| `append`) | ✅ (`truncateInsert` \| `append`) | TBD |
-| `@mergeStrategy` | ➖ Not applicable | ✅ (`upsert` \| `changeTracking` \| `lastModified`) | TBD |
-| `@zeroKey` (node-level) | ➖ Not applicable | ✅ | TBD |
+| `@writeMode` | ✅ | ✅ | TBD |
+| `@mergeStrategy` | ➖ | ✅ | TBD |
+| `@zeroKey` (node-level) | ➖ | ✅ | TBD |
 | `@disableTests` | ✅ | ✅ | TBD |
 | `@tests` | ✅ | ✅ | TBD |
 | `@preSQL` | ✅ | ✅ | TBD |
@@ -37,16 +37,16 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 | `@description` ***(reserved)*** | ✅ | ✅ | TBD |
 | `@defaultValue` ***(reserved)*** | ✅ | ✅ | TBD |
 | `@inHash` | ✅ | ✅ | TBD |
-| `@isBusinessKey` | ➖ Not applicable | ✅ ***(required)*** | TBD |
-| `@lastModifiedTracking` | ➖ Not applicable | ✅ | TBD |
-| `@isChangeTracking` | ➖ Not applicable | ✅ | TBD |
-| `@zeroKey` (column-level) | ➖ Not applicable | ✅ | TBD |
-| `@isSurrogateKey` | ➖ Not applicable | ✅ *(agentic creation only)* | TBD |
-| `@isSystemVersion` | ➖ Not applicable | ✅ *(agentic creation only)* | TBD |
-| `@isSystemCurrentFlag` | ➖ Not applicable | ✅ *(agentic creation only)* | TBD |
-| `@isSystemCreateDate` | ➖ Not applicable | ✅ *(agentic creation only)* | TBD |
-| `@isSystemUpdateDate` | ➖ Not applicable | ✅ *(agentic creation only)* | TBD |
-| `@isSystemEndDate` | ➖ Not applicable | ✅ *(agentic creation only)* | TBD |
+| `@isBusinessKey` | ➖ | ✅ ***(required)*** | TBD |
+| `@lastModifiedTracking` | ➖ | ✅ | TBD |
+| `@isChangeTracking` | ➖ | ✅ | TBD |
+| `@zeroKey` (column-level) | ➖ | ✅ | TBD |
+| `@isSurrogateKey` | ➖ | ✅ | TBD |
+| `@isSystemVersion` | ➖ | ✅ | TBD |
+| `@isSystemCurrentFlag` | ➖ | ✅ | TBD |
+| `@isSystemCreateDate` | ➖ | ✅ | TBD |
+| `@isSystemUpdateDate` | ➖ | ✅ | TBD |
+| `@isSystemEndDate` | ➖ | ✅  | TBD |
 | `@not_null` / `@uniqueness` / `@empty` / `@accepted_values` / `@rejected_values` / `@min_max` / `@min_value` / `@max_value` / `@freshness` / `@relative_time` | ✅ | ✅ | TBD |
 
 > **Legend:** ✅ Supported · ➖ Not applicable to this node type's model · **TBD** node type not yet documented.<br/>See [Column-Level Data Quality Tests](#column-level-data-quality-tests) for the shared quality-test annotations in the last row.
