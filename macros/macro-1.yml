@@ -171,31 +171,35 @@ macroString: |-
                         FROM {{ target }}
                         WHERE {{ colName }} IS NOT NULL AND TRIM({{ colName }}) = ''
                     {%- endif -%}
-                    {%- if accepted | length > 0 -%}
-                        {%- set acceptedValues = namespace(items=[]) -%}
-                        {%- for v in accepted -%}
-                            {%- for p in v.parameters -%}
-                                {%- set acceptedValues.items = acceptedValues.items + [p] -%}
-                            {%- endfor -%}
-                        {%- endfor -%}
-                        {{ test_stage(col.name + ': accepted_values', columnContinueOnFailure) }}
-                        SELECT {{ colName }}
-                        FROM {{ target }}
-                        WHERE {{ colName }} IS NOT NULL
-                        AND {{ colName }} NOT IN ({{ acceptedValues.items | unique | join(', ') }})
-                    {%- endif -%}
-                    {%- if rejected | length > 0 -%}
-                        {%- set rejectedValues = namespace(items=[]) -%}
-                        {%- for v in rejected -%}
-                            {%- for p in v.parameters -%}
-                                {%- set rejectedValues.items = rejectedValues.items + [p] -%}
-                            {%- endfor -%}
-                        {%- endfor -%}
-                        {{ test_stage(col.name + ': rejected_values', columnContinueOnFailure) }}
-                        SELECT {{ colName }}
-                        FROM {{ target }}
-                        WHERE {{ colName }} IN ({{ rejectedValues.items | unique | join(', ') }})
-                    {%- endif -%}
+                  {%- set nsAccepted = namespace(values=[]) -%}
+                  {%- for v in accepted -%}
+                      {%- for p in v.parameters -%}
+                          {%- for val in (p | string).split(',') -%}
+                              {%- set nsAccepted.values = nsAccepted.values + [val.strip()] -%}
+                          {%- endfor -%}
+                      {%- endfor -%}
+                  {%- endfor -%}
+                  {%- if nsAccepted.values | length > 0 -%}
+                      {{ test_stage(col.name + ': accepted_values', columnContinueOnFailure) }}
+                      SELECT {{ colName }}
+                      FROM {{ target }}
+                      WHERE {{ colName }} IS NOT NULL
+                      AND {{ colName }} NOT IN ({{ nsAccepted.values | join(', ') }})
+                  {%- endif -%}
+                  {%- set nsRejected = namespace(values=[]) -%}
+                  {%- for v in rejected -%}
+                      {%- for p in v.parameters -%}
+                          {%- for val in (p | string).split(',') -%}
+                              {%- set nsRejected.values = nsRejected.values + [val.strip()] -%}
+                          {%- endfor -%}
+                      {%- endfor -%}
+                  {%- endfor -%}
+                  {%- if nsRejected.values | length > 0 -%}
+                      {{ test_stage(col.name + ': rejected_values', columnContinueOnFailure) }}
+                      SELECT {{ colName }}
+                      FROM {{ target }}
+                      WHERE {{ colName }} IN ({{ nsRejected.values | join(', ') }})
+                  {%- endif -%}
                     {%- if col.min_max is defined and col.min_max.parameters is defined -%}
                         {{ test_stage(col.name + ': min_max', columnContinueOnFailure) }}
                         SELECT {{ colName }}
