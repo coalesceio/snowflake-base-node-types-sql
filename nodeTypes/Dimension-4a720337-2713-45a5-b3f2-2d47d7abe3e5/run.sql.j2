@@ -79,9 +79,11 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
             {%- if col_transform is not none and col_transform != 'NULL' %}
                 {{- source.cteString }}
                 SELECT 1
-                {{ get_clause(source.join, 'from') }}
-                WHERE {{ get_source_transform(col) }} IS NULL
-                {{ get_clause(source.join) }}
+                FROM (
+                    SELECT {{ get_source_transform(col) }} AS "CHECK_COL"
+                    {{ source.join }}
+                ) "T"
+                WHERE "T"."CHECK_COL" IS NULL
             {%- endif %}
         {%- endfor %}
     {%- endif %}
@@ -202,8 +204,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                     {{ get_source_transform(col) }} AS "{{ col.name }}"
                     {%- if not loop.last %}, {%- endif %}
                 {%- endfor %}
-                {{ get_clause(joinclause, 'from') }}
-                {{ get_clause(joinclause) }}
+                {{ joinclause }}
             ),
 
             "TARGET_CURRENT" AS (
@@ -372,8 +373,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                 {{ get_source_transform(col) }} AS "{{ col.name }}"
                 {%- if not loop.last %}, {%- endif %}
             {%- endfor %}
-            {{ get_clause(joinclause, 'from') }}
-            {{ get_clause(joinclause) }}
+            {{ joinclause }}
             {%- else %}
 
             WITH "SOURCE_DATA" AS (
@@ -382,8 +382,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                     {{ get_source_transform(col) }} AS "{{ col.name }}"
                     {%- if not loop.last %}, {%- endif %}
                 {%- endfor %}
-                {{ get_clause(joinclause, 'from') }}
-                {{ get_clause(joinclause) }}
+                {{ joinclause }}
             ),
 
             "TARGET_CURRENT" AS (

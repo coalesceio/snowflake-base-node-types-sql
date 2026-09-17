@@ -85,92 +85,6 @@ macroString: |-
 
     {%- endmacro -%}
 
-    {# ========================================================================
-    Purpose:
-        Returns the SQL expression to be used for a column transformation.
-
-    Input:
-        col
-            - transform: Column transform expression.
-            - sourceColumns[0].node.name: Source table name.
-            - sourceColumns[0].column.name: Source column name.
-
-    Logic:
-        1. If transform is not empty and matches the source column name
-        (ignoring double quotes), return a fully qualified source
-        column reference:
-            "SOURCE_TABLE"."SOURCE_COLUMN"
-
-        2. If transform is not empty and does not match the source column
-        name, return the transform expression as-is.
-
-        3. If transform is empty, return NULL.
-
-    Examples:
-        transform = '"N_NAME"'      -> "NATION_TEST"."N_NAME"
-        transform = 'N_NAME'        -> "NATION_TEST"."N_NAME"
-        transform = 'UPPER(N_NAME)' -> UPPER(N_NAME)
-        transform = ''              -> NULL
-    ========================================================================#}
-    {%- macro get_source_transform_v2(col) -%}
-        {%- set transform = col.transform | trim -%}
-        {%- if transform != '' -%}
-            {%- if col.sourceColumns
-                    and col.sourceColumns[0].node
-                    and transform | replace('"', '')
-                        == col.sourceColumns[0].column.name -%}
-
-                "{{ col.sourceColumns[0].node.name }}"."{{ col.sourceColumns[0].column.name }}"
-            {%- else -%}
-                {{ transform }}
-            {%- endif -%}
-        {%- else -%}
-            NULL
-        {%- endif -%}
-    {%- endmacro -%}
-
-    {# ====================================================================================================
-    Description:
-    Generates a datatype-aware equality comparison between a source and target expression.
-    Designed for use in WHERE / JOIN conditions where different Snowflake datatypes
-    require different comparison logic.
-
-    Inputs:
-    - src_expr (string):
-        Source column or expression (e.g., SRC."COL1")
-
-    - tgt_expr (string):
-        Target column or expression (e.g., "DIM"."COL1")
-
-    - data_type (string):
-        Datatype of the column (e.g., VARCHAR, NUMBER, GEOGRAPHY, GEOMETRY)
-
-    Output:
-    - Returns a SQL boolean condition that evaluates to TRUE when source and target values are equal
-    ====================================================================================================#}
-    {%- macro safe_equals(src_expr, tgt_expr, data_type) -%}
-
-        {%- set dt = data_type | upper -%}
-
-        {%- if 'GEOGRAPHY' in dt -%}
-            (
-                ST_DISTANCE(
-                    COALESCE({{ src_expr }}, TO_GEOGRAPHY('POINT(0 0)')),
-                    COALESCE({{ tgt_expr }}, TO_GEOGRAPHY('POINT(0 0)'))
-                ) = 0
-            )
-        {%- elif 'GEOMETRY' in dt -%}
-            (
-                ST_DISTANCE(
-                    COALESCE({{ src_expr }}, TO_GEOMETRY('POINT(0 0)')),
-                    COALESCE({{ tgt_expr }}, TO_GEOMETRY('POINT(0 0)'))
-                ) = 0
-            )
-        {%- else -%}
-            {{ src_expr }} = {{ tgt_expr }}
-        {%- endif -%}
-    {%- endmacro -%}
-
     {#====================================================================================================
     Description:
     Generates a datatype-aware comparison to detect differences between a source and
@@ -210,102 +124,6 @@ macroString: |-
             )
         {%- else -%}
             {{ src_expr }} IS DISTINCT FROM {{ tgt_expr }}
-        {%- endif -%}
-
-    {%- endmacro -%}
-
-
-    {# ========================================================================
-    Description:
-    Parses a SQL join clause string and splits it into two logical parts:
-    1. FROM/JOIN portion
-    2. Remaining clause (WHERE / GROUP BY / QUALIFY / ORDER BY)
-
-    This is useful when dynamically injecting additional conditions into an
-    existing query without breaking its structure.
-
-    Inputs:
-    - joinclause (string):
-        Full SQL clause containing JOIN + optional filters and clauses.
-        May include comments (both block /* */ and line --).
-
-    - ret_clause (string):
-        Specifies which part to return:
-        - 'from' → returns only the FROM/JOIN portion
-        - anything else → returns the remaining clause
-
-    Output:
-    - Cleaned and trimmed SQL string based on requested clause
-    ========================================================================#}
-    {%- macro get_clause( joinclause , ret_clause ) -%}
-
-        {#  STEP 1: Remove Block Comments /* ... */ #}
-        {#  We split by the start of the comment and only keep the part after the end of the comment #}
-        {%- set ns_block = namespace(text="") -%}
-        {%- set block_parts = joinclause.split('/*') -%}
-        {%- set ns_block.text = block_parts[0] -%} {# The text before the very first /* #}
-        
-        {%- for part in block_parts[1:] -%}
-            {%- if '*/' in part -%}
-                {# Split by the first occurrence of */ and take everything after it #}
-                {%- set after_comment = part.split('*/', 1)[1] -%}
-                {%- set ns_block.text = ns_block.text ~ ' ' ~ after_comment  -%}
-            {%- endif -%}
-        {%- endfor -%}
-
-        {# STEP 2: Remove Line Comments #}
-        {%- set ns_line = namespace(clean_lines=[]) -%}
-        {%- for line in ns_block.text.split('\n') -%}
-            {%- set active_part = line.split('--')[0] -%}
-            {%- set ns_line.clean_lines = ns_line.clean_lines + [active_part] -%}
-        {%- endfor  -%}
-        
-        {# Rejoin everything and normalize whitespace for searching #}
-        {%- set cleaned_join_clause = ns_line.clean_lines | join(' ')  -%}
-        {%- set search_string = ' ' ~ cleaned_join_clause.lower().replace('\t', ' ').replace('\r', ' ') ~ ' '  -%}
-
-        {# STEP 3: Identify Keyword Split Point (Priority: WHERE > GROUP > QUALIFY > ORDER) #}
-        {%- set found_keyword = '' -%}
-        {%- set split_index = -1 -%}
-
-        {%- if ' where ' in search_string -%}
-            {%- set found_keyword = 'where'  -%}
-            {%- set split_index = search_string.find(' where ') -%}
-        {%- elif ' group by ' in search_string -%}
-            {%- set found_keyword = 'group by' -%}
-            {%- set split_index = search_string.find(' group by ') -%}
-        {%- elif ' qualify ' in search_string -%}
-            {%- set found_keyword = 'qualify' -%}
-            {%- set split_index = search_string.find(' qualify ') -%}
-        {%- elif ' order by ' in search_string -%}
-            {%- set found_keyword = 'order by' -%}
-            {%- set split_index = search_string.find(' order by ') -%}
-        {%- endif -%}
-
-        {# STEP 4: Perform the Split #}
-        {%- if split_index >= 0 -%}
-            {# split_index maps directly to cleaned_join_clause because we replaced chars 1-to-1 #}
-            {%- set from_part = cleaned_join_clause[:split_index] -%}
-            
-            {# offset = keyword length + 1 space #}
-            {%- set offset = found_keyword|length + 1 -%}
-            {%- set remainder = cleaned_join_clause[split_index + offset:] -%}
-
-            {%- if found_keyword == 'where' -%}
-                {%- set add_part = 'AND ' ~ remainder -%}
-            {%- else -%}
-                {%- set add_part = found_keyword ~ ' ' ~ remainder -%}
-            {%- endif -%}
-        {%- else -%}
-            {%- set from_part = cleaned_join_clause -%}
-            {%- set add_part = '' -%}
-        {%- endif -%}
-
-        {# STEP 5: Return Result #}
-        {%- if ret_clause == 'from' -%}
-            {{ from_part | trim }}
-        {%- else -%}
-            {{ add_part | trim }}
         {%- endif -%}
 
     {%- endmacro -%}
@@ -354,17 +172,29 @@ macroString: |-
                         WHERE {{ colName }} IS NOT NULL AND TRIM({{ colName }}) = ''
                     {%- endif -%}
                     {%- if accepted | length > 0 -%}
+                        {%- set acceptedValues = namespace(items=[]) -%}
+                        {%- for v in accepted -%}
+                            {%- for p in v.parameters -%}
+                                {%- set acceptedValues.items = acceptedValues.items + [p] -%}
+                            {%- endfor -%}
+                        {%- endfor -%}
                         {{ test_stage(col.name + ': accepted_values', columnContinueOnFailure) }}
                         SELECT {{ colName }}
                         FROM {{ target }}
                         WHERE {{ colName }} IS NOT NULL
-                        AND {{ colName }} NOT IN ({%- for v in accepted -%} {{ v.parameters[0] }} {%- if not loop.last -%}, {%- endif -%}{%- endfor -%})
+                        AND {{ colName }} NOT IN ({{ acceptedValues.items | unique | join(', ') }})
                     {%- endif -%}
                     {%- if rejected | length > 0 -%}
+                        {%- set rejectedValues = namespace(items=[]) -%}
+                        {%- for v in rejected -%}
+                            {%- for p in v.parameters -%}
+                                {%- set rejectedValues.items = rejectedValues.items + [p] -%}
+                            {%- endfor -%}
+                        {%- endfor -%}
                         {{ test_stage(col.name + ': rejected_values', columnContinueOnFailure) }}
                         SELECT {{ colName }}
                         FROM {{ target }}
-                        WHERE {{ colName }} IN ({%- for v in rejected -%} {{ v.parameters[0] }} {%- if not loop.last -%}, {%- endif -%}{%- endfor -%})
+                        WHERE {{ colName }} IN ({{ rejectedValues.items | unique | join(', ') }})
                     {%- endif -%}
                     {%- if col.min_max is defined and col.min_max.parameters is defined -%}
                         {{ test_stage(col.name + ': min_max', columnContinueOnFailure) }}
