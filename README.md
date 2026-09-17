@@ -37,7 +37,7 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 | `@description` ***(reserved)*** | ✅ | ✅ | TBD |
 | `@defaultValue` ***(reserved)*** | ✅ | ✅ | TBD |
 | `@inHash` | ✅ | ✅ | TBD |
-| `@isBusinessKey` | ➖ | ✅ ***(required)*** | TBD |
+| `@isBusinessKey` ***(required)*** | ➖ | ✅ | TBD |
 | `@lastModifiedTracking` | ➖ | ✅ | TBD |
 | `@isChangeTracking` | ➖ | ✅ | TBD |
 | `@zeroKey` (column-level) | ➖ | ✅ | TBD |
@@ -47,7 +47,7 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 | `@isSystemCreateDate` | ➖ | ✅ | TBD |
 | `@isSystemUpdateDate` | ➖ | ✅ | TBD |
 | `@isSystemEndDate` | ➖ | ✅  | TBD |
-| `@not_null` / `@uniqueness` / `@empty` / `@accepted_values` / `@rejected_values` / `@min_max` / `@min_value` / `@max_value` / `@freshness` / `@relative_time` | ✅ | ✅ | TBD |
+| all column tests | ✅ | ✅ | TBD |
 
 > **Legend:** ✅ Supported · ➖ Not applicable to this node type's model · **TBD** node type not yet documented.<br/>See [Column-Level Data Quality Tests](#column-level-data-quality-tests) for the shared quality-test annotations in the last row.
 
