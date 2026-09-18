@@ -442,18 +442,24 @@ metadata:
           {%- macro ref_raw(location_name, node_name) -%}
             {% raw %}{{ ref('{% endraw %}{{ location_name }}{% raw %}', '{% endraw %}{{ node_name }}{% raw %}') }}{% endraw %}
           {%- endmacro -%}
-          {%- set ns = namespace(lines=[]) -%}
-          {%- set ns.lines = ns.lines + ['"0" AS "{{NODE_NAME}}_KEY" @isSurrogateKey'] -%}
+          {%- set ns = namespace(items=[], lines=[]) -%}
+          {%- set ns.items = ns.items + [{'expr': '0', 'alias': '"' ~ node.name ~ '_KEY"', 'annotation': '@isSurrogateKey'}] -%}
           {%- for dep in sources[0].dependencies -%}
             {%- for col in dep.columns -%}
-              {%- set ns.lines = ns.lines + ['"' ~ col.name ~ '" AS "' ~ col.name ~ '"'] -%}
+              {%- set ns.items = ns.items + [{'expr': '"' ~ col.name ~ '"', 'alias': '"' ~ col.name ~ '"', 'annotation': ''}] -%}
             {%- endfor -%}
           {%- endfor -%}
-          {%- set ns.lines = ns.lines + ['1 AS "SYSTEM_VERSION" @isSystemVersion'] -%}
-          {%- set ns.lines = ns.lines + ["'Y' AS \"SYSTEM_CURRENT_FLAG\" @isSystemCurrentFlag"] -%}
-          {%- set ns.lines = ns.lines + ['CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate'] -%}
-          {%- set ns.lines = ns.lines + ['CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate'] -%}
-          {%- set ns.lines = ns.lines + ["CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS \"SYSTEM_END_DATE\" @isSystemEndDate"] -%}
+          {%- set ns.items = ns.items + [{'expr': '1', 'alias': '"SYSTEM_VERSION"', 'annotation': '@isSystemVersion'}] -%}
+          {%- set ns.items = ns.items + [{'expr': "'Y'", 'alias': '"SYSTEM_CURRENT_FLAG"', 'annotation': '@isSystemCurrentFlag'}] -%}
+          {%- set ns.items = ns.items + [{'expr': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP)', 'alias': '"SYSTEM_CREATE_DATE"', 'annotation': '@isSystemCreateDate'}] -%}
+          {%- set ns.items = ns.items + [{'expr': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP)', 'alias': '"SYSTEM_UPDATE_DATE"', 'annotation': '@isSystemUpdateDate'}] -%}
+          {%- set ns.items = ns.items + [{'expr': "CAST('2999-12-31 00:00:00' AS TIMESTAMP)", 'alias': '"SYSTEM_END_DATE"', 'annotation': '@isSystemEndDate'}] -%}
+          {%- set maxExprLen = ns.items | map(attribute='expr') | map('length') | max -%}
+          {%- set maxAliasLen = ns.items | map(attribute='alias') | map('length') | max -%}
+          {%- for item in ns.items -%}
+            {%- set line = (item.expr.ljust(maxExprLen) ~ ' AS ' ~ item.alias.ljust(maxAliasLen) ~ ' ' ~ item.annotation).rstrip() -%}
+            {%- set ns.lines = ns.lines + [line] -%}
+          {%- endfor -%}
           SELECT
               {{ ns.lines | join(',\n    ') }}
           {% for dep in sources[0].dependencies -%}
