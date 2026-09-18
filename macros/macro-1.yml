@@ -149,8 +149,8 @@ macroString: |-
             {%- if runOrder == "After" -%}
                 {%- for col in columns -%}
                     {%- set colName = '"' + col.name + '"' -%}
-                    {%- set accepted = col.accepted_values if (col.accepted_values is sequence and col.accepted_values is not mapping) else [] -%}
-                    {%- set rejected = col.rejected_values if (col.rejected_values is sequence and col.rejected_values is not mapping) else [] -%}
+                    {%- set accepted = ([col.accepted_values] if col.accepted_values is mapping else (col.accepted_values if col.accepted_values is sequence else [])) -%}
+                    {%- set rejected = ([col.rejected_values] if col.rejected_values is mapping else (col.rejected_values if col.rejected_values is sequence else [])) -%}
                     {%- set target = ref(node.location.name, node.name) -%}
                     {%- if col.not_null is defined -%}
                         {{ test_stage(col.name + ': not_null', columnContinueOnFailure) }}

@@ -355,8 +355,8 @@ If the column name's casing must be preserved exactly, swap the outer quotes to 
 | `@not_null` | Fails on rows where the column is NULL.<br/>Example: `@not_null` |
 | `@uniqueness` | Fails when a value appears on more than one row.<br/>Example: `@uniqueness` |
 | `@empty` | Fails on rows where the column trims to the empty string.<br/>NULL values pass this test — they're caught by `@not_null` instead.<br/>Example: `@empty` |
-| `@accepted_values("<value>")` | ***(repeatable)*** Fails on rows whose value is outside the allow list.<br/>Repeat once per permitted value.<br/>Quote to match the column's data type — <br/>number: `accepted_values("<num>")`<br/>string: `accepted_values("'<string>'")`.<br/>Example: `@accepted_values("'ALGERIA'")` |
-| `@rejected_values("<value>")` | ***(repeatable)*** Fails on rows whose value is in the deny list.<br/>Repeat once per forbidden value.<br/>Same quoting rules as `accepted_values`.<br/>Example: `@rejected_values("'NA'")` |
+| `@accepted_values("<value>", ...)` | Fails on rows whose value is outside the allow list.<br/>List every permitted value in a single call, either as one comma-separated string — `accepted_values("1, 3, 5")` — or as separate parameters — `accepted_values("1", "3", "5")`.<br/>Quote to match the column's data type — <br/>number: `"<num>"`<br/>string: `"'<string>'"`.<br/>Example: `@accepted_values("'ALGERIA', 'ARGENTINA'")` |
+| `@rejected_values("<value>", ...)` | Fails on rows whose value is in the deny list.<br/>Same syntax and quoting rules as `accepted_values`.<br/>Example: `@rejected_values("'NA'")` |
 | `@min_max("<min>", "<max>")` | Fails on rows outside the inclusive range.<br/>Bounds are pasted into the SQL verbatim —<br/>number: `"0"`,<br/>date: `"DATE '2026-01-01'"`.<br/>Example: `@min_max("0", "4")` |
 | `@min_value("<min>")` | Fails on rows below the bound.<br/>Value formatting — see `min_max`.<br/>Example: `@min_value("0")` |
 | `@max_value("<max>")` | Fails on rows above the bound.<br/>Value formatting — see `min_max`.<br/>Example: `@max_value("100")` |
@@ -497,7 +497,7 @@ The following patterns represent common ways to use the SQL Node.<br/>
 @postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('WRK_NATION', CURRENT_TIMESTAMP())")
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY" @not_null @uniqueness @min_value("0") @max_value("100")  @accepted_values("1") @inHash("GH_COL1", 2),
-     "N_NAME" AS "N_NAME" @not_null @empty @accepted_values("'ALGERIA'") @accepted_values("'ARGENTINA'") @inHash("GH_COL1", 1),
+     "N_NAME" AS "N_NAME" @not_null @empty @accepted_values("'ALGERIA', 'ARGENTINA'") @inHash("GH_COL1", 1),
      "N_REGIONKEY" AS "N_REGIONKEY" @min_max("0", "4") @notNull @defaultValue("20"),
      "N_COMMENT" AS "N_COMMENT" @rejected_values("'NA'"),
      "LAST_MODIFIED" AS L_M_1 @freshness(7, "DAY") @relative_time("<", "L_M_2") @description("timestamp column"),

@@ -20,7 +20,7 @@ metadata:
             • Controls how data is written to the target table.
             • 𝘁𝗿𝘂𝗻𝗰𝗮𝘁𝗲𝗜𝗻𝘀𝗲𝗿𝘁 clears the table before loading, replacing its contents entirely;
             • 𝗮𝗽𝗽𝗲𝗻𝗱 inserts the new rows alongside whatever is already there.
-            If not specified in the SQL, defaults to 𝗮𝗽𝗽𝗲𝗻𝗱.
+            • If not specified in the SQL, defaults to 𝗮𝗽𝗽𝗲𝗻𝗱.
             • Ignored on views.
           isRequired: false
           parameters:
@@ -49,21 +49,21 @@ metadata:
                   • Doesn't assert any SCD type of its own — if the upstream SELECT/CTE already implements SCD1/SCD2 logic, this strategy just merges that result through as-is, without re-deriving or re-checking it.
                   • Requires no 𝗶𝘀𝗖𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴/𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 columns — the run fails if either is present, since they'd silently be ignored.
 
-              ◆ 𝗰𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴
+                ◆ 𝗰𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴
                   • Compares columns marked 𝗶𝘀𝗖𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 (or, if none are marked, every plain attribute column) to detect a change.
                   • 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 if any column is marked 𝗶𝘀𝗖𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴, otherwise 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭.
                   • Requires no 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 column — the run fails if one is present.
 
-              ◆ 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱
+                ◆ 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱
                   • Compares a single 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 timestamp column against the target's stored value.
                   • Requires exactly one column marked 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 — the run fails if none is present (𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 itself still rejects more than one).
                   • 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 𝗼𝗿 𝟮 comes from that column's own 𝘀𝗰𝗱𝗧𝘆𝗽𝗲 parameter.
-                isRequired: true
-                default: changeTracking
-                options:
-                  - upsert
-                  - changeTracking
-                  - lastModified
+              isRequired: true
+              default: changeTracking
+              options:
+                - upsert
+                - changeTracking
+                - lastModified
 
         - name: zeroKey
           description: |-
@@ -335,11 +335,11 @@ metadata:
           description: |-
             🚦 Column-level data quality test.
             Fails on rows whose value is outside the allow list.
-            Repeat the annotation once per permitted value.
+            List every permitted value in a single annotation call, either as one comma-separated
+            string — accepted_values("1, 3, 5") — or as separate parameters — accepted_values("1", "3", "5").
             Each value is pasted into the SQL verbatim, so quote it to match the column's data
-            type — a number as accepted_values("<num>"), a string as accepted_values("'<string>'").
+            type — a number as "<num>", a string as "'<string>'".
             Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
-          allowsMultiple: true
           parameters:
             - name: value
               type: string
@@ -349,10 +349,11 @@ metadata:
           description: |-
             🚦 Column-level data quality test.
             Fails on rows whose value is in the deny list.
-            Repeat the annotation once per forbidden value. Each value is pasted into the SQL verbatim, so quote it to match the column's data type — a number as rejected_values("<num>"), a string as
-            rejected_values("'<string>'").
+            List every forbidden value in a single annotation call, either as one comma-separated
+            string — rejected_values("1, 3, 5") — or as separate parameters — rejected_values("1", "3", "5").
+            Each value is pasted into the SQL verbatim, so quote it to match the column's data
+            type — a number as "<num>", a string as "'<string>'".
             Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
-          allowsMultiple: true
           parameters:
             - name: value
               type: string
@@ -444,7 +445,7 @@ metadata:
               isRequired: true
               example: "<other_column>"
 
-    sqlInitializationTemplate: |
+    sqlInitializationTemplate: |-
           {%- macro ref_raw(location_name, node_name) -%}
             {% raw %}{{ ref('{% endraw %}{{ location_name }}{% raw %}', '{% endraw %}{{ node_name }}{% raw %}') }}{% endraw %}
           {%- endmacro -%}
