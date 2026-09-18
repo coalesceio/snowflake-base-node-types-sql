@@ -515,7 +515,7 @@ macroString: |-
                 'required': false,
                 'annotation': '@isSurrogateKey',
                 'example': '0 AS "' ~ node.name ~ '_KEY" @isSurrogateKey',
-                'reason': 'Recommended for SCD Type 2: fact tables typically need to join to the specific historical row-version that was active at the time of the fact, not just the business key (which repeats across every version) — a stable surrogate key per version is the standard way to support that join. Not needed for SCD Type 1, where there is only ever one row per business key.'
+                'reason': 'Recommended for SCD Type 2, to give tables a stable per-version join key. Ignore this warning if you are managing your own surrogate key logic (e.g. a sequence NEXTVAL) instead of using @isSurrogateKey.'
             }] %}
         {%- endif %}
 
@@ -587,7 +587,14 @@ macroString: |-
 
         {%- if missingSystemColumns.items | length > 0 %}
             {%- set anyRequired = missingSystemColumns.items | selectattr('required') | list | length > 0 %}
-            {{ test_stage('Missing Required System Columns', not anyRequired) }}
+            {#== Every OTHER required/recommended system column is already present — the only
+                 thing flagged is the recommended (not required) @isSurrogateKey. That's just as
+                 likely to be a customer running their own surrogate key logic (e.g. SEQ.NEXTVAL)
+                 as it is a genuine oversight, so use a neutral heading instead of "Missing" —
+                 not an error, just a heads-up either way. ==#}
+            {%- set onlySurrogateKeyFlagged = missingSystemColumns.items | length == 1 and missingSystemColumns.items[0].annotation == '@isSurrogateKey' and not missingSystemColumns.items[0].required %}
+            {%- set stageName = 'Surrogate Key Not Set/Using Custom Surrogate Key Logic' if onlySurrogateKeyFlagged else 'Missing Required System Columns' %}
+            {{ test_stage(stageName, not anyRequired) }}
             {%- for item in missingSystemColumns.items %}
             -- {{ loop.index }}. [{{ 'REQUIRED' if item.required else 'RECOMMENDED' }}] {{ item.annotation }}
             {%- if item.example %}
