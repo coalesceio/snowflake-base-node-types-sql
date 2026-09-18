@@ -1,5 +1,5 @@
 @id("306ecbc9-cb3d-407b-89e9-1f2b2fca24eb")
-@nodeType("4a720337-2713-45a5-b3f2-2d47d7abe3e5")
+@nodeType("718")
 @mergeStrategy("changeTracking")
 SELECT DISTINCT
     {{ ref('SRC', 'DIM_NATION_TEST_SEQ') }}.NEXTVAL::STRING AS "DIM_NATION_KEY",

@@ -1,5 +1,5 @@
 @id("c7e2a9f4-5d1b-4a6c-9f3e-8b0d4c7a2e15")
-@nodeType("4a720337-2713-45a5-b3f2-2d47d7abe3e5")
+@nodeType("718")
 @mergeStrategy("lastModified")
 @zeroKey("0", "PNKNOWN", "1900-01-01 00:00:00", "true")
 SELECT

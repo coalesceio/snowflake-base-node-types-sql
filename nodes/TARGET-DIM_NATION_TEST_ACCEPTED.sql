@@ -1,5 +1,5 @@
 @id("dc22fe14-4908-4696-81ec-06936327f826")
-@nodeType("4a720337-2713-45a5-b3f2-2d47d7abe3e5")
+@nodeType("718")
 SELECT DISTINCT
     N_NATIONKEY AS "T_N_NATIONKEY" @isBusinessKey,
     N_NAME AS "T_N_NAME",

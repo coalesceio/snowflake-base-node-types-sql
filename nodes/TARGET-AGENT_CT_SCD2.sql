@@ -1,5 +1,5 @@
 @id("f3b8a1c2-6e7d-4a9b-8c1f-2d5e9a7b4c60")
-@nodeType("4a720337-2713-45a5-b3f2-2d47d7abe3e5")
+@nodeType("718")
 @mergeStrategy("changeTracking")
 SELECT
     "NATION_TEST".N_NATIONKEY               AS "BUSINESS_KEY"          @isBusinessKey,

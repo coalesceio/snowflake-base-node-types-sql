@@ -5,7 +5,7 @@ metadata:
   defaultStorageLocation: null
   error: null
   nodeMetadataSpec: |-
-    capitalized: Copy of Dimension 
+    capitalized: Dimension 
     short: DIM
     plural: Dimensions
     tagColor: '#1E339A'

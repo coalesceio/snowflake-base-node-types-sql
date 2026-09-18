@@ -1,5 +1,5 @@
 @id("7905f0c1-54c0-4a4d-8f11-ba2c1d9a8cd1")
-@nodeType("4a720337-2713-45a5-b3f2-2d47d7abe3e5")
+@nodeType("718")
 @mergeStrategy("upsert")
     WITH src AS (
     SELECT
