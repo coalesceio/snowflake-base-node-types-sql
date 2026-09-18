@@ -239,7 +239,6 @@ metadata:
             • 𝗢𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 — the merge logic joins and detects changes entirely off the business key (@isBusinessKey).
             • 𝗥𝗲𝗰𝗼𝗺𝗺𝗲𝗻𝗱𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — a stable surrogate key per version is the standard way to support versioned business key. Not enforced — the merge itself doesn't require it.
             • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗼𝗻𝗹𝘆 𝘄𝗵𝗲𝗻 the node-level @zeroKey is set, since the zero/ghost record is matched against the target by surrogate key value.
-            • Ignored on views.
 
             𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
             0 AS "{{NODE_NAME}}_KEY" @isSurrogateKey
@@ -252,7 +251,6 @@ metadata:
             • Marks this column as the SCD version number, incremented each time a business key gets a new version.
             • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — shows which version of a row this is. Each time a business key's row changes, the expired row is kept and a new row is inserted with this value incremented by 1.
             • 𝗢𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 — new-vs-existing is detected off the business key alone, so this column can be dropped entirely; if kept, it is always written as 1 and never incremented.
-            • Ignored on views.
 
             𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
             1 AS "SYSTEM_VERSION" @isSystemVersion
@@ -265,7 +263,6 @@ metadata:
             • Marks this column as the SCD "is current" flag — 'Y' on the active version of a row, overwritten to 'N' when it's expired.
             • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — used to filter the target down to each business key's one current row before comparing it against the incoming source row.
             • 𝗢𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 —  safe to omit; if kept, it is always written as 'Y'.
-            • Ignored on views.
 
             𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
             'Y' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag
@@ -277,7 +274,6 @@ metadata:
           description: |-
             • Marks this column as the timestamp a row (or, under SCD Type 2, a specific row version) was first created.
             • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝘂𝗻𝗹𝗲𝘀𝘀 @mergeStrategy 𝗶𝘀 𝘂𝗽𝘀𝗲𝗿𝘁
-            • Ignored on views.
 
             𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
             CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate
@@ -290,7 +286,6 @@ metadata:
             • Marks this column as the timestamp a row was last updated.
             • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — read back from the target and refreshed to the current timestamp whenever a row is inserted as a new version or its prior current version is expired.
             • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 — recomputed to the current timestamp on every inserted or changed row, so every row change carries an audit trail of when it was last updated.
-            • Ignored on views.
 
             𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
             CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
@@ -303,7 +298,6 @@ metadata:
             • Marks this column as the SCD Type 2 expiration timestamp — a far-future sentinel while the row is current, set to the actual expiry time once superseded.
             • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — this is what makes a version's active window queryable; omitting it leaves expired versions with no expiry marker.
             • 𝗢𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 — (no versioning, so nothing ever expires) — safe to omit entirely.
-            • Ignored on views.
 
             𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
             CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
@@ -313,33 +307,33 @@ metadata:
 
         - name: not_null
           description: |-
-            🚦 Column-level data quality test.
-            Fails on rows where the column is 𝗡𝗨𝗟𝗟.
-            Presence enables the test — remove the annotation to turn it off.
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+           🚦 Column-level data quality test.
+            • Fails on rows where the column is 𝗡𝗨𝗟𝗟.
+            • Presence enables the test — remove the annotation to turn it off.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
 
         - name: uniqueness
           description: |- 
-            🚦 Column-level data quality test.
-            Fails when a value appears on more than one row.
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+           🚦 Column-level data quality test.
+            • Fails when a value appears on more than one row.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
 
         - name: empty
           description: |-
-            🚦 Column-level data quality test.
-            Fails on rows where the column trims to the empty string;
-            𝗡𝗨𝗟𝗟 values pass this test and are instead caught by not_null.
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+           🚦 Column-level data quality test.
+            • Fails on rows where the column trims to the empty string;
+            • 𝗡𝗨𝗟𝗟 values pass this test and are instead caught by not_null.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
 
         - name: accepted_values
           description: |-
-            🚦 Column-level data quality test.
-            Fails on rows whose value is outside the allow list.
-            List every permitted value in a single annotation call, either as one comma-separated
-            string — accepted_values("1, 3, 5") — or as separate parameters — accepted_values("1", "3", "5").
-            Each value is pasted into the SQL verbatim, so quote it to match the column's data
-            type — a number as "<num>", a string as "'<string>'".
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+           🚦 Column-level data quality test.
+            • Fails on rows whose value is outside the allow list.
+            • List every permitted value in a single annotation call:
+              accepted_values("1, 3, 5")
+              accepted_values("1", "3", "5")
+            • Each value is pasted into the SQL verbatim, so quote it to match the column's data type — a number as "<num>", a string as "'<string>'".
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: value
               type: string
@@ -347,13 +341,13 @@ metadata:
 
         - name: rejected_values
           description: |-
-            🚦 Column-level data quality test.
-            Fails on rows whose value is in the deny list.
-            List every forbidden value in a single annotation call, either as one comma-separated
-            string — rejected_values("1, 3, 5") — or as separate parameters — rejected_values("1", "3", "5").
-            Each value is pasted into the SQL verbatim, so quote it to match the column's data
-            type — a number as "<num>", a string as "'<string>'".
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+           🚦 Column-level data quality test.
+            • Fails on rows whose value is in the deny list.
+            • List every forbidden value in a single annotation call:
+              rejected_values("1, 3, 5")
+              rejected_values("1", "3", "5")
+            • Each value is pasted into the SQL verbatim, so quote it to match the column's data type — a number as "<num>", a string as "'<string>'".
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: value
               type: string
@@ -362,10 +356,10 @@ metadata:
 
         - name: min_max
           description: |-
-            🚦 Column-level data quality test.
-            Fails on rows outside the inclusive range.
-            Both bounds are pasted into the SQL verbatim, so write a number as "0" and a date as "DATE '2026-01-01'".
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+           🚦 Column-level data quality test.
+            • Fails on rows outside the inclusive range.
+            • Both bounds are pasted into the SQL verbatim, so write a number as "0" and a date as "DATE '2026-01-01'".
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: min
               type: string
@@ -380,10 +374,10 @@ metadata:
 
         - name: min_value
           description: |-
-            🚦 Column-level data quality test.
-            Fails on rows below the bound.
-            Pasted into the SQL verbatim — see min_max.
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+           🚦 Column-level data quality test.
+            • Fails on rows below the bound.
+            • Pasted into the SQL verbatim — see min_max.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: min
               type: string
@@ -393,10 +387,10 @@ metadata:
 
         - name: max_value
           description: |-
-            🚦 Column-level data quality test.
-            Fails on rows above the bound.
-            Pasted into the SQL verbatim — see min_max.
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+           🚦 Column-level data quality test.
+            • Fails on rows above the bound.
+            • Pasted into the SQL verbatim — see min_max.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: max
               type: string
@@ -406,10 +400,10 @@ metadata:
 
         - name: freshness
           description: |-
-            🚦 Column-level data quality test.
-            Checks that the data is fresh — fails when the column's value is older than the given interval, or when the table has no rows at all.
+           🚦 Column-level data quality test.
+            • Checks that the data is fresh — fails when the column's value is older than the given interval, or when the table has no rows at all. 
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
             𝗡𝗼𝘁𝗲: on a DATE column the value is truncated to midnight.
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: interval
               description: |-
@@ -425,12 +419,11 @@ metadata:
 
         - name: relative_time
           description: |-
-            🚦 Column-level data quality test.
-            Compares this column against another date/time column on the same node using the
-            given operator.
-            E.g. @relative_time("<=", "END_DATE") fails any row where this column's value is not less than or equal to END_DATE.
-            A row with either side 𝗡𝗨𝗟𝗟 is left out of the check and passes.
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+           🚦 Column-level data quality test.
+            • Compares this column against another date/time column on the same node using the given operator.
+            • E.g. @relative_time("<=", "END_DATE") fails any row where this column's value is not less than or equal to END_DATE.
+            • A row with either side 𝗡𝗨𝗟𝗟 is left out of the check and passes.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: operator
               type: string

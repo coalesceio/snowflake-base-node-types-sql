@@ -355,7 +355,7 @@ If the column name's casing must be preserved exactly, swap the outer quotes to 
 | `@not_null` | Fails on rows where the column is NULL.<br/>Example: `@not_null` |
 | `@uniqueness` | Fails when a value appears on more than one row.<br/>Example: `@uniqueness` |
 | `@empty` | Fails on rows where the column trims to the empty string.<br/>NULL values pass this test — they're caught by `@not_null` instead.<br/>Example: `@empty` |
-| `@accepted_values("<value>", ...)` | Fails on rows whose value is outside the allow list.<br/>List every permitted value in a single call, either as one comma-separated string — `accepted_values("1, 3, 5")` — or as separate parameters — `accepted_values("1", "3", "5")`.<br/>Quote to match the column's data type — <br/>number: `"<num>"`<br/>string: `"'<string>'"`.<br/>Example: `@accepted_values("'ALGERIA', 'ARGENTINA'")` |
+| `@accepted_values("<value>", ...)` | Fails on rows whose value is outside the allow list.<br/>List every permitted value in a single call —<br/>`accepted_values("1, 3, 5")`<br/>`accepted_values("1", "3", "5")`<br/>Quote to match the column's data type — <br/>number: `"<num>"`<br/>string: `"'<string>'"`.<br/>Example: `@accepted_values("'ALGERIA', 'ARGENTINA'")` |
 | `@rejected_values("<value>", ...)` | Fails on rows whose value is in the deny list.<br/>Same syntax and quoting rules as `accepted_values`.<br/>Example: `@rejected_values("'NA'")` |
 | `@min_max("<min>", "<max>")` | Fails on rows outside the inclusive range.<br/>Bounds are pasted into the SQL verbatim —<br/>number: `"0"`,<br/>date: `"DATE '2026-01-01'"`.<br/>Example: `@min_max("0", "4")` |
 | `@min_value("<min>")` | Fails on rows below the bound.<br/>Value formatting — see `min_max`.<br/>Example: `@min_value("0")` |
