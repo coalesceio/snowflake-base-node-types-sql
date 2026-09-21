@@ -36,9 +36,14 @@ metadata:
 
         - name: mergeStrategy
           description: |-
-            • Chooses how this dimension decides a row has changed, and therefore which column annotations it requires. 
+            • Chooses how this dimension decides a row has changed, and therefore which column annotations it requires.
             • If not specified, defaults to 𝗰𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 - 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭
             • Ignored on views.
+
+            𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 — before writing a new Dimension node's SELECT, ask the user (don't silently default):
+            1. Which merge strategy do they want — 𝘂𝗽𝘀𝗲𝗿𝘁, 𝗰𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴, or 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱? If they don't know, explain the three options above and let them choose — don't pick 𝗰𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 just because it's the fallback default.
+            2. If they chose 𝗰𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 or 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱, ask whether they want 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 (overwrite the row in place) or 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 (expire the old row, insert a new version) — this decides whether to mark a column 𝗶𝘀𝗖𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 (changeTracking) or use 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴(𝟮) (lastModified), and whether the SCD Type 2 system columns (isSystemVersion/isSystemCurrentFlag/isSystemEndDate) are required.
+            3. If 𝘂𝗽𝘀𝗲𝗿𝘁 was chosen, skip step 2 entirely — 𝘂𝗽𝘀𝗲𝗿𝘁 has no SCD type of its own.
           isRequired: false
           parameters:
             - name: strategy
@@ -157,7 +162,25 @@ metadata:
         - name: disableIDs
           type: boolean
           description: |-
-            • When set, skips requiring/adding the @id("<ID>") annotation on this node's columns.
+            • When set, skips requiring/adding a real @id("<value>") annotation on this node's columns.
+            • 𝗗𝗲𝗳𝗮𝘂𝗹𝘁 𝗯𝗲𝗵𝗮𝘃𝗶𝗼𝗿 𝗶𝘀 𝘁𝗼 𝗶𝗻𝗰𝗹𝘂𝗱𝗲 𝗜𝗗𝘀 — this annotation is only added when IDs are explicitly turned off, never added "just in case".
+            • @id("<value>") is read verbatim — nothing generates or substitutes a value for you. Whatever string is typed inside the quotes becomes that column's id, exactly as written. Leaving it as literal placeholder text (e.g. @id("<ID>")) satisfies validation but is worthless as an identifier, since it's identical on every column.
+
+            𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 — when generating a new Dimension node's SELECT from scratch:
+            1. Check for a disableIDs value before writing anything. It is not fixed to one place — check whatever parameter source is actually available to you in this creation session first (e.g. a runtime/API parameter passed to you, or a parameters argument the calling tool supplied); workspace.yml's top-level parameters: block (e.g. parameters.disableIDs: true) is one place this can also be set as a file, but it is not the only one and may not be present or may not be the live source — a runtime/API-supplied value, where available, takes priority over it. If you find no such value from any source available to you, treat it as not set (the default).
+            2. 𝗻𝗼𝘁 𝘀𝗲𝘁 / 𝗳𝗮𝗹𝘀𝗲 (the default) → generate your own fresh, unique value (e.g. a UUID) for every generated column — every plain source column, the surrogate key, and every system column — and mark it with @id("<your-generated-value>"). A different value per column; never reuse one value, and never use literal placeholder text like "<ID>". Do not add @disableIDs.
+            3. 𝘁𝗿𝘂𝗲 → skip @id(...) on every column entirely, and instead add a single node-level @disableIDs annotation.
+            • Never mix the two: a node either carries a real, distinct @id(...) on all of its columns, or carries @disableIDs and none of them — not a partial mix of some columns with an ID and others without.
+
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻 (disableIDs not set — the default):
+            0 AS "{{NODE_NAME}}_KEY" @id("3f9a1c2e-4b7d-4e6a-9c1f-8a2d5e7b0c3a") @isSurrogateKey,
+            "SOME_COLUMN" AS "SOME_COLUMN" @id("7b2e5f1a-9c3d-4a6e-8f0b-1d4c6e9a2b5f"),
+            1 AS "SYSTEM_VERSION" @id("1a4d7e0b-3c6f-4b9a-8e1d-5a7c0f2b4e6d") @isSystemVersion
+
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻 (disableIDs set to true):
+            @disableIDs
+            0 AS "{{NODE_NAME}}_KEY" @isSurrogateKey,
+            "SOME_COLUMN" AS "SOME_COLUMN"
           isRequired: false
           default: false
 
@@ -180,6 +203,7 @@ metadata:
           description: |-
             • Marks a column as part of the business key used to match existing rows during the merge.
             • Ignored on views.
+            • 𝗔𝗴𝗲𝗻𝘁𝗶𝗰 𝗰𝗿𝗲𝗮𝘁𝗶𝗼𝗻 — before writing the SELECT, ask the user which column(s) should be marked @isBusinessKey. Don't guess based on column naming (e.g. assuming a "_ID"/"_KEY" column, or the first natural-looking key) — the business key is a domain decision only the user can make, and getting it wrong silently breaks change detection for every row. A business key can be more than one column; ask whether it's composite.
           isRequired: true
 
         - name: lastModifiedTracking

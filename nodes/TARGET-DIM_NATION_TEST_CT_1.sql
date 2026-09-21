@@ -1,6 +1,6 @@
 @id("02d8dce1-774f-4af0-896f-42afdb41f5f4")
 @nodeType("718")
--- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created — don't remove unless every column has a real @id("xxxxx").
+-- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created — don't remove unless every column has a real system-generated ID.
 @disableIDs
 @disableTests
 SELECT DISTINCT

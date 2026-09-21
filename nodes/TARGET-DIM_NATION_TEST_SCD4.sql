@@ -1,6 +1,6 @@
 @id("6be73b19-cac2-403f-bc16-a1115eeb235a")
 @nodeType("718")
--- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created — don't remove unless every column has a real @id("xxxxx").
+-- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created — don't remove unless every column has a real system-generated ID.
 @disableIDs
 -- Load history before loading change tracked load into target
 @preSQL('INSERT INTO {{ ref("SRC", "NATION_TEST_HISTORY") }} SELECT * FROM {{ ref("SRC", "NATION_TEST") }}')

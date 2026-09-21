@@ -1,6 +1,6 @@
 @id("ea827314-b477-4a98-9d64-db61d17d8602")
 @nodeType("718")
--- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created — don't remove unless every column has a real @id("xxxxx").
+-- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created — don't remove unless every column has a real system-generated ID.
 @disableIDs
 @materializationType("view")
 SELECT

@@ -1,6 +1,6 @@
 @id("dc22fe14-4908-4696-81ec-06936327f826")
 @nodeType("718")
--- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created — don't remove unless every column has a real @id("xxxxx").
+-- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created — don't remove unless every column has a real system-generated ID.
 @disableIDs
 SELECT DISTINCT
     N_NATIONKEY AS "T_N_NATIONKEY" @isBusinessKey,
