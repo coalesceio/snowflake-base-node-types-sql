@@ -36,10 +36,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
         {%- if lastModifiedComparison %}
             {%- set lastModifiedCol = columns | selectattr("lastModifiedTracking") | first %}
             {%- set lastModifiedColName = lastModifiedCol.name %}
-            {#== @lastModifiedTracking with no scdType parameter at all (e.g. mentioned as a plain
-                 boolean annotation, @lastModifiedTracking with no parentheses) comes through as a
-                 bare `true`, not a mapping with .parameters — guard for that and fall back to the
-                 default scdType of 1 instead of erroring. ==#}
+            {# A bare @lastModifiedTracking (no scdType) comes through as `true`, not a mapping — guard for that and default scdType to 1. #}
             {%- set lastModifiedTrackingParams = lastModifiedCol.lastModifiedTracking.parameters if (lastModifiedCol.lastModifiedTracking is mapping and lastModifiedCol.lastModifiedTracking.parameters is defined) else [] %}
             {%- set scdType = lastModifiedTrackingParams[0] | default(1, true) | string %}
             {%- set type2Dimension = scdType == '2' %}
@@ -53,8 +50,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     {%- endif %}
 
     {%- if isSimpleUpsert %}
-        {# @upsert always forces plain SCD1 — no change detection, no versioning — regardless
-           of any @lastModifiedTracking/@isChangeTracking annotations present on the node. #}
+        {# @upsert always forces plain SCD1, no matter what @lastModifiedTracking/@isChangeTracking say. #}
         {%- set type2Dimension = false %}
     {%- endif %}
 
@@ -186,12 +182,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     USING (
         {{- source.cteString }}
         {%- if type2Dimension -%}
-            {#== SCD Type 2 — CTE-based (see SCD2-Chnaged logic_Combined.sql).
-                 Source rows are classified NEW / CHANGED / NOCHANGE against the current target row,
-                 then unioned into the three MERGE row shapes (insert new key, insert new version,
-                 expire old version). Handles both the last-modified-driven and the change-tracking-
-                 driven variants of SCD2 — only the CHANGED predicate below differs between them.
-                 SCD1 (non-type-2) handling is intentionally left as-is for now. ==#}
+            {# SCD Type 2: classifies each source row as NEW/CHANGED/NOCHANGE, then unions the three MERGE row shapes (new key, new version, expire old version). #}
             {%- set sysVersionCol = get_value_by_column_attribute("isSystemVersion") %}
             {%- set sysCurrentFlagCol = get_value_by_column_attribute("isSystemCurrentFlag") %}
             {%- set sysCreateDateCol = get_value_by_column_attribute("isSystemCreateDate") %}
@@ -368,21 +359,12 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
             -- can route each row to the right insert/update behavior
             SELECT * FROM "MERGE_ROWS"
         {%- else -%}
-            {#== SCD Type 1 — CTE-based (see SCD1-Chnaged logic_Combined.sql).
-                 One row per business key. Source rows are classified NEW / CHANGED / NOCHANGE
-                 against the current target row (NEW is detected off the business key, not a
-                 version column — SYSTEM_VERSION/SYSTEM_CURRENT_FLAG/SYSTEM_END_DATE are all
-                 optional for SCD1 and the flow works the same whether or not they're present;
-                 SYSTEM_CREATE_DATE is set once on insert and never touched again, and
-                 SYSTEM_UPDATE_DATE only advances on rows actually inserted/changed).
-                 SCD2 keeps SYSTEM_VERSION/SYSTEM_CURRENT_FLAG/SYSTEM_END_DATE as required. ==#}
+            {# SCD Type 1: one row per business key, classified NEW/CHANGED/NOCHANGE off the business key (version/current-flag/end-date columns are optional here). #}
             {%- set sysCreateDateCol = get_value_by_column_attribute("isSystemCreateDate") %}
             {%- set firstBizKeyCol = (columns | selectattr("isBusinessKey") | first).name %}
 
             {%- if isSimpleUpsert %}
-            {# @upsert compares nothing and needs nothing back from the target at all — the
-               outer MERGE's own MATCHED/NOT MATCHED branches already tell us insert-vs-update,
-               so this is a plain pass-through of the source's business key + attribute columns. #}
+            {# @upsert needs nothing from the target — the outer MERGE's MATCHED/NOT MATCHED already tells insert vs. update, so just pass the source columns through. #}
             SELECT {{ source.selectModifier | default('', true) }}
             {%- for col in source.columns if not (col.isSurrogateKey or col.isSystemVersion or col.isSystemCurrentFlag or col.isSystemCreateDate or col.isSystemUpdateDate or col.isSystemEndDate) %}
                 {{ get_source_transform(col) }} AS "{{ col.name }}"

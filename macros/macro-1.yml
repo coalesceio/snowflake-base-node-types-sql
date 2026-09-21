@@ -225,7 +225,7 @@ macroString: |-
 
             {%- if col.inHash is defined -%}
                 {%- for p in col.inHash -%}
-                    {%- set parts = p.parameters[0] %}
+                    {%- set parts = p.parameters[0] -%}
                     {%- set position = p.parameters[1] | int -%}
                     {%- set hash = p.parameters[0] -%}
 
@@ -286,44 +286,44 @@ macroString: |-
     Output: Rendered test_stage(...) + SELECT statements for every check that fails.
     ===========================================================================#}
     {%- macro validate_dimension_requirements() -%}
-        {# @disableIDs is a per-node opt-out — set it on a specific node to skip only its column ID check, independently of every other check below. #}
-        {%- set disableIDs = parameters.disableIDs is defined and parameters.disableIDs and (parameters.disableIDs | string | lower != 'false') %}
-        {%- if not disableIDs %}
-            {%- set invalidIdColumns = namespace(items=[]) %}
-            {%- for col in columns %}
-                {%- if col.id == col.name %}
-                    {%- set invalidIdColumns.items = invalidIdColumns.items + [col] %}
-                {%- endif %}
-            {%- endfor %}
-            {%- set invalidIdColumns = invalidIdColumns.items %}
+        {# @disableIDs is a per-node opt-out, read from the node's own SQL (not the one-time creation parameter) — set it on a specific node to skip only its column ID check, independently of every other check below. #}
+        {%- set disableIDs = get_boolean_config("disableIDs") == "true" -%}
+        {%- if not disableIDs -%}
+            {%- set invalidIdColumns = namespace(items=[]) -%}
+            {%- for col in columns -%}
+                {%- if col.id == col.name -%}
+                    {%- set invalidIdColumns.items = invalidIdColumns.items + [col] -%}
+                {%- endif -%}
+            {%- endfor -%}
+            {%- set invalidIdColumns = invalidIdColumns.items -%}
             {%- if invalidIdColumns | length > 0 %}
-                {{ test_stage("Missing Column IDs", true) }}
-                -- These columns need a real @id("<ID>") (not just the column name): {{ invalidIdColumns | map(attribute='name') | join(', ') }}. Set @disableIDs to skip this check.
+                {{ test_stage("Missing Column IDs", false) }}
+                -- These columns have no real system-generated ID (id equals the column name): {{ invalidIdColumns | map(attribute='name') | join(', ') }}. Set @disableIDs to skip this check.
                 SELECT 1
-            {%- endif %}
-        {%- endif %}
+            {%- endif -%}
+        {%- endif -%}
 
-        {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) %}
+        {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) -%}
         {%- if not hasBusinessKey %}
             {{ test_stage("Missing Business Key", false) }}
             -- Mark at least one column with @isBusinessKey to identify the dimension's natural/business key for SCD matching.
             SELECT 1
-        {%- endif %}
+        {%- endif -%}
 
-        {%- set lastModifiedCount = columns | selectattr("lastModifiedTracking") | list | length %}
-        {%- set changeTrackingCount = columns | selectattr("isChangeTracking") | list | length %}
+        {%- set lastModifiedCount = columns | selectattr("lastModifiedTracking") | list | length -%}
+        {%- set changeTrackingCount = columns | selectattr("isChangeTracking") | list | length -%}
 
-        {%- set mergeStrategyExplicit = config.mergeStrategy is defined and config.mergeStrategy.parameters is defined and config.mergeStrategy.parameters | length > 0 %}
-        {%- if mergeStrategyExplicit %}
-            {%- set mergeStrategy = config.mergeStrategy.parameters[0] | trim %}
+        {%- set mergeStrategyExplicit = config.mergeStrategy is defined and config.mergeStrategy.parameters is defined and config.mergeStrategy.parameters | length > 0 -%}
+        {%- if mergeStrategyExplicit -%}
+            {%- set mergeStrategy = config.mergeStrategy.parameters[0] | trim -%}
         {%- elif lastModifiedCount > 0 %}
             {# No @mergeStrategy given, but a column has @lastModifiedTracking — infer lastModified. #}
-            {%- set mergeStrategy = 'lastModified' %}
-        {%- else %}
-            {%- set mergeStrategy = 'changeTracking' %}
-        {%- endif %}
-        {%- set isSimpleUpsert = mergeStrategy == 'upsert' %}
-        {%- set isLastModifiedStrategy = mergeStrategy == 'lastModified' %}
+            {%- set mergeStrategy = 'lastModified' -%}
+        {%- else -%}
+            {%- set mergeStrategy = 'changeTracking' -%}
+        {%- endif -%}
+        {%- set isSimpleUpsert = mergeStrategy == 'upsert' -%}
+        {%- set isLastModifiedStrategy = mergeStrategy == 'lastModified' -%}
         {%- set isChangeTrackingStrategy = mergeStrategy == 'changeTracking' %}
 
         {# These cross-checks only apply when @mergeStrategy is set explicitly, since an inferred strategy can't conflict with itself. #}
@@ -331,13 +331,13 @@ macroString: |-
             {{ test_stage('Invalid configuration: mergeStrategy', true) }}
             -- @mergeStrategy("upsert") performs no change detection, so @isChangeTracking/@lastModifiedTracking columns are never read. Remove them, or switch mergeStrategy to "changeTracking"/"lastModified" to use them.
             SELECT 1
-        {%- endif %}
+        {%- endif -%}
 
         {%- if isChangeTrackingStrategy and lastModifiedCount > 0 %}
             {{ test_stage('Invalid configuration: mergeStrategy', true) }}
             -- @mergeStrategy("changeTracking") does not use @lastModifiedTracking — that column would be silently ignored. Remove it, or switch mergeStrategy to "lastModified".
             SELECT 1
-        {%- endif %}
+        {%- endif -%}
 
         {%- if isLastModifiedStrategy and lastModifiedCount == 0 %}
             {{ test_stage('Invalid configuration: mergeStrategy', false) }}
@@ -350,131 +350,131 @@ macroString: |-
             {{ test_stage('Invalid configuration: Last Modified Column', false) }}
             -- @lastModifiedTracking may be applied to at most one column, but {{ lastModifiedCount }} columns were marked. Remove the annotation from all but one column.
             SELECT 1
-        {%- endif %}
+        {%- endif -%}
 
         {%- if isLastModifiedStrategy and changeTrackingCount > 0 %}
             {{ test_stage('Invalid configuration: mergeStrategy', true) }}
             -- @mergeStrategy("lastModified") does not use @isChangeTracking — those columns would be silently ignored (the last-modified comparison takes priority). Remove them, or switch mergeStrategy to "changeTracking" to use them.
             SELECT 1
-        {%- endif %}
+        {%- endif -%}
 
-        {%- set lastModifiedComparison = isLastModifiedStrategy and lastModifiedCount > 0 %}
-        {%- if hasBusinessKey %}
+        {%- set lastModifiedComparison = isLastModifiedStrategy and lastModifiedCount > 0 -%}
+        {%- if hasBusinessKey -%}
             {%- if lastModifiedComparison %}
                 {# More than one @lastModifiedTracking column is already flagged above — treat it as inconclusive (plain SCD1) until that's fixed. #}
-                {%- if lastModifiedCount == 1 %}
+                {%- if lastModifiedCount == 1 -%}
                     {%- set lastModifiedCol = columns | selectattr("lastModifiedTracking") | first %}
                     {# A bare @lastModifiedTracking (no scdType) comes through as `true`, not a mapping — guard for that and default scdType to 1. #}
-                    {%- set lastModifiedTrackingParams = lastModifiedCol.lastModifiedTracking.parameters if (lastModifiedCol.lastModifiedTracking is mapping and lastModifiedCol.lastModifiedTracking.parameters is defined) else [] %}
-                    {%- set scdType = lastModifiedTrackingParams[0] | default(1, true) | string %}
+                    {%- set lastModifiedTrackingParams = lastModifiedCol.lastModifiedTracking.parameters if (lastModifiedCol.lastModifiedTracking is mapping and lastModifiedCol.lastModifiedTracking.parameters is defined) else [] -%}
+                    {%- set scdType = lastModifiedTrackingParams[0] | default(1, true) | string -%}
                     {%- if scdType not in ('1', '2') %}
                         {{ test_stage('Invalid configuration: lastModifiedTracking scdType', false) }}
                         -- @lastModifiedTracking's scdType parameter only accepts 1 or 2, but "{{ scdType }}" was given on column {{ lastModifiedCol.name }}. Mention @lastModifiedTracking(scdType) explicitly — @lastModifiedTracking(1) to overwrite in place, or @lastModifiedTracking(2) to version the row.
                         SELECT 1
-                    {%- endif %}
-                    {%- set type2Dimension = scdType == '2' %}
-                {%- else %}
-                    {%- set type2Dimension = false %}
-                {%- endif %}
-            {%- else %}
-                {%- set type2Dimension = changeTrackingCount > 0 %}
-            {%- endif %}
-        {%- else %}
-            {%- set type2Dimension = false %}
-        {%- endif %}
+                    {%- endif -%}
+                    {%- set type2Dimension = scdType == '2' -%}
+                {%- else -%}
+                    {%- set type2Dimension = false -%}
+                {%- endif -%}
+            {%- else -%}
+                {%- set type2Dimension = changeTrackingCount > 0 -%}
+            {%- endif -%}
+        {%- else -%}
+            {%- set type2Dimension = false -%}
+        {%- endif -%}
         {%- if isSimpleUpsert %}
             {# @upsert always forces plain SCD1, no matter what @lastModifiedTracking/@isChangeTracking say. #}
-            {%- set type2Dimension = false %}
+            {%- set type2Dimension = false -%}
         {%- endif %}
 
         {# Collect every missing/misconfigured system column here so one run reports them all together instead of one at a time. #}
         {%- set missingSystemColumns = namespace(items=[]) %}
 
         {# @isSurrogateKey is normally optional (a customer may manage their own, e.g. SEQ.NEXTVAL) — required when @zeroKey needs one to match against, recommended for SCD Type 2. #}
-        {%- set hasSurrogateKey = columns | selectattr("isSurrogateKey") | list | length > 0 %}
-        {%- if config.zeroKey is defined and not hasSurrogateKey %}
+        {%- set hasSurrogateKey = columns | selectattr("isSurrogateKey") | list | length > 0 -%}
+        {%- if config.zeroKey is defined and not hasSurrogateKey -%}
             {%- set missingSystemColumns.items = missingSystemColumns.items + [{
                 'required': true,
                 'annotation': '@isSurrogateKey',
                 'example': none,
                 'reason': '@zeroKey requires a surrogate key column to match the zero record against; none was found on this node.'
-            }] %}
-        {%- elif type2Dimension and not hasSurrogateKey %}
+            }] -%}
+        {%- elif type2Dimension and not hasSurrogateKey -%}
             {%- set missingSystemColumns.items = missingSystemColumns.items + [{
                 'required': false,
                 'annotation': '@isSurrogateKey',
                 'example': '0 AS "' ~ node.name ~ '_KEY" @isSurrogateKey',
                 'reason': 'Recommended for SCD Type 2, to give tables a stable per-version join key. Ignore this warning if you are managing your own surrogate key logic (e.g. a sequence NEXTVAL) instead of using @isSurrogateKey.'
-            }] %}
-        {%- endif %}
+            }] -%}
+        {%- endif -%}
 
-        {%- set hasSystemCreateDate = columns | selectattr("isSystemCreateDate") | list | length > 0 %}
-        {%- if not isSimpleUpsert and not hasSystemCreateDate %}
+        {%- set hasSystemCreateDate = columns | selectattr("isSystemCreateDate") | list | length > 0 -%}
+        {%- if not isSimpleUpsert and not hasSystemCreateDate -%}
             {%- set missingSystemColumns.items = missingSystemColumns.items + [{
                 'required': true,
                 'annotation': '@isSystemCreateDate',
                 'example': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate',
                 'reason': 'Required because @mergeStrategy("changeTracking"/"lastModified") does change detection against the existing target row: SYSTEM_CREATE_DATE is carried through unchanged from that row into CHANGE_DETECTION so its original insert timestamp is preserved on every update, and only stamped with CURRENT_TIMESTAMP the one time a business key is first inserted.'
-            }] %}
+            }] -%}
         {%- endif %}
 
         {# SYSTEM_UPDATE_DATE is required for both SCD Type 1 and Type 2. #}
-        {%- set hasSystemUpdateDate = columns | selectattr("isSystemUpdateDate") | list | length > 0 %}
-        {%- if not isSimpleUpsert and not hasSystemUpdateDate %}
-            {%- if type2Dimension %}
+        {%- set hasSystemUpdateDate = columns | selectattr("isSystemUpdateDate") | list | length > 0 -%}
+        {%- if not isSimpleUpsert and not hasSystemUpdateDate -%}
+            {%- if type2Dimension -%}
                 {%- set missingSystemColumns.items = missingSystemColumns.items + [{
                     'required': true,
                     'annotation': '@isSystemUpdateDate',
                     'example': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate',
                     'reason': 'Required because this is an SCD Type 2 dimension: SYSTEM_UPDATE_DATE is carried through from the current target row into CHANGE_DETECTION/MERGE_ROWS so it can be stamped with CURRENT_TIMESTAMP whenever a new or changed version is inserted, marking when that version became active.'
-                }] %}
-            {%- else %}
+                }] -%}
+            {%- else -%}
                 {%- set missingSystemColumns.items = missingSystemColumns.items + [{
                     'required': true,
                     'annotation': '@isSystemUpdateDate',
                     'example': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate',
                     'reason': 'Required for SCD Type 1: without it there\'s no way to tell when a row\'s attributes were last changed — SYSTEM_CREATE_DATE is set once and never touched again.'
-                }] %}
-            {%- endif %}
-        {%- endif %}
+                }] -%}
+            {%- endif -%}
+        {%- endif -%}
 
         {# The remaining system columns are only required for SCD Type 2. #}
-        {%- if type2Dimension %}
-            {%- set hasSystemVersion = columns | selectattr("isSystemVersion") | list | length > 0 %}
-            {%- if not hasSystemVersion %}
+        {%- if type2Dimension -%}
+            {%- set hasSystemVersion = columns | selectattr("isSystemVersion") | list | length > 0 -%}
+            {%- if not hasSystemVersion -%}
                 {%- set missingSystemColumns.items = missingSystemColumns.items + [{
                     'required': true,
                     'annotation': '@isSystemVersion',
                     'example': '1 AS "SYSTEM_VERSION" @isSystemVersion',
                     'reason': 'Required because this is an SCD Type 2 dimension (a versioned last-modified column, or an @isChangeTracking column, was found): SYSTEM_VERSION is what distinguishes successive versions of the same business key, and it\'s what the outer MERGE\'s ON clause uses (alongside the business key) to target the exact row version being expired or matched.'
-                }] %}
-            {%- endif %}
+                }] -%}
+            {%- endif -%}
 
-            {%- set hasSystemCurrentFlag = columns | selectattr("isSystemCurrentFlag") | list | length > 0 %}
-            {%- if not hasSystemCurrentFlag %}
+            {%- set hasSystemCurrentFlag = columns | selectattr("isSystemCurrentFlag") | list | length > 0 -%}
+            {%- if not hasSystemCurrentFlag -%}
                 {%- set missingSystemColumns.items = missingSystemColumns.items + [{
                     'required': true,
                     'annotation': '@isSystemCurrentFlag',
                     'example': '\'Y\' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag',
                     'reason': 'Required because this is an SCD Type 2 dimension: the CHANGE_DETECTION CTE filters TARGET_CURRENT down to WHERE SYSTEM_CURRENT_FLAG = \'Y\' to find the one active row per business key to compare the incoming source row against — without it there\'s no way to tell which of possibly several historical versions is the current one.'
-                }] %}
-            {%- endif %}
+                }] -%}
+            {%- endif -%}
 
-            {%- set hasSystemEndDate = columns | selectattr("isSystemEndDate") | list | length > 0 %}
-            {%- if not hasSystemEndDate %}
+            {%- set hasSystemEndDate = columns | selectattr("isSystemEndDate") | list | length > 0 -%}
+            {%- if not hasSystemEndDate -%}
                 {%- set missingSystemColumns.items = missingSystemColumns.items + [{
                     'required': true,
                     'annotation': '@isSystemEndDate',
                     'example': 'CAST(\'2999-12-31 00:00:00\' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate',
                     'reason': 'Required because this is an SCD Type 2 dimension: SYSTEM_END_DATE is what gets set to the expiry timestamp when a changed row\'s prior version is expired, and to the far-future sentinel on every newly inserted current version — without it there\'s no way to bound how long each historical version was active.'
-                }] %}
-            {%- endif %}
-        {%- endif %}
+                }] -%}
+            {%- endif -%}
+        {%- endif -%}
 
-        {%- if missingSystemColumns.items | length > 0 %}
+        {%- if missingSystemColumns.items | length > 0 -%}
             {%- set anyRequired = missingSystemColumns.items | selectattr('required') | list | length > 0 %}
             {# If @isSurrogateKey is the only thing flagged, use a neutral heading since it may just be a custom surrogate key setup. #}
-            {%- set onlySurrogateKeyFlagged = missingSystemColumns.items | length == 1 and missingSystemColumns.items[0].annotation == '@isSurrogateKey' and not missingSystemColumns.items[0].required %}
+            {%- set onlySurrogateKeyFlagged = missingSystemColumns.items | length == 1 and missingSystemColumns.items[0].annotation == '@isSurrogateKey' and not missingSystemColumns.items[0].required -%}
             {%- set stageName = 'Surrogate Key Not Set/Using Custom Surrogate Key Logic' if onlySurrogateKeyFlagged else 'Missing Required System Columns' %}
             {{ test_stage(stageName, not anyRequired) }}
             {%- for item in missingSystemColumns.items %}
@@ -485,7 +485,7 @@ macroString: |-
             --    Reason: {{ item.reason }}
             {%- endfor %}
             SELECT 1
-        {%- endif %}
+        {%- endif -%}
     {%- endmacro -%}
 name: macro
 type: Macro

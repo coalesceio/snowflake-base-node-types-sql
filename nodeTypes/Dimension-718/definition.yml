@@ -157,7 +157,7 @@ metadata:
         - name: disableIDs
           type: boolean
           description: |-
-            • When set, skips adding the @id("<ID>") annotation to generated columns.
+            • When set, skips requiring/adding the @id("<ID>") annotation on this node's columns.
           isRequired: false
           default: false
 
@@ -472,6 +472,9 @@ metadata:
             {%- set line = (item.expr.ljust(maxExprLen) ~ ' AS ' ~ item.alias.ljust(maxAliasLen) ~ ' ' ~ item.annotation).rstrip() -%}
             {%- set ns.lines = ns.lines + [line] -%}
           {%- endfor -%}
+          {% if disableIDs -%}
+          @disableIDs     -- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created.
+          {% endif -%}
           SELECT
               {{ ns.lines | join(',\n    ') }}
           {% for dep in sources[0].dependencies -%}
