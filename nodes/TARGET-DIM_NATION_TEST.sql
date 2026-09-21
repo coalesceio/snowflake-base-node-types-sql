@@ -2,11 +2,11 @@
 @nodeType("718")
 SELECT
     0                                        AS "DIM_NATION_TEST_KEY" @id("ce304f") @isSurrogateKey,
-    "N_NATIONKEY"                            AS "N_NATIONKEY"         @id("7d6e35") ,
+    "N_NATIONKEY"                            AS "N_NATIONKEY_1"         @id("7d6e35"),
     "N_NAME"                                 AS "N_NAME"              @id("aee942"),
     "N_REGIONKEY"                            AS "N_REGIONKEY"         @id("aee946") @not_null,
     "N_COMMENT"                              AS "N_COMMENT"           @id("04055a"),
-    "N_LOAD_TIMESTAMP"                       AS "N_LOAD_TIMESTAMP"    @id("12df4d"),
+    "N_LOAD_TIMESTAMP"                       AS "N_LOAD_TIMESTAMP"    ,
     1                                        AS "SYSTEM_VERSION"      @id("0c28af") @isSystemVersion,
     'Y'                                      AS "SYSTEM_CURRENT_FLAG" @id("76068f") @isSystemCurrentFlag,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @id("3afd97") @isSystemCreateDate,
