@@ -1,11 +1,11 @@
-@id("89f3f8ed-2f62-45f8-a6d8-667d22022f4b")
+@id("1d9a300a-5ab4-45e2-b9c1-bcb0ed0c0eaa")
 @nodeType("718")
 @disableIDs     -- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created.
 SELECT
     0                                        AS "DIM_NATION_TEST_KEY" @isSurrogateKey,
     "N_NATIONKEY"                            AS "N_NATIONKEY" @isBusinessKey,
     "N_NAME"                                 AS "N_NAME",
-    "N_REGIONKEY"                            AS "N_REGIONKEY_RENAME",
+    "N_REGIONKEY"                            AS "N_REGIONKEY",
     "N_COMMENT"                              AS "N_COMMENT",
     "N_LOAD_TIMESTAMP"                       AS "N_LOAD_TIMESTAMP",
     1                                        AS "SYSTEM_VERSION"      @isSystemVersion,
