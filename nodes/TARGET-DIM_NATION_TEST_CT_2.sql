@@ -1,5 +1,6 @@
 @id("0d5791a6-e942-417b-9091-0bf13be314d2")
 @nodeType("718")
+@deployDisabled
 -- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created — don't remove unless every column has a real system-generated ID.
 @disableIDs
 @description("Table desc''")

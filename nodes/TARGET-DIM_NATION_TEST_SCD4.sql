@@ -1,5 +1,6 @@
 @id("6be73b19-cac2-403f-bc16-a1115eeb235a")
 @nodeType("718")
+@deployDisabled
 -- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created — don't remove unless every column has a real system-generated ID.
 @disableIDs
 -- Load history before loading change tracked load into target

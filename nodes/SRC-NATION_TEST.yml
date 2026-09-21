@@ -3,7 +3,7 @@ id: ee06c81b-3a32-4b21-abcf-f05a2aeb1849
 name: NATION_TEST
 operation:
   database: ""
-  deployEnabled: true
+  deployEnabled: false
   description: ""
   locationName: SRC
   metadata:

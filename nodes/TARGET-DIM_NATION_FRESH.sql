@@ -1,5 +1,6 @@
 @id("6488b4bf-c47e-45b6-8df6-3d63816ce649")
 @nodeType("718")
+@deployDisabled
 @disableIDs
 @mergeStrategy("lastModified")
 SELECT

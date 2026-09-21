@@ -1,5 +1,6 @@
 @id("1d9a300a-5ab4-45e2-b9c1-bcb0ed0c0eaa")
 @nodeType("718")
+@deployDisabled
 @disableIDs     -- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created.
 SELECT
     0                                        AS "DIM_NATION_TEST_KEY" @isSurrogateKey,

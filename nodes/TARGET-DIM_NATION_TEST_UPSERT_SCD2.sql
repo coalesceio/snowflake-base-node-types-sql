@@ -1,5 +1,6 @@
 @id("eadbba57-dee5-4e99-8f50-683c11c62279")
 @nodeType("718")
+@deployDisabled
 -- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created — don't remove unless every column has a real system-generated ID.
 @disableIDs
 @mergeStrategy("upsert")

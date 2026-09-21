@@ -1,5 +1,6 @@
 @id("9f68afb8-4848-4dce-8508-3e2cb7b1e7e4")
 @nodeType("718")
+@deployDisabled
 @disableIDs
 SELECT
     0                                        AS "DIM_NATION_TEST1_KEY" @id("5df2fd") @isSurrogateKey,
