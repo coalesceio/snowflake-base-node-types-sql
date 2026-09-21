@@ -4,7 +4,7 @@ SELECT
     0                                        AS "DIM_NATION_TEST_KEY" @id("84c777") @isSurrogateKey,
     "N_NATIONKEY"                            AS "N_NATIONKEY"         @id("b984ac") @isBusinessKey,
     "N_NAME"                                 AS "N_NAME"              @id("f89631"),
-    "N_REGIONKEY"                            AS "N_REGIONKEY"         @id("fc338a"),
+    "N_REGIONKEY"                            AS "N_REGIONKEY_RENAME"         @id("fc338a"),
     "N_COMMENT"                              AS "N_COMMENT"           @id("69476b"),
     "N_LOAD_TIMESTAMP"                       AS "N_LOAD_TIMESTAMP"    @id("8a0dd6"),
     1                                        AS "SYSTEM_VERSION"      @id("0bc025") @isSystemVersion,
