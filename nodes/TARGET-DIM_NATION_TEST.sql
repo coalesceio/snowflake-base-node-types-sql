@@ -1,16 +1,15 @@
-@id("5562149c-ef42-4b01-89fc-8e7e5b4af991")
+@id("c670d46f-5306-4d99-ab5c-a76b1a3f9bea")
 @nodeType("718")
-@disableIDs     -- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created.
 SELECT
-    0                                        AS "DIM_NATION_TEST_KEY" @isSurrogateKey,
-    "N_NATIONKEY"                            AS "N_NATIONKEY" @isBusinessKey,
-    "N_NAME"                                 AS "N_NAME",
-    "N_REGIONKEY"                            AS "N_REGIONKEY",
-    "N_COMMENT"                              AS "N_COMMENT",
-    "N_LOAD_TIMESTAMP"                       AS "N_LOAD_TIMESTAMP",
-    1                                        AS "SYSTEM_VERSION"      @isSystemVersion,
-    'Y'                                      AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag,
-    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @isSystemCreateDate,
-    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_UPDATE_DATE"  @isSystemUpdateDate,
-    CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE"     @isSystemEndDate
+    0                                        AS "DIM_NATION_TEST_KEY" @id("ce304f") @isSurrogateKey,
+    "N_NATIONKEY"                            AS "N_NATIONKEY"         @id("7d6e35") @isBusinessKey,
+    "N_NAME"                                 AS "N_NAME"              @id("aee942"),
+    "N_REGIONKEY"                            AS "N_REGIONKEY"         @id("938b29"),
+    "N_COMMENT"                              AS "N_COMMENT"           @id("04055a"),
+    "N_LOAD_TIMESTAMP"                       AS "N_LOAD_TIMESTAMP"    @id("12df4d"),
+    1                                        AS "SYSTEM_VERSION"      @id("0c28af") @isSystemVersion,
+    'Y'                                      AS "SYSTEM_CURRENT_FLAG" @id("76068f") @isSystemCurrentFlag,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @id("3afd97") @isSystemCreateDate,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_UPDATE_DATE"  @id("7d3b98") @isSystemUpdateDate,
+    CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE"     @id("6e8253") @isSystemEndDate
 FROM {{ ref('SRC', 'NATION_TEST') }} "NATION_TEST"
