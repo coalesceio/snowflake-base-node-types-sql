@@ -1,13 +1,15 @@
-@id("dc22fe14-4908-4696-81ec-06936327f826")
+@id("6be73b19-cac2-403f-bc16-a1115eeb235a")
 @nodeType("718")
 -- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created — don't remove unless every column has a real @id("xxxxx").
 @disableIDs
+-- Load history before loading change tracked load into target
+@preSQL('INSERT INTO {{ ref("SRC", "NATION_TEST_HISTORY") }} SELECT * FROM {{ ref("SRC", "NATION_TEST") }}')
 SELECT DISTINCT
-    N_NATIONKEY AS "T_N_NATIONKEY" @isBusinessKey,
-    N_NAME AS "T_N_NAME",
-    N_REGIONKEY AS "T_N_REGIONKEY" @accepted_values("0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11"),
-    N_COMMENT AS "T_N_COMMENT" @inHash("GH_COL", 1) @inHash("GH_COL1", 1),
-    N_LOAD_TIMESTAMP AS "T_N_LOAD_TIMESTAMP",
+    N_NATIONKEY AS "N_NATIONKEY" @isBusinessKey,
+    N_NAME AS "N_NAME",
+    N_REGIONKEY AS "N_REGIONKEY",
+    N_COMMENT AS "N_COMMENT",
+    N_LOAD_TIMESTAMP AS "N_LOAD_TIMESTAMP",
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
 FROM {{ ref("SRC", "NATION_TEST") }} "NATION_TEST_ALIAS"

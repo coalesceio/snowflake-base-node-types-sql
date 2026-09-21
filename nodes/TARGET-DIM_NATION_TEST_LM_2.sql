@@ -1,5 +1,7 @@
 @id("b94bcc63-55f2-4c7b-9e59-f20db1bd3696")
 @nodeType("718")
+-- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created — don't remove unless every column has a real @id("xxxxx").
+@disableIDs
 @mergeStrategy("lastModified")
 SELECT DISTINCT
     0 AS "DIM_NATION_KEY" @isSurrogateKey,

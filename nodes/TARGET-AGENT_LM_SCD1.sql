@@ -1,5 +1,7 @@
 @id("a1d4e8f6-3b2c-4f19-9e7a-5c8b6d0f2a41")
 @nodeType("718")
+-- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created — don't remove unless every column has a real @id("xxxxx").
+@disableIDs
 @mergeStrategy("lastModified")
 SELECT
     "NATION_TEST".N_NATIONKEY               AS "BUSINESS_KEY"        @isBusinessKey,

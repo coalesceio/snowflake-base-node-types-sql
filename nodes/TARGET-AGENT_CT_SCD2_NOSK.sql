@@ -1,5 +1,7 @@
 @id("306ecbc9-cb3d-407b-89e9-1f2b2fca24eb")
 @nodeType("718")
+-- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created — don't remove unless every column has a real @id("xxxxx").
+@disableIDs
 @mergeStrategy("changeTracking")
 SELECT DISTINCT
     {{ ref('SRC', 'DIM_NATION_TEST_SEQ') }}.NEXTVAL::STRING AS "DIM_NATION_KEY",
