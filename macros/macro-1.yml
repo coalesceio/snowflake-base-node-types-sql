@@ -281,21 +281,21 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-    Description: Validates a Dimension node's annotations and stages a failing test for anything wrong or missing (column IDs, business key, mergeStrategy, required system columns). Shared by create.sql.j2 and run.sql.j2 so both enforce the same rules.
-    Input: hardFail (boolean, default false) — RUN's test_stage(..., false) already fails the job when a wrapped SELECT returns a row, so "SELECT 1" is enough there. CREATE's statement executor does NOT evaluate row counts — it only fails a statement that raises a real SQL error — so a blocking check called with hardFail=true instead emits a statement that deliberately errors (embedding the reason in the error text), guaranteeing CREATE actually halts instead of silently "passing" a failed check.
+    Description: Validates a Dimension node's annotations (column IDs, business key, mergeStrategy, required system columns). Shared by create.sql.j2 and run.sql.j2.
+    Input: hardFail (boolean, default false) — set true from create.sql.j2 so a failed check raises a real SQL error, since CREATE (unlike RUN) doesn't fail on row count alone.
     Output: Rendered test_stage(...) + SELECT statements for every check that fails.
     ===========================================================================#}
     {%- macro validate_dimension_requirements(hardFail=false) -%}
-        {# Emits the failing statement for a BLOCKING check: SELECT 1 (relies on the RUN test framework's row-count-means-fail evaluation) or, when hardFail is set, a statement that raises a real SQL error carrying the reason text — needed for CREATE, whose statement executor doesn't apply that row-count evaluation. #}
+        {# CREATE doesn't fail on row count like RUN does, so hardFail forces a real SQL error instead. #}
         {%- macro fail_select(reason) -%}
             {%- if hardFail -%}
-                SELECT CAST('{{ reason | replace("'", "''") | replace('\n', ' ') }}' AS INTEGER) AS "VALIDATION_FAILURE"
+                SELECT 1/0
             {%- else -%}
                 SELECT 1
             {%- endif -%}
         {%- endmacro -%}
 
-        {# @disableIDs is a per-node opt-out, read from the node's own SQL (not the one-time creation parameter) — set it on a specific node to skip only its column ID check, independently of every other check below. #}
+        {# Per-node opt-out, read from this node's own SQL — not the one-time creation parameter. #}
         {%- set disableIDs = get_boolean_config("disableIDs") == "true" -%}
         {%- if not disableIDs -%}
             {%- set invalidIdColumns = namespace(items=[]) -%}
@@ -498,7 +498,7 @@ macroString: |-
             {%- endif %}
             --    Reason: {{ item.reason }}
             {%- endfor %}
-            {# Only a REQUIRED item should hard-fail CREATE — a purely RECOMMENDED-only list (anyRequired false) must stay non-blocking in both CREATE and RUN, same as test_stage(stageName, true) above. #}
+            {# Only hard-fail if a REQUIRED item is present; recommendations-only stays non-blocking. #}
             {%- if hardFail and anyRequired -%}
                 {{ fail_select("Missing required system column(s): " ~ (missingSystemColumns.items | selectattr('required') | map(attribute='annotation') | join(', ')) ~ ". See the comments above for details.") }}
             {%- else -%}
