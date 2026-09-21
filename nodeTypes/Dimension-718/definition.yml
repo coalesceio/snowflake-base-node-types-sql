@@ -154,6 +154,13 @@ metadata:
             isRequired: true
             example: 'SELECT 1'
 
+        - name: disableIDs
+          type: boolean
+          description: |-
+            • When set, skips adding the @id("<ID>") annotation to generated columns.
+          isRequired: false
+          default: false
+
         - name: postSQL
           description: |-
             • SQL statement to execute after the data load operation — e.g. updating dependent tables, cleaning up temp objects, or logging load completion.
@@ -332,7 +339,9 @@ metadata:
             • List every permitted value in a single annotation call:
               accepted_values("1, 3, 5")
               accepted_values("1", "3", "5")
-            • Each value is pasted into the SQL verbatim, so quote it to match the column's data type — a number as "<num>", a string as "'<string>'".
+            • Each value is pasted into the SQL verbatim, so quote it to match the column's data type
+              number as "<num>"
+              string as "'<string>'"
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: value
@@ -346,13 +355,14 @@ metadata:
             • List every forbidden value in a single annotation call:
               rejected_values("1, 3, 5")
               rejected_values("1", "3", "5")
-            • Each value is pasted into the SQL verbatim, so quote it to match the column's data type — a number as "<num>", a string as "'<string>'".
+            • Each value is pasted into the SQL verbatim, so quote it to match the column's data type
+              number as "<num>"
+              string as "'<string>'"
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: value
               type: string
               isRequired: true
-              example: "'<string>'"
 
         - name: min_max
           description: |-
@@ -443,17 +453,19 @@ metadata:
             {% raw %}{{ ref('{% endraw %}{{ location_name }}{% raw %}', '{% endraw %}{{ node_name }}{% raw %}') }}{% endraw %}
           {%- endmacro -%}
           {%- set ns = namespace(items=[], lines=[]) -%}
-          {%- set ns.items = ns.items + [{'expr': '0', 'alias': '"' ~ node.name ~ '_KEY"', 'annotation': '@isSurrogateKey'}] -%}
+          {%- set disableIDs = parameters.disableIDs is defined and parameters.disableIDs and (parameters.disableIDs | string | lower != 'false') -%}
+          {%- set idAnnotation = '' if disableIDs else '@id("<ID>") ' -%}
+          {%- set ns.items = ns.items + [{'expr': '0', 'alias': '"' ~ node.name ~ '_KEY"', 'annotation': idAnnotation ~ '@isSurrogateKey'}] -%}
           {%- for dep in sources[0].dependencies -%}
             {%- for col in dep.columns -%}
-              {%- set ns.items = ns.items + [{'expr': '"' ~ col.name ~ '"', 'alias': '"' ~ col.name ~ '"', 'annotation': ''}] -%}
+              {%- set ns.items = ns.items + [{'expr': '"' ~ col.name ~ '"', 'alias': '"' ~ col.name ~ '"', 'annotation': idAnnotation.rstrip()}] -%}
             {%- endfor -%}
           {%- endfor -%}
-          {%- set ns.items = ns.items + [{'expr': '1', 'alias': '"SYSTEM_VERSION"', 'annotation': '@isSystemVersion'}] -%}
-          {%- set ns.items = ns.items + [{'expr': "'Y'", 'alias': '"SYSTEM_CURRENT_FLAG"', 'annotation': '@isSystemCurrentFlag'}] -%}
-          {%- set ns.items = ns.items + [{'expr': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP)', 'alias': '"SYSTEM_CREATE_DATE"', 'annotation': '@isSystemCreateDate'}] -%}
-          {%- set ns.items = ns.items + [{'expr': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP)', 'alias': '"SYSTEM_UPDATE_DATE"', 'annotation': '@isSystemUpdateDate'}] -%}
-          {%- set ns.items = ns.items + [{'expr': "CAST('2999-12-31 00:00:00' AS TIMESTAMP)", 'alias': '"SYSTEM_END_DATE"', 'annotation': '@isSystemEndDate'}] -%}
+          {%- set ns.items = ns.items + [{'expr': '1', 'alias': '"SYSTEM_VERSION"', 'annotation': idAnnotation ~ '@isSystemVersion'}] -%}
+          {%- set ns.items = ns.items + [{'expr': "'Y'", 'alias': '"SYSTEM_CURRENT_FLAG"', 'annotation': idAnnotation ~ '@isSystemCurrentFlag'}] -%}
+          {%- set ns.items = ns.items + [{'expr': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP)', 'alias': '"SYSTEM_CREATE_DATE"', 'annotation': idAnnotation ~ '@isSystemCreateDate'}] -%}
+          {%- set ns.items = ns.items + [{'expr': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP)', 'alias': '"SYSTEM_UPDATE_DATE"', 'annotation': idAnnotation ~ '@isSystemUpdateDate'}] -%}
+          {%- set ns.items = ns.items + [{'expr': "CAST('2999-12-31 00:00:00' AS TIMESTAMP)", 'alias': '"SYSTEM_END_DATE"', 'annotation': idAnnotation ~ '@isSystemEndDate'}] -%}
           {%- set maxExprLen = ns.items | map(attribute='expr') | map('length') | max -%}
           {%- set maxAliasLen = ns.items | map(attribute='alias') | map('length') | max -%}
           {%- for item in ns.items -%}

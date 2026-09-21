@@ -1,43 +1,23 @@
 fileVersion: 1
 id: "1"
 macroString: |-
-  {#====================================================================================================
-    Description:
-        Returns a zero-key value for a given column based on:
-        1. Column-level zeroKey (highest priority)
-        2. Config-level zeroKey (matched using column dataType)
-        3. If no match is found → returns NULL
-
-        The macro ONLY resolves and formats the zero-key value.
-        It does not handle system columns or any business logic.
-
-    Inputs:
-        col (object)
-
-    Output:
-        Returns a SQL-compatible literal based on resolved zeroKey:
-            - NUMBER    → 0
-            - BOOLEAN   → TRUE / FALSE
-            - STRING    → 'DEFAULT'
-            - TIME      → TO_TIMESTAMP('1999-12-31')
-            - No match  → NULL
-    ====================================================================================================#}
+  {#===========================================================================
+    Description: Resolves the zero-key literal for a column (column-level @zeroKey wins, else node-level @zeroKey by dataType, else NULL).
+    Input: col (object)
+    Output: SQL literal for the resolved zero-key value.
+  ===========================================================================#}
     {%- macro resolve_zero_key(col) -%}
 
         {%- set ns = namespace(zk_type=none, zk_value=none) -%}
 
-        {# -------------------------------
-        STEP 1: Column-level zeroKey
-        -------------------------------- #}
-        {%- if col.zeroKey is defined 
-            and col.zeroKey.parameters is defined 
+        {# Column-level zeroKey #}
+        {%- if col.zeroKey is defined
+            and col.zeroKey.parameters is defined
             and col.zeroKey.parameters | trim | length > 0 -%}
 
             {%- set ns.zk_value = col.zeroKey.parameters[0] -%}
 
-        {# -------------------------------
-        STEP 2: Config-level zeroKey (match datatype)
-        -------------------------------- #}
+        {# Node-level zeroKey, matched by column dataType #}
         {%- else -%}
             {%- set zkParams = config.zeroKey.parameters if (config.zeroKey is defined and config.zeroKey.parameters is defined) else [] -%}
             {%- if col.dataType | upper == 'VARIANT' -%}
@@ -58,9 +38,7 @@ macroString: |-
             {%- endif -%}
         {%- endif -%}
 
-        {# -------------------------------
-        STEP 3: Return formatted value
-        -------------------------------- #}
+        {# Format the resolved value #}
         {%- if ns.zk_type == 'numeric' -%}
             {{ ns.zk_value }}
         {%- elif ns.zk_type == 'variant' -%}
@@ -85,25 +63,11 @@ macroString: |-
 
     {%- endmacro -%}
 
-    {#====================================================================================================
-    Description:
-    Generates a datatype-aware comparison to detect differences between a source and
-    target expression. Typically used in MERGE statements or change tracking logic
-    to identify when a column value has changed.
-
-    Inputs:
-    - src_expr (string):
-        Source column or expression (e.g., SRC."COL1")
-
-    - tgt_expr (string):
-        Target column or expression (e.g., "DIM"."COL1")
-
-    - data_type (string):
-        Datatype of the column (e.g., VARCHAR, NUMBER, GEOGRAPHY, GEOMETRY)
-
-    Output:
-    - Returns a SQL boolean condition that evaluates to TRUE when source and target values are different
-    ====================================================================================================#}
+    {#===========================================================================
+    Description: Builds a datatype-aware condition that's TRUE when the source and target values differ.
+    Input: src_expr (string), tgt_expr (string), data_type (string)
+    Output: SQL boolean condition.
+    ===========================================================================#}
     {%- macro safe_compare(src_expr, tgt_expr, data_type) -%}
 
         {%- set dt = data_type | upper -%}
@@ -128,19 +92,11 @@ macroString: |-
 
     {%- endmacro -%}
 
-    {# ========================================================================
-    Purpose          : Executes data quality tests associated with the node
-                        and its columns, based on the configured run order.
-                        Supports running tests either before or after data
-                        insertion, and respects the test continuation
-                        behavior on failure.
-    Input Parameters : runOrder (String)
-                        - Determines when the tests should be executed.
-                            Expected values: 'Before' or 'After'
-    Returns          : Rendered SQL statements for executing the applicable
-                        node-level and column-level data quality tests.
-                        No output is generated if tests are disabled.
-    ========================================================================= #}
+    {#===========================================================================
+    Description: Runs the node's column- and node-level data quality tests; does nothing if @disableTests is set.
+    Input: runOrder (string) — "Before" or "After".
+    Output: Rendered test_stage(...) + SELECT statements for the applicable tests.
+    ===========================================================================#}
     {%- macro run_tests(runOrder) -%}
 
         {%- set columnContinueOnFailure = true -%}
@@ -254,16 +210,11 @@ macroString: |-
         {%- endif -%}
     {%- endmacro -%}
 
-    {#===================================================================================================
-    Description:
-    Generates a deterministic hash value by combining and hashing all column values associated with the given `hash_name` using the `@inHash` annotation.
-
-    Input: `hash_name` (string) - The hash group identifier used in `@inHash("<hash_name>")` to group columns for hashing.
-
-    Output: - Returns a SQL expression of type `STRING`:
-            - A SHA1 hash of concatenated column values  
-            - Returns `NULL` if no columns are mapped to the given hash group
-    ====================================================================================================#}
+    {#===========================================================================
+    Description: Builds a deterministic hash from every column marked @inHash("<hash_name>") for the given hash_name.
+    Input: hash_name (string), algo (string, default SHA1), delimiter (string, default ||)
+    Output: SQL STRING hash expression, or NULL if no columns are mapped to the hash group.
+    ===========================================================================#}
     {%- macro get_hash(hash_name, algo='SHA1', delimiter='||') -%}
 
         {%- set cols = namespace(items=[]) -%}
@@ -314,41 +265,11 @@ macroString: |-
         {%- endif -%}
     {%- endmacro -%}
 
-    {#===================================================================================================
-    get_boolean_config(flag)
-
-    Description:
-        Extracts the boolean value of a configuration flag, supporting both
-        annotation formats:
-        - @flag
-        - @flag(true) / @flag(false)
-
-    Input:
-        flag: Name of the boolean configuration flag, e.g. "truncateBefore",
-            "testsEnabled", or "clusterDefined".
-
-    Examples:
-        @truncateBefore
-        -> config["truncateBefore"] = true
-        -> Output: true
-
-        @truncateBefore(true)
-        -> config["truncateBefore"] = { parameters: [true] }
-        -> Output: true
-
-        @truncateBefore(false)
-        -> config["truncateBefore"] = { parameters: [false] }
-        -> Output: false
-
-        No annotation
-        -> config["truncateBefore"] is not defined
-        -> Output: empty
-
-    Usage:
-        {% if get_boolean_config("truncateBefore") | trim | lower == "true" %}
-        ...
-        {% endif %}
-    ====================================================================================================#}
+    {#===========================================================================
+    Description: Reads a boolean config annotation, supporting both the bare @flag and @flag(true/false) formats.
+    Input: flag (string) — the annotation name, e.g. "disableTests".
+    Output: "true"/"false"/empty string.
+    ===========================================================================#}
     {%- macro get_boolean_config(flag) -%}
         {%- if config[flag] is defined -%}
             {%- if config[flag] is boolean -%}
@@ -359,36 +280,29 @@ macroString: |-
         {%- endif -%}
     {%- endmacro -%}
 
-    {#====================================================================================================
-    Description:
-        Validates a Dimension node's annotation configuration and stages a failing (or, for one
-        specific case, warning-only) test for anything wrong or missing, before any of the actual
-        create/run logic runs. Shared here so create.sql.j2 and run.sql.j2 both enforce the exact
-        same rules from a single place instead of duplicating the checks in each template.
-
-        Checks performed, in order:
-        1. @isBusinessKey — at least one column must be marked (hard fail).
-        2. @lastModifiedTracking — at most one column may be marked (hard fail).
-        3. @mergeStrategy — cross-checks between the explicit/inferred strategy and the
-           @lastModifiedTracking/@isChangeTracking annotations actually present (hard fail).
-        4. @isSystemCreateDate — required whenever the merge strategy is changeTracking/lastModified
-           (i.e. not a plain @upsert), since the SCD1/SCD2 merge logic looks this column up by
-           attribute and splices its name directly into generated SQL (hard fail).
-        5. @isSystemUpdateDate — same lookup-by-attribute dependency; required for both SCD
-           Type 2 and SCD Type 1 (hard fail either way).
-        6. @isSystemVersion / @isSystemCurrentFlag / @isSystemEndDate — required only for SCD
-           Type 2 dimensions, where each is looked up by attribute and spliced into the merge
-           (hard fail).
-        7. @isSurrogateKey — optional in general (a customer may manage it themselves, e.g. via
-           SEQ.NEXTVAL, in their own SELECT logic), but required when @zeroKey is configured,
-           since the zero-key MERGE needs a surrogate key column to match against (hard fail).
-
-    Inputs: none — reads columns/config from the surrounding node context directly.
-
-    Output: Rendered test_stage(...) calls (with their SELECT 1 probe body) for every check
-            that fails; nothing is rendered for checks that pass.
-    ====================================================================================================#}
+    {#===========================================================================
+    Description: Validates a Dimension node's annotations and stages a failing test for anything wrong or missing (column IDs, business key, mergeStrategy, required system columns). Shared by create.sql.j2 and run.sql.j2 so both enforce the same rules.
+    Input: none — reads columns/config/parameters from the surrounding node context.
+    Output: Rendered test_stage(...) + SELECT statements for every check that fails.
+    ===========================================================================#}
     {%- macro validate_dimension_requirements() -%}
+        {# @disableIDs is a per-node opt-out — set it on a specific node to skip only its column ID check, independently of every other check below. #}
+        {%- set disableIDs = parameters.disableIDs is defined and parameters.disableIDs and (parameters.disableIDs | string | lower != 'false') %}
+        {%- if not disableIDs %}
+            {%- set invalidIdColumns = namespace(items=[]) %}
+            {%- for col in columns %}
+                {%- if col.id == col.name %}
+                    {%- set invalidIdColumns.items = invalidIdColumns.items + [col] %}
+                {%- endif %}
+            {%- endfor %}
+            {%- set invalidIdColumns = invalidIdColumns.items %}
+            {%- if invalidIdColumns | length > 0 %}
+                {{ test_stage("Missing Column IDs", true) }}
+                -- These columns need a real @id("<ID>") (not just the column name): {{ invalidIdColumns | map(attribute='name') | join(', ') }}. Set @disableIDs to skip this check.
+                SELECT 1
+            {%- endif %}
+        {%- endif %}
+
         {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) %}
         {%- if not hasBusinessKey %}
             {{ test_stage("Missing Business Key", false) }}
@@ -403,8 +317,7 @@ macroString: |-
         {%- if mergeStrategyExplicit %}
             {%- set mergeStrategy = config.mergeStrategy.parameters[0] | trim %}
         {%- elif lastModifiedCount > 0 %}
-            {# == No @mergeStrategy given — infer it the same way older nodes without the annotation
-                 always worked: an @lastModifiedTracking column present means last-modified comparison. == #}
+            {# No @mergeStrategy given, but a column has @lastModifiedTracking — infer lastModified. #}
             {%- set mergeStrategy = 'lastModified' %}
         {%- else %}
             {%- set mergeStrategy = 'changeTracking' %}
@@ -413,8 +326,7 @@ macroString: |-
         {%- set isLastModifiedStrategy = mergeStrategy == 'lastModified' %}
         {%- set isChangeTrackingStrategy = mergeStrategy == 'changeTracking' %}
 
-        {#== The strict cross-checks below only apply when @mergeStrategy is set explicitly — an
-             inferred strategy is derived FROM whatever's marked, so it can never conflict with it. ==#}
+        {# These cross-checks only apply when @mergeStrategy is set explicitly, since an inferred strategy can't conflict with itself. #}
         {%- if mergeStrategyExplicit and isSimpleUpsert and (lastModifiedCount > 0 or changeTrackingCount > 0) %}
             {{ test_stage('Invalid configuration: mergeStrategy', true) }}
             -- @mergeStrategy("upsert") performs no change detection, so @isChangeTracking/@lastModifiedTracking columns are never read. Remove them, or switch mergeStrategy to "changeTracking"/"lastModified" to use them.
@@ -433,10 +345,7 @@ macroString: |-
             SELECT 1
         {%- endif %}
 
-        {#== Cardinality only matters once we know lastModified is the strategy actually in effect —
-             under changeTracking/upsert, stray @lastModifiedTracking columns (any count) are already
-             flagged above as unused annotations; piling on a redundant "at most one" complaint about
-             columns that were mistakenly added in the first place would just be noise. ==#}
+        {# Only check "at most one @lastModifiedTracking column" once lastModified is the strategy in effect. #}
         {%- if isLastModifiedStrategy and lastModifiedCount > 1 %}
             {{ test_stage('Invalid configuration: Last Modified Column', false) }}
             -- @lastModifiedTracking may be applied to at most one column, but {{ lastModifiedCount }} columns were marked. Remove the annotation from all but one column.
@@ -452,17 +361,10 @@ macroString: |-
         {%- set lastModifiedComparison = isLastModifiedStrategy and lastModifiedCount > 0 %}
         {%- if hasBusinessKey %}
             {%- if lastModifiedComparison %}
-                {#== lastModifiedCount > 1 is already flagged above as its own cardinality error —
-                     deriving scdType/type2Dimension from an arbitrary "first" pick among several
-                     mismarked columns would only cascade into further misleading errors (e.g.
-                     demanding SCD2 system columns based on a column that isn't even "the" one).
-                     Treat it as inconclusive (plain SCD1) until the cardinality is actually fixed. ==#}
+                {# More than one @lastModifiedTracking column is already flagged above — treat it as inconclusive (plain SCD1) until that's fixed. #}
                 {%- if lastModifiedCount == 1 %}
                     {%- set lastModifiedCol = columns | selectattr("lastModifiedTracking") | first %}
-                    {#== @lastModifiedTracking with no scdType parameter at all (e.g. mentioned as a
-                         plain boolean annotation, @lastModifiedTracking with no parentheses) comes
-                         through as a bare `true`, not a mapping with .parameters — guard for that
-                         and fall back to the default scdType of 1 instead of erroring. ==#}
+                    {# A bare @lastModifiedTracking (no scdType) comes through as `true`, not a mapping — guard for that and default scdType to 1. #}
                     {%- set lastModifiedTrackingParams = lastModifiedCol.lastModifiedTracking.parameters if (lastModifiedCol.lastModifiedTracking is mapping and lastModifiedCol.lastModifiedTracking.parameters is defined) else [] %}
                     {%- set scdType = lastModifiedTrackingParams[0] | default(1, true) | string %}
                     {%- if scdType not in ('1', '2') %}
@@ -481,27 +383,14 @@ macroString: |-
             {%- set type2Dimension = false %}
         {%- endif %}
         {%- if isSimpleUpsert %}
-            {# @upsert always forces plain SCD1 — no change detection, no versioning — regardless
-               of any @lastModifiedTracking/@isChangeTracking annotations present on the node. #}
+            {# @upsert always forces plain SCD1, no matter what @lastModifiedTracking/@isChangeTracking say. #}
             {%- set type2Dimension = false %}
         {%- endif %}
 
-        {#== System columns are only read/written once change detection is active (i.e. not a
-             plain @upsert) — see the SCD1/SCD2 CTE blocks in run.sql.j2. Rather than staging a
-             separate failing test per missing column (which stops the run at the first one,
-             so fixing an SCD1→SCD2 switch takes as many run-fix-rerun cycles as there are
-             missing columns), every missing/misconfigured system column is collected here and
-             reported together in a single stage — one run surfaces everything to fix at once. ==#}
+        {# Collect every missing/misconfigured system column here so one run reports them all together instead of one at a time. #}
         {%- set missingSystemColumns = namespace(items=[]) %}
 
-        {#== A surrogate key column (@isSurrogateKey) is optional in general — a customer may
-             instead manage it themselves in their own SELECT logic (e.g. SEQ.NEXTVAL) — with
-             two exceptions: it's hard-required when @zeroKey needs one to match the zero record
-             against, and it's recommended (not required — the merge itself doesn't need it) for
-             SCD Type 2, since fact tables typically join to a dimension by the surrogate key of
-             a specific row-version rather than the business key (which repeats across every
-             version of that key) — SCD Type 1 has only one row per business key, so this
-             doesn't apply there at all. ==#}
+        {# @isSurrogateKey is normally optional (a customer may manage their own, e.g. SEQ.NEXTVAL) — required when @zeroKey needs one to match against, recommended for SCD Type 2. #}
         {%- set hasSurrogateKey = columns | selectattr("isSurrogateKey") | list | length > 0 %}
         {%- if config.zeroKey is defined and not hasSurrogateKey %}
             {%- set missingSystemColumns.items = missingSystemColumns.items + [{
@@ -529,9 +418,7 @@ macroString: |-
             }] %}
         {%- endif %}
 
-        {#== SYSTEM_UPDATE_DATE: hard-required for both SCD types — for Type 2 the merge looks it
-             up by attribute and stamps it on every inserted version; for Type 1 it's required so
-             every row change carries an audit trail of when it was last updated. ==#}
+        {# SYSTEM_UPDATE_DATE is required for both SCD Type 1 and Type 2. #}
         {%- set hasSystemUpdateDate = columns | selectattr("isSystemUpdateDate") | list | length > 0 %}
         {%- if not isSimpleUpsert and not hasSystemUpdateDate %}
             {%- if type2Dimension %}
@@ -551,8 +438,7 @@ macroString: |-
             {%- endif %}
         {%- endif %}
 
-        {#== The remaining system columns are only required for SCD Type 2 dimensions — SCD Type 1
-             tracks neither version history nor row expiry. ==#}
+        {# The remaining system columns are only required for SCD Type 2. #}
         {%- if type2Dimension %}
             {%- set hasSystemVersion = columns | selectattr("isSystemVersion") | list | length > 0 %}
             {%- if not hasSystemVersion %}
@@ -587,11 +473,7 @@ macroString: |-
 
         {%- if missingSystemColumns.items | length > 0 %}
             {%- set anyRequired = missingSystemColumns.items | selectattr('required') | list | length > 0 %}
-            {#== Every OTHER required/recommended system column is already present — the only
-                 thing flagged is the recommended (not required) @isSurrogateKey. That's just as
-                 likely to be a customer running their own surrogate key logic (e.g. SEQ.NEXTVAL)
-                 as it is a genuine oversight, so use a neutral heading instead of "Missing" —
-                 not an error, just a heads-up either way. ==#}
+            {# If @isSurrogateKey is the only thing flagged, use a neutral heading since it may just be a custom surrogate key setup. #}
             {%- set onlySurrogateKeyFlagged = missingSystemColumns.items | length == 1 and missingSystemColumns.items[0].annotation == '@isSurrogateKey' and not missingSystemColumns.items[0].required %}
             {%- set stageName = 'Surrogate Key Not Set/Using Custom Surrogate Key Logic' if onlySurrogateKeyFlagged else 'Missing Required System Columns' %}
             {{ test_stage(stageName, not anyRequired) }}
