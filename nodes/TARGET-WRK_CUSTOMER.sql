@@ -1,0 +1,12 @@
+@id("84dd52c8-f115-4eb7-aeb9-28cbba56bfaf")
+@nodeType("707")
+SELECT
+     "C_CUSTKEY" AS "C_CUSTKEY",
+     "C_NAME" AS "C_NAME",
+     "C_ADDRESS" AS "C_ADDRESS",
+     "C_NATIONKEY" AS "C_NATIONKEY",
+     "C_PHONE" AS "C_PHONE",
+     "C_ACCTBAL" AS "C_ACCTBAL",
+     "C_MKTSEGMENT" AS "C_MKTSEGMENT",
+     "C_COMMENT" AS "C_COMMENT"
+FROM {{ ref('SRC', 'CUSTOMER') }} "CUSTOMER"
