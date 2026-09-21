@@ -282,10 +282,19 @@ macroString: |-
 
     {#===========================================================================
     Description: Validates a Dimension node's annotations and stages a failing test for anything wrong or missing (column IDs, business key, mergeStrategy, required system columns). Shared by create.sql.j2 and run.sql.j2 so both enforce the same rules.
-    Input: none — reads columns/config/parameters from the surrounding node context.
+    Input: hardFail (boolean, default false) — RUN's test_stage(..., false) already fails the job when a wrapped SELECT returns a row, so "SELECT 1" is enough there. CREATE's statement executor does NOT evaluate row counts — it only fails a statement that raises a real SQL error — so a blocking check called with hardFail=true instead emits a statement that deliberately errors (embedding the reason in the error text), guaranteeing CREATE actually halts instead of silently "passing" a failed check.
     Output: Rendered test_stage(...) + SELECT statements for every check that fails.
     ===========================================================================#}
-    {%- macro validate_dimension_requirements() -%}
+    {%- macro validate_dimension_requirements(hardFail=false) -%}
+        {# Emits the failing statement for a BLOCKING check: SELECT 1 (relies on the RUN test framework's row-count-means-fail evaluation) or, when hardFail is set, a statement that raises a real SQL error carrying the reason text — needed for CREATE, whose statement executor doesn't apply that row-count evaluation. #}
+        {%- macro fail_select(reason) -%}
+            {%- if hardFail -%}
+                SELECT CAST('{{ reason | replace("'", "''") | replace('\n', ' ') }}' AS INTEGER) AS "VALIDATION_FAILURE"
+            {%- else -%}
+                SELECT 1
+            {%- endif -%}
+        {%- endmacro -%}
+
         {# @disableIDs is a per-node opt-out, read from the node's own SQL (not the one-time creation parameter) — set it on a specific node to skip only its column ID check, independently of every other check below. #}
         {%- set disableIDs = get_boolean_config("disableIDs") == "true" -%}
         {%- if not disableIDs -%}
@@ -297,17 +306,19 @@ macroString: |-
             {%- endfor -%}
             {%- set invalidIdColumns = invalidIdColumns.items -%}
             {%- if invalidIdColumns | length > 0 %}
+                {%- set reason = "These columns have no real system-generated ID (id equals the column name): " ~ (invalidIdColumns | map(attribute='name') | join(', ')) ~ ". Set @disableIDs to skip this check." %}
                 {{ test_stage("Missing Column IDs", false) }}
-                -- These columns have no real system-generated ID (id equals the column name): {{ invalidIdColumns | map(attribute='name') | join(', ') }}. Set @disableIDs to skip this check.
-                SELECT 1
+                -- {{ reason }}
+                {{ fail_select(reason) }}
             {%- endif -%}
         {%- endif -%}
 
         {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) -%}
         {%- if not hasBusinessKey %}
+            {%- set reason = "Mark at least one column with @isBusinessKey to identify the dimension's natural/business key for SCD matching." %}
             {{ test_stage("Missing Business Key", false) }}
-            -- Mark at least one column with @isBusinessKey to identify the dimension's natural/business key for SCD matching.
-            SELECT 1
+            -- {{ reason }}
+            {{ fail_select(reason) }}
         {%- endif -%}
 
         {%- set lastModifiedCount = columns | selectattr("lastModifiedTracking") | list | length -%}
@@ -340,16 +351,18 @@ macroString: |-
         {%- endif -%}
 
         {%- if isLastModifiedStrategy and lastModifiedCount == 0 %}
+            {%- set reason = '@mergeStrategy("lastModified") requires exactly one column marked @lastModifiedTracking(<scdType>); none was found.' %}
             {{ test_stage('Invalid configuration: mergeStrategy', false) }}
-            -- @mergeStrategy("lastModified") requires exactly one column marked @lastModifiedTracking(<scdType>); none was found.
-            SELECT 1
+            -- {{ reason }}
+            {{ fail_select(reason) }}
         {%- endif %}
 
         {# Only check "at most one @lastModifiedTracking column" once lastModified is the strategy in effect. #}
         {%- if isLastModifiedStrategy and lastModifiedCount > 1 %}
+            {%- set reason = "@lastModifiedTracking may be applied to at most one column, but " ~ lastModifiedCount ~ " columns were marked. Remove the annotation from all but one column." %}
             {{ test_stage('Invalid configuration: Last Modified Column', false) }}
-            -- @lastModifiedTracking may be applied to at most one column, but {{ lastModifiedCount }} columns were marked. Remove the annotation from all but one column.
-            SELECT 1
+            -- {{ reason }}
+            {{ fail_select(reason) }}
         {%- endif -%}
 
         {%- if isLastModifiedStrategy and changeTrackingCount > 0 %}
@@ -368,9 +381,10 @@ macroString: |-
                     {%- set lastModifiedTrackingParams = lastModifiedCol.lastModifiedTracking.parameters if (lastModifiedCol.lastModifiedTracking is mapping and lastModifiedCol.lastModifiedTracking.parameters is defined) else [] -%}
                     {%- set scdType = lastModifiedTrackingParams[0] | default(1, true) | string -%}
                     {%- if scdType not in ('1', '2') %}
+                        {%- set reason = '@lastModifiedTracking\'s scdType parameter only accepts 1 or 2, but "' ~ scdType ~ '" was given on column ' ~ lastModifiedCol.name ~ '. Mention @lastModifiedTracking(scdType) explicitly — @lastModifiedTracking(1) to overwrite in place, or @lastModifiedTracking(2) to version the row.' %}
                         {{ test_stage('Invalid configuration: lastModifiedTracking scdType', false) }}
-                        -- @lastModifiedTracking's scdType parameter only accepts 1 or 2, but "{{ scdType }}" was given on column {{ lastModifiedCol.name }}. Mention @lastModifiedTracking(scdType) explicitly — @lastModifiedTracking(1) to overwrite in place, or @lastModifiedTracking(2) to version the row.
-                        SELECT 1
+                        -- {{ reason }}
+                        {{ fail_select(reason) }}
                     {%- endif -%}
                     {%- set type2Dimension = scdType == '2' -%}
                 {%- else -%}
@@ -484,7 +498,12 @@ macroString: |-
             {%- endif %}
             --    Reason: {{ item.reason }}
             {%- endfor %}
-            SELECT 1
+            {# Only a REQUIRED item should hard-fail CREATE — a purely RECOMMENDED-only list (anyRequired false) must stay non-blocking in both CREATE and RUN, same as test_stage(stageName, true) above. #}
+            {%- if hardFail and anyRequired -%}
+                {{ fail_select("Missing required system column(s): " ~ (missingSystemColumns.items | selectattr('required') | map(attribute='annotation') | join(', ')) ~ ". See the comments above for details.") }}
+            {%- else -%}
+                SELECT 1
+            {%- endif -%}
         {%- endif -%}
     {%- endmacro -%}
 name: macro

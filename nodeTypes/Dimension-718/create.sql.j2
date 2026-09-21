@@ -10,7 +10,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
 {%- if node.materializationType == 'table' %}
 
-    {{ validate_dimension_requirements() }}
+    {{ validate_dimension_requirements(true) }}
 
     {# CreateSQL for Table #}
     {{ stage('Create ' + node.materializationType ) }}
