@@ -5,7 +5,7 @@ SELECT
     0                                        AS "DIM_NATION_TEST_KEY" @isSurrogateKey,
     "N_NATIONKEY"                            AS "N_NATIONKEY" @isBusinessKey,
     "N_NAME"                                 AS "N_NAME",
-    "N_REGIONKEY"                            AS "N_REGIONKEY",
+    "N_REGIONKEY"                            AS "N_REGIONKEY_RENAME",
     "N_COMMENT"                              AS "N_COMMENT",
     "N_LOAD_TIMESTAMP"                       AS "N_LOAD_TIMESTAMP",
     1                                        AS "SYSTEM_VERSION"      @isSystemVersion,
