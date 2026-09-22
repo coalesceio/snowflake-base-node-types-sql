@@ -514,3 +514,4 @@ metadata:
           {%- endfor %}
 name: Dimension
 type: NodeType
+# marker: pre-disableIDs-removal checkpoint
