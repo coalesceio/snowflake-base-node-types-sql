@@ -81,18 +81,18 @@ metadata:
           default: false
           parameters:
             - name: surrogateKeyValue
-              type: string
+              type: number
               description: Value used for the zero record's surrogate key column.
               isRequired: true
               default: "0"
-              example: "0"
+              example: 0
 
             - name: stringValue
               type: string
-              description: Default value used for the zero record's string/varchar columns.
+              description: Default value used for the zero record's string/varchar columns, pasted into the SQL verbatim — include your own quotes.
               isRequired: false
-              default: "UNKNOWN"
-              example: "UNKNOWN"
+              default: "'UNKNOWN'"
+              example: "'UNKNOWN'"
 
             - name: timestampValue
               type: string
@@ -102,7 +102,7 @@ metadata:
               example: "1900-01-01 00:00:00"
 
             - name: booleanValue
-              type: string
+              type: boolean
               description: Default value used for the zero record's boolean columns.
               isRequired: false
               default: true
@@ -234,15 +234,16 @@ metadata:
         - name: zeroKey
           description: |-
             • Adds a custom zero key value (ghost record) to this column, overriding the node-level 𝘇𝗲𝗿𝗼𝗞𝗲𝘆 defaults for it.
-            • 𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝘂𝗻𝗹𝗲𝘀𝘀 𝘇𝗲𝗿𝗼𝗞𝗲𝘆 𝗶𝘀 𝗲𝗻𝗮𝗯𝗹𝗲𝗱 𝗮𝘁 𝘁𝗵𝗲 𝗻𝗼𝗱𝗲 𝗹𝗲𝘃𝗲𝗹.
+            • 𝗩𝗮𝗹𝘂𝗲 𝗶𝘀 𝗽𝗮𝘀𝘁𝗲𝗱 𝗶𝗻𝘁𝗼 𝘁𝗵𝗲 𝗦𝗤𝗟 𝗲𝘅𝗮𝗰𝘁𝗹𝘆 𝗮𝘀 𝘄𝗿𝗶𝘁𝘁𝗲𝗻 — no quotes, casing, or wrapping is added for you. For a string, include your own quotes (e.g. "'N/A'"); for a date/time, write the full expression yourself (e.g. "CAST('1900-01-01' AS TIMESTAMP)"); a number or boolean can be given bare (e.g. 10, true).
+            • Ignored unless zeroKey is enabled at the node level.
             • Ignored on views.
           isRequired: false
           parameters:
             - name: value
               type: string
-              description: Custom zero key value for this column, pasted into the SQL verbatim.
+              description: Custom zero key value for this column, pasted into the SQL verbatim — supply your own quotes/casts as needed.
               isRequired: true
-              example: "<value>"
+              example: "'N/A'"
 
         - name: inHash
           description: |-
@@ -507,4 +508,3 @@ metadata:
           {%- endfor %}
 name: Dimension
 type: NodeType
-# commit with older zero-key handling - disableIDs

@@ -32,7 +32,7 @@ macroString: |-
                 {%- set ns.zk_value = none -%}
             {%- elif col.dataType[:3] | upper in ('VAR', 'CHA', 'STR') -%}
                 {%- set ns.zk_type = 'string' -%}
-                {%- set ns.zk_value = zkParams[1] if zkParams | length > 1 else 'UNKNOWN' -%}
+                {%- set ns.zk_value = zkParams[1] if zkParams | length > 1 else "'UNKNOWN'" -%}
             {%- elif col.dataType[:3] | upper in ('NUM',' INT', 'DEC', 'FLO') -%}
                 {%- set ns.zk_type = 'numeric' -%}
                 {%- set ns.zk_value = zkParams[0] if zkParams | length > 1 else 0 -%}
@@ -58,10 +58,13 @@ macroString: |-
                 TO_TIMESTAMP('{{ ns.zk_value }}')
 
             {%- elif ns.zk_type == 'string' -%}
-                '{{ ns.zk_value }}'
+                {# Node-level default: pasted verbatim, same as the column-level override — supply your own quotes in the annotation, e.g. "'UNKNOWN'". #}
+                {{ ns.zk_value }}
 
             {%- else -%}
-                '{{ ns.zk_value }}'
+                {# Column-level @zeroKey override: pasted verbatim, exactly as the user wrote it — #}
+                {# they supply their own quotes for a string, or a full expression like CAST(...). #}
+                {{ ns.zk_value }}
             {%- endif -%}
 
         {%- else -%}
