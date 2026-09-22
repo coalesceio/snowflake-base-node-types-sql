@@ -4,7 +4,7 @@ macroString: |-
 
   {% set packageConfiguration = namespace
       (
-          disableIDs=true
+          disableIDs=false
       )
   %}
 
@@ -302,7 +302,7 @@ macroString: |-
             {%- endif -%}
         {%- endmacro -%}
 
-        {# Package-level opt-out, read from packageConfiguration — no longer a per-node annotation. #}
+        {# disableIDs is a package-level setting read from packageConfiguration #}
         {%- set disableIDs = packageConfiguration is defined and packageConfiguration.disableIDs is defined and packageConfiguration.disableIDs and (packageConfiguration.disableIDs | string | lower != 'false') -%}
         {%- if not disableIDs -%}
             {%- set invalidIdColumns = namespace(items=[]) -%}
