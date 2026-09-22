@@ -313,7 +313,7 @@ macroString: |-
             {%- endfor -%}
             {%- set invalidIdColumns = invalidIdColumns.items -%}
             {%- if invalidIdColumns | length > 0 %}
-                {%- set reason = "These columns have no real system-generated ID (id equals the column name): " ~ (invalidIdColumns | map(attribute='name') | join(', ')) ~ ". Set @disableIDs to skip this check." %}
+                {%- set reason = "These columns have no real system-generated ID (id equals the column name): " ~ (invalidIdColumns | map(attribute='name') | join(', ')) ~ ". Set packageConfiguration.disableIDs to true to skip this check." %}
                 {{ test_stage("Missing Column IDs", false) }}
                 -- {{ reason }}
                 {{ fail_select(reason) }}
