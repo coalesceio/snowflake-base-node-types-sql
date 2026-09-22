@@ -36,6 +36,7 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 | `@notNull` ***(reserved)*** | ✅ | ✅ | TBD |
 | `@description` ***(reserved)*** | ✅ | ✅ | TBD |
 | `@defaultValue` ***(reserved)*** | ✅ | ✅ | TBD |
+| `@id`<br/>(column-level, gated by<br/>`packageConfiguration.disableIDs`) | ➖ | ✅ | TBD |
 | `@inHash` | ✅ | ✅ | TBD |
 | `@isBusinessKey` ***(required)*** | ➖ | ✅ | TBD |
 | `@lastModifiedTracking` | ➖ | ✅ | TBD |
@@ -228,6 +229,7 @@ The Dimension Node type has three configuration groups:
 
 | **Property** | **Description** |
 |---------|-------------|
+| `@id("<value>")` | Stable column ID for lineage tracking.<br/>Whether it's required, and whether the SQL editor generates it for you, is controlled package-wide by `packageConfiguration.disableIDs` — not `true` (the default) → every generated column needs its own fresh `@id("<value>")`; `true` → omit `@id` entirely.<br/>Not for manual editing — value is a stable identifier generated once at creation time.<br/>Example: `@id("110e75")` |
 | `@notNull` ***(reserved)*** | Marks column as NOT NULL.<br/>**Note:** Ignored on Views.<br/>Example: `@notNull` |
 | `@description(<text>)` ***(reserved)*** | Adds column description.<br/>Example: `@description("timestamp column")` |
 | `@defaultValue(<value>)` ***(reserved)*** | Adds default value.<br/>Quote to match the column's data type - <br/>number: `defaultValue("<num>")`<br/>string: `defaultValue("'<string>'")`<br/>**Note:** Ignored on Views.<br/>Example: `@defaultValue("20")` `@defaultValue("'NA'")` |
@@ -239,7 +241,6 @@ The Dimension Node type has three configuration groups:
 | `@lastModifiedTracking(scdType?)` | Marks the column used to detect newer source rows for an incremental load.<br/>Datatype — DATE/TIME or any incrementing NUMERIC type.<br/>Can only be applied to one column.<br/>**scdType** — `1` overwrites the row in place, `2` expires the row and inserts a new version. *Not specified → defaults to 1.*<br/>**Note:** Ignored on Views.<br/>Example: `@lastModifiedTracking(2)` |
 | `@isChangeTracking` | Marks a column to be watched for changes that decide SCD type.<br/>Marked on any column → SCD Type 2 — a change expires the existing row and inserts a new version.<br/>Not marked on any column → SCD Type 1 — a change updates the row in place.<br/>**Note:** Ignored on Views.<br/>Example: `@isChangeTracking` |
 | `@zeroKey(value)` | Adds a custom zero key value (ghost record) to this column, overriding the node-level `@zeroKey` defaults for it.<br/>The value is pasted into the SQL verbatim, so quote it to match the column's data type.<br/>**Note:** Ignored unless `@zeroKey` is enabled at the node level, and ignored on Views.<br/>Example: `@zeroKey("'N/A'")` |
-| `@inHash("<hashName>", <hashOrder>)`**¹** | ***(repeatable)*** Marks a column as an input to a generated hash key.<br/>**hashName** — columns sharing the same value are grouped together into the same hash.<br/>**hashOrder** — this column's position within that group.<br/>Call `get_hash("<hashName>")` elsewhere in the SELECT to produce the hash column from the marked columns.<br/>[Refer to Hash Columns for more details.](#hash-columns---get_hash)<br/>Example:<br/>`<col_name> AS <col_name> @inHash("GH_COL", 1),`<br/>`{{ get_hash('GH_COL') }}::STRING AS "GH_COL"`|
 | `@isSurrogateKey` | Marks this column as the node's surrogate key.<br/>Optional for SCD Type 1 — the merge logic joins and detects changes entirely off the business key.<br/>Recommended for SCD Type 2 — a stable surrogate key per version is the standard way to identify a versioned row, though it isn't enforced by the merge itself.<br/>Required only when the node-level `@zeroKey` is set, since the zero/ghost record is matched against the target by surrogate key value.<br/>**Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.<br/>Expected expression: `0 AS "{{NODE_NAME}}_KEY" @isSurrogateKey` |
 | `@isSystemVersion` | Marks this column as the SCD version number, incremented each time a business key gets a new version.<br/>Required for SCD Type 2 — shows which version of a row this is; each time a business key's row changes, the expired row is kept and a new row is inserted with this value incremented by 1.<br/>Optional for SCD Type 1 — new-vs-existing is detected off the business key alone, so this column can be dropped entirely; if kept, it is always written as 1 and never incremented.<br/>**Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.<br/>Expected expression: `1 AS "SYSTEM_VERSION" @isSystemVersion` |
 | `@isSystemCurrentFlag` | Marks this column as the SCD "is current" flag — `'Y'` on the active version of a row, overwritten to `'N'` when it's expired.<br/>Required for SCD Type 2 — used to filter the target down to each business key's one current row before comparing it against the incoming source row.<br/>Optional for SCD Type 1 — safe to omit; if kept, it is always written as `'Y'`.<br/>**Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.<br/>Expected expression: `'Y' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag` |
@@ -689,9 +690,9 @@ SELECT * FROM ALL_NATIONS
 
 #### Dimension
 
-* [Node definition](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Dimension-4a720337-2713-45a5-b3f2-2d47d7abe3e5/definition.yml)
-* [Create Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Dimension-4a720337-2713-45a5-b3f2-2d47d7abe3e5/create.sql.j2)
-* [Run Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Dimension-4a720337-2713-45a5-b3f2-2d47d7abe3e5/run.sql.j2)
+* [Node definition](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Dimension-718/definition.yml)
+* [Create Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Dimension-718/create.sql.j2)
+* [Run Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Dimension-718/run.sql.j2)
 
 #### Macro
 
