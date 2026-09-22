@@ -361,7 +361,9 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
         {%- else -%}
             {# SCD Type 1: one row per business key, classified NEW/CHANGED/NOCHANGE off the business key (version/current-flag/end-date columns are optional here). #}
             {%- set sysCreateDateCol = get_value_by_column_attribute("isSystemCreateDate") %}
-            {%- set firstBizKeyCol = (columns | selectattr("isBusinessKey") | first).name %}
+            {# No @isBusinessKey column is already caught by validate_dimension_requirements()'s "Missing Business Key" test above —
+               guard here too so a missing key fails that test with a clear message instead of crashing template rendering outright. #}
+            {%- set firstBizKeyCol = (columns | selectattr("isBusinessKey") | first).name if hasBusinessKey else none %}
 
             {%- if isSimpleUpsert %}
             {# @upsert needs nothing from the target — the outer MERGE's MATCHED/NOT MATCHED already tells insert vs. update, so just pass the source columns through. #}
