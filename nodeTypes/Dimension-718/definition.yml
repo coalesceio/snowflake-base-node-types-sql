@@ -176,6 +176,26 @@ metadata:
 
         column:
 
+        - name: id
+          description: |-
+            • Stable column ID for lineage tracking.
+            • Not for manual creation — never add or edit this by hand. It's taken care of during create, based on the package-level 𝗽𝗮𝗰𝗸𝗮𝗴𝗲𝗖𝗼𝗻𝗳𝗶𝗴𝘂𝗿𝗮𝘁𝗶𝗼𝗻.𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗜𝗗𝘀 setting, not a per-node annotation or parameter.
+
+            Agentic creation — when generating a new node's SELECT from scratch, no template renders this for you, so check 𝗽𝗮𝗰𝗸𝗮𝗴𝗲𝗖𝗼𝗻𝗳𝗶𝗴𝘂𝗿𝗮𝘁𝗶𝗼𝗻.𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗜𝗗𝘀 before writing anything:
+            1. packageConfiguration.disableIDs is true -> do not add @id(...) to any column.
+            2. packageConfiguration.disableIDs is not true (the default) -> add @id("<value>") to every generated column — every plain source column, the surrogate key, and every system column. Generate each value as a 6-character lowercase hexadecimal string (each character 0-9 or a-f), e.g. by taking the first 6 hex characters of a fresh random UUID (uuid().replace(/-/g, '').slice(0, 6)) or equivalent — not full alphanumeric. A fresh value per column; never reuse one value across columns on the same node, and never use literal placeholder text like "<ID>".
+
+            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
+            0 AS "{{NODE_NAME}}_KEY" @id("110e75") @isSurrogateKey,
+            "SOME_COLUMN" AS "SOME_COLUMN" @id("2a9f31")
+          isRequired: false
+          parameters:
+            - name: value
+              type: string
+              description: Stable identifier for this column, used for lineage resolution.
+              isRequired: true
+              example: "110e75"
+
         - name: isBusinessKey
           description: |-
             • Marks a column as part of the business key used to match existing rows during the merge.
