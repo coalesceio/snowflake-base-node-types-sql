@@ -1,112 +1,25 @@
 fileVersion: 1
 id: "1"
 macroString: |-
-
   {% set packageConfiguration = namespace
       (
           disableIDs=true
       )
   %}
 
-  {#===========================================================================
-    Description: Resolves the zero-key literal for a column (column-level @zeroKey wins, else node-level @zeroKey by dataType, else NULL).
-    Input: col (object)
-    Output: SQL literal for the resolved zero-key value.
-  ===========================================================================#}
-    {%- macro resolve_zero_key(col) -%}
-
-        {%- set ns = namespace(zk_type=none, zk_value=none) -%}
-
-        {# Column-level zeroKey #}
-        {%- if col.zeroKey is defined
-            and col.zeroKey.parameters is defined
-            and col.zeroKey.parameters | trim | length > 0 -%}
-
-            {%- set ns.zk_value = col.zeroKey.parameters[0] -%}
-
-        {# Node-level zeroKey, matched by column dataType #}
-        {%- else -%}
-            {%- set zkParams = config.zeroKey.parameters if (config.zeroKey is defined and config.zeroKey.parameters is defined) else [] -%}
-            {%- if col.dataType | upper == 'VARIANT' -%}
-                {%- set ns.zk_type = 'variant' -%}
-                {%- set ns.zk_value = none -%}
-            {%- elif col.dataType[:3] | upper in ('VAR', 'CHA', 'STR') -%}
-                {%- set ns.zk_type = 'string' -%}
-                {%- set ns.zk_value = zkParams[1] if zkParams | length > 1 else "'UNKNOWN'" -%}
-            {%- elif col.dataType[:3] | upper in ('NUM',' INT', 'DEC', 'FLO') -%}
-                {%- set ns.zk_type = 'numeric' -%}
-                {%- set ns.zk_value = zkParams[0] if zkParams | length > 1 else 0 -%}
-            {%- elif col.dataType | upper == 'BOOLEAN' -%}
-                {%- set ns.zk_type = 'boolean' -%}
-                {%- set ns.zk_value = zkParams[3] if zkParams | length > 3 else true -%}
-            {%- elif col.dataType[:4] | upper in ('DATE', 'TIME', 'TIMESTAMP') -%}
-                {%- set ns.zk_type = 'datetime' -%}
-                {%- set ns.zk_value = zkParams[2] if zkParams | length > 2 else '1900-01-01 00:00:00' -%}
-            {%- endif -%}
-        {%- endif -%}
-
-        {# Format the resolved value #}
-        {%- if ns.zk_type == 'numeric' -%}
-            {{ ns.zk_value }}
-        {%- elif ns.zk_type == 'variant' -%}
-            PARSE_JSON('null')
-        {%- elif ns.zk_value is not none -%}
-            {%- if ns.zk_type == 'boolean' -%}
-                {{ ns.zk_value | upper }}
-
-            {%- elif ns.zk_type == 'datetime' -%}
-                TO_TIMESTAMP('{{ ns.zk_value }}')
-
-            {%- elif ns.zk_type == 'string' -%}
-                {# Node-level default: pasted verbatim, same as the column-level override — supply your own quotes in the annotation, e.g. "'UNKNOWN'". #}
-                {{ ns.zk_value }}
-
-            {%- else -%}
-                {# Column-level @zeroKey override: pasted verbatim, exactly as the user wrote it — #}
-                {# they supply their own quotes for a string, or a full expression like CAST(...). #}
-                {{ ns.zk_value }}
-            {%- endif -%}
-
-        {%- else -%}
-            NULL
-        {%- endif -%}
-
-    {%- endmacro -%}
-
-    {#===========================================================================
-    Description: Builds a datatype-aware condition that's TRUE when the source and target values differ.
-    Input: src_expr (string), tgt_expr (string), data_type (string)
-    Output: SQL boolean condition.
-    ===========================================================================#}
-    {%- macro safe_compare(src_expr, tgt_expr, data_type) -%}
-
-        {%- set dt = data_type | upper -%}
-
-        {%- if 'GEOGRAPHY' in dt -%}
-            (
-                ST_DISTANCE(
-                    COALESCE({{ src_expr }}, TO_GEOGRAPHY('POINT(0 0)')),
-                    COALESCE({{ tgt_expr }}, TO_GEOGRAPHY('POINT(0 0)'))
-                ) > 0
-            )
-        {%- elif 'GEOMETRY' in dt -%}
-            (
-                ST_DISTANCE(
-                    COALESCE({{ src_expr }}, TO_GEOMETRY('POINT(0 0)')),
-                    COALESCE({{ tgt_expr }}, TO_GEOMETRY('POINT(0 0)'))
-                ) > 0
-            )
-        {%- else -%}
-            {{ src_expr }} IS DISTINCT FROM {{ tgt_expr }}
-        {%- endif -%}
-
-    {%- endmacro -%}
-
-    {#===========================================================================
-    Description: Runs the node's column- and node-level data quality tests; does nothing if @disableTests is set.
-    Input: runOrder (string) — "Before" or "After".
-    Output: Rendered test_stage(...) + SELECT statements for the applicable tests.
-    ===========================================================================#}
+  {# ========================================================================
+  Purpose          : Executes data quality tests associated with the node
+                      and its columns, based on the configured run order.
+                      Supports running tests either before or after data
+                      insertion, and respects the test continuation
+                      behavior on failure.
+  Input Parameters : runOrder (String)
+                      - Determines when the tests should be executed.
+                          Expected values: 'Before' or 'After'
+  Returns          : Rendered SQL statements for executing the applicable
+                      node-level and column-level data quality tests.
+                      No output is generated if tests are disabled.
+  ========================================================================= #}
     {%- macro run_tests(runOrder) -%}
 
         {%- set columnContinueOnFailure = true -%}
@@ -220,11 +133,16 @@ macroString: |-
         {%- endif -%}
     {%- endmacro -%}
 
-    {#===========================================================================
-    Description: Builds a deterministic hash from every column marked @inHash("<hash_name>") for the given hash_name.
-    Input: hash_name (string), algo (string, default SHA1), delimiter (string, default ||)
-    Output: SQL STRING hash expression, or NULL if no columns are mapped to the hash group.
-    ===========================================================================#}
+  {#===================================================================================================
+  Description:
+  Generates a deterministic hash value by combining and hashing all column values associated with the given `hash_name` using the `@inHash` annotation.
+
+  Input: `hash_name` (string) - The hash group identifier used in `@inHash("<hash_name>")` to group columns for hashing.
+
+  Output: - Returns a SQL expression of type `STRING`:
+          - A SHA1 hash of concatenated column values  
+          - Returns `NULL` if no columns are mapped to the given hash group
+  ====================================================================================================#}
     {%- macro get_hash(hash_name, algo='SHA1', delimiter='||') -%}
 
         {%- set cols = namespace(items=[]) -%}
@@ -235,7 +153,7 @@ macroString: |-
 
             {%- if col.inHash is defined -%}
                 {%- for p in col.inHash -%}
-                    {%- set parts = p.parameters[0] -%}
+                    {%- set parts = p.parameters[0] %}
                     {%- set position = p.parameters[1] | int -%}
                     {%- set hash = p.parameters[0] -%}
 
@@ -275,11 +193,41 @@ macroString: |-
         {%- endif -%}
     {%- endmacro -%}
 
-    {#===========================================================================
-    Description: Reads a boolean config annotation, supporting both the bare @flag and @flag(true/false) formats.
-    Input: flag (string) — the annotation name, e.g. "disableTests".
-    Output: "true"/"false"/empty string.
-    ===========================================================================#}
+  {#===================================================================================================
+    get_boolean_config(flag)
+
+    Description:
+      Extracts the boolean value of a configuration flag, supporting both
+      annotation formats:
+        - @flag
+        - @flag(true) / @flag(false)
+
+    Input:
+      flag: Name of the boolean configuration flag, e.g. "truncateBefore",
+            "testsEnabled", or "clusterDefined".
+
+    Examples:
+      @truncateBefore
+        -> config["truncateBefore"] = true
+        -> Output: true
+
+      @truncateBefore(true)
+        -> config["truncateBefore"] = { parameters: [true] }
+        -> Output: true
+
+      @truncateBefore(false)
+        -> config["truncateBefore"] = { parameters: [false] }
+        -> Output: false
+
+      No annotation
+        -> config["truncateBefore"] is not defined
+        -> Output: empty
+
+    Usage:
+      {% if get_boolean_config("truncateBefore") | trim | lower == "true" %}
+        ...
+      {% endif %}
+  ====================================================================================================#}
     {%- macro get_boolean_config(flag) -%}
         {%- if config[flag] is defined -%}
             {%- if config[flag] is boolean -%}
@@ -288,6 +236,100 @@ macroString: |-
                 {{- config[flag].parameters[0] | trim | lower -}}
             {%- endif -%}
         {%- endif -%}
+    {%- endmacro -%}
+
+  {#===========================================================================
+    Description: Resolves the zero-key literal for a column (column-level @zeroKey wins, else node-level @zeroKey by dataType, else NULL).
+    Input: col (object)
+    Output: SQL literal for the resolved zero-key value.
+  ===========================================================================#}
+    {%- macro resolve_zero_key(col) -%}
+
+        {%- set ns = namespace(zk_type=none, zk_value=none) -%}
+
+        {# Column-level zeroKey #}
+        {%- if col.zeroKey is defined
+            and col.zeroKey.parameters is defined
+            and col.zeroKey.parameters | trim | length > 0 -%}
+
+            {%- set ns.zk_value = col.zeroKey.parameters[0] -%}
+
+        {# Node-level zeroKey, matched by column dataType #}
+        {%- else -%}
+            {%- set zkParams = config.zeroKey.parameters if (config.zeroKey is defined and config.zeroKey.parameters is defined) else [] -%}
+            {%- if col.dataType | upper == 'VARIANT' -%}
+                {%- set ns.zk_type = 'variant' -%}
+                {%- set ns.zk_value = none -%}
+            {%- elif col.dataType[:3] | upper in ('VAR', 'CHA', 'STR') -%}
+                {%- set ns.zk_type = 'string' -%}
+                {%- set ns.zk_value = zkParams[1] if zkParams | length > 1 else "'UNKNOWN'" -%}
+            {%- elif col.dataType[:3] | upper in ('NUM',' INT', 'DEC', 'FLO') -%}
+                {%- set ns.zk_type = 'numeric' -%}
+                {%- set ns.zk_value = zkParams[0] if zkParams | length > 1 else 0 -%}
+            {%- elif col.dataType | upper == 'BOOLEAN' -%}
+                {%- set ns.zk_type = 'boolean' -%}
+                {%- set ns.zk_value = zkParams[3] if zkParams | length > 3 else true -%}
+            {%- elif col.dataType[:4] | upper in ('DATE', 'TIME', 'TIMESTAMP') -%}
+                {%- set ns.zk_type = 'datetime' -%}
+                {%- set ns.zk_value = zkParams[2] if zkParams | length > 2 else '1900-01-01 00:00:00' -%}
+            {%- endif -%}
+        {%- endif -%}
+
+        {# Format the resolved value #}
+        {%- if ns.zk_type == 'numeric' -%}
+            {{ ns.zk_value }}
+        {%- elif ns.zk_type == 'variant' -%}
+            PARSE_JSON('null')
+        {%- elif ns.zk_value is not none -%}
+            {%- if ns.zk_type == 'boolean' -%}
+                {{ ns.zk_value | upper }}
+
+            {%- elif ns.zk_type == 'datetime' -%}
+                TO_TIMESTAMP('{{ ns.zk_value }}')
+
+            {%- elif ns.zk_type == 'string' -%}
+                {# Node-level default: pasted verbatim, same as the column-level override — supply your own quotes in the annotation, e.g. "'UNKNOWN'". #}
+                {{ ns.zk_value }}
+
+            {%- else -%}
+                {# Column-level @zeroKey override: pasted verbatim, exactly as the user wrote it — #}
+                {# they supply their own quotes for a string, or a full expression like CAST(...). #}
+                {{ ns.zk_value }}
+            {%- endif -%}
+
+        {%- else -%}
+            NULL
+        {%- endif -%}
+
+    {%- endmacro -%}
+
+    {#===========================================================================
+    Description: Builds a datatype-aware condition that's TRUE when the source and target values differ.
+    Input: src_expr (string), tgt_expr (string), data_type (string)
+    Output: SQL boolean condition.
+    ===========================================================================#}
+    {%- macro safe_compare(src_expr, tgt_expr, data_type) -%}
+
+        {%- set dt = data_type | upper -%}
+
+        {%- if 'GEOGRAPHY' in dt -%}
+            (
+                ST_DISTANCE(
+                    COALESCE({{ src_expr }}, TO_GEOGRAPHY('POINT(0 0)')),
+                    COALESCE({{ tgt_expr }}, TO_GEOGRAPHY('POINT(0 0)'))
+                ) > 0
+            )
+        {%- elif 'GEOMETRY' in dt -%}
+            (
+                ST_DISTANCE(
+                    COALESCE({{ src_expr }}, TO_GEOMETRY('POINT(0 0)')),
+                    COALESCE({{ tgt_expr }}, TO_GEOMETRY('POINT(0 0)'))
+                ) > 0
+            )
+        {%- else -%}
+            {{ src_expr }} IS DISTINCT FROM {{ tgt_expr }}
+        {%- endif -%}
+
     {%- endmacro -%}
 
     {#===========================================================================
