@@ -36,24 +36,25 @@ metadata:
 
         - name: mergeStrategy
           description: |-
-            • Picks the change-detection method; different methods require different column tags.
+            • Picks the change-detection method; different methods require different column annotations.
             • If not specified, defaults to 𝗰𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 - 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭
             • Ignored on views.
-
-            ◆ 𝘂𝗽𝘀𝗲𝗿𝘁
-              • No change detection at all — a matched row is always updated, an unmatched row is inserted.
-              • Doesn't assert any SCD type of its own — if the upstream SELECT/CTE already implements SCD1/SCD2 logic, this strategy just merges that result through as-is, without re-deriving or re-checking it.
-              • Requires no 𝗶𝘀𝗖𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴/𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 columns — the run fails if either is present, since they'd silently be ignored.
 
             ◆ 𝗰𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴
               • Compares columns marked 𝗶𝘀𝗖𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 (or, if none are marked, every plain attribute column) to detect a change.
               • 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 if any column is marked 𝗶𝘀𝗖𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴, otherwise 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭.
-              • Requires no 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 column — the run fails if one is present.
+              • Requires no 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 column
 
             ◆ 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱
               • Compares a single 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 timestamp column against the target's stored value.
-              • Requires exactly one column marked 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 — the run fails if none is present (𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 itself still rejects more than one).
+              • Requires exactly one column marked 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 — the run fails if none is present.
               • 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 𝗼𝗿 𝟮 comes from that column's own 𝘀𝗰𝗱𝗧𝘆𝗽𝗲 parameter.
+              • Requires no 𝗶𝘀𝗖𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 column
+
+            ◆ 𝘂𝗽𝘀𝗲𝗿𝘁
+              • No change detection at all — a matched row is always updated, an unmatched row is inserted.
+              • Doesn't assert any SCD type of its own — if the upstream SELECT/CTE already implements SCD1/SCD2 logic, this strategy just merges that result through as-is, without re-deriving or re-checking it.
+              • Requires no 𝗶𝘀𝗖𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴/𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 columns
 
             Agentic creation — before writing a new Dimension node's SELECT, ask the user (don't silently default):
             1. Which merge strategy do they want — upsert, changeTracking, or lastModified? If they don't know, explain the three options above and let them choose — don't pick changeTracking just because it's the fallback default.
@@ -68,9 +69,9 @@ metadata:
               isRequired: true
               default: changeTracking
               options:
-                - upsert
                 - changeTracking
                 - lastModified
+                - upsert
 
         - name: zeroKey
           description: |-
@@ -200,7 +201,8 @@ metadata:
           description: |-
             • Marks a column as part of the business key used to match existing rows during the merge.
             • Ignored on views.
-            • Agentic creation — before writing the SELECT, ask the user which column(s) should be marked @isBusinessKey. Don't guess based on column naming (e.g. assuming a "_ID"/"_KEY" column, or the first natural-looking key) — the business key is a domain decision only the user can make, and getting it wrong silently breaks change detection for every row. A business key can be more than one column; ask whether it's composite.
+
+            Agentic creation — before writing the SELECT, ask the user which column(s) should be marked @isBusinessKey. Don't guess based on column naming (e.g. assuming a "_ID"/"_KEY" column, or the first natural-looking key) — the business key is a domain decision only the user can make, and getting it wrong silently breaks change detection for every row. A business key can be more than one column; ask whether it's composite.
           isRequired: true
 
         - name: lastModifiedTracking
@@ -223,7 +225,7 @@ metadata:
 
         - name: isChangeTracking
           description: |-
-            • Marks a column to be watched for changes that decide SCD type:
+            • Marks a column to be watched for changes that decide SCD type
             • 𝗠𝗮𝗿𝗸𝗲𝗱 — 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 - a change expires the existing row and inserts a new version.
             • Not 𝗠𝗮𝗿𝗸𝗲𝗱 — 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 - a change updates the row in place.
             • Ignored on views.
