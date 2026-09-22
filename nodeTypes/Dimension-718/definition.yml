@@ -495,9 +495,6 @@ metadata:
             {%- set line = (item.expr.ljust(maxExprLen) ~ ' AS ' ~ item.alias.ljust(maxAliasLen) ~ ' ' ~ item.annotation).rstrip() -%}
             {%- set ns.lines = ns.lines + [line] -%}
           {%- endfor -%}
-          {% if disableIDs -%}
-          @disableIDs     -- WARNING: skips column ID checks. This stays as-is for the complete lifecycle of this node once created.
-          {% endif -%}
           SELECT
               {{ ns.lines | join(',\n    ') }}
           {% for dep in sources[0].dependencies -%}
@@ -510,4 +507,4 @@ metadata:
           {%- endfor %}
 name: Dimension
 type: NodeType
-# commit with older zero-key handling
+# commit with older zero-key handling - disableIDs
