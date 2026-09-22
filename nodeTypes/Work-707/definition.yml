@@ -17,11 +17,11 @@ metadata:
 
         - name: writeMode
           description: >-
-            Controls how data is written to the target table. 
-            𝘁𝗿𝘂𝗻𝗰𝗮𝘁𝗲𝗜𝗻𝘀𝗲𝗿𝘁 clears the table before loading, replacing its contents entirely;
-            𝗮𝗽𝗽𝗲𝗻𝗱 inserts the new rows alongside whatever is already there.
-            If not specified in the SQL, defaults to 𝘁𝗿𝘂𝗻𝗰𝗮𝘁𝗲𝗜𝗻𝘀𝗲𝗿𝘁. 
-            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+            • Controls how data is written to the target table. 
+            • 𝘁𝗿𝘂𝗻𝗰𝗮𝘁𝗲𝗜𝗻𝘀𝗲𝗿𝘁 clears the table before loading, replacing its contents entirely;
+            • 𝗮𝗽𝗽𝗲𝗻𝗱 inserts the new rows alongside whatever is already there.
+            • If not specified in the SQL, defaults to 𝘁𝗿𝘂𝗻𝗰𝗮𝘁𝗲𝗜𝗻𝘀𝗲𝗿𝘁. 
+            • Ignored on views.
           isRequired: false
           parameters:
             - name: mode
@@ -37,16 +37,15 @@ metadata:
         - name: disableTests
           type: boolean
           description: >-
-            Controls whether configured tests are skipped.
-            Useful while developing a node — skip node-level and column-level tests without deleting them, so you can iterate on the SQL first and turn tests back on once the logic is settled.
+            • Controls whether configured tests are skipped.
+            • Useful while developing a node — skip node-level and column-level tests without deleting them, so you can iterate on the SQL first and turn tests back on once the logic is settled.
           isRequired: false
           default: false
 
         - name: tests
           description: >-
-            Node-level data quality test.
-            Runs the given 𝗾𝘂𝗲𝗿𝘆𝗦𝗤𝗟 against the target and fails the test if it returns any records — write the query so it selects only the rows that violate your condition.
-            Runs 𝗕𝗲𝗳𝗼𝗿𝗲 or 𝗔𝗳𝘁𝗲𝗿 the load per 𝗿𝘂𝗻𝗢𝗿𝗱𝗲𝗿, and either halts or continues the run on failure per 𝗰𝗼𝗻𝘁𝗶𝗻𝘂𝗲𝗢𝗻𝗙𝗮𝗶𝗹𝘂𝗿𝗲.
+            • 🚦Node-level data quality test.
+            • Runs the given 𝗾𝘂𝗲𝗿𝘆𝗦𝗤𝗟 against the target and fails the test if it returns any records — write the query so it selects only the rows that violate your condition.
             Skipped entirely when 𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗧𝗲𝘀𝘁𝘀 is set.
           allowsMultiple: true
           parameters:
@@ -77,9 +76,9 @@ metadata:
 
         - name: preSQL
           description: >-
-            SQL statement to execute before the data load operation — e.g. staging setup, dropping temp tables, or capturing pre-load state.
-            Repeat the annotation to run multiple statements in the order they appear.
-            𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+            • SQL statement to execute before the data load operation — e.g. staging setup, dropping temp tables, or capturing pre-load state.
+            • Repeat the annotation to run multiple statements in the order they appear.
+            • Ignored on views.
           allowsMultiple: true
           parameters:
           - name: querySQL
@@ -90,9 +89,9 @@ metadata:
 
         - name: postSQL
           description: >-
-            SQL statement to execute after the data load operation — e.g. updating dependent tables, cleaning up temp objects, or logging load completion.
-                Repeat the annotation to run multiple statements in the order they appear.
-                𝗜𝗴𝗻𝗼𝗿𝗲𝗱 𝗼𝗻 𝘃𝗶𝗲𝘄𝘀.
+            • SQL statement to execute after the data load operation — e.g. updating dependent tables, cleaning up temp objects, or logging load completion.
+            • Repeat the annotation to run multiple statements in the order they appear.
+            • Ignored on views.
           allowsMultiple: true
           parameters:
           - name: querySQL
@@ -105,9 +104,9 @@ metadata:
 
         - name: inHash
           description: >-
-                Marks a column as an input to a generated hash key, grouped by 𝗵𝗮𝘀𝗵𝗡𝗮𝗺𝗲 and ordered within that group by 𝗵𝗮𝘀𝗵𝗢𝗿𝗱𝗲𝗿.
-                Mark every column that should feed a given hash with the same 𝗵𝗮𝘀𝗵𝗡𝗮𝗺𝗲, then call the 𝐠𝐞𝐭_𝐡𝐚𝐬𝐡("<hashName>") macro elsewhere in the SELECT to produce the actual hash column from those marked columns.
-                𝗦𝗲𝗲 𝗱𝗼𝗰𝘂𝗺𝗲𝗻𝘁𝗮𝘁𝗶𝗼𝗻 𝗳𝗼𝗿 𝗱𝗲𝘁𝗮𝗶𝗹𝘀.
+                • Marks a column as an input to a generated hash key, grouped by 𝗵𝗮𝘀𝗵𝗡𝗮𝗺𝗲 and ordered within that group by 𝗵𝗮𝘀𝗵𝗢𝗿𝗱𝗲𝗿.
+                • Mark every column that should feed a given hash with the same 𝗵𝗮𝘀𝗵𝗡𝗮𝗺𝗲, then call the 𝐠𝐞𝐭_𝐡𝐚𝐬𝐡("<hashName>") macro elsewhere in the SELECT to produce the actual hash column from those marked columns.
+                • 𝗦𝗲𝗲 𝗱𝗼𝗰𝘂𝗺𝗲𝗻𝘁𝗮𝘁𝗶𝗼𝗻 𝗳𝗼𝗿 𝗱𝗲𝘁𝗮𝗶𝗹𝘀.
           allowsMultiple: true
           parameters:
             - name: hashName
@@ -124,32 +123,32 @@ metadata:
 
         - name: not_null
           description: >-
-            🚦 Column-level data quality test.
-            Fails on rows where the column is 𝗡𝗨𝗟𝗟.
-            Presence enables the test — remove the annotation to turn it off.
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+           🚦 Column-level data quality test.
+            • Fails on rows where the column is 𝗡𝗨𝗟𝗟.
+            • Presence enables the test — remove the annotation to turn it off.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
 
         - name: uniqueness
           description: >- 
-            🚦 Column-level data quality test.
-            Fails when a value appears on more than one row.
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+           🚦 Column-level data quality test.
+            • Fails when a value appears on more than one row.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
 
         - name: empty
           description: >-
             🚦 Column-level data quality test.
-            Fails on rows where the column trims to the empty string;
-            𝗡𝗨𝗟𝗟 values pass this test and are instead caught by not_null.
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+            • Fails on rows where the column trims to the empty string;
+            • 𝗡𝗨𝗟𝗟 values pass this test and are instead caught by not_null.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
 
         - name: accepted_values
           description: >-
-            🚦 Column-level data quality test.
-            Fails on rows whose value is outside the allow list.
-            Repeat the annotation once per permitted value.
-            Each value is pasted into the SQL verbatim, so quote it to match the column's data
+           🚦 Column-level data quality test.
+            • Fails on rows whose value is outside the allow list.
+            • Repeat the annotation once per permitted value.
+            • Each value is pasted into the SQL verbatim, so quote it to match the column's data
             type — a number as accepted_values("<num>"), a string as accepted_values("'<string>'").
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           allowsMultiple: true
           parameters:
             - name: value
@@ -158,11 +157,11 @@ metadata:
 
         - name: rejected_values
           description: >-
-            🚦 Column-level data quality test.
-            Fails on rows whose value is in the deny list.
-            Repeat the annotation once per forbidden value. Each value is pasted into the SQL verbatim, so quote it to match the column's data type — a number as rejected_values("<num>"), a string as
+           🚦 Column-level data quality test.
+            • Fails on rows whose value is in the deny list.
+            • Repeat the annotation once per forbidden value. Each value is pasted into the SQL verbatim, so quote it to match the column's data type — a number as rejected_values("<num>"), a string as
             rejected_values("'<string>'").
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           allowsMultiple: true
           parameters:
             - name: value
@@ -172,10 +171,10 @@ metadata:
 
         - name: min_max
           description: >-
-            🚦 Column-level data quality test.
-            Fails on rows outside the inclusive range.
-            Both bounds are pasted into the SQL verbatim, so write a number as "0" and a date as "DATE '2026-01-01'".
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+           🚦 Column-level data quality test.
+            • Fails on rows outside the inclusive range.
+            • Both bounds are pasted into the SQL verbatim, so write a number as "0" and a date as "DATE '2026-01-01'".
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: min
               type: string
@@ -190,10 +189,10 @@ metadata:
 
         - name: min_value
           description: >-
-            🚦 Column-level data quality test.
-            Fails on rows below the bound.
-            Pasted into the SQL verbatim — see min_max.
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+           🚦 Column-level data quality test.
+            • Fails on rows below the bound.
+            • Pasted into the SQL verbatim — see min_max.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: min
               type: string
@@ -203,10 +202,10 @@ metadata:
 
         - name: max_value
           description: >-
-            🚦 Column-level data quality test.
-            Fails on rows above the bound.
-            Pasted into the SQL verbatim — see min_max.
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+           🚦 Column-level data quality test.
+            • Fails on rows above the bound.
+            • Pasted into the SQL verbatim — see min_max.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: max
               type: string
@@ -216,10 +215,10 @@ metadata:
 
         - name: freshness
           description: >-
-            🚦 Column-level data quality test.
-            Checks that the data is fresh — fails when the column's value is older than the given interval, or when the table has no rows at all.
+           🚦 Column-level data quality test.
+            • Checks that the data is fresh — fails when the column's value is older than the given interval, or when the table has no rows at all.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
             𝗡𝗼𝘁𝗲: on a DATE column the value is truncated to midnight.
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: interval
               description: >-
@@ -235,12 +234,11 @@ metadata:
 
         - name: relative_time
           description: >-
-            🚦 Column-level data quality test.
-            Compares this column against another date/time column on the same node using the
-            given operator.
-            E.g. @relative_time("<=", "END_DATE") fails any row where this column's value is not less than or equal to END_DATE.
-            A row with either side 𝗡𝗨𝗟𝗟 is left out of the check and passes.
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+           🚦 Column-level data quality test.
+            • Compares this column against another date/time column on the same node using the given operator.
+            • E.g. @relative_time("<=", "END_DATE") fails any row where this column's value is not less than or equal to END_DATE.
+            • A row with either side 𝗡𝗨𝗟𝗟 is left out of the check and passes.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: operator
               type: string

@@ -7,7 +7,7 @@ operation:
     postSQL: ""
     preSQL: ""
   database: ""
-  deployEnabled: true
+  deployEnabled: false
   description: ""
   isMultisource: false
   locationName: TARGET
