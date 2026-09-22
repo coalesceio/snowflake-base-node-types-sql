@@ -108,32 +108,6 @@ metadata:
               example: true
               options: [true, false]
 
-        - name: disableIDs
-          type: boolean
-          description: |-
-            • When set, skips requiring/adding a real @id("<value>") annotation on this node's columns.
-            • For manual node creation, this is handled automatically as part of node creation based on the session's default disableIDs parameter — no action needed from the user.
-            • 𝗗𝗲𝗳𝗮𝘂𝗹𝘁 𝗯𝗲𝗵𝗮𝘃𝗶𝗼𝗿 𝗶𝘀 𝘁𝗼 𝗶𝗻𝗰𝗹𝘂𝗱𝗲 𝗜𝗗𝘀 — this annotation is only added when IDs are explicitly turned off, never added "just in case".
-            • @id("<value>") is read verbatim — nothing generates or substitutes a value for you. Whatever string is typed inside the quotes becomes that column's id, exactly as written. Leaving it as literal placeholder text (e.g. @id("<ID>")) satisfies validation but is worthless as an identifier, since it's identical on every column.
-
-            Agentic creation — when generating a new Dimension node's SELECT from scratch, this is NOT automatic the way manual creation is (see sqlInitializationTemplate) — no template renders the SQL for you, so you must read the parameter and write the correct annotation into the SQL editor content yourself:
-            1. Check for a disableIDs value before writing anything. It is not fixed to one place — check whatever parameter source is actually available to you in this creation session first (e.g. a runtime/API parameter passed to you, or a parameters argument the calling tool supplied); workspace/environment Parameters (Build Settings -> Workspace/Environment -> Parameters, surfaced in templates and to agents as parameters.disableIDs) is the standing default source for this value — not a per-node config field, and not committed into any node's file — but it is not the only source and may not be the live one; a runtime/API-supplied value, where available, takes priority over it. If you find no such value from any source available to you, treat it as not set (the default).
-            2. not set / false (the default) -> generate your own fresh, unique value (e.g. a UUID) for every generated column — every plain source column, the surrogate key, and every system column — and mark it with @id("<your-generated-value>"). A different value per column; never reuse one value, and never use literal placeholder text like "<ID>". Do not add @disableIDs.
-            3. true (i.e. parameters.disableIDs = true) -> skip @id(...) on every column entirely, and instead write a single node-level @disableIDs annotation directly into the SQL editor content as part of the SELECT you're generating — the same way sqlInitializationTemplate would inject it for a manually-created node, just done by you instead of the template.
-            • Never mix the two: a node either carries a real, distinct @id(...) on all of its columns, or carries @disableIDs and none of them — not a partial mix of some columns with an ID and others without.
-
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻 (disableIDs is not set — the default):
-            0 AS "{{NODE_NAME}}_KEY" @id("3f9a1c2e-4b7d-4e6a-9c1f-8a2d5e7b0c3a") @isSurrogateKey,
-            "SOME_COLUMN" AS "SOME_COLUMN" @id("7b2e5f1a-9c3d-4a6e-8f0b-1d4c6e9a2b5f"),
-            1 AS "SYSTEM_VERSION" @id("1a4d7e0b-3c6f-4b9a-8e1d-5a7c0f2b4e6d") @isSystemVersion
-
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻 (disableIDs is set):
-            @disableIDs
-            0 AS "{{NODE_NAME}}_KEY" @isSurrogateKey,
-            "SOME_COLUMN" AS "SOME_COLUMN"
-          isRequired: false
-          default: false
-
         - name: disableTests
           type: boolean
           description: |-
@@ -480,7 +454,7 @@ metadata:
             {% raw %}{{ ref('{% endraw %}{{ location_name }}{% raw %}', '{% endraw %}{{ node_name }}{% raw %}') }}{% endraw %}
           {%- endmacro -%}
           {%- set ns = namespace(items=[], lines=[]) -%}
-          {%- set disableIDs = parameters.disableIDs is defined and parameters.disableIDs and (parameters.disableIDs | string | lower != 'false') -%}
+          {%- set disableIDs = packageConfiguration is defined and packageConfiguration.disableIDs is defined and packageConfiguration.disableIDs and (packageConfiguration.disableIDs | string | lower != 'false') -%}
           {%- set idAnnotation = '' if disableIDs else '@id("<ID>") ' -%}
           {%- set ns.items = ns.items + [{'expr': '0', 'alias': '"' ~ node.name ~ '_KEY"', 'annotation': idAnnotation ~ '@isSurrogateKey'}] -%}
           {%- for dep in sources[0].dependencies -%}
@@ -514,4 +488,3 @@ metadata:
           {%- endfor %}
 name: Dimension
 type: NodeType
-# marker: pre-disableIDs-removal checkpoint

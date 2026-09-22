@@ -1,6 +1,13 @@
 fileVersion: 1
 id: "1"
 macroString: |-
+
+  {% set packageConfiguration = namespace
+      (
+          disableIDs=true
+      )
+  %}
+
   {#===========================================================================
     Description: Resolves the zero-key literal for a column (column-level @zeroKey wins, else node-level @zeroKey by dataType, else NULL).
     Input: col (object)
@@ -295,8 +302,8 @@ macroString: |-
             {%- endif -%}
         {%- endmacro -%}
 
-        {# Per-node opt-out, read from this node's own SQL — not the one-time creation parameter. #}
-        {%- set disableIDs = get_boolean_config("disableIDs") == "true" -%}
+        {# Package-level opt-out, read from packageConfiguration — no longer a per-node annotation. #}
+        {%- set disableIDs = packageConfiguration is defined and packageConfiguration.disableIDs is defined and packageConfiguration.disableIDs and (packageConfiguration.disableIDs | string | lower != 'false') -%}
         {%- if not disableIDs -%}
             {%- set invalidIdColumns = namespace(items=[]) -%}
             {%- for col in columns -%}
@@ -508,4 +515,3 @@ macroString: |-
     {%- endmacro -%}
 name: macro
 type: Macro
-# marker: pre-disableIDs-removal checkpoint
