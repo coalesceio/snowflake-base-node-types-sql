@@ -37,24 +37,24 @@ metadata:
         - name: mergeStrategy
           description: |-
             • Picks the change-detection method; different methods require different column annotations.
-            • If not specified, defaults to 𝗰𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 - 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭
+            • If not specified, defaults to changeTracking - 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭
             • Ignored on views.
 
             ◆ 𝗰𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴
-              • Compares columns marked 𝗶𝘀𝗖𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 (or, if none are marked, every plain attribute column) to detect a change.
-              • 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 if any column is marked 𝗶𝘀𝗖𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴, otherwise 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭.
-              • Requires no 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 column
+              • Compares columns marked isChangeTracking (or, if none are marked, every plain attribute column) to detect a change.
+              • 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 if any column is marked isChangeTracking, otherwise 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭.
+              • Requires no lastModifiedTracking column
 
             ◆ 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱
-              • Compares a single 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 timestamp column against the target's stored value.
-              • Requires exactly one column marked 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 — the run fails if none is present.
+              • Compares a single lastModifiedTracking timestamp column against the target's stored value.
+              • Requires exactly one column marked lastModifiedTracking — the run fails if none is present.
               • 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 𝗼𝗿 𝟮 comes from that column's own 𝘀𝗰𝗱𝗧𝘆𝗽𝗲 parameter.
-              • Requires no 𝗶𝘀𝗖𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 column
+              • Requires no isChangeTracking column
 
             ◆ 𝘂𝗽𝘀𝗲𝗿𝘁
               • No change detection at all — a matched row is always updated, an unmatched row is inserted.
               • Doesn't assert any SCD type of its own — if the upstream SELECT/CTE already implements SCD1/SCD2 logic, this strategy just merges that result through as-is, without re-deriving or re-checking it.
-              • Requires no 𝗶𝘀𝗖𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴/𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴 columns
+              • Requires no isChangeTracking/lastModifiedTracking columns
 
             Agentic creation — before writing a new Dimension node's SELECT, ask the user (don't silently default):
             1. Which merge strategy do they want — upsert, changeTracking, or lastModified? If they don't know, explain the three options above and let them choose — don't pick changeTracking just because it's the fallback default.
@@ -186,7 +186,7 @@ metadata:
             1. packageConfiguration.disableIDs is true -> do not add @id(...) to any column.
             2. packageConfiguration.disableIDs is not true (the default) -> add @id("<value>") to every generated column — every plain source column, the surrogate key, and every system column. Generate each value as a 6-character lowercase hexadecimal string (each character 0-9 or a-f), e.g. by taking the first 6 hex characters of a fresh random UUID (uuid().replace(/-/g, '').slice(0, 6)) or equivalent — not full alphanumeric. A fresh value per column; never reuse one value across columns on the same node, and never use literal placeholder text like "<ID>".
 
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
+            Expected expression:
             0 AS "{{NODE_NAME}}_KEY" @id("110e75") @isSurrogateKey,
             "SOME_COLUMN" AS "SOME_COLUMN" @id("2a9f31")
           isRequired: false
@@ -266,11 +266,11 @@ metadata:
         - name: isSurrogateKey
           description: |-
             • Marks this column as the node's surrogate key.
-            • 𝗢𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 — the merge logic joins and detects changes entirely off the business key (@isBusinessKey).
-            • 𝗥𝗲𝗰𝗼𝗺𝗺𝗲𝗻𝗱𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — a stable surrogate key per version is the standard way to support versioned business key. Not enforced — the merge itself doesn't require it.
+            • Optional for SCD Type 1 — the merge logic joins and detects changes entirely off the business key (@isBusinessKey).
+            • Recommended for SCD Type 2 — a stable surrogate key per version is the standard way to support versioned business key. Not enforced — the merge itself doesn't require it.
             • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗼𝗻𝗹𝘆 𝘄𝗵𝗲𝗻 the node-level @zeroKey is set, since the zero/ghost record is matched against the target by surrogate key value.
 
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
+            Expected expression:
             0 AS "{{NODE_NAME}}_KEY" @isSurrogateKey
 
             Agentic creation only — manual creation adds this column automatically.
@@ -279,10 +279,10 @@ metadata:
         - name: isSystemVersion
           description: |-
             • Marks this column as the SCD version number, incremented each time a business key gets a new version.
-            • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — shows which version of a row this is. Each time a business key's row changes, the expired row is kept and a new row is inserted with this value incremented by 1.
-            • 𝗢𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 — new-vs-existing is detected off the business key alone, so this column can be dropped entirely; if kept, it is always written as 1 and never incremented.
+            • Required for SCD Type 2 — shows which version of a row this is. Each time a business key's row changes, the expired row is kept and a new row is inserted with this value incremented by 1.
+            • Optional for SCD Type 1 — new-vs-existing is detected off the business key alone, so this column can be dropped entirely; if kept, it is always written as 1 and never incremented.
 
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
+            Expected expression:
             1 AS "SYSTEM_VERSION" @isSystemVersion
 
             Agentic creation only — manual creation adds this column automatically.
@@ -291,10 +291,10 @@ metadata:
         - name: isSystemCurrentFlag
           description: |-
             • Marks this column as the SCD "is current" flag — 'Y' on the active version of a row, overwritten to 'N' when it's expired.
-            • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — used to filter the target down to each business key's one current row before comparing it against the incoming source row.
-            • 𝗢𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 —  safe to omit; if kept, it is always written as 'Y'.
+            • Required for SCD Type 2 — used to filter the target down to each business key's one current row before comparing it against the incoming source row.
+            • Optional for SCD Type 1 —  safe to omit; if kept, it is always written as 'Y'.
 
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
+            Expected expression:
             'Y' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag
 
             Agentic creation only — manual creation adds this column automatically.
@@ -305,7 +305,7 @@ metadata:
             • Marks this column as the timestamp a row (or, under SCD Type 2, a specific row version) was first created.
             • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝘂𝗻𝗹𝗲𝘀𝘀 @mergeStrategy 𝗶𝘀 𝘂𝗽𝘀𝗲𝗿𝘁
 
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
+            Expected expression:
             CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate
 
             Agentic creation only — manual creation adds this column automatically.
@@ -314,10 +314,10 @@ metadata:
         - name: isSystemUpdateDate
           description: |-
             • Marks this column as the timestamp a row was last updated.
-            • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — read back from the target and refreshed to the current timestamp whenever a row is inserted as a new version or its prior current version is expired.
-            • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 — recomputed to the current timestamp on every inserted or changed row, so every row change carries an audit trail of when it was last updated.
+            • Required for SCD Type 2 — read back from the target and refreshed to the current timestamp whenever a row is inserted as a new version or its prior current version is expired.
+            • Required for SCD Type 1 — recomputed to the current timestamp on every inserted or changed row, so every row change carries an audit trail of when it was last updated.
 
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
+            Expected expression:
             CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
 
             Agentic creation only — manual creation adds this column automatically.
@@ -326,10 +326,10 @@ metadata:
         - name: isSystemEndDate
           description: |-
             • Marks this column as the SCD Type 2 expiration timestamp — a far-future sentinel while the row is current, set to the actual expiry time once superseded.
-            • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟮 — this is what makes a version's active window queryable; omitting it leaves expired versions with no expiry marker.
-            • 𝗢𝗽𝘁𝗶𝗼𝗻𝗮𝗹 𝗳𝗼𝗿 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 — (no versioning, so nothing ever expires) — safe to omit entirely.
+            • Required for SCD Type 2 — this is what makes a version's active window queryable; omitting it leaves expired versions with no expiry marker.
+            • Optional for SCD Type 1 — (no versioning, so nothing ever expires) — safe to omit entirely.
 
-            𝗘𝘅𝗽𝗲𝗰𝘁𝗲𝗱 𝗲𝘅𝗽𝗿𝗲𝘀𝘀𝗶𝗼𝗻:
+            Expected expression:
             CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
 
             Agentic creation only — manual creation adds this column automatically.
