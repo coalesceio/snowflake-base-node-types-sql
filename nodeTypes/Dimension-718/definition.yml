@@ -9,6 +9,7 @@ metadata:
     short: DIM
     plural: Dimensions
     tagColor: '#1E339A'
+    description: 'An id annotation is required for each column - it should be unique to the column and be six hexadecimal digits, unless 𝗽𝗮𝗰𝗸𝗮𝗴𝗲𝗖𝗼𝗻𝗳𝗶𝗴𝘂𝗿𝗮𝘁𝗶𝗼𝗻.𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗜𝗗𝘀 is true'
 
     enableCTESupport: true
 
