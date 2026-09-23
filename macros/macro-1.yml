@@ -3,7 +3,7 @@ id: "1"
 macroString: |-
   {% set packageConfiguration = namespace
       (
-          disableIDs=true
+          disableIDs=false
       )
   %}
 
@@ -379,10 +379,8 @@ macroString: |-
         {%- set mergeStrategyExplicit = config.mergeStrategy is defined and config.mergeStrategy.parameters is defined and config.mergeStrategy.parameters | length > 0 -%}
         {%- if mergeStrategyExplicit -%}
             {%- set mergeStrategy = config.mergeStrategy.parameters[0] | trim -%}
-        {%- elif lastModifiedCount > 0 %}
-            {# No @mergeStrategy given, but a column has @lastModifiedTracking — infer lastModified. #}
-            {%- set mergeStrategy = 'lastModified' -%}
         {%- else -%}
+            {# No @mergeStrategy given — always default to changeTracking, regardless of which tracking columns are present. #}
             {%- set mergeStrategy = 'changeTracking' -%}
         {%- endif -%}
         {%- set isSimpleUpsert = mergeStrategy == 'upsert' -%}
