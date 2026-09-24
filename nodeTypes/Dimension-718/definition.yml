@@ -126,6 +126,7 @@ metadata:
               example: 'SELECT 1'
 
             - name: continueOnFailure
+              type: boolean
               description: Determines whether execution continues when the test fails.
               isRequired: false
               default: true
