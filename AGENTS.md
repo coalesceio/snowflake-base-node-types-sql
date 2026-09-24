@@ -21,13 +21,28 @@ Shortcut: the app writes an executable shim next to that file — run `~/.coales
 
 If the file is absent, use `coa` from your PATH. Prefer `--json` output; `coa --help` lists commands.
 
+## Credentials and profiles
+
+Warehouse credentials live in `~/.coa/config` as named profiles. The profile this workspace
+runs against is the `profile:` key in its `workspace.yml`.
+
+- Inspect and switch with `coa profile list`, `coa profile show`, `coa profile use`, and
+  `coa profile create` — all support `--format json`.
+- Never hand-edit `~/.coa/config`; the `coa profile` commands own its shape.
+- Creating or changing credentials is the user's call — ask before you run `coa profile create`,
+  and ask them for the values rather than guessing.
+
 ## Authoring nodes
 
-Once `data.yml` declares a platform, the app writes that platform's default node types into
-`nodeTypes/`. Source nodes are always V1 (`.yml`). For transformation nodes, use V2 (`.sql`) when a
-V2 node type (`fileVersion: 2`) exists in `nodeTypes/` for the type; otherwise author them as V1
-(`.yml`). Run `coa describe sql-format` for both file shapes. Verify with `coa validate`,
-`coa plan`, and `coa run`.
+Before authoring, check the available node types on disk: workspace types in `nodeTypes/` and
+installed package types in `.coa/cache/packages/<alias>/nodeTypes/` (derived and read-only —
+`coa install` regenerates it; use the id in each materialized definition.yml).
+Source nodes are always V1 (`.yml`). For every other node, author V2 (`.sql`) when a `fileVersion: 2`
+node type exists for the target node type — normally from the platform's base node types package,
+which `coa init` installs and `coa install` hydrates; otherwise author V1 (`.yml`). The node type's
+`fileVersion` decides this, never the platform. Both formats are supported — V1 is not a workaround.
+Do not create node types. Run `coa describe sql-format` for both file shapes. Verify with
+`coa validate`, `coa plan`, and `coa run`.
 
 The `Source` node type is built in and never lives in `nodeTypes/` — `coa sources add` output
 resolves to it automatically. Do not author a `Source` definition; the built-in always wins.

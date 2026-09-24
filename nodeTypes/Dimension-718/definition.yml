@@ -9,7 +9,7 @@ metadata:
     short: DIM
     plural: Dimensions
     tagColor: '#1E339A'
-    description: 'An id annotation is required for each column - it should be unique to the column and be six hexadecimal digits, unless 𝗽𝗮𝗰𝗸𝗮𝗴𝗲𝗖𝗼𝗻𝗳𝗶𝗴𝘂𝗿𝗮𝘁𝗶𝗼𝗻.𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗜𝗗𝘀 is true'
+    description: 'A column level @id annotation is required for each column - it should be unique to the column and be six hexadecimal digits, unless 𝗽𝗮𝗰𝗸𝗮𝗴𝗲𝗖𝗼𝗻𝗳𝗶𝗴𝘂𝗿𝗮𝘁𝗶𝗼𝗻.𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗜𝗗𝘀 is true'
 
     enableCTESupport: true
 
@@ -79,13 +79,11 @@ metadata:
             • Inserts a default "zero key" record into the target — a placeholder row used to catch unresolved foreign key lookups.
             • Ignored on views.
           isRequired: false
-          default: false
           parameters:
             - name: surrogateKeyValue
               type: number
               description: Value used for the zero record's surrogate key column.
               isRequired: true
-              default: "0"
               example: 0
 
             - name: stringValue
@@ -108,21 +106,18 @@ metadata:
               isRequired: false
               default: true
               example: true
-              options: [true, false]
 
         - name: disableTests
-          type: boolean
           description: |-
             • Controls whether configured tests are skipped.
             • Useful while developing a node — skip node-level and column-level tests without deleting them, so you can iterate on the SQL first and turn tests back on once the logic is settled.
           isRequired: false
-          default: false
 
         - name: tests
           description: |-
             • 🚦Node-level data quality test.
             • Runs the given 𝗾𝘂𝗲𝗿𝘆𝗦𝗤𝗟 against the target and fails the test if it returns any records — write the query so it selects only the rows that violate your condition.
-            Skipped entirely when 𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗧𝗲𝘀𝘁𝘀 is set.
+            • Skipped entirely when 𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗧𝗲𝘀𝘁𝘀 is set.
           allowsMultiple: true
           parameters:
             - name: querySQL
@@ -136,10 +131,6 @@ metadata:
               description: Determines whether execution continues when the test fails.
               isRequired: false
               default: true
-              parameters:
-              options:
-                - true
-                - false
 
             - name: runOrder
               type: string
