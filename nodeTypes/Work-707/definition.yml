@@ -138,13 +138,15 @@ metadata:
         - name: accepted_values
           description: |-
             🚦 Column-level data quality test.
-            Fails on rows whose value is outside the allow list. One annotation per column — pass
-            a comma-separated list (accepted_values("0,1,2")) or any number of separate arguments
-            (accepted_values("0", "1", "2")) in that single call; every argument is itself
-            comma-splittable. Each value is pasted into the SQL verbatim, so quote it to match the
-            column's data type — a number as accepted_values("<num>"), a string as
-            accepted_values("'<string>'").
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+            • Fails on rows whose value is outside the allow list. One annotation per column — pass
+              a comma-separated list (accepted_values("0,1,2")) or any number of separate arguments
+              (accepted_values("0", "1", "2")) in that single call; every argument is itself
+              comma-splittable.
+            • Each value is pasted into the SQL verbatim, so quote it to match the column's data type
+                positive number/float/decimal/bool as "<val>" or <val>
+                negative number/float/decimal as "-<val>"
+                string as "'<val>'"
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: value
               type: string
@@ -153,13 +155,15 @@ metadata:
         - name: rejected_values
           description: |-
             🚦 Column-level data quality test.
-            Fails on rows whose value is in the deny list. One annotation per column — pass a
+            • Fails on rows whose value is in the deny list. One annotation per column — pass a
             comma-separated list (rejected_values("'A','B'")) or any number of separate arguments
             (rejected_values("'A'", "'B'", "'C'")) in that single call; every argument is itself
-            comma-splittable. Each value is pasted into the SQL verbatim, so quote it to match the
-            column's data type — a number as rejected_values("<num>"), a string as
-            rejected_values("'<string>'").
-            Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+            comma-splittable.        
+            • Each value is pasted into the SQL verbatim, so quote it to match the column's data type
+                positive number/float/decimal/bool as "<val>" or <val>
+                negative number/float/decimal as "-<val>"
+                string as "'<val>'"
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: value
               type: string
