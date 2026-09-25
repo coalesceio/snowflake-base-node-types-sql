@@ -175,7 +175,7 @@ metadata:
                 positive number as "<num>" or <num>
                 negative number as "-<num>"
                 float/decimal number as "<num>" or <num> (a trailing .0 may render as a whole number, e.g. 3.0 → 3)
-                date as "<date_expression>"
+                date as "'<date/time>'" or "<date/time_expression>"
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: min
@@ -198,7 +198,7 @@ metadata:
                 positive number as "<num>" or <num>
                 negative number as "-<num>"
                 float/decimal number as "<num>" or <num> (a trailing .0 may render as a whole number, e.g. 3.0 → 3)
-                date as "<date_expression>"
+                date as "'<date/time>'" or "<date/time_expression>"
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: min
@@ -216,7 +216,7 @@ metadata:
                 positive number as "<num>" or <num>
                 negative number as "-<num>"
                 float/decimal number as "<num>" or <num> (a trailing .0 may render as a whole number, e.g. 3.0 → 3)
-                date as "<date_expression>"
+                date as "'<date/time>'" or "<date/time_expression>"
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: max
