@@ -36,7 +36,7 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 | `@notNull` ***(reserved)*** | ✅ | ✅ | TBD |
 | `@description` ***(reserved)*** | ✅ | ✅ | TBD |
 | `@defaultValue` ***(reserved)*** | ✅ | ✅ | TBD |
-| `@id`<br/>(column-level, gated by<br/>`packageConfiguration.disableIDs`) | ➖ | ✅ | TBD |
+| `@id` ***(required)***<br/>(column-level) | ➖ | ✅ | TBD |
 | `@inHash` | ✅ | ✅ | TBD |
 | `@isBusinessKey` ***(required)*** | ➖ | ✅ | TBD |
 | `@lastModifiedTracking` | ➖ | ✅ | TBD |
@@ -229,7 +229,7 @@ The Dimension Node type has three configuration groups:
 
 | **Property** | **Description** |
 |---------|-------------|
-| `@id("<value>")` | Stable column ID for lineage tracking.<br/>Whether it's required, and whether the SQL editor generates it for you, is controlled package-wide by `packageConfiguration.disableIDs` — not `true` (the default) → every generated column needs its own fresh `@id("<value>")`; `true` → omit `@id` entirely.<br/>Not for manual editing — value is a stable identifier generated once at creation time.<br/>Example: `@id("110e75")` |
+| `@id("<value>")` | Stable column ID for lineage tracking.<br/>Required on every column — the SQL editor generates a fresh `@id("<value>")` for each column it creates, and the run fails if any column is missing one.<br/>Not for manual editing — value is a stable identifier generated once at creation time.<br/>**Column added later:** make sure it gets its own `@id` too. If you're editing by hand, add a new, unique 6-hex-digit `@id("<value>")` along with the column; an agent can generate one for you. Don't reuse a value already on the node.<br/>Example: `@id("110e75")` |
 | `@notNull` ***(reserved)*** | Marks column as NOT NULL.<br/>**Note:** Ignored on Views.<br/>Example: `@notNull` |
 | `@description(<text>)` ***(reserved)*** | Adds column description.<br/>Example: `@description("timestamp column")` |
 | `@defaultValue(<value>)` ***(reserved)*** | Adds default value.<br/>Quote to match the column's data type - <br/>number: `defaultValue("<num>")`<br/>string: `defaultValue("'<string>'")`<br/>**Note:** Ignored on Views.<br/>Example: `@defaultValue("20")` `@defaultValue("'NA'")` |

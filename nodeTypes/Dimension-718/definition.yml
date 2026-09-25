@@ -9,7 +9,7 @@ metadata:
     short: DIM
     plural: Dimensions
     tagColor: '#1E339A'
-    description: 'A column level @id annotation is required for each column - it should be unique to the column and be six hexadecimal digits, unless 𝗽𝗮𝗰𝗸𝗮𝗴𝗲𝗖𝗼𝗻𝗳𝗶𝗴𝘂𝗿𝗮𝘁𝗶𝗼𝗻.𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗜𝗗𝘀 is true'
+    description: 'A column level @id annotation is required for each column - it should be unique to the column and be six hexadecimal digits'
 
     enableCTESupport: true
 
@@ -90,15 +90,15 @@ metadata:
               type: string
               description: Default value used for the zero record's string/varchar columns, pasted into the SQL verbatim — include your own quotes.
               isRequired: false
-              default: "'UNKNOWN'"
+              default: 'UNKNOWN'
               example: "'UNKNOWN'"
 
             - name: timestampValue
               type: string
               description: Default value used for the zero record's date/time/timestamp columns.
               isRequired: false
-              default: "1900-01-01 00:00:00"
-              example: "1900-01-01 00:00:00"
+              default: 1900-01-01 00:00:00
+              example: 1900-01-01 00:00:00
 
             - name: booleanValue
               type: boolean
@@ -168,26 +168,6 @@ metadata:
 
         column:
 
-        - name: id
-          description: |-
-            • Stable column ID for lineage tracking.
-            • Not for manual creation — never add or edit this by hand. It's taken care of during create, based on the package-level 𝗽𝗮𝗰𝗸𝗮𝗴𝗲𝗖𝗼𝗻𝗳𝗶𝗴𝘂𝗿𝗮𝘁𝗶𝗼𝗻.𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗜𝗗𝘀 setting, not a per-node annotation or parameter.
-
-            Agentic creation — when generating a new node's SELECT from scratch, no template renders this for you, so check 𝗽𝗮𝗰𝗸𝗮𝗴𝗲𝗖𝗼𝗻𝗳𝗶𝗴𝘂𝗿𝗮𝘁𝗶𝗼𝗻.𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗜𝗗𝘀 before writing anything:
-            1. packageConfiguration.disableIDs is true -> do not add @id(...) to any column.
-            2. packageConfiguration.disableIDs is not true (the default) -> add @id("<value>") to every generated column — every plain source column, the surrogate key, and every system column. Generate each value as a 6-character lowercase hexadecimal string (each character 0-9 or a-f), e.g. by taking the first 6 hex characters of a fresh random UUID (uuid().replace(/-/g, '').slice(0, 6)) or equivalent — not full alphanumeric. A fresh value per column; never reuse one value across columns on the same node, and never use literal placeholder text like "<ID>".
-
-            Expected expression:
-            0 AS "{{NODE_NAME}}_KEY" @id("110e75") @isSurrogateKey,
-            "SOME_COLUMN" AS "SOME_COLUMN" @id("2a9f31")
-          isRequired: false
-          parameters:
-            - name: value
-              type: string
-              description: Stable identifier for this column, used for lineage resolution.
-              isRequired: true
-              example: "110e75"
-
         - name: isBusinessKey
           description: |-
             • Marks a column as part of the business key used to match existing rows during the merge.
@@ -212,7 +192,6 @@ metadata:
                 • 2 — 𝗲𝘅𝗽𝗶𝗿𝗲𝘀 the row and inserts a new version.
               isRequired: false
               default: 1
-              options: [1, 2]
 
         - name: isChangeTracking
           description: |-
@@ -390,12 +369,12 @@ metadata:
               type: string
               description: Inclusive lower bound the column value must not fall below.
               isRequired: true
-              example: "0"
+              example: 0
             - name: max
               type: string
               description: Inclusive upper bound the column value must not exceed.
               isRequired: true
-              example: "100"
+              example: 100
 
         - name: min_value
           description: |-
@@ -405,10 +384,10 @@ metadata:
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: min
-              type: string
+              type: number
               description: Inclusive lower bound the column value must not fall below.
               isRequired: true
-              example: "0"
+              example: 0
 
         - name: max_value
           description: |-
@@ -421,7 +400,7 @@ metadata:
               type: string
               description: Inclusive upper bound the column value must not exceed.
               isRequired: true
-              example: "100"
+              example: 100
 
         - name: freshness
           description: |-
@@ -468,8 +447,7 @@ metadata:
             {% raw %}{{ ref('{% endraw %}{{ location_name }}{% raw %}', '{% endraw %}{{ node_name }}{% raw %}') }}{% endraw %}
           {%- endmacro -%}
           {%- set ns = namespace(items=[], lines=[]) -%}
-          {%- set disableIDs = packageConfiguration is defined and packageConfiguration.disableIDs is defined and packageConfiguration.disableIDs and (packageConfiguration.disableIDs | string | lower != 'false') -%}
-          {%- set idAnnotation = '' if disableIDs else '@id("<ID>") ' -%}
+          {%- set idAnnotation = '@id("<ID>") ' -%}
           {%- set ns.items = ns.items + [{'expr': '0', 'alias': '"' ~ node.name ~ '_KEY"', 'annotation': idAnnotation ~ '@isSurrogateKey'}] -%}
           {%- for dep in sources[0].dependencies -%}
             {%- for col in dep.columns -%}

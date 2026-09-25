@@ -1,12 +1,6 @@
 fileVersion: 1
 id: "1"
 macroString: |-
-  {% set packageConfiguration = namespace
-      (
-          disableIDs=false
-      )
-  %}
-
   {# ========================================================================
   Purpose          : Executes data quality tests associated with the node
                       and its columns, based on the configured run order.
@@ -347,22 +341,19 @@ macroString: |-
             {%- endif -%}
         {%- endmacro -%}
 
-        {# disableIDs is a package-level setting read from packageConfiguration #}
-        {%- set disableIDs = packageConfiguration is defined and packageConfiguration.disableIDs is defined and packageConfiguration.disableIDs and (packageConfiguration.disableIDs | string | lower != 'false') -%}
-        {%- if not disableIDs -%}
-            {%- set invalidIdColumns = namespace(items=[]) -%}
-            {%- for col in columns -%}
-                {%- if col.id == col.name -%}
-                    {%- set invalidIdColumns.items = invalidIdColumns.items + [col] -%}
-                {%- endif -%}
-            {%- endfor -%}
-            {%- set invalidIdColumns = invalidIdColumns.items -%}
-            {%- if invalidIdColumns | length > 0 %}
-                {%- set reason = "These columns have no real system-generated ID (id equals the column name): " ~ (invalidIdColumns | map(attribute='name') | join(', ')) ~ ". Set packageConfiguration.disableIDs to true to skip this check." %}
-                {{ test_stage("Missing Column IDs", false) }}
-                -- {{ reason }}
-                {{ fail_select(reason) }}
+        {# Every Dimension column must carry its own @id annotation. #}
+        {%- set invalidIdColumns = namespace(items=[]) -%}
+        {%- for col in columns -%}
+            {%- if col.id == col.name -%}
+                {%- set invalidIdColumns.items = invalidIdColumns.items + [col] -%}
             {%- endif -%}
+        {%- endfor -%}
+        {%- set invalidIdColumns = invalidIdColumns.items -%}
+        {%- if invalidIdColumns | length > 0 %}
+            {%- set reason = "These columns have no real system-generated ID (id equals the column name): " ~ (invalidIdColumns | map(attribute='name') | join(', ')) ~ '. Add a unique @id("<6 hex digits>") annotation to each of them.' %}
+            {{ test_stage("Missing Column IDs", false) }}
+            -- {{ reason }}
+            {{ fail_select(reason) }}
         {%- endif -%}
 
         {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) -%}
