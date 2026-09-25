@@ -22,9 +22,8 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     {%- set mergeStrategyExplicit = config.mergeStrategy is defined and config.mergeStrategy.parameters is defined and config.mergeStrategy.parameters | length > 0 %}
     {%- if mergeStrategyExplicit %}
         {%- set mergeStrategy = config.mergeStrategy.parameters[0] | trim %}
-    {%- elif lastModifiedCount > 0 %}
-        {%- set mergeStrategy = 'lastModified' %}
     {%- else %}
+        {# No @mergeStrategy given — always default to changeTracking, regardless of which tracking columns are present (must match validate_dimension_requirements). #}
         {%- set mergeStrategy = 'changeTracking' %}
     {%- endif %}
     {%- set isSimpleUpsert = mergeStrategy == 'upsert' %}
