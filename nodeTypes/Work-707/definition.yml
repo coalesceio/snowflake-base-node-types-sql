@@ -151,6 +151,7 @@ metadata:
             - name: value
               type: string
               isRequired: true
+          allowsMultiple: true
 
         - name: rejected_values
           description: |-
@@ -169,6 +170,7 @@ metadata:
               type: string
               isRequired: true
               example: "'<string>'"
+          allowsMultiple: true
 
         - name: min_max
           description: |-
