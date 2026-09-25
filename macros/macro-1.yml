@@ -22,8 +22,6 @@ macroString: |-
             {%- if runOrder == "After" -%}
                 {%- for col in columns -%}
                     {%- set colName = '"' + col.name + '"' -%}
-                    {%- set accepted = ([col.accepted_values] if col.accepted_values is mapping else (col.accepted_values if col.accepted_values is sequence else [])) -%}
-                    {%- set rejected = ([col.rejected_values] if col.rejected_values is mapping else (col.rejected_values if col.rejected_values is sequence else [])) -%}
                     {%- set target = ref(node.location.name, node.name) -%}
                     {%- if col.not_null is defined -%}
                         {{ test_stage(col.name + ': not_null', columnContinueOnFailure) }}
@@ -45,13 +43,13 @@ macroString: |-
                         WHERE {{ colName }} IS NOT NULL AND TRIM({{ colName }}) = ''
                     {%- endif -%}
                   {%- set nsAccepted = namespace(values=[]) -%}
-                  {%- for v in accepted -%}
-                      {%- for p in v.parameters -%}
+                    {%- if col.accepted_values is defined and col.accepted_values.parameters is defined -%}
+                        {%- for p in col.accepted_values.parameters -%}
                           {%- for val in (p | string).split(',') -%}
                               {%- set nsAccepted.values = nsAccepted.values + [val.strip()] -%}
                           {%- endfor -%}
                       {%- endfor -%}
-                  {%- endfor -%}
+                  {%- endif -%}
                   {%- if nsAccepted.values | length > 0 -%}
                       {{ test_stage(col.name + ': accepted_values', columnContinueOnFailure) }}
                       SELECT {{ colName }}
@@ -60,13 +58,13 @@ macroString: |-
                       AND {{ colName }} NOT IN ({{ nsAccepted.values | join(', ') }})
                   {%- endif -%}
                   {%- set nsRejected = namespace(values=[]) -%}
-                  {%- for v in rejected -%}
-                      {%- for p in v.parameters -%}
+                    {%- if col.rejected_values is defined and col.rejected_values.parameters is defined -%}
+                        {%- for p in col.rejected_values.parameters -%}
                           {%- for val in (p | string).split(',') -%}
                               {%- set nsRejected.values = nsRejected.values + [val.strip()] -%}
                           {%- endfor -%}
                       {%- endfor -%}
-                  {%- endfor -%}
+                  {%- endif -%}
                   {%- if nsRejected.values | length > 0 -%}
                       {{ test_stage(col.name + ': rejected_values', columnContinueOnFailure) }}
                       SELECT {{ colName }}

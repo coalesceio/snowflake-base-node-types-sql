@@ -55,6 +55,9 @@ metadata:
             ◆ 𝘂𝗽𝘀𝗲𝗿𝘁
               • No change detection at all — a matched row is always updated, an unmatched row is inserted.
               • Doesn't assert any SCD type of its own — if the upstream SELECT/CTE already implements SCD1/SCD2 logic, this strategy just merges that result through as-is, without re-deriving or re-checking it.
+              • The SELECT/CTE should return one row per business key (e.g. de-duplicated upstream); duplicates make the merge fail.
+              • System columns are optional; any that are present are written exactly as the SELECT/CTE computes them. SYSTEM_CREATE_DATE keeps its first-inserted value on update.
+              • For SCD2 logic, match on a key that is unique per version (e.g. mark a per-version key column as isBusinessKey) and have the CTE return both the row that expires the old version and the new version.
               • Requires no isChangeTracking/lastModifiedTracking columns
 
             Agentic creation — before writing a new Dimension node's SELECT, ask the user (don't silently default):
@@ -330,12 +333,13 @@ metadata:
           description: |-
            🚦 Column-level data quality test.
             • Fails on rows whose value is outside the allow list.
-            • List every permitted value in a single annotation call:
-              accepted_values("1, 3, 5")
-              accepted_values("1", "3", "5")
+            • One annotation per column — pass a comma-separated list or any number of separate arguments in that single call; every argument is itself comma-splittable.
+                accepted_values("0, 1, 2")
+                accepted_values("0", "1", "2") 
             • Each value is pasted into the SQL verbatim, so quote it to match the column's data type
-              number as "<num>"
-              string as "'<string>'"
+                positive number/float/decimal/bool as "<val>" or <val>
+                negative number/float/decimal as "-<val>"
+                string as "'<val>'"
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: value
@@ -346,12 +350,13 @@ metadata:
           description: |-
            🚦 Column-level data quality test.
             • Fails on rows whose value is in the deny list.
-            • List every forbidden value in a single annotation call:
-              rejected_values("1, 3, 5")
-              rejected_values("1", "3", "5")
+            • One annotation per column — pass a comma-separated list or any number of separate arguments in that single call; every argument is itself comma-splittable.
+                rejected_values("0, 1, 2")
+                rejected_values("0", "1", "2") 
             • Each value is pasted into the SQL verbatim, so quote it to match the column's data type
-              number as "<num>"
-              string as "'<string>'"
+                positive number/float/decimal/bool as "<val>" or <val>
+                negative number/float/decimal as "-<val>"
+                string as "'<val>'"
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: value
@@ -361,38 +366,44 @@ metadata:
         - name: min_max
           description: |-
            🚦 Column-level data quality test.
-            • Fails on rows outside the inclusive range.
-            • Both bounds are pasted into the SQL verbatim, so write a number as "0" and a date as "DATE '2026-01-01'".
+            • Fails on rows outside the inclusive range. NULL values pass.
+            • Applies to numeric and temporal(date/time related) columns only.
+            • Each bound is pasted into the SQL verbatim, so write it as a valid SQL value for the column's data type —
+                positive number/float/decimal as "<num>" or <num>
+                negative number/float/decimal as "-<num>"
+                date/time as "'date/time'" or "<date/time_expression>"
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: min
               type: string
               description: Inclusive lower bound the column value must not fall below.
               isRequired: true
-              example: 0
+              example: -5
             - name: max
               type: string
               description: Inclusive upper bound the column value must not exceed.
               isRequired: true
-              example: 100
+              example: 0
 
         - name: min_value
           description: |-
            🚦 Column-level data quality test.
-            • Fails on rows below the bound.
+            • Fails on rows below the bound. NULL values pass.
+            • Applies to numeric and temporal(date/time related) columns only.
             • Pasted into the SQL verbatim — see min_max.
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: min
-              type: number
+              type: string
               description: Inclusive lower bound the column value must not fall below.
               isRequired: true
-              example: 0
+              example: -5
 
         - name: max_value
           description: |-
            🚦 Column-level data quality test.
-            • Fails on rows above the bound.
+            • Fails on rows above the bound. NULL values pass.
+            • Applies to numeric and temporal(date/time related) columns only.
             • Pasted into the SQL verbatim — see min_max.
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
@@ -400,7 +411,7 @@ metadata:
               type: string
               description: Inclusive upper bound the column value must not exceed.
               isRequired: true
-              example: 100
+              example: 0
 
         - name: freshness
           description: |-

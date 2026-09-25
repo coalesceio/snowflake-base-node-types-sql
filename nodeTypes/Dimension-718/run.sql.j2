@@ -365,9 +365,10 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
             {%- set firstBizKeyCol = (columns | selectattr("isBusinessKey") | first).name if hasBusinessKey else none %}
 
             {%- if isSimpleUpsert %}
-            {# @upsert needs nothing from the target — the outer MERGE's MATCHED/NOT MATCHED already tells insert vs. update, so just pass the source columns through. #}
+            {# @upsert needs nothing from the target — the outer MERGE's MATCHED/NOT MATCHED already tells insert vs. update, so just pass the source columns through.
+               System columns ride along with the user's own expressions (not hard-coded values), so custom SELECT/CTE logic can set them (e.g. expiring a row for SCD2); only the identity surrogate key is left out. #}
             SELECT {{ source.selectModifier | default('', true) }}
-            {%- for col in source.columns if not (col.isSurrogateKey or col.isSystemVersion or col.isSystemCurrentFlag or col.isSystemCreateDate or col.isSystemUpdateDate or col.isSystemEndDate) %}
+            {%- for col in source.columns if not col.isSurrogateKey %}
                 {{ get_source_transform(col) }} AS "{{ col.name }}"
                 {%- if not loop.last %}, {%- endif %}
             {%- endfor %}
@@ -486,10 +487,22 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
             {%- if not loop.last %}, {%- endif %}
         {%- endfor %}
 
+    {%- elif isSimpleUpsert %}
+
+        {# @upsert: every matched row is overwritten straight from SRC — system columns included, using whatever the SELECT/CTE put in them.
+           SYSTEM_CREATE_DATE is kept as first inserted. If nothing is left to update (only key/create-date columns), skip WHEN MATCHED rather than emit an empty SET. #}
+        {%- set upsertUpdateCols = columns | rejectattr("isBusinessKey") | rejectattr("isSurrogateKey") | rejectattr("isSystemCreateDate") | list %}
+        {%- if upsertUpdateCols | length > 0 %}
+        WHEN MATCHED THEN UPDATE SET
+        {%- for col in upsertUpdateCols %}
+            "TGT"."{{ col.name }}" = "SRC"."{{ col.name }}"
+            {%- if not loop.last %}, {%- endif %}
+        {%- endfor %}
+        {%- endif %}
+
     {%- else %}
 
-        WHEN MATCHED
-        {%- if not isSimpleUpsert %} AND "SRC"."CHANGE_TYPE" = 'CHANGED'{%- endif %}
+        WHEN MATCHED AND "SRC"."CHANGE_TYPE" = 'CHANGED'
 
         THEN UPDATE SET
         {%- for col in columns if not (  col.isBusinessKey or
@@ -498,11 +511,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                                         col.isSystemCurrentFlag or
                                         col.isSystemStartDate or
                                         col.isSystemCreateDate) %}
-            {%- if isSimpleUpsert and col.isSystemUpdateDate %}
-            "TGT"."{{ col.name }}" = CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
-            {%- else %}
             "TGT"."{{ col.name }}" = "SRC"."{{ col.name }}"
-            {%- endif %}
             {%- if not loop.last %}, {%- endif %}
         {%- endfor %}
     {%- endif %}
@@ -517,17 +526,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     VALUES
     (
         {%- for col in columns if not col.isSurrogateKey %}
-            {%- if isSimpleUpsert and col.isSystemVersion %}
-            1
-            {%- elif isSimpleUpsert and col.isSystemCurrentFlag %}
-            'Y'
-            {%- elif isSimpleUpsert and (col.isSystemCreateDate or col.isSystemUpdateDate) %}
-            CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
-            {%- elif isSimpleUpsert and col.isSystemEndDate %}
-            CAST('2999-12-31 00:00:00' AS TIMESTAMP)
-            {%- else %}
             "SRC"."{{ col.name }}"
-            {%- endif %}
             {%- if not loop.last %}, {%- endif %}
         {%- endfor %}
     )
