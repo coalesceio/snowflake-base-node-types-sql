@@ -93,15 +93,15 @@ metadata:
               type: string
               description: Default value used for the zero record's string/varchar columns, pasted into the SQL verbatim — include your own quotes.
               isRequired: false
-              default: 'UNKNOWN'
+              default: "'UNKNOWN'"
               example: "'UNKNOWN'"
 
             - name: timestampValue
               type: string
               description: Default value used for the zero record's date/time/timestamp columns.
               isRequired: false
-              default: 1900-01-01 00:00:00
-              example: 1900-01-01 00:00:00
+              default: "1900-01-01 00:00:00"
+              example: "1900-01-01 00:00:00"
 
             - name: booleanValue
               type: boolean
@@ -453,7 +453,7 @@ metadata:
               type: string
               description: Name of the other date/time column on this node to compare against.
               isRequired: true
-              example: "<other_column>"
+              example: <other_column>
 
     sqlInitializationTemplate: |-
           {%- macro ref_raw(location_name, node_name) -%}
