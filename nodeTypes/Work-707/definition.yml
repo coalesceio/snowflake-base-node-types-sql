@@ -16,7 +16,7 @@ metadata:
         node:
 
         - name: writeMode
-          description: >-
+          description: |-
             • Controls how data is written to the target table. 
             • 𝘁𝗿𝘂𝗻𝗰𝗮𝘁𝗲𝗜𝗻𝘀𝗲𝗿𝘁 clears the table before loading, replacing its contents entirely;
             • 𝗮𝗽𝗽𝗲𝗻𝗱 inserts the new rows alongside whatever is already there.
@@ -35,15 +35,13 @@ metadata:
                 - append
 
         - name: disableTests
-          type: boolean
-          description: >-
+          description: |-
             • Controls whether configured tests are skipped.
             • Useful while developing a node — skip node-level and column-level tests without deleting them, so you can iterate on the SQL first and turn tests back on once the logic is settled.
           isRequired: false
-          default: false
 
         - name: tests
-          description: >-
+          description: |-
             • 🚦Node-level data quality test.
             • Runs the given 𝗾𝘂𝗲𝗿𝘆𝗦𝗤𝗟 against the target and fails the test if it returns any records — write the query so it selects only the rows that violate your condition.
             Skipped entirely when 𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗧𝗲𝘀𝘁𝘀 is set.
@@ -60,10 +58,6 @@ metadata:
               description: Determines whether execution continues when the test fails.
               isRequired: false
               default: true
-              parameters:
-              options:
-                - true
-                - false
 
             - name: runOrder
               type: string
@@ -75,7 +69,7 @@ metadata:
                 - After
 
         - name: preSQL
-          description: >-
+          description: |-
             • SQL statement to execute before the data load operation — e.g. staging setup, dropping temp tables, or capturing pre-load state.
             • Repeat the annotation to run multiple statements in the order they appear.
             • Ignored on views.
@@ -88,7 +82,7 @@ metadata:
             example: 'SELECT 1'
 
         - name: postSQL
-          description: >-
+          description: |-
             • SQL statement to execute after the data load operation — e.g. updating dependent tables, cleaning up temp objects, or logging load completion.
             • Repeat the annotation to run multiple statements in the order they appear.
             • Ignored on views.
@@ -103,7 +97,7 @@ metadata:
         column:
 
         - name: inHash
-          description: >-
+          description: |-
                 • Marks a column as an input to a generated hash key, grouped by 𝗵𝗮𝘀𝗵𝗡𝗮𝗺𝗲 and ordered within that group by 𝗵𝗮𝘀𝗵𝗢𝗿𝗱𝗲𝗿.
                 • Mark every column that should feed a given hash with the same 𝗵𝗮𝘀𝗵𝗡𝗮𝗺𝗲, then call the 𝐠𝐞𝐭_𝐡𝐚𝐬𝐡("<hashName>") macro elsewhere in the SELECT to produce the actual hash column from those marked columns.
                 • 𝗦𝗲𝗲 𝗱𝗼𝗰𝘂𝗺𝗲𝗻𝘁𝗮𝘁𝗶𝗼𝗻 𝗳𝗼𝗿 𝗱𝗲𝘁𝗮𝗶𝗹𝘀.
@@ -122,106 +116,130 @@ metadata:
               example: 1
 
         - name: not_null
-          description: >-
+          description: |-
            🚦 Column-level data quality test.
             • Fails on rows where the column is 𝗡𝗨𝗟𝗟.
             • Presence enables the test — remove the annotation to turn it off.
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
 
         - name: uniqueness
-          description: >- 
+          description: |- 
            🚦 Column-level data quality test.
             • Fails when a value appears on more than one row.
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
 
         - name: empty
-          description: >-
+          description: |-
             🚦 Column-level data quality test.
             • Fails on rows where the column trims to the empty string;
             • 𝗡𝗨𝗟𝗟 values pass this test and are instead caught by not_null.
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
 
         - name: accepted_values
-          description: >-
-           🚦 Column-level data quality test.
-            • Fails on rows whose value is outside the allow list.
-            • Repeat the annotation once per permitted value.
-            • Each value is pasted into the SQL verbatim, so quote it to match the column's data
-            type — a number as accepted_values("<num>"), a string as accepted_values("'<string>'").
+          description: |-
+            🚦 Column-level data quality test.
+            • Fails on rows whose value is outside the allow list. One annotation per column — pass
+              a comma-separated list (accepted_values("0,1,2")) or any number of separate arguments
+              (accepted_values("0", "1", "2")) in that single call; every argument is itself
+              comma-splittable.
+            • Each value is pasted into the SQL verbatim, so quote it to match the column's data type
+                positive number/float/decimal/bool as "<val>" or <val>
+                negative number/float/decimal as "-<val>"
+                string as "'<val>'"
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
-          allowsMultiple: true
           parameters:
             - name: value
               type: string
               isRequired: true
+          allowsMultiple: true
 
         - name: rejected_values
-          description: >-
-           🚦 Column-level data quality test.
-            • Fails on rows whose value is in the deny list.
-            • Repeat the annotation once per forbidden value. Each value is pasted into the SQL verbatim, so quote it to match the column's data type — a number as rejected_values("<num>"), a string as
-            rejected_values("'<string>'").
+          description: |-
+            🚦 Column-level data quality test.
+            • Fails on rows whose value is in the deny list. One annotation per column — pass a
+            comma-separated list (rejected_values("'A','B'")) or any number of separate arguments
+            (rejected_values("'A'", "'B'", "'C'")) in that single call; every argument is itself
+            comma-splittable.        
+            • Each value is pasted into the SQL verbatim, so quote it to match the column's data type
+                positive number/float/decimal/bool as "<val>" or <val>
+                negative number/float/decimal as "-<val>"
+                string as "'<val>'"
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
-          allowsMultiple: true
           parameters:
             - name: value
               type: string
               isRequired: true
               example: "'<string>'"
+          allowsMultiple: true
 
         - name: min_max
-          description: >-
-           🚦 Column-level data quality test.
+          description: |-
+            🚦 Column-level data quality test.
             • Fails on rows outside the inclusive range.
-            • Both bounds are pasted into the SQL verbatim, so write a number as "0" and a date as "DATE '2026-01-01'".
+            • Applies to numeric and temporal (date/time related) columns only.
+            • Each bound is pasted into the SQL verbatim, so quote it to match the column's data type —
+                positive number as "<num>" or <num>
+                negative number as "-<num>"
+                float/decimal number as "<num>" or <num> (a trailing .0 may render as a whole number, e.g. 3.0 → 3)
+                date as "'<date/time>'" or "<date/time_expression>"
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: min
               type: string
               description: Inclusive lower bound the column value must not fall below.
               isRequired: true
-              example: "0"
+              example: -5
             - name: max
               type: string
               description: Inclusive upper bound the column value must not exceed.
               isRequired: true
-              example: "100"
+              example: 0
 
         - name: min_value
-          description: >-
-           🚦 Column-level data quality test.
+          description: |-
+            🚦 Column-level data quality test.
             • Fails on rows below the bound.
-            • Pasted into the SQL verbatim — see min_max.
+            • Applies to numeric and temporal (date/time related) columns only.
+            • Pasted into the SQL verbatim, so quote it to match the column's data type —
+                positive number as "<num>" or <num>
+                negative number as "-<num>"
+                float/decimal number as "<num>" or <num> (a trailing .0 may render as a whole number, e.g. 3.0 → 3)
+                date as "'<date/time>'" or "<date/time_expression>"
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: min
               type: string
               description: Inclusive lower bound the column value must not fall below.
               isRequired: true
-              example: "0"
+              example: -5
 
         - name: max_value
-          description: >-
-           🚦 Column-level data quality test.
+          description: |-
+            🚦 Column-level data quality test.
             • Fails on rows above the bound.
-            • Pasted into the SQL verbatim — see min_max.
+            • Applies to numeric and temporal (date/time related) columns only.
+            • Pasted into the SQL verbatim, so quote it to match the column's data type —
+                positive number as "<num>" or <num>
+                negative number as "-<num>"
+                float/decimal number as "<num>" or <num> (a trailing .0 may render as a whole number, e.g. 3.0 → 3)
+                date as "'<date/time>'" or "<date/time_expression>"
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
           parameters:
             - name: max
               type: string
               description: Inclusive upper bound the column value must not exceed.
               isRequired: true
-              example: "100"
+              example: 0
 
         - name: freshness
-          description: >-
+          description: |-
            🚦 Column-level data quality test.
             • Checks that the data is fresh — fails when the column's value is older than the given interval, or when the table has no rows at all.
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
             𝗡𝗼𝘁𝗲: on a DATE column the value is truncated to midnight.
           parameters:
             - name: interval
-              description: >-
+              description: |-
                 How far back from now the newest value is allowed to be, expressed in the unit given by 𝘂𝗻𝗶𝘁.
               type: number
               isRequired: true
@@ -233,7 +251,7 @@ metadata:
               default: DAY
 
         - name: relative_time
-          description: >-
+          description: |-
            🚦 Column-level data quality test.
             • Compares this column against another date/time column on the same node using the given operator.
             • E.g. @relative_time("<=", "END_DATE") fails any row where this column's value is not less than or equal to END_DATE.
