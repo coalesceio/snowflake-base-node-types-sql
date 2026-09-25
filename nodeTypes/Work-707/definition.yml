@@ -170,6 +170,7 @@ metadata:
           description: |-
             🚦 Column-level data quality test.
             • Fails on rows outside the inclusive range.
+            • Applies to numeric and temporal (date/time related) columns only.
             • Each bound is pasted into the SQL verbatim, so quote it to match the column's data type —
                 positive number as "<num>" or <num>
                 negative number as "-<num>"
@@ -192,6 +193,7 @@ metadata:
           description: |-
             🚦 Column-level data quality test.
             • Fails on rows below the bound.
+            • Applies to numeric and temporal (date/time related) columns only.
             • Pasted into the SQL verbatim, so quote it to match the column's data type —
                 positive number as "<num>" or <num>
                 negative number as "-<num>"
@@ -209,6 +211,7 @@ metadata:
           description: |-
             🚦 Column-level data quality test.
             • Fails on rows above the bound.
+            • Applies to numeric and temporal (date/time related) columns only.
             • Pasted into the SQL verbatim, so quote it to match the column's data type —
                 positive number as "<num>" or <num>
                 negative number as "-<num>"
