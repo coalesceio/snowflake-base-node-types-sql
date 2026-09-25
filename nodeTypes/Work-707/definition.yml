@@ -58,7 +58,6 @@ metadata:
               description: Determines whether execution continues when the test fails.
               isRequired: false
               default: true
-              parameters:
 
             - name: runOrder
               type: string
@@ -137,7 +136,7 @@ metadata:
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
 
         - name: accepted_values
-          description: >-
+          description: |-
             🚦 Column-level data quality test.
             Fails on rows whose value is outside the allow list. One annotation per column — pass
             a comma-separated list (accepted_values("0,1,2")) or any number of separate arguments
@@ -152,7 +151,7 @@ metadata:
               isRequired: true
 
         - name: rejected_values
-          description: >-
+          description: |-
             🚦 Column-level data quality test.
             Fails on rows whose value is in the deny list. One annotation per column — pass a
             comma-separated list (rejected_values("'A','B'")) or any number of separate arguments
