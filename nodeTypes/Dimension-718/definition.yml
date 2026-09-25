@@ -341,6 +341,7 @@ metadata:
                 negative number/float/decimal as "-<val>"
                 string as "'<val>'"
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+          allowsMultiple: true
           parameters:
             - name: value
               type: string
@@ -358,6 +359,7 @@ metadata:
                 negative number/float/decimal as "-<val>"
                 string as "'<val>'"
             • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+          allowsMultiple: true
           parameters:
             - name: value
               type: string
