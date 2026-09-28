@@ -4,7 +4,7 @@ name: Nation_Test
 operation:
   database: ""
   deployEnabled: true
-  description: ""
+  description: Nation reference data (TPC-H NATION shape) used as the source for Work and Dimension test nodes
   locationName: SRC
   metadata:
     columns:
@@ -18,7 +18,7 @@ operation:
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
-        description: ""
+        description: Nation business identifier
         name: NAtionKey
         nullable: true
         primaryKey: false
@@ -37,7 +37,7 @@ operation:
         config: {}
         dataType: VARCHAR(25)
         defaultValue: ""
-        description: ""
+        description: Nation name
         name: name
         nullable: true
         primaryKey: false
@@ -56,7 +56,7 @@ operation:
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
-        description: ""
+        description: Identifier of the region the nation belongs to
         name: REGIONKEY
         nullable: true
         primaryKey: false
@@ -75,7 +75,7 @@ operation:
         config: {}
         dataType: VARCHAR(152)
         defaultValue: ""
-        description: ""
+        description: Free-text comment about the nation
         name: CommenT
         nullable: true
         primaryKey: false
@@ -94,7 +94,7 @@ operation:
         config: {}
         dataType: TIMESTAMP_LTZ(9)
         defaultValue: ""
-        description: ""
+        description: Timestamp when the row was loaded
         name: N_Load_Timestamp
         nullable: true
         primaryKey: false
