@@ -290,7 +290,7 @@ Under `changeTracking` and `lastModified` the load writes fixed values into the 
 | `@isSystemVersion` | `1` on a new key; previous version + 1 on a new SCD2 version |
 | `@isSystemCurrentFlag` | `'Y'` on the current row; `'N'` on an expired SCD2 row |
 | `@isSystemCreateDate` | `CURRENT_TIMESTAMP` on first insert, then kept |
-| `@isSystemUpdateDate` | `CURRENT_TIMESTAMP` whenever the row is inserted or changed |
+| `@isSystemUpdateDate` | `CURRENT_TIMESTAMP` whenever the row is inserted, changed, or expired as an old SCD2 version |
 | `@isSystemEndDate` | `'2999-12-31 00:00:00'` on the current row; the expiry time (one millisecond before the load) on an expired SCD2 row |
 
 To use different values (e.g. `'Yes'`/`'No'` flags or another end-date sentinel), use `upsert` and compute them in the SELECT/CTE — `upsert` writes system columns exactly as the SELECT/CTE computes them.
@@ -509,12 +509,14 @@ An unquoted number in an annotation is read as a floating-point value, so intege
 * **Commas Inside String Values in `accepted_values`/`rejected_values`**:  
 Values are split on every comma, trimmed, and re-joined with `", "`. A string written with exactly one space after each comma, like `"'4, 5'"`, is tested as written; any other spacing is normalised, so `"'A,B'"` is tested as `'A, B'`. Commas between arguments of a function call (e.g. `"TO_DATE('15/06/2026','DD/MM/YYYY')"`) are unaffected.
 
+* **`truncateInsert` with SCD Type 2**:  
+`@writeMode("truncateInsert")` empties the table before every load, so an SCD Type 2 dimension (`changeTracking` with an `@isChangeTracking` column, or `lastModified` with `@lastModifiedTracking(2)`) loses all its history on each run — every row is reloaded as version 1. The combination runs without error, but it defeats the purpose of SCD Type 2; use the default `append` for versioned dimensions.
+
+* **Keys Deleted from the Source**:  
+A business key that disappears from the source is left as it is in the target — under SCD Type 2 its current row stays current (`SYSTEM_CURRENT_FLAG` = `'Y'`, open `SYSTEM_END_DATE`), and under SCD Type 1 the row is kept unchanged. Deletes are never detected, expired or flagged; handle them separately (e.g. with `@postSQL`) if the dimension needs to reflect removed keys.
+
 * **Duplicate or NULL Business Keys**:  
-Every strategy merges on the business key, so the SELECT/CTE must return exactly one row per key, with no NULL key. Otherwise a duplicated key is inserted more than once on a first load and later merges fail with "Duplicate row detected during DML action", and a NULL key never matches, so that row is re-inserted on every run. De-duplicate upstream (e.g. `QUALIFY ROW_NUMBER() OVER (PARTITION BY <business key> ORDER BY <timestamp> DESC) = 1`). To check it before each load, add a `Before` node-level test that returns the offending keys:
-
-    @tests("SELECT N_NATIONKEY FROM {{ ref('SRC', 'NATION') }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1 OR N_NATIONKEY IS NULL", false, "Before")
-
-    Point the query at the same source, CTE and filters as the node's SELECT so it sees the rows that are actually loaded. For a case-sensitive column name, double each inner quote — `""Nation_Key""` — see [Quote Style for Case-Sensitive Identifiers](#quote-style-for-case-sensitive-identifiers).
+Every strategy merges on the business key, so the SELECT/CTE must return exactly one row per key, with no NULL key. Otherwise a duplicated key is inserted more than once on a first load and later merges fail with "Duplicate row detected during DML action", and a NULL key never matches, so that row is re-inserted on every run. De-duplicate upstream (e.g. `QUALIFY ROW_NUMBER() OVER (PARTITION BY <business key> ORDER BY <timestamp> DESC) = 1`). To check it before each load, add a `Before` node-level test — see **Dimension with a duplicate / NULL business key check** in [Usage Examples](#usage-examples).
 
 ---
 
@@ -552,6 +554,24 @@ SELECT DISTINCT
      "LAST_MODIFIED" AS L_M @freshness(7, "DAY")
 FROM {{ ref('SOURCE_DATA', 'NATION') }} "NATION"
 ```
+**Dimension with a duplicate / NULL business key check** - Every merge strategy matches rows on the business key, so the source must return exactly one row per key, with no NULL key. A `Before` test runs ahead of the load and fails if the source returns a duplicated or NULL key.
+
+```sql
+@nodeType("718")
+@mergeStrategy("changeTracking")
+@tests("SELECT N_NATIONKEY, N_NAME FROM {{ ref('SOURCE_DATA', 'NATION') }} GROUP BY N_NATIONKEY, N_NAME HAVING COUNT(*) > 1 OR N_NATIONKEY IS NULL OR N_NAME IS NULL", false, "Before")
+SELECT
+     0 AS "DIM_NATION_KEY" @id("a1b2c3") @isSurrogateKey,
+     "N_NATIONKEY" AS "N_NATIONKEY" @id("b2c3d4") @isBusinessKey,
+     "N_NAME" AS "N_NAME" @id("c3d4e5") @isBusinessKey,
+     "N_REGIONKEY" AS "N_REGIONKEY" @id("d4e5f6"),
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("e5f6a7") @isSystemCreateDate,
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @id("f6a7b8") @isSystemUpdateDate
+FROM {{ ref('SOURCE_DATA', 'NATION') }} "NATION"
+```
+* The test query must read the same source, CTE and filters as the node's SELECT, so it checks the rows that are actually loaded. List every `@isBusinessKey` column in the `GROUP BY` and the `IS NULL` checks.
+* For a case-sensitive column name, double each inner quote — `""Nation_Key""` — see [Quote Style for Case-Sensitive Identifiers](#quote-style-for-case-sensitive-identifiers).
+* The three-argument `@tests(...)` form is flagged by the current `coa validate` (a known CLI parser bug) but runs normally.
 **Basic Transformation & Cleaning** - Standard pattern for renaming columns and handling nulls.
 
 ```sql

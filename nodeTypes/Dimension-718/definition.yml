@@ -308,7 +308,7 @@ metadata:
             • Marks this column as the timestamp a row was last updated.
             • Required for SCD Type 2 — read back from the target and refreshed to the current timestamp whenever a row is inserted as a new version or its prior current version is expired.
             • Required for SCD Type 1 — recomputed to the current timestamp on every inserted or changed row, so every row change carries an audit trail of when it was last updated.
-            • Value written under changeTracking/lastModified: CURRENT_TIMESTAMP whenever the row is inserted or changed.
+            • Value written under changeTracking/lastModified: CURRENT_TIMESTAMP whenever the row is inserted, changed, or expired as an old SCD2 version.
             • The expression in the SELECT is only used to derive the column's datatype — its value is ignored under changeTracking/lastModified (upsert writes it as computed).
             • To use different values (e.g. 'Yes'/'No' flags or another end-date sentinel), use upsert and compute them in the SELECT/CTE.
 

@@ -131,9 +131,10 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                 "{{ node.name }}"."{{ col.name }}" = {{ zeroKeySurrogateValue }}
             {%- endfor %}
 
+            {# SYSTEM_CREATE_DATE keeps the zero record's first-inserted value; everything else is refreshed. #}
             WHEN MATCHED THEN UPDATE
             SET
-            {%- for col in columns if (not col.isSurrogateKey) %}
+            {%- for col in columns if not (col.isSurrogateKey or col.isSystemCreateDate) %}
                 "{{ node.name }}"."{{ col.name }}" = "SOURCE_ZERO"."{{ col.name }}"
                 {%- if not loop.last %}, {%- endif %}			
             {%- endfor %}
@@ -307,11 +308,13 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
                 UNION ALL
 
-                /* Expire the prior current version */
+                /* Expire the prior current version — expiring is an update, so SYSTEM_UPDATE_DATE is stamped with the load time */
                 SELECT
                 {%- for col in columns if not col.isSurrogateKey %}
-                    {%- if col.isBusinessKey or col.isSystemVersion or col.isSystemCreateDate or col.isSystemUpdateDate %}
+                    {%- if col.isBusinessKey or col.isSystemVersion or col.isSystemCreateDate %}
                     "{{ col.name }}"
+                    {%- elif col.isSystemUpdateDate %}
+                    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
                     {%- elif col.isSystemCurrentFlag %}
                     'N'
                     {%- elif col.isSystemEndDate %}
