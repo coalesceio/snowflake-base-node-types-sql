@@ -147,7 +147,6 @@ macroString: |-
 
             {%- if col.inHash is defined -%}
                 {%- for p in col.inHash -%}
-                    {%- set parts = p.parameters[0] %}
                     {%- set position = p.parameters[1] | int -%}
                     {%- set hash = p.parameters[0] -%}
 
@@ -257,7 +256,7 @@ macroString: |-
             {%- elif col.dataType[:3] | upper in ('VAR', 'CHA', 'STR') -%}
                 {%- set ns.zk_type = 'string' -%}
                 {%- set ns.zk_value = zkParams[1] if zkParams | length > 1 else "'UNKNOWN'" -%}
-            {%- elif col.dataType[:3] | upper in ('NUM',' INT', 'DEC', 'FLO') -%}
+            {%- elif col.dataType[:3] | upper in ('NUM','INT', 'DEC', 'FLO') -%}
                 {%- set ns.zk_type = 'numeric' -%}
                 {%- set ns.zk_value = zkParams[0] if zkParams | length > 1 else 0 -%}
             {%- elif col.dataType | upper == 'BOOLEAN' -%}

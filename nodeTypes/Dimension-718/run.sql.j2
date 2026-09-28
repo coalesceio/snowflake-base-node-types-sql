@@ -53,14 +53,6 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
         {%- set type2Dimension = false %}
     {%- endif %}
 
-    {%- set hasSystemCreateDate = columns | selectattr("isSystemCreateDate") | list | length > 0 %}
-    {%- set hasSystemUpdateDate = columns | selectattr("isSystemUpdateDate") | list | length > 0 %}
-    {%- if type2Dimension %}
-        {%- set hasSystemVersion = columns | selectattr("isSystemVersion") | list | length > 0 %}
-        {%- set hasSystemCurrentFlag = columns | selectattr("isSystemCurrentFlag") | list | length > 0 %}
-        {%- set hasSystemEndDate = columns | selectattr("isSystemEndDate") | list | length > 0 %}
-    {%- endif %}
-
     {%- set source = sources[0] %}
     {%- set joinclause = source.join %}
 
@@ -233,8 +225,6 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                         WHEN "SOURCE_DATA"."{{ lastModifiedColName }}" > "TARGET_CURRENT"."TGT_{{ lastModifiedColName }}" THEN 'CHANGED'
                         {%- else %}
                         -- Change-tracking-driven: any @isChangeTracking column differing means a change
-                        -- (a change here always produces a new SCD2 version, unlike the plain-attribute
-                        -- comparison below)
                         WHEN (
                             {%- for col in columns if col.isChangeTracking %}
                             {%- if not loop.first %} OR {%- endif %}
@@ -509,7 +499,6 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                                         col.isSurrogateKey or
                                         col.isSystemVersion or
                                         col.isSystemCurrentFlag or
-                                        col.isSystemStartDate or
                                         col.isSystemCreateDate) %}
             "TGT"."{{ col.name }}" = "SRC"."{{ col.name }}"
             {%- if not loop.last %}, {%- endif %}
