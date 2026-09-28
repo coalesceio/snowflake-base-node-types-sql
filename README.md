@@ -67,7 +67,7 @@ The Work Node type has three configuration groups:
 
 #### Work General Options
 
-<img width="745" height="302" alt="image" src="https://github.com/user-attachments/assets/bf4ced93-3b7d-434c-aee4-8757aa7c37ab" />
+<img width="622" height="307" alt="image" src="https://github.com/user-attachments/assets/6c4e70ce-a7b0-4feb-af74-9be64b64002b" />
 
 | **Property** | **Description** |
 |----------|-------------|
@@ -199,11 +199,15 @@ The Dimension Node type has three configuration groups:
 
 #### Dimension General Options
 
+<img width="538" height="299" alt="image" src="https://github.com/user-attachments/assets/47a6ea12-485c-4356-95dd-a17b653392b5" />
+
 | **Property** | **Description** |
 |----------|-------------|
 | **Storage Location** | Storage Location where the Dimension table or view will be created |
 
 ### Dimension Node Annotations
+
+<img width="638" height="695" alt="image" src="https://github.com/user-attachments/assets/3ce0bc6a-3294-4d2f-b41b-1e6c82280b49" />
 
 | **Property** | **Description** |
 |---------|-------------|
@@ -233,6 +237,8 @@ The Dimension Node type has three configuration groups:
 | `@description(<text>)` ***(reserved)*** | Adds column description.<br/>Example: `@description("timestamp column")` |
 | `@defaultValue(<value>)` ***(reserved)*** | Adds default value.<br/>Quote to match the column's data type - <br/>number: `defaultValue("<num>")`<br/>string: `defaultValue("'<string>'")`<br/>**Note:** Ignored on Views.<br/>Example: `@defaultValue("20")` `@defaultValue("'NA'")` |
 | `@inHash("<hashName>", <hashOrder>)`**¹** | ***(repeatable)*** Marks a column as an input to a generated hash key.<br/>**hashName** — columns sharing the same value are grouped together into the same hash.<br/>**hashOrder** — this column's position within that group.<br/>Call `get_hash("<hashName>")` elsewhere in the SELECT to produce the hash column from the marked columns.<br/>[Refer to Hash Columns for more details.](#hash-columns--get_hash)<br/>Example:<br/>`<col_name> AS <col_name> @inHash("GH_COL", 1),`<br/>`{{ get_hash('GH_COL') }}::STRING AS "GH_COL"`|
+
+<img width="648" height="455" alt="image" src="https://github.com/user-attachments/assets/74fe3375-b1cc-4d2a-8f40-81d97b02136c" />
 
 | **Property** | **Description** |
 |---------|-------------|
