@@ -265,15 +265,15 @@ Requirement level of each column annotation, by resolved strategy/SCD type:
 
 | Annotation | Category | SCD1 (`changeTracking` / `lastModified`) | SCD2 (`changeTracking` / `lastModified`) | `upsert` |
 |---|---|:---:|:---:|:---:|
-| `@isBusinessKey` | Key | 🔴 Required | 🔴 Required | 🔴 Required |
-| `@isSurrogateKey` | Key | ⚪ Optional | 🟡 Recommended | ⚪ Optional |
-| `@isSystemCreateDate` | System column | 🔴 Required | 🔴 Required | ⚪ Optional¹ |
-| `@isSystemUpdateDate` | System column | 🔴 Required | 🔴 Required | ⚪ Optional¹ |
-| `@isSystemVersion` | System column | ⚪ Optional | 🔴 Required | ⚪ Optional¹ |
-| `@isSystemCurrentFlag` | System column | ⚪ Optional | 🔴 Required | ⚪ Optional¹ |
-| `@isSystemEndDate` | System column | ⚪ Optional | 🔴 Required | ⚪ Optional¹ |
+| `@isBusinessKey` | Key | 🔴 | 🔴 | 🔴 |
+| `@isSurrogateKey` | Key | ⚪ | 🟡 | ⚪ |
+| `@isSystemCreateDate` | System column | 🔴 | 🔴 | ⚪|
+| `@isSystemUpdateDate` | System column | 🔴 | 🔴 | ⚪ |
+| `@isSystemVersion` | System column | ⚪ | 🔴 | ⚪ |
+| `@isSystemCurrentFlag` | System column | ⚪  | 🔴 | ⚪ |
+| `@isSystemEndDate` | System column | ⚪ | 🔴 | ⚪ |
 
-**Legend:** 🔴 Required · 🟡 Recommended · ⚪ Optional
+**Legend:** 🔴 Required · 🟡 Recommended · ⚪ Optional¹
 
 * ¹ `upsert` never reads the target back to compare, so no system column is needed for change detection. Any system column that is present is written exactly as the SELECT/CTE computes it — on insert and on every update — except `@isSystemCreateDate`, which keeps its first-inserted value. The default columns the SQL editor generates (`SYSTEM_VERSION` → 1, `SYSTEM_CURRENT_FLAG` → `'Y'`, `SYSTEM_END_DATE` → `'2999-12-31'`, create/update date → current timestamp) therefore still load as expected.<br/>
 * ² SCD2 with `upsert`: the merge matches on the `@isBusinessKey` column(s) only, so to keep history mark a key that is unique **per version** as `@isBusinessKey` (e.g. a hash of the natural key and effective date, or your own version key — not the `@isSurrogateKey` identity column), and have the CTE return both rows: the existing version re-emitted with its expiry values (`SYSTEM_CURRENT_FLAG` → `'N'`, `SYSTEM_END_DATE` → now), which updates the old row, and the new version with a new key, which is inserted.<br/>
@@ -322,7 +322,46 @@ Every deployment of a Dimension Node of materialization type table runs its conf
 
 #### Dimension Redeployment
 
-After the Dimension Node with materialization type table has been deployed for the first time into a target Environment, subsequent deployments may result in either altering the Dimension Table or recreating the Dimension table, following the same rules as [Work Redeployment](#work-redeployment) — changing table names, dropping existing columns, altering column data types, or adding new columns all result in an ALTER statement via clone-and-swap, while changing materialization type from Table to View drops and recreates the object.
+After the Dimension Node with materialization type table has been deployed for the first time into a target Environment, subsequent deployments may result in either altering the Dimension Table or recreating the Dimension table.
+
+#### Altering the Dimension Tables
+
+A few types of column or table changes will result in an ALTER statement to modify the Dimension Table in the target Environment, whether these changes are made individually or all together:
+
+* Changing table names
+* Dropping existing columns
+* Altering column data types
+* Adding new columns
+
+The following stages are executed:
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Clone Table** | Creates an internal table |
+| **Rename Table\| Alter Column \| Delete Column \| Add Column \| Edit table description** | Alter table statement is executed to perform the alter operation |
+| **Swap Cloned Table** | Upon successful completion of all updates, the clone replaces the main table ensuring that no data is lost |
+| **Delete Table** | Drops the internal table |
+
+#### Recreating the Dimension Tables
+
+If the materialization type is changed from Table to View, then the following stages are executed:
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Delete Table** | Drops the existing table |
+| **Create View** | Recreates the node as a view |
+
+#### Recreating the Dimension Views
+
+The subsequent deployment of the Dimension Node of materialization type view with changes in view definition, adding table description or renaming view results in deleting the existing view and recreating the view.
+
+The following stages are executed:
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Delete View** | Removes existing view |
+| **Create View** | Creates new view with updated definition |
+
 
 ### Removing a Dimension Node
 
@@ -465,7 +504,7 @@ CAST(
 
 ---
 
-### Notes
+### Notes & Supported SQL Functionality
 
 - Verify that all **column datatypes** are successfully resolved before creating the object. Columns with an `UNKNOWN` datatype may cause stage generation or runtime failures. This typically happens when a CTE builds a column through a `UNION`/`UNION ALL` inside a derived table — wrap the column in an explicit `CAST(... AS <type>)` in the final SELECT.
 
@@ -477,6 +516,20 @@ CAST(
          "N_NAME" AS "N_NAME"
     FROM {{ ref('SRC', 'NATION') }} "NATION"
     ```
+
+- **Multi-Source Joins & Enrichment:** The ability to reference and join multiple upstream nodes (e.g., Joining ORDERS and CUSTOMER) within a single stage to flatten data or create enriched wide tables while maintaining full lineage for every source.
+
+- **Conditional Logic via CASE Statements:** Support for complex business rules and data categorization using standard CASE WHEN syntax to create derived columns based on multiple logical conditions.
+
+ - **Flexible Projection (SELECT * with Expressions):** Enhanced projection capabilities that allow for selecting all columns from a source (`SELECT *`) while simultaneously appending new calculated expressions, timestamps, or metadata in the same statement.<br/>**Note:** Column-level annotations (e.g. `@not_null`, `@inHash`) can only be attached to columns that are explicitly listed in the `SELECT` clause — they cannot be applied to columns pulled in via `SELECT *`.
+
+- **Nested Subqueries:** Support for correlated and non-correlated subqueries within SELECT, FROM, or WHERE clauses, enabling granular filtering and complex lookups that don't require separate nodes.
+
+- **Common Table Expressions (CTEs)**: Support for standard `WITH` clauses to break down complex, multi-step transformation logic into readable, modular blocks. Coalesce tracks lineage through each CTE and back to the source tables.
+
+- **Recursive CTEs**: Full support for `WITH` RECURSIVE logic, enabling the transformation of hierarchical data and the programmatic generation of data sequences within a single node.
+  
+- If a CTE is referenced in templates that may include joins, always use a **table alias** and qualify all column references with that alias. This prevents ambiguous column errors and ensures the template remains extensible as additional joins are introduced.
 
 ---
 
@@ -713,23 +766,6 @@ WITH ALL_NATIONS AS (
     FROM {{ ref('SOURCE_DATA', 'NATION_COPY2') }}
 )
 SELECT * FROM ALL_NATIONS
-```
-
-### Supported SQL Functionality
-
-- **Multi-Source Joins & Enrichment:** The ability to reference and join multiple upstream nodes (e.g., Joining ORDERS and CUSTOMER) within a single stage to flatten data or create enriched wide tables while maintaining full lineage for every source.
-
-- **Conditional Logic via CASE Statements:** Support for complex business rules and data categorization using standard CASE WHEN syntax to create derived columns based on multiple logical conditions.
-
- - **Flexible Projection (SELECT * with Expressions):** Enhanced projection capabilities that allow for selecting all columns from a source (`SELECT *`) while simultaneously appending new calculated expressions, timestamps, or metadata in the same statement.<br/>**Note:** Column-level annotations (e.g. `@not_null`, `@inHash`) can only be attached to columns that are explicitly listed in the `SELECT` clause — they cannot be applied to columns pulled in via `SELECT *`.
-
-- **Nested Subqueries:** Support for correlated and non-correlated subqueries within SELECT, FROM, or WHERE clauses, enabling granular filtering and complex lookups that don't require separate nodes.
-
-- **Common Table Expressions (CTEs)**: Support for standard `WITH` clauses to break down complex, multi-step transformation logic into readable, modular blocks. Coalesce tracks lineage through each CTE and back to the source tables.
-
-- **Recursive CTEs**: Full support for `WITH` RECURSIVE logic, enabling the transformation of hierarchical data and the programmatic generation of data sequences within a single node.
-  
-- If a CTE is referenced in templates that may include joins, always use a **table alias** and qualify all column references with that alias. This prevents ambiguous column errors and ensures the template remains extensible as additional joins are introduced.
 
 ---
 
