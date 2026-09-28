@@ -86,7 +86,7 @@ The Work Node type has three configuration groups:
 | `@deployDisabled` ***(reserved)*** | Excludes this node from deployment. |
 | `@writeMode("truncateInsert \| append")` | **truncateInsert** — replaces the table's contents entirely via a single `INSERT OVERWRITE INTO` statement (atomic — no separate truncate step). <br/>**append** — inserts the new rows via `INSERT INTO`, alongside whatever is already there.<br/>*Not specified in the SQL editor → defaults to **truncateInsert**.*<br/>**Note:** Ignored on Views.<br/>Example: `@writeMode("append")` |
 | `@disableTests`**²** | Controls whether configured tests are skipped.<br/>*Specified in the SQL editor → all node- and column-level tests are skipped.*<br/>*Not specified in the SQL editor → tests run normally.*<br/>To turn tests back on, remove the annotation. Useful while developing a node — iterate on the SQL first, then re-enable once the logic is settled.<br/>Example: `@disableTests` |
-| `@tests(querySQL, continueOnFailure?, runOrder?)`**²** | ***(repeatable)*** Node-level data quality test.<br/>Runs `querySQL` against the target; fails if it returns any records.<br/>Skipped entirely when **@disableTests** is set.<br/>[Refer to Node-Level Tests for more details.](#node-level-tests---tests)<br/>Example: `@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")`<br/>**Known issue:** the current `coa` build's validator rejects the multi-argument form of `@tests(...)` with "@tests argument must be quoted" — only the single-argument form `@tests("<querySQL>")` passes `coa validate`. |
+| `@tests(querySQL, continueOnFailure?, runOrder?)`**²** | ***(repeatable)*** Node-level data quality test.<br/>Runs `querySQL` against the target; fails if it returns any records.<br/>Skipped entirely when **@disableTests** is set.<br/>[Refer to Node-Level Tests for more details.](#node-level-tests--tests)<br/>Example: `@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")` |
 | `@preSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `before` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)")` |
 | `@postSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `after` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('WRK_NATION', CURRENT_TIMESTAMP())")` |
 
@@ -101,7 +101,7 @@ The Work Node type has three configuration groups:
 | `@notNull` ***(reserved)*** | Marks column as NOT NULL.<br/>**Note:** Ignored on Views.<br/>Example: `@notNull` |
 | `@description(<text>)` ***(reserved)*** | Adds column description.<br/>Example: `@description("timestamp column")` |
 | `@defaultValue(<value>)` ***(reserved)*** | Adds default value.<br/>Quote to match the column's data type - <br/>number: `defaultValue("<num>")`<br/>string: `defaultValue("'<string>'")`<br/>**Note:** Ignored on Views.<br/>Example: `@defaultValue("20")` `@defaultValue("'NA'")` |
-| `@inHash("<hashName>", <hashOrder>)`**¹** | ***(repeatable)*** Marks a column as an input to a generated hash key.<br/>**hashName** — columns sharing the same value are grouped together into the same hash.<br/>**hashOrder** — this column's position within that group.<br/>Call `get_hash("<hashName>")` elsewhere in the SELECT to produce the hash column from the marked columns.<br/>[Refer to Hash Columns for more details.](#hash-columns---get_hash)<br/>Example:<br/>`<col_name> AS <col_name> @inHash("GH_COL", 1),`<br/>`{{ get_hash('GH_COL') }}::STRING AS "GH_COL"`|
+| `@inHash("<hashName>", <hashOrder>)`**¹** | ***(repeatable)*** Marks a column as an input to a generated hash key.<br/>**hashName** — columns sharing the same value are grouped together into the same hash.<br/>**hashOrder** — this column's position within that group.<br/>Call `get_hash("<hashName>")` elsewhere in the SELECT to produce the hash column from the marked columns.<br/>[Refer to Hash Columns for more details.](#hash-columns--get_hash)<br/>Example:<br/>`<col_name> AS <col_name> @inHash("GH_COL", 1),`<br/>`{{ get_hash('GH_COL') }}::STRING AS "GH_COL"`|
 
 <img width="792" height="824" alt="image" src="https://github.com/user-attachments/assets/b8559c63-db38-4c09-ad5b-5ae12fb0c870" />
 
@@ -213,10 +213,10 @@ The Dimension Node type has three configuration groups:
 | `@materializationType(type)` ***(reserved)*** | table/view.<br/>Value is strictly case-sensitive — must be lowercase `table` or `view`.<br/>*Not specified in the SQL editor → defaults to **table**.*<br/>Example: `@materializationType("view")` |
 | `@deployDisabled` ***(reserved)*** | Excludes this node from deployment. |
 | `@writeMode("truncateInsert \| append")` | **truncateInsert** — clears the table before loading, replacing its contents entirely.<br/>**append** — inserts the new rows via merge, alongside whatever is already there.<br/>*Not specified in the SQL editor → defaults to **append**.*<br/>**Note:** Ignored on Views.<br/>Example: `@writeMode("truncateInsert")` |
-| `@mergeStrategy("upsert \| changeTracking \| lastModified")` | Chooses how this dimension decides a row has changed, and therefore which column annotations it requires.<br/><br/>**upsert** — no change detection at all; a matched row is always updated, an unmatched row is inserted. Doesn't assert any SCD type of its own — if the upstream SELECT/CTE already implements SCD1/SCD2 logic, this strategy just merges that result through as-is. The SELECT/CTE should return one row per business key (de-duplicate upstream). System columns are optional; any that are present are written exactly as the SELECT/CTE computes them. `@lastModifiedTracking`/`@isChangeTracking` columns aren't used — if present, a warning is raised and they're ignored.<br/><br/>**changeTracking** — compares columns marked `@isChangeTracking` (or, if none are marked, every plain attribute column) to detect a change. SCD Type 2 if any column is marked `@isChangeTracking`, otherwise SCD Type 1. Doesn't use `@lastModifiedTracking` — if present, a warning is raised and it's ignored.<br/><br/>**lastModified** — compares a single `@lastModifiedTracking` timestamp column against the target's stored value. Requires exactly one column marked `@lastModifiedTracking` — the run fails if none (or more than one) is present. SCD Type 1 or 2 comes from that column's own `scdType` parameter. Doesn't use `@isChangeTracking` — if present, a warning is raised and it's ignored.<br/>*Not specified in the SQL editor → defaults to **changeTracking** - SCD Type 1.*<br/><br/>The value is not case-sensitive; any other value fails the run.<br/>Every strategy merges on the business key, so the SELECT/CTE must return exactly one row per business key, with no NULL business key — see [Duplicate or NULL Business Keys](#known-limitations) for a `Before` test that checks this.<br/>Under **changeTracking** / **lastModified** the load writes fixed system column values — see [System column values](#system-column-values).<br/>**Note:** Ignored on Views.<br/>Example: `@mergeStrategy("lastModified")` |
+| `@mergeStrategy("upsert \| changeTracking \| lastModified")` | Chooses how this dimension decides a row has changed, and therefore which column annotations it requires.<br/><br/>**upsert** — no change detection at all; a matched row is always updated, an unmatched row is inserted. Doesn't assert any SCD type of its own — if the upstream SELECT/CTE already implements SCD1/SCD2 logic, this strategy just merges that result through as-is. The SELECT/CTE should return one row per business key (de-duplicate upstream). System columns are optional; any that are present are written exactly as the SELECT/CTE computes them. `@lastModifiedTracking`/`@isChangeTracking` columns aren't used — if present, a warning is raised and they're ignored.<br/><br/>**changeTracking** — compares columns marked `@isChangeTracking` (or, if none are marked, every plain attribute column) to detect a change. SCD Type 2 if any column is marked `@isChangeTracking`, otherwise SCD Type 1. Doesn't use `@lastModifiedTracking` — if present, a warning is raised and it's ignored.<br/><br/>**lastModified** — compares a single `@lastModifiedTracking` timestamp column against the target's stored value. Requires exactly one column marked `@lastModifiedTracking` — a validation check flags it if none (or more than one) is present. SCD Type 1 or 2 comes from that column's own `scdType` parameter. Doesn't use `@isChangeTracking` — if present, a warning is raised and it's ignored.<br/>*Not specified in the SQL editor → defaults to **changeTracking** - SCD Type 1.*<br/><br/>The value is not case-sensitive; any other value is flagged by a validation check.<br/>Every strategy merges on the business key, so the SELECT/CTE must return exactly one row per business key, with no NULL business key — see [Duplicate or NULL Business Keys](#known-limitations) for a `Before` test that checks this.<br/>Under **changeTracking** / **lastModified** the load writes fixed system column values — see [System column values](#system-column-values).<br/>**Note:** Ignored on Views.<br/>Example: `@mergeStrategy("lastModified")` |
 | `@zeroKey(surrogateKeyValue?, stringValue?, timestampValue?, booleanValue?)` | Inserts a default "zero key" record into the target — a placeholder row used to catch unresolved foreign key lookups.<br/>**surrogateKeyValue** — value used for the zero record's surrogate key column only. Default `"0"`.<br/>Numeric columns (integer, decimal, float) always get `0`; override any column with a column-level `@zeroKey(value)`.<br/>**stringValue** — default value for string/varchar columns, pasted into the SQL verbatim — include your own quotes. Default `"'UNKNOWN'"`.<br/>**timestampValue** — default value for date/time/timestamp columns. Default `"1900-01-01 00:00:00"`.<br/>**booleanValue** — default value for boolean columns. Default `true`.<br/>*Not specified in the SQL editor → the zero record is not inserted.*<br/>**Note:** Ignored on Views.<br/>Example: `@zeroKey("0", "'UNKNOWN'", "1900-01-01 00:00:00", true)`<br/>**Known issue:** the current `coa` build's validator rejects any multi-argument `@zeroKey(...)` call regardless of quoting — only a single-argument call passes `coa validate`. This is a bug in the CLI's annotation parser, not a syntax issue; the multi-argument form above is still the semantically correct one to use once the bug is fixed upstream. |
 | `@disableTests`**²** | Controls whether configured tests are skipped.<br/>*Specified in the SQL editor → all node- and column-level tests are skipped.*<br/>*Not specified in the SQL editor → tests run normally.*<br/>To turn tests back on, remove the annotation. Useful while developing a node — iterate on the SQL first, then re-enable once the logic is settled.<br/>Example: `@disableTests` |
-| `@tests(querySQL, continueOnFailure?, runOrder?)`**²** | ***(repeatable)*** Node-level data quality test.<br/>Runs `querySQL` against the target; fails if it returns any records.<br/>Skipped entirely when **@disableTests** is set.<br/>[Refer to Node-Level Tests for more details.](#node-level-tests---tests)<br/>Example: `@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")`|
+| `@tests(querySQL, continueOnFailure?, runOrder?)`**²** | ***(repeatable)*** Node-level data quality test.<br/>Runs `querySQL` against the target; fails if it returns any records.<br/>Skipped entirely when **@disableTests** is set.<br/>[Refer to Node-Level Tests for more details.](#node-level-tests--tests)<br/>Example: `@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")`|
 | `@preSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `before` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)")` |
 | `@postSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `after` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('DIM_NATION', CURRENT_TIMESTAMP())")` |
 
@@ -228,16 +228,16 @@ The Dimension Node type has three configuration groups:
 
 | **Property** | **Description** |
 |---------|-------------|
-| `@id("<value>")` | Stable column ID for lineage tracking.<br/>Required on every column — the SQL editor generates a fresh `@id("<value>")` for each column it creates, and the run fails if any column is missing one.<br/>Not for manual editing — value is a stable identifier generated once at creation time.<br/>**Column added later:** make sure it gets its own `@id` too. If you're editing by hand, add a new, unique 6-hex-digit `@id("<value>")` along with the column; an agent can generate one for you. Don't reuse a value already on the node.<br/>Example: `@id("110e75")` |
+| `@id("<value>")` | Stable column ID for lineage tracking.<br/>Required on every column — the SQL editor generates a fresh `@id("<value>")` for each column it creates, and a validation check flags any column that is missing one.<br/>Not for manual editing — value is a stable identifier generated once at creation time.<br/>**Column added later:** make sure it gets its own `@id` too. If you're editing by hand, add a new, unique 6-hex-digit `@id("<value>")` along with the column; an agent can generate one for you. Don't reuse a value already on the node.<br/>Example: `@id("110e75")` |
 | `@notNull` ***(reserved)*** | Marks column as NOT NULL.<br/>**Note:** Ignored on Views.<br/>Example: `@notNull` |
 | `@description(<text>)` ***(reserved)*** | Adds column description.<br/>Example: `@description("timestamp column")` |
 | `@defaultValue(<value>)` ***(reserved)*** | Adds default value.<br/>Quote to match the column's data type - <br/>number: `defaultValue("<num>")`<br/>string: `defaultValue("'<string>'")`<br/>**Note:** Ignored on Views.<br/>Example: `@defaultValue("20")` `@defaultValue("'NA'")` |
-| `@inHash("<hashName>", <hashOrder>)`**¹** | ***(repeatable)*** Marks a column as an input to a generated hash key.<br/>**hashName** — columns sharing the same value are grouped together into the same hash.<br/>**hashOrder** — this column's position within that group.<br/>Call `get_hash("<hashName>")` elsewhere in the SELECT to produce the hash column from the marked columns.<br/>[Refer to Hash Columns for more details.](#hash-columns---get_hash)<br/>Example:<br/>`<col_name> AS <col_name> @inHash("GH_COL", 1),`<br/>`{{ get_hash('GH_COL') }}::STRING AS "GH_COL"`|
+| `@inHash("<hashName>", <hashOrder>)`**¹** | ***(repeatable)*** Marks a column as an input to a generated hash key.<br/>**hashName** — columns sharing the same value are grouped together into the same hash.<br/>**hashOrder** — this column's position within that group.<br/>Call `get_hash("<hashName>")` elsewhere in the SELECT to produce the hash column from the marked columns.<br/>[Refer to Hash Columns for more details.](#hash-columns--get_hash)<br/>Example:<br/>`<col_name> AS <col_name> @inHash("GH_COL", 1),`<br/>`{{ get_hash('GH_COL') }}::STRING AS "GH_COL"`|
 
 | **Property** | **Description** |
 |---------|-------------|
 | `@isBusinessKey` ***(required)*** | Marks a column as part of the business key used to match existing rows during the merge.<br/>**Note:** Ignored on Views.<br/>Example: `@isBusinessKey` |
-| `@lastModifiedTracking(scdType?)` | Marks the column used to detect newer source rows for an incremental load.<br/>Datatype — DATE/TIME or any incrementing NUMERIC type.<br/>Can only be applied to one column.<br/>Must not be NULL in the source — a pre-load check fails the run if it is, since a NULL value can never compare as newer.<br/>**scdType** — `1` overwrites the row in place, `2` expires the row and inserts a new version. *Not specified → defaults to 1.*<br/>**Note:** Ignored on Views.<br/>Example: `@lastModifiedTracking(2)` |
+| `@lastModifiedTracking(scdType?)` | Marks the column used to detect newer source rows for an incremental load.<br/>Datatype — DATE/TIME or any incrementing NUMERIC type.<br/>Can only be applied to one column.<br/>Must not be NULL in the source — a pre-load check flags it, since a NULL value can never compare as newer: a row loaded with a NULL tracking value is never updated again.<br/>Only this column decides a change — other columns that change without a newer tracking value are never applied, even under SCD Type 1.<br/>**scdType** — `1` overwrites the row in place, `2` expires the row and inserts a new version. *Not specified → defaults to 1.*<br/>**Note:** Ignored on Views.<br/>Example: `@lastModifiedTracking(2)` |
 | `@isChangeTracking` | Marks a column to be watched for changes that decide SCD type.<br/>Marked on any column → SCD Type 2 — a change expires the existing row and inserts a new version.<br/>Not marked on any column → SCD Type 1 — a change updates the row in place.<br/>**Note:** Ignored on Views.<br/>Example: `@isChangeTracking` |
 | `@zeroKey(value)` | Adds a custom zero key value (ghost record) to this column, overriding the node-level `@zeroKey` defaults for it.<br/>The value is pasted into the SQL verbatim, so quote it to match the column's data type.<br/>**Note:** Ignored unless `@zeroKey` is enabled at the node level, and ignored on Views.<br/>Example: `@zeroKey("'N/A'")` |
 | `@isSurrogateKey` | Marks this column as the node's surrogate key.<br/>Optional for SCD Type 1 — the merge logic joins and detects changes entirely off the business key.<br/>Recommended for SCD Type 2 — a stable surrogate key per version is the standard way to identify a versioned row, though it isn't enforced by the merge itself.<br/>Required only when the node-level `@zeroKey` is set, since the zero/ghost record is matched against the target by surrogate key value.<br/>**Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.<br/>Expected expression: `0 AS "{{NODE_NAME}}_KEY" @isSurrogateKey` |
@@ -307,18 +307,32 @@ When deployed for the first time into an Environment the Dimension Node of mater
 | **Create Dimension Table** | This will execute a CREATE OR REPLACE statement and create a table in the target Environment |
 | **Create Dimension View** | This will execute a CREATE OR REPLACE statement and create a view in the target Environment |
 
+#### Dimension View
+
+A Dimension Node of materialization type view is a plain `CREATE OR REPLACE VIEW` over the node's SELECT:
+
+* None of the Dimension validation checks run — `@isBusinessKey`, system columns, `@id` and `@mergeStrategy` aren't required or checked.
+* There is no merge; the run shows **Load Skipped for View**. `@mergeStrategy`, `@writeMode`, `@zeroKey`, `@preSQL`, `@postSQL` and the tracking annotations are ignored.
+* Any system column (surrogate key, version, current flag, create/update/end date) is selected as a typed `NULL`, keeping the column's datatype.
+* Column-level data quality tests and node-level `@tests` still run.
+
 #### Dimension Load
 
 Every deployment of a Dimension Node of materialization type table runs its configured data quality tests, then merges data into the target using the stages below, depending on the resolved `@mergeStrategy` and SCD type:
 
 | **Stage** | **Description** |
 |-----------|----------------|
-| **Check NULL values for `<column>` column** | Pre-load check for `@mergeStrategy("lastModified")` — fails the run if the `@lastModifiedTracking` column is NULL in the source. |
+| **Pre Load Test `<n>`** | Node-level `@tests(..., "Before")` tests, in the order they appear. |
+| **Missing Column IDs \| Missing Business Key \| Invalid configuration: … \| Missing Required System Columns** | Validation checks — rendered only when the node's annotations have a problem (a column without `@id`, no `@isBusinessKey`, an unrecognised or conflicting `@mergeStrategy`/tracking column, or a missing system column). Each one flags the problem; see the individual annotations for what triggers it. |
+| **Check NULL values for `<column>` column** | Pre-load check for `@mergeStrategy("lastModified")` — flags a NULL `@lastModifiedTracking` value in the source. |
+| **Pre-SQL `<n>`** | Each `@preSQL` statement, in the order they appear. |
 | **Truncate table** | Executed only when `@writeMode("truncateInsert")` is set — clears the target before the merge. |
 | **Load table Using Merge - Zero Key Record** | Executed only when node-level `@zeroKey` is set and a surrogate key column exists — merges the placeholder "zero key" row into the target. |
 | **Load table Using Merge - Upsert** | Executed for `@mergeStrategy("upsert")` — merges source rows straight through with no change detection: every matched row is updated from the SELECT/CTE (system columns included, `@isSystemCreateDate` excepted) and every unmatched row is inserted. |
 | **Load table Using Merge - Last Modified Comparison - SCD1 \| SCD2** | Executed for `@mergeStrategy("lastModified")` — compares the `@lastModifiedTracking` column against the target to detect changes, then updates in place (SCD1) or versions the row (SCD2) per that column's `scdType`. |
 | **Load table Using Merge - Change Tracking - SCD1 \| SCD2** | Executed for `@mergeStrategy("changeTracking")` (the default) — compares `@isChangeTracking` columns (or, absent any, every plain attribute column) against the target, then updates in place (SCD1) or versions the row (SCD2). |
+| **Post-SQL `<n>`** | Each `@postSQL` statement, in the order they appear. |
+| **`<column>: <test>` \| Post Load Test `<n>`** | Column-level data quality tests and node-level `@tests(..., "After")` tests, run after the load. |
 
 #### Dimension Redeployment
 
@@ -421,7 +435,7 @@ A backslash (`\"`) does not escape a quote inside an annotation string and fails
 | `@min_value("<min>")` | Fails on rows below the bound. NULL values pass.<br/>Value formatting — see `min_max`.<br/>Example: `@min_value("0")` |
 | `@max_value("<max>")` | Fails on rows above the bound. NULL values pass.<br/>Value formatting — see `min_max`.<br/>Example: `@max_value("100")` |
 | `@freshness(<interval>, "<unit>")` | Fails when the newest value in the column is older than the given interval, or the table is empty.<br/>**interval** — how far back from now the newest value is allowed to be, expressed in the unit given by **unit**.<br/>**unit** — SECOND, MINUTE, HOUR, DAY, WEEK, MONTH, or YEAR (defaults to DAY).<br/>**Note:** on a DATE column the value is truncated to midnight.<br/>Example: `@freshness(7, "DAY")` |
-| `@relative_time("<operator>", "<other_column>")` | Compares this column against another date/time column on the same node.<br/>e.g. `@relative_time("<=", "END_DATE")` fails rows where this column's value is not `<=` END_DATE.<br/>Either side NULL → row is skipped (passes).<br/>Example: `@relative_time("<", "L_M_2")` |
+| `@relative_time("<operator>", "<other_column>")` | Compares this column against another date/time column on the same node.<br/>e.g. `@relative_time("<=", "END_DATE")` fails rows where this column's value is not `<=` END_DATE.<br/>Either side NULL → row is skipped (passes).<br/>Both columns should have the same datatype — e.g. comparing a `TIMESTAMP_TZ` with a `TIMESTAMP_NTZ` reads the NTZ value in the session's time zone and can give unexpected results.<br/>Example: `@relative_time("<", "L_M_2")` |
 
 ### Hash Columns — get_hash()
 
@@ -434,7 +448,7 @@ A backslash (`\"`) does not escape a quote inside an annotation string and fails
 | Parameter | Description |
 |-----------|-------------|
 | `hash_name` | Hash name used across columns to identify the columns included in the hash. |
-| `algo` | **(optional)** Hashing algorithm to use. Supported values include `SHA1` and `SHA256`. Defaults to `SHA1`. |
+| `algo` | **(optional)** Hashing algorithm to use. Supported values include `SHA1`, `SHA256` and `MD5`. Defaults to `SHA1`. |
 | `delimiter` | **(optional)** Delimiter used to separate column values when generating the hash. Defaults to `\|\|` and can be customized. |
 
 #### get_hash() Examples
@@ -454,7 +468,7 @@ Using hash macro(SHA256)
 <col_name> AS <col_name> @inHash("GH_COL", 1),
 {{ get_hash('GH_COL', 'SHA256') }}::STRING AS "GH_COL"
 ```
-Using hash macro(algo=SHA256, delimeter='~' )
+Using hash macro(algo=SHA256, delimiter='~' )
 ```sql
 <col_name> AS <col_name> @inHash("GH_COL", 1),
 {{ get_hash('GH_COL', algo='SHA256', delimiter='~') }}::STRING AS "GH_COL"
@@ -467,7 +481,7 @@ Using multiple keys hash macro
 ```
 Using multiple hash macros
 ```sql
-<col_name1> AS <col_name1> @inHash("GH_COL1", 1, "GH_COL2", 2),
+<col_name1> AS <col_name1> @inHash("GH_COL1", 1) @inHash("GH_COL2", 2),
 <col_name2> AS <col_name2> @inHash("GH_COL1", 2),
 <col_name3> AS <col_name3> @inHash("GH_COL2", 1),
 {{ get_hash('GH_COL1') }}::STRING AS "GH_COL_COMBINED1",
@@ -491,8 +505,10 @@ CAST(
 | Parameter | Description |
 |-----------|-------------|
 | querySQL | SQL statement to execute as a validation test. The test fails if the query returns any records. |
-| continueOnFailure |**(optional)** `true`(default) or `false`. Determines whether execution continues when the test fails. |
+| continueOnFailure |**(optional)** `true`(default) or `false`. Marks whether the run is meant to continue when the test fails. In the current `coa` build a failing `false` test is reported, but the load still runs. |
 | runOrder |**(optional)** `Before` or `After`(default). Determines whether the test is executed before or after the load operation. |
+
+**Known issue:** the current `coa` build's validator rejects the multi-argument form of `@tests(...)` with "@tests argument must be quoted" — only the single-argument form `@tests("<querySQL>")` passes `coa validate`. This is a bug in the CLI's annotation parser: the multi-argument form still runs as written.
 
 #### tests() Examples
 
@@ -544,7 +560,7 @@ Users should be aware of the following technical constraints when using SQL-firs
 This node only supports data retrieval and transformation logic. DML or DDL commands such as `CREATE`, `MERGE`, `DELETE`, `UPDATE`, or `TRUNCATE` are not supported and will cause execution failures.
 
 * **Support for `UNION`, and `UNION ALL`**:  
-`UNION`, and `UNION ALL` are fully supported when used within **Common Table Expressions (CTEs)**. While these keywords can also be used in standard `SELECT` statements without generating an error, they may not parsed correctly by the platform. As a result, subsequent clauses (such as `JOIN`s) may be interpreted as part of a standard join structure, causing the generated SQL to differ from the intended query and potentially leading to inconsistent data loads. To ensure the SQL is parsed and executed as expected, always implement these operations inside a CTE.
+`UNION`, and `UNION ALL` are fully supported when used within **Common Table Expressions (CTEs)**. While these keywords can also be used in standard `SELECT` statements without generating an error, they may not be parsed correctly by the platform. As a result, subsequent clauses (such as `JOIN`s) may be interpreted as part of a standard join structure, causing the generated SQL to differ from the intended query and potentially leading to inconsistent data loads. To ensure the SQL is parsed and executed as expected, always implement these operations inside a CTE.
 
 * **Other Keywords**:  
 **GROUP BY, ORDER BY and HAVING** clauses can be included as part of the join query and will be parsed and processed accordingly.
@@ -568,15 +584,39 @@ Values are split on every comma, trimmed, and re-joined with `", "`. A string wr
 A business key that disappears from the source is left as it is in the target — under SCD Type 2 its current row stays current (`SYSTEM_CURRENT_FLAG` = `'Y'`, open `SYSTEM_END_DATE`), and under SCD Type 1 the row is kept unchanged. Deletes are never detected, expired or flagged; handle them separately (e.g. with `@postSQL`) if the dimension needs to reflect removed keys.
 
 * **Duplicate or NULL Business Keys**:  
-Every strategy merges on the business key, so the SELECT/CTE must return exactly one row per key, with no NULL key. Otherwise a duplicated key is inserted more than once on a first load and later merges fail with "Duplicate row detected during DML action", and a NULL key never matches, so that row is re-inserted on every run. De-duplicate upstream (e.g. `QUALIFY ROW_NUMBER() OVER (PARTITION BY <business key> ORDER BY <timestamp> DESC) = 1`). To check it before each load, add a `Before` node-level test — see **Dimension with a duplicate / NULL business key check** in [Usage Examples](#usage-examples).
+Every strategy merges on the business key, so the SELECT/CTE must return exactly one row per key, with no NULL key. Otherwise a duplicated key is inserted more than once on a first load and later merges fail with "Duplicate row detected during DML action", and a NULL key never matches, so that row is re-inserted on every run. De-duplicate upstream (e.g. `QUALIFY ROW_NUMBER() OVER (PARTITION BY <business key> ORDER BY <timestamp> DESC) = 1`). To check it before each load, add a `Before` node-level test — see [Duplicate or NULL Business Key Check](#duplicate-or-null-business-key-check).
 
 ---
 
-### Usage Examples 
+### Usage Examples
 
-The following patterns represent common ways to use the SQL Node.<br/>
+Common ways to use the SQL nodes. The SQL patterns under Work Examples (CTEs, window functions, DISTINCT) work the same way in a Dimension node.
 
-**Sample node with Annotations**
+**Work Examples**
+* [Sample Node with Annotations](#sample-node-with-annotations)
+* [Sample Node with DISTINCT](#sample-node-with-distinct)
+* [Basic Transformation and Cleaning](#basic-transformation-and-cleaning)
+* [Aggregate Functions inside a CTE](#aggregate-functions-inside-a-cte)
+* [Using CTEs](#using-ctes)
+* [Multi-CTE Transformation with Window Functions](#multi-cte-transformation-with-window-functions)
+* [Recursive CTE](#recursive-cte)
+* [Recursive CTE Date Series](#recursive-cte-date-series)
+* [CTE for Multi-Source Combine](#cte-for-multi-source-combine)
+
+**Dimension Examples**
+* [Change Tracking SCD1](#change-tracking-scd1)
+* [Change Tracking SCD2](#change-tracking-scd2)
+* [Last Modified SCD1](#last-modified-scd1)
+* [Last Modified SCD2](#last-modified-scd2)
+* [Upsert](#upsert)
+* [Zero Key Record](#zero-key-record)
+* [Dimension as a View](#dimension-as-a-view)
+* [Duplicate or NULL Business Key Check](#duplicate-or-null-business-key-check)
+
+#### Work Examples
+
+##### Sample Node with Annotations
+
 ```sql
 @writeMode("append")
 @tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1")
@@ -594,7 +634,9 @@ SELECT
      CAST({{ get_hash('GH_COL1') }} AS STRING) AS "GH_COL1" @description("Hash Column")
 FROM {{ ref('SOURCE_DATA', 'NATION') }} "NATION"
 ```
-**Sample node with DISTINCT**
+
+##### Sample Node with DISTINCT
+
 ```sql
 @writeMode("append")
 @description("Table description")
@@ -606,25 +648,10 @@ SELECT DISTINCT
      "LAST_MODIFIED" AS L_M @freshness(7, "DAY")
 FROM {{ ref('SOURCE_DATA', 'NATION') }} "NATION"
 ```
-**Dimension with a duplicate / NULL business key check** - Every merge strategy matches rows on the business key, so the source must return exactly one row per key, with no NULL key. A `Before` test runs ahead of the load and fails if the source returns a duplicated or NULL key.
 
-```sql
-@nodeType("718")
-@mergeStrategy("changeTracking")
-@tests("SELECT N_NATIONKEY, N_NAME FROM {{ ref('SOURCE_DATA', 'NATION') }} GROUP BY N_NATIONKEY, N_NAME HAVING COUNT(*) > 1 OR N_NATIONKEY IS NULL OR N_NAME IS NULL", false, "Before")
-SELECT
-     0 AS "DIM_NATION_KEY" @id("a1b2c3") @isSurrogateKey,
-     "N_NATIONKEY" AS "N_NATIONKEY" @id("b2c3d4") @isBusinessKey,
-     "N_NAME" AS "N_NAME" @id("c3d4e5") @isBusinessKey,
-     "N_REGIONKEY" AS "N_REGIONKEY" @id("d4e5f6"),
-     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("e5f6a7") @isSystemCreateDate,
-     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @id("f6a7b8") @isSystemUpdateDate
-FROM {{ ref('SOURCE_DATA', 'NATION') }} "NATION"
-```
-* The test query must read the same source, CTE and filters as the node's SELECT, so it checks the rows that are actually loaded. List every `@isBusinessKey` column in the `GROUP BY` and the `IS NULL` checks.
-* For a case-sensitive column name, double each inner quote — `""Nation_Key""` — see [Quote Style for Case-Sensitive Identifiers](#quote-style-for-case-sensitive-identifiers).
-* The three-argument `@tests(...)` form is flagged by the current `coa validate` (a known CLI parser bug) but runs normally.
-**Basic Transformation & Cleaning** - Standard pattern for renaming columns and handling nulls.
+##### Basic Transformation and Cleaning
+
+Standard pattern for renaming columns and handling nulls.
 
 ```sql
 SELECT
@@ -637,7 +664,7 @@ FROM {{ ref('SRC', 'ORDERS') }} "ORDERS"
 WHERE "O_ORDERSTATUS" != 'F'
 ```
 
-**Aggregate Functions inside a CTE**
+##### Aggregate Functions inside a CTE
 
 ```sql
 WITH "ORDER_COUNTS" AS (
@@ -653,7 +680,9 @@ SELECT
 FROM "ORDER_COUNTS"
 ```
 
-**Using CTEs (Common Table Expressions)** - For more complex, multi-step logic
+##### Using CTEs
+
+For more complex, multi-step logic
 
 ```sql
 WITH PRIORITY_COUNTS AS (
@@ -665,7 +694,9 @@ WITH PRIORITY_COUNTS AS (
 )
 SELECT * FROM PRIORITY_COUNTS
 ```
-**Multi-CTE Transformation With Window Functions** <br/>
+
+##### Multi-CTE Transformation with Window Functions
+
 Complex transformations that would otherwise require multiple nodes can be written as a single SQL statement. Coalesce tracks lineage through each CTE and down to the source tables
 ```sql
 WITH ORDERED_ORDERS AS (
@@ -704,7 +735,9 @@ CURRENT_TIMESTAMP() AS REFRESHED_AT,
 'Initial Customer Purchase' AS RECORD_TYPE
 FROM FIRST_ORDERS F
 ```
-**Using Recursive CTE**
+
+##### Recursive CTE
+
 ```sql
 WITH RECURSIVE "NATION_MANAGERS" AS (
     SELECT
@@ -744,7 +777,9 @@ FROM "NATION_CHAIN" "NC"
 JOIN {{ ref('SRC', 'ORDERS_TEST') }} "O" ON "NC"."NATION_ID" = MOD("O"."ORDER_ID", 25)
 GROUP BY "NC"."NATION_ID", "NC"."NATION_NAME", "NC"."ORG_LEVEL", "NC"."PATH"
 ```
-**Using Recursive CTE - Date Series**
+
+##### Recursive CTE Date Series
+
 ```sql
 WITH RECURSIVE RCTE_FNL AS (
     SELECT TO_DATE('2025-01-01') AS "date_s"
@@ -756,7 +791,9 @@ WITH RECURSIVE RCTE_FNL AS (
 SELECT "date_s"
 FROM RCTE_FNL
 ```
-**Using CTE for multisource combine**
+
+##### CTE for Multi-Source Combine
+
 ```sql
 WITH ALL_NATIONS AS (
     SELECT *
@@ -766,6 +803,142 @@ WITH ALL_NATIONS AS (
     FROM {{ ref('SOURCE_DATA', 'NATION_COPY2') }}
 )
 SELECT * FROM ALL_NATIONS
+```
+
+#### Dimension Examples
+
+##### Change Tracking SCD1
+
+The default strategy. Any change in a non-key column overwrites the row.
+
+```sql
+@nodeType("718")
+SELECT
+    "CUSTOMER_ID"                            AS "CUSTOMER_ID"         @id("a10001") @isBusinessKey,
+    "NAME"                                   AS "NAME"                @id("a10002"),
+    "CITY"                                   AS "CITY"                @id("a10003"),
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @id("a10008") @isSystemCreateDate,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_UPDATE_DATE"  @id("a10009") @isSystemUpdateDate
+FROM {{ ref('SRC', 'CUSTOMER') }}
+```
+
+##### Change Tracking SCD2
+
+A change in a column marked `@isChangeTracking` keeps the old row and adds a new version. Other columns are updated in place.
+
+```sql
+@nodeType("718")
+@mergeStrategy("changeTracking")
+SELECT
+    "CUSTOMER_ID"                            AS "CUSTOMER_ID"         @id("b10001") @isBusinessKey,
+    "NAME"                                   AS "NAME"                @id("b10002"),
+    "CITY"                                   AS "CITY"                @id("b10003") @isChangeTracking,
+    1                                        AS "SYSTEM_VERSION"      @id("b10005") @isSystemVersion,
+    'Y'                                      AS "SYSTEM_CURRENT_FLAG" @id("b10006") @isSystemCurrentFlag,
+    CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE"     @id("b10007") @isSystemEndDate,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @id("b10008") @isSystemCreateDate,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_UPDATE_DATE"  @id("b10009") @isSystemUpdateDate
+FROM {{ ref('SRC', 'CUSTOMER') }}
+```
+
+##### Last Modified SCD1
+
+A row is overwritten only when its `@lastModifiedTracking` value is newer than the stored one.
+
+```sql
+@nodeType("718")
+@mergeStrategy("lastModified")
+SELECT
+    "CUSTOMER_ID"                            AS "CUSTOMER_ID"         @id("c10001") @isBusinessKey,
+    "NAME"                                   AS "NAME"                @id("c10002"),
+    "UPDATED_AT"                             AS "UPDATED_AT"          @id("c10003") @lastModifiedTracking(1),
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @id("c10008") @isSystemCreateDate,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_UPDATE_DATE"  @id("c10009") @isSystemUpdateDate
+FROM {{ ref('SRC', 'CUSTOMER') }}
+```
+
+##### Last Modified SCD2
+
+Same as above, but a newer value keeps the old row and adds a new version.
+
+```sql
+@nodeType("718")
+@mergeStrategy("lastModified")
+SELECT
+    "CUSTOMER_ID"                            AS "CUSTOMER_ID"         @id("d10001") @isBusinessKey,
+    "NAME"                                   AS "NAME"                @id("d10002"),
+    "UPDATED_AT"                             AS "UPDATED_AT"          @id("d10003") @lastModifiedTracking(2),
+    1                                        AS "SYSTEM_VERSION"      @id("d10005") @isSystemVersion,
+    'Y'                                      AS "SYSTEM_CURRENT_FLAG" @id("d10006") @isSystemCurrentFlag,
+    CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE"     @id("d10007") @isSystemEndDate,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @id("d10008") @isSystemCreateDate,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_UPDATE_DATE"  @id("d10009") @isSystemUpdateDate
+FROM {{ ref('SRC', 'CUSTOMER') }}
+```
+
+##### Upsert
+
+No change detection: existing keys are updated, new keys inserted. System columns are optional.
+
+```sql
+@nodeType("718")
+@mergeStrategy("upsert")
+SELECT
+    "CUSTOMER_ID"                            AS "CUSTOMER_ID"         @id("e10001") @isBusinessKey,
+    "NAME"                                   AS "NAME"                @id("e10002"),
+    "CITY"                                   AS "CITY"                @id("e10003")
+FROM {{ ref('SRC', 'CUSTOMER') }}
+```
+
+##### Zero Key Record
+
+Adds a placeholder row for unmatched lookups. Needs a surrogate key column.
+
+```sql
+@nodeType("718")
+@zeroKey(0)
+SELECT
+    0                                        AS "CUSTOMER_KEY"        @id("f10000") @isSurrogateKey,
+    "CUSTOMER_ID"                            AS "CUSTOMER_ID"         @id("f10001") @isBusinessKey,
+    "NAME"                                   AS "NAME"                @id("f10002") @zeroKey("'NA'"),
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @id("f10008") @isSystemCreateDate,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_UPDATE_DATE"  @id("f10009") @isSystemUpdateDate
+FROM {{ ref('SRC', 'CUSTOMER') }}
+```
+
+##### Dimension as a View
+
+No business key or system columns needed; nothing is merged.
+
+```sql
+@nodeType("718")
+@materializationType("view")
+SELECT
+    "CUSTOMER_ID"                            AS "CUSTOMER_ID"         @id("0a0001"),
+    "NAME"                                   AS "NAME"                @id("0a0002")
+FROM {{ ref('SRC', 'CUSTOMER') }}
+```
+
+##### Duplicate or NULL Business Key Check
+
+Every merge strategy matches rows on the business key, so the source must return exactly one row per key, with no NULL key. A `Before` test runs ahead of the load and fails if the source returns a duplicated or NULL key.
+
+```sql
+@nodeType("718")
+@mergeStrategy("changeTracking")
+@tests("SELECT N_NATIONKEY, N_NAME FROM {{ ref('SOURCE_DATA', 'NATION') }} GROUP BY N_NATIONKEY, N_NAME HAVING COUNT(*) > 1 OR N_NATIONKEY IS NULL OR N_NAME IS NULL", false, "Before")
+SELECT
+     0 AS "DIM_NATION_KEY" @id("a1b2c3") @isSurrogateKey,
+     "N_NATIONKEY" AS "N_NATIONKEY" @id("b2c3d4") @isBusinessKey,
+     "N_NAME" AS "N_NAME" @id("c3d4e5") @isBusinessKey,
+     "N_REGIONKEY" AS "N_REGIONKEY" @id("d4e5f6"),
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("e5f6a7") @isSystemCreateDate,
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @id("f6a7b8") @isSystemUpdateDate
+FROM {{ ref('SOURCE_DATA', 'NATION') }} "NATION"
+```
+* The test query must read the same source, CTE and filters as the node's SELECT, so it checks the rows that are actually loaded. List every `@isBusinessKey` column in the `GROUP BY` and the `IS NULL` checks.
+* For a case-sensitive column name, double each inner quote — `""Nation_Key""` — see [Quote Style for Case-Sensitive Identifiers](#quote-style-for-case-sensitive-identifiers).
+* The three-argument `@tests(...)` form is flagged by the current `coa validate` (a known CLI parser bug) but runs normally.
 
 ---
 
@@ -787,3 +960,4 @@ SELECT * FROM ALL_NATIONS
 
 * [Macro](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/macros/macro-1.yml)
 
+----
