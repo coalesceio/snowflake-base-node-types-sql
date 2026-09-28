@@ -13,44 +13,45 @@ Concepts shared across every node type — quote style, hash columns, data quali
 
 ## Node Type Comparison
 
-A side-by-side view of which annotations each node type supports, so it's easy to see what a given node type is missing compared to the others. `Fact` is a placeholder for when that node type is documented.
+A side-by-side view of which annotations each node type supports, so it's easy to see what a given node type is missing compared to the others.
 
 ### Node Annotations Matrix
 
-| Annotation | Work | Dimension | Fact |
-|---|---|---|---|
-| `@description` ***(reserved)*** | ✅ | ✅ | TBD |
-| `@materializationType` ***(reserved)*** | ✅ | ✅ | TBD |
-| `@writeMode` | ✅ | ✅ | TBD |
-| `@mergeStrategy` | ➖ | ✅ | TBD |
-| `@zeroKey` (node-level) | ➖ | ✅ | TBD |
-| `@disableTests` | ✅ | ✅ | TBD |
-| `@tests` | ✅ | ✅ | TBD |
-| `@preSQL` | ✅ | ✅ | TBD |
-| `@postSQL` | ✅ | ✅ | TBD |
+| Annotation | Work | Dimension |
+|---|---|---|
+| `@description` ***(reserved)*** | ✅ | ✅ |
+| `@materializationType` ***(reserved)*** | ✅ | ✅ |
+| `@deployDisabled` ***(reserved)*** | ✅ | ✅ |
+| `@writeMode` | ✅ | ✅ |
+| `@mergeStrategy` | ➖ | ✅ |
+| `@zeroKey` (node-level) | ➖ | ✅ |
+| `@disableTests` | ✅ | ✅ |
+| `@tests` | ✅ | ✅ |
+| `@preSQL` | ✅ | ✅ |
+| `@postSQL` | ✅ | ✅ |
 
 ### Column Annotations Matrix
 
-| Annotation | Work | Dimension | Fact |
-|---|---|---|---|
-| `@notNull` ***(reserved)*** | ✅ | ✅ | TBD |
-| `@description` ***(reserved)*** | ✅ | ✅ | TBD |
-| `@defaultValue` ***(reserved)*** | ✅ | ✅ | TBD |
-| `@id` ***(required)***<br/>(column-level) | ➖ | ✅ | TBD |
-| `@inHash` | ✅ | ✅ | TBD |
-| `@isBusinessKey` ***(required)*** | ➖ | ✅ | TBD |
-| `@lastModifiedTracking` | ➖ | ✅ | TBD |
-| `@isChangeTracking` | ➖ | ✅ | TBD |
-| `@zeroKey` (column-level) | ➖ | ✅ | TBD |
-| `@isSurrogateKey` | ➖ | ✅ | TBD |
-| `@isSystemVersion` | ➖ | ✅ | TBD |
-| `@isSystemCurrentFlag` | ➖ | ✅ | TBD |
-| `@isSystemCreateDate` | ➖ | ✅ | TBD |
-| `@isSystemUpdateDate` | ➖ | ✅ | TBD |
-| `@isSystemEndDate` | ➖ | ✅  | TBD |
-| all column tests | ✅ | ✅ | TBD |
+| Annotation | Work | Dimension |
+|---|---|---|
+| `@id` ***(required)***<br/>(column-level) | ➖ | ✅ |
+| `@description` ***(reserved)*** | ✅ | ✅ |
+| `@notNull` ***(reserved)*** | ✅ | ✅ |
+| `@defaultValue` ***(reserved)*** | ✅ | ✅ |
+| `@inHash` | ✅ | ✅ |
+| `@isBusinessKey` ***(required)*** | ➖ | ✅ |
+| `@isChangeTracking` | ➖ | ✅ |
+| `@lastModifiedTracking` | ➖ | ✅ |
+| `@zeroKey` (column-level) | ➖ | ✅ |
+| `@isSurrogateKey` | ➖ | ✅ |
+| `@isSystemVersion` | ➖ | ✅ |
+| `@isSystemCurrentFlag` | ➖ | ✅ |
+| `@isSystemCreateDate` | ➖ | ✅ |
+| `@isSystemUpdateDate` | ➖ | ✅ |
+| `@isSystemEndDate` | ➖ | ✅  |
+| all column tests | ✅ | ✅ |
 
-> **Legend:** ✅ Supported · ➖ Not applicable to this node type's model · **TBD** node type not yet documented.<br/>See [Column-Level Data Quality Tests](#column-level-data-quality-tests) for the shared quality-test annotations in the last row.
+> See [Column-Level Data Quality Tests](#column-level-data-quality-tests) for the shared quality-test annotations in the last row.
 
 ## Work
 
@@ -72,8 +73,6 @@ The Work Node type has three configuration groups:
 |----------|-------------|
 | **Storage Location** | Storage Location where the Work table or view will be created |
 
-> **Note:** `Deploy Enabled` (the setting that lets a Node be excluded from — or dropped during — redeployment based on a TRUE/FALSE toggle) is **not supported** on this node types.
-
 ### Work Node Annotations
 
 <img width="793" height="612" alt="image" src="https://github.com/user-attachments/assets/db09c345-979b-4b4e-a628-19451e4435d3" />
@@ -84,6 +83,7 @@ The Work Node type has three configuration groups:
 | `@nodeType(type)` ***(reserved)*** | Identifies the node's type.<br/>Set automatically based on the node type chosen when the node is created.|
 | `@description(text)` ***(reserved)*** | Node-level description.<br/>Can be edited via this annotation or in the node description field below the node name in the UI.<br/>Example: `@description("Table description")` |
 | `@materializationType(type)` ***(reserved)*** | table/view.<br/>Value is strictly case-sensitive — must be lowercase `table` or `view`.<br/>*Not specified in the SQL editor → defaults to **table**.*<br/>Example: `@materializationType("view")` |
+| `@deployDisabled` ***(reserved)*** | Excludes this node from deployment. |
 | `@writeMode("truncateInsert \| append")` | **truncateInsert** — replaces the table's contents entirely via a single `INSERT OVERWRITE INTO` statement (atomic — no separate truncate step). <br/>**append** — inserts the new rows via `INSERT INTO`, alongside whatever is already there.<br/>*Not specified in the SQL editor → defaults to **truncateInsert**.*<br/>**Note:** Ignored on Views.<br/>Example: `@writeMode("append")` |
 | `@disableTests`**²** | Controls whether configured tests are skipped.<br/>*Specified in the SQL editor → all node- and column-level tests are skipped.*<br/>*Not specified in the SQL editor → tests run normally.*<br/>To turn tests back on, remove the annotation. Useful while developing a node — iterate on the SQL first, then re-enable once the logic is settled.<br/>Example: `@disableTests` |
 | `@tests(querySQL, continueOnFailure?, runOrder?)`**²** | ***(repeatable)*** Node-level data quality test.<br/>Runs `querySQL` against the target; fails if it returns any records.<br/>Skipped entirely when **@disableTests** is set.<br/>[Refer to Node-Level Tests for more details.](#node-level-tests---tests)<br/>Example: `@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")`<br/>**Known issue:** the current `coa` build's validator rejects the multi-argument form of `@tests(...)` with "@tests argument must be quoted" — only the single-argument form `@tests("<querySQL>")` passes `coa validate`. |
@@ -203,8 +203,6 @@ The Dimension Node type has three configuration groups:
 |----------|-------------|
 | **Storage Location** | Storage Location where the Dimension table or view will be created |
 
-> **Note:** `Deploy Enabled` (the setting that lets a Node be excluded from — or dropped during — redeployment based on a TRUE/FALSE toggle) is **not supported** on this node types.
-
 ### Dimension Node Annotations
 
 | **Property** | **Description** |
@@ -213,11 +211,12 @@ The Dimension Node type has three configuration groups:
 | `@nodeType(type)` ***(reserved)*** | Identifies the node's type.<br/>Set automatically based on the node type chosen when the node is created.|
 | `@description(text)` ***(reserved)*** | Node-level description.<br/>Can be edited via this annotation or in the node description field below the node name in the UI.<br/>Example: `@description("Table description")` |
 | `@materializationType(type)` ***(reserved)*** | table/view.<br/>Value is strictly case-sensitive — must be lowercase `table` or `view`.<br/>*Not specified in the SQL editor → defaults to **table**.*<br/>Example: `@materializationType("view")` |
+| `@deployDisabled` ***(reserved)*** | Excludes this node from deployment. |
 | `@writeMode("truncateInsert \| append")` | **truncateInsert** — clears the table before loading, replacing its contents entirely.<br/>**append** — inserts the new rows via merge, alongside whatever is already there.<br/>*Not specified in the SQL editor → defaults to **append**.*<br/>**Note:** Ignored on Views.<br/>Example: `@writeMode("truncateInsert")` |
-| `@mergeStrategy("upsert \| changeTracking \| lastModified")` | Chooses how this dimension decides a row has changed, and therefore which column annotations it requires.<br/>**upsert** — no change detection at all; a matched row is always updated, an unmatched row is inserted. Doesn't assert any SCD type of its own — if the upstream SELECT/CTE already implements SCD1/SCD2 logic, this strategy just merges that result through as-is. The SELECT/CTE should return one row per business key (de-duplicate upstream). System columns are optional; any that are present are written exactly as the SELECT/CTE computes them. `@lastModifiedTracking`/`@isChangeTracking` columns aren't used — if present, a warning is raised and they're ignored.<br/>**changeTracking** — compares columns marked `@isChangeTracking` (or, if none are marked, every plain attribute column) to detect a change. SCD Type 2 if any column is marked `@isChangeTracking`, otherwise SCD Type 1. Doesn't use `@lastModifiedTracking` — if present, a warning is raised and it's ignored.<br/>**lastModified** — compares a single `@lastModifiedTracking` timestamp column against the target's stored value. Requires exactly one column marked `@lastModifiedTracking` — the run fails if none (or more than one) is present. SCD Type 1 or 2 comes from that column's own `scdType` parameter. Doesn't use `@isChangeTracking` — if present, a warning is raised and it's ignored.<br/>*Not specified in the SQL editor → defaults to **changeTracking** - SCD Type 1.*<br/>The value is not case-sensitive; any other value fails the run.<br/>Every strategy merges on the business key, so the SELECT/CTE must return exactly one row per business key, with no NULL business key — see [Duplicate or NULL Business Keys](#known-limitations) for a `Before` test that checks this.<br/>Under **changeTracking** / **lastModified** the load writes fixed system column values — see [System column values](#system-column-values).<br/>**Note:** Ignored on Views.<br/>Example: `@mergeStrategy("lastModified")` |
+| `@mergeStrategy("upsert \| changeTracking \| lastModified")` | Chooses how this dimension decides a row has changed, and therefore which column annotations it requires.<br/><br/>**upsert** — no change detection at all; a matched row is always updated, an unmatched row is inserted. Doesn't assert any SCD type of its own — if the upstream SELECT/CTE already implements SCD1/SCD2 logic, this strategy just merges that result through as-is. The SELECT/CTE should return one row per business key (de-duplicate upstream). System columns are optional; any that are present are written exactly as the SELECT/CTE computes them. `@lastModifiedTracking`/`@isChangeTracking` columns aren't used — if present, a warning is raised and they're ignored.<br/><br/>**changeTracking** — compares columns marked `@isChangeTracking` (or, if none are marked, every plain attribute column) to detect a change. SCD Type 2 if any column is marked `@isChangeTracking`, otherwise SCD Type 1. Doesn't use `@lastModifiedTracking` — if present, a warning is raised and it's ignored.<br/><br/>**lastModified** — compares a single `@lastModifiedTracking` timestamp column against the target's stored value. Requires exactly one column marked `@lastModifiedTracking` — the run fails if none (or more than one) is present. SCD Type 1 or 2 comes from that column's own `scdType` parameter. Doesn't use `@isChangeTracking` — if present, a warning is raised and it's ignored.<br/>*Not specified in the SQL editor → defaults to **changeTracking** - SCD Type 1.*<br/><br/>The value is not case-sensitive; any other value fails the run.<br/>Every strategy merges on the business key, so the SELECT/CTE must return exactly one row per business key, with no NULL business key — see [Duplicate or NULL Business Keys](#known-limitations) for a `Before` test that checks this.<br/>Under **changeTracking** / **lastModified** the load writes fixed system column values — see [System column values](#system-column-values).<br/>**Note:** Ignored on Views.<br/>Example: `@mergeStrategy("lastModified")` |
 | `@zeroKey(surrogateKeyValue?, stringValue?, timestampValue?, booleanValue?)` | Inserts a default "zero key" record into the target — a placeholder row used to catch unresolved foreign key lookups.<br/>**surrogateKeyValue** — value used for the zero record's surrogate key column only. Default `"0"`.<br/>Numeric columns (integer, decimal, float) always get `0`; override any column with a column-level `@zeroKey(value)`.<br/>**stringValue** — default value for string/varchar columns, pasted into the SQL verbatim — include your own quotes. Default `"'UNKNOWN'"`.<br/>**timestampValue** — default value for date/time/timestamp columns. Default `"1900-01-01 00:00:00"`.<br/>**booleanValue** — default value for boolean columns. Default `true`.<br/>*Not specified in the SQL editor → the zero record is not inserted.*<br/>**Note:** Ignored on Views.<br/>Example: `@zeroKey("0", "'UNKNOWN'", "1900-01-01 00:00:00", true)`<br/>**Known issue:** the current `coa` build's validator rejects any multi-argument `@zeroKey(...)` call regardless of quoting — only a single-argument call passes `coa validate`. This is a bug in the CLI's annotation parser, not a syntax issue; the multi-argument form above is still the semantically correct one to use once the bug is fixed upstream. |
 | `@disableTests`**²** | Controls whether configured tests are skipped.<br/>*Specified in the SQL editor → all node- and column-level tests are skipped.*<br/>*Not specified in the SQL editor → tests run normally.*<br/>To turn tests back on, remove the annotation. Useful while developing a node — iterate on the SQL first, then re-enable once the logic is settled.<br/>Example: `@disableTests` |
-| `@tests(querySQL, continueOnFailure?, runOrder?)`**²** | ***(repeatable)*** Node-level data quality test.<br/>Runs `querySQL` against the target; fails if it returns any records.<br/>Skipped entirely when **@disableTests** is set.<br/>[Refer to Node-Level Tests for more details.](#node-level-tests---tests)<br/>Example: `@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")`<br/>**Known issue:** the current `coa` build's validator rejects the multi-argument form of `@tests(...)` with "@tests argument must be quoted", the same CLI parser bug as `@zeroKey` — only the single-argument form `@tests("<querySQL>")` passes `coa validate`. |
+| `@tests(querySQL, continueOnFailure?, runOrder?)`**²** | ***(repeatable)*** Node-level data quality test.<br/>Runs `querySQL` against the target; fails if it returns any records.<br/>Skipped entirely when **@disableTests** is set.<br/>[Refer to Node-Level Tests for more details.](#node-level-tests---tests)<br/>Example: `@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")`|
 | `@preSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `before` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)")` |
 | `@postSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `after` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('DIM_NATION', CURRENT_TIMESTAMP())")` |
 

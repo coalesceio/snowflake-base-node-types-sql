@@ -1,6 +1,6 @@
 fileVersion: 1
-id: ee06c81b-3a32-4b21-abcf-f05a2aeb1849
-name: NATION_TEST
+id: 1610aab1-7820-4366-b317-87606f480f7f
+name: Nation_Test
 operation:
   database: ""
   deployEnabled: true
@@ -13,13 +13,13 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 5d6c89ae-5585-43f0-8e39-c9b89aa2c8d5
-          stepCounter: ee06c81b-3a32-4b21-abcf-f05a2aeb1849
+          columnCounter: a487d975-d666-4306-91f0-6893d9987231
+          stepCounter: 1610aab1-7820-4366-b317-87606f480f7f
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
         description: ""
-        name: N_NATIONKEY
+        name: NAtionKey
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -32,13 +32,13 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: e44214ae-fdda-4121-952e-b31cd91eb6c6
-          stepCounter: ee06c81b-3a32-4b21-abcf-f05a2aeb1849
+          columnCounter: def546ac-625e-47bb-a977-ef8eecce28a5
+          stepCounter: 1610aab1-7820-4366-b317-87606f480f7f
         config: {}
         dataType: VARCHAR(25)
         defaultValue: ""
         description: ""
-        name: N_NAME
+        name: name
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -51,13 +51,13 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 7c6d569a-0d18-4ea3-8364-5ae72c2b9fa7
-          stepCounter: ee06c81b-3a32-4b21-abcf-f05a2aeb1849
+          columnCounter: bf7327c1-083b-469b-bfec-91508c7eab26
+          stepCounter: 1610aab1-7820-4366-b317-87606f480f7f
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
         description: ""
-        name: N_REGIONKEY
+        name: REGIONKEY
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -70,13 +70,13 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 410d4c6a-a48f-4232-99f9-64db1c320f32
-          stepCounter: ee06c81b-3a32-4b21-abcf-f05a2aeb1849
+          columnCounter: 5325c202-4ae8-454f-a6c2-f83966273a15
+          stepCounter: 1610aab1-7820-4366-b317-87606f480f7f
         config: {}
         dataType: VARCHAR(152)
         defaultValue: ""
         description: ""
-        name: N_COMMENT
+        name: CommenT
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -89,13 +89,13 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 4af52c9e-1cf4-40f4-b2b4-e375da402f26
-          stepCounter: ee06c81b-3a32-4b21-abcf-f05a2aeb1849
+          columnCounter: 4d1c468c-4bf7-443a-9e0c-6994f9e48961
+          stepCounter: 1610aab1-7820-4366-b317-87606f480f7f
         config: {}
         dataType: TIMESTAMP_LTZ(9)
         defaultValue: ""
         description: ""
-        name: N_LOAD_TIMESTAMP
+        name: N_Load_Timestamp
         nullable: true
         primaryKey: false
         sourceColumnReferences:
@@ -103,7 +103,7 @@ operation:
             transform: ""
         transform: ""
         uniqueKey: false
-  name: NATION_TEST
+  name: Nation_Test
   schema: ""
   sqlType: Source
   type: sourceInput
