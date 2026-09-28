@@ -18,7 +18,7 @@ operation:
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
-        description: ""
+        description: Supplier key (primary key)
         name: S_SUPPKEY
         nullable: false
         primaryKey: false
@@ -37,7 +37,7 @@ operation:
         config: {}
         dataType: VARCHAR(25)
         defaultValue: ""
-        description: ""
+        description: Supplier name
         name: S_NAME
         nullable: false
         primaryKey: false
@@ -56,7 +56,7 @@ operation:
         config: {}
         dataType: VARCHAR(40)
         defaultValue: ""
-        description: ""
+        description: Supplier street address
         name: S_ADDRESS
         nullable: false
         primaryKey: false
@@ -75,7 +75,7 @@ operation:
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
-        description: ""
+        description: Nation key of the supplier (FK to NATION)
         name: S_NATIONKEY
         nullable: false
         primaryKey: false
@@ -94,7 +94,7 @@ operation:
         config: {}
         dataType: VARCHAR(15)
         defaultValue: ""
-        description: ""
+        description: Supplier phone number
         name: S_PHONE
         nullable: false
         primaryKey: false
@@ -113,7 +113,7 @@ operation:
         config: {}
         dataType: NUMBER(12,2)
         defaultValue: ""
-        description: ""
+        description: Supplier account balance
         name: S_ACCTBAL
         nullable: false
         primaryKey: false
@@ -132,7 +132,7 @@ operation:
         config: {}
         dataType: VARCHAR(101)
         defaultValue: ""
-        description: ""
+        description: Free-text comment about the supplier
         name: S_COMMENT
         nullable: true
         primaryKey: false

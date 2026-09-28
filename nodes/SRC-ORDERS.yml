@@ -18,7 +18,7 @@ operation:
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
-        description: ""
+        description: Order key (primary key)
         name: O_ORDERKEY
         nullable: false
         primaryKey: false
@@ -37,7 +37,7 @@ operation:
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
-        description: ""
+        description: Customer key (FK to CUSTOMER)
         name: O_CUSTKEY
         nullable: false
         primaryKey: false
@@ -56,7 +56,7 @@ operation:
         config: {}
         dataType: VARCHAR(1)
         defaultValue: ""
-        description: ""
+        description: Order status (O = open, F = fulfilled, P = partial)
         name: O_ORDERSTATUS
         nullable: false
         primaryKey: false
@@ -75,7 +75,7 @@ operation:
         config: {}
         dataType: NUMBER(12,2)
         defaultValue: ""
-        description: ""
+        description: Total price of the order
         name: O_TOTALPRICE
         nullable: false
         primaryKey: false
@@ -94,7 +94,7 @@ operation:
         config: {}
         dataType: DATE
         defaultValue: ""
-        description: ""
+        description: Date the order was placed
         name: O_ORDERDATE
         nullable: false
         primaryKey: false
@@ -113,7 +113,7 @@ operation:
         config: {}
         dataType: VARCHAR(15)
         defaultValue: ""
-        description: ""
+        description: Order priority
         name: O_ORDERPRIORITY
         nullable: false
         primaryKey: false
@@ -132,7 +132,7 @@ operation:
         config: {}
         dataType: VARCHAR(15)
         defaultValue: ""
-        description: ""
+        description: Clerk who processed the order
         name: O_CLERK
         nullable: false
         primaryKey: false
@@ -151,7 +151,7 @@ operation:
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
-        description: ""
+        description: Shipping priority
         name: O_SHIPPRIORITY
         nullable: false
         primaryKey: false
@@ -170,7 +170,7 @@ operation:
         config: {}
         dataType: VARCHAR(79)
         defaultValue: ""
-        description: ""
+        description: Free-text comment about the order
         name: O_COMMENT
         nullable: false
         primaryKey: false

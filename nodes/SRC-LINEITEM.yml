@@ -18,7 +18,7 @@ operation:
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
-        description: ""
+        description: Order key (FK to ORDERS)
         name: L_ORDERKEY
         nullable: false
         primaryKey: false
@@ -37,7 +37,7 @@ operation:
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
-        description: ""
+        description: Part key (FK to PART)
         name: L_PARTKEY
         nullable: false
         primaryKey: false
@@ -56,7 +56,7 @@ operation:
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
-        description: ""
+        description: Supplier key (FK to SUPPLIER)
         name: L_SUPPKEY
         nullable: false
         primaryKey: false
@@ -75,7 +75,7 @@ operation:
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
-        description: ""
+        description: Line number within the order
         name: L_LINENUMBER
         nullable: false
         primaryKey: false
@@ -94,7 +94,7 @@ operation:
         config: {}
         dataType: NUMBER(12,2)
         defaultValue: ""
-        description: ""
+        description: Quantity ordered
         name: L_QUANTITY
         nullable: false
         primaryKey: false
@@ -113,7 +113,7 @@ operation:
         config: {}
         dataType: NUMBER(12,2)
         defaultValue: ""
-        description: ""
+        description: Extended price (quantity x part retail price)
         name: L_EXTENDEDPRICE
         nullable: false
         primaryKey: false
@@ -132,7 +132,7 @@ operation:
         config: {}
         dataType: NUMBER(12,2)
         defaultValue: ""
-        description: ""
+        description: Discount rate applied to the line
         name: L_DISCOUNT
         nullable: false
         primaryKey: false
@@ -151,7 +151,7 @@ operation:
         config: {}
         dataType: NUMBER(12,2)
         defaultValue: ""
-        description: ""
+        description: Tax rate applied to the line
         name: L_TAX
         nullable: false
         primaryKey: false
@@ -170,7 +170,7 @@ operation:
         config: {}
         dataType: VARCHAR(1)
         defaultValue: ""
-        description: ""
+        description: Return flag (R, A or N)
         name: L_RETURNFLAG
         nullable: false
         primaryKey: false
@@ -189,7 +189,7 @@ operation:
         config: {}
         dataType: VARCHAR(1)
         defaultValue: ""
-        description: ""
+        description: Line status (O = open, F = fulfilled)
         name: L_LINESTATUS
         nullable: false
         primaryKey: false
@@ -208,7 +208,7 @@ operation:
         config: {}
         dataType: DATE
         defaultValue: ""
-        description: ""
+        description: Date the line was shipped
         name: L_SHIPDATE
         nullable: false
         primaryKey: false
@@ -227,7 +227,7 @@ operation:
         config: {}
         dataType: DATE
         defaultValue: ""
-        description: ""
+        description: Date the line was committed to ship
         name: L_COMMITDATE
         nullable: false
         primaryKey: false
@@ -246,7 +246,7 @@ operation:
         config: {}
         dataType: DATE
         defaultValue: ""
-        description: ""
+        description: Date the line was received
         name: L_RECEIPTDATE
         nullable: false
         primaryKey: false
@@ -265,7 +265,7 @@ operation:
         config: {}
         dataType: VARCHAR(25)
         defaultValue: ""
-        description: ""
+        description: Shipping instructions
         name: L_SHIPINSTRUCT
         nullable: false
         primaryKey: false
@@ -284,7 +284,7 @@ operation:
         config: {}
         dataType: VARCHAR(10)
         defaultValue: ""
-        description: ""
+        description: Shipping mode
         name: L_SHIPMODE
         nullable: false
         primaryKey: false
@@ -303,7 +303,7 @@ operation:
         config: {}
         dataType: VARCHAR(44)
         defaultValue: ""
-        description: ""
+        description: Free-text comment about the line
         name: L_COMMENT
         nullable: false
         primaryKey: false

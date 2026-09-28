@@ -18,7 +18,7 @@ operation:
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
-        description: ""
+        description: Region key (primary key)
         name: R_REGIONKEY
         nullable: false
         primaryKey: false
@@ -37,7 +37,7 @@ operation:
         config: {}
         dataType: VARCHAR(25)
         defaultValue: ""
-        description: ""
+        description: Region name
         name: R_NAME
         nullable: false
         primaryKey: false
@@ -56,7 +56,7 @@ operation:
         config: {}
         dataType: VARCHAR(152)
         defaultValue: ""
-        description: ""
+        description: Free-text comment about the region
         name: R_COMMENT
         nullable: true
         primaryKey: false
