@@ -214,7 +214,7 @@ The Dimension Node type has three configuration groups:
 | `@deployDisabled` ***(reserved)*** | Excludes this node from deployment. |
 | `@writeMode("truncateInsert \| append")` | **truncateInsert** — clears the table before loading, replacing its contents entirely.<br/>**append** — inserts the new rows via merge, alongside whatever is already there.<br/>*Not specified in the SQL editor → defaults to **append**.*<br/>**Note:** Ignored on Views.<br/>Example: `@writeMode("truncateInsert")` |
 | `@mergeStrategy("upsert \| changeTracking \| lastModified")` | Chooses how this dimension decides a row has changed, and therefore which column annotations it requires.<br/><br/>**upsert** — no change detection at all; a matched row is always updated, an unmatched row is inserted. Doesn't assert any SCD type of its own — if the upstream SELECT/CTE already implements SCD1/SCD2 logic, this strategy just merges that result through as-is. The SELECT/CTE should return one row per business key (de-duplicate upstream). System columns are optional; any that are present are written exactly as the SELECT/CTE computes them. `@lastModifiedTracking`/`@isChangeTracking` columns aren't used — if present, a warning is raised and they're ignored.<br/><br/>**changeTracking** — compares columns marked `@isChangeTracking` (or, if none are marked, every plain attribute column) to detect a change. SCD Type 2 if any column is marked `@isChangeTracking`, otherwise SCD Type 1. Doesn't use `@lastModifiedTracking` — if present, a warning is raised and it's ignored.<br/><br/>**lastModified** — compares a single `@lastModifiedTracking` timestamp column against the target's stored value. Requires exactly one column marked `@lastModifiedTracking` — a validation check flags it if none (or more than one) is present. SCD Type 1 or 2 comes from that column's own `scdType` parameter. Doesn't use `@isChangeTracking` — if present, a warning is raised and it's ignored.<br/>*Not specified in the SQL editor → defaults to **changeTracking** - SCD Type 1.*<br/><br/>The value is not case-sensitive; any other value is flagged by a validation check.<br/>Every strategy merges on the business key, so the SELECT/CTE must return exactly one row per business key, with no NULL business key — see [Duplicate or NULL Business Keys](#known-limitations) for a `Before` test that checks this.<br/>Under **changeTracking** / **lastModified** the load writes fixed system column values — see [System column values](#system-column-values).<br/>**Note:** Ignored on Views.<br/>Example: `@mergeStrategy("lastModified")` |
-| `@zeroKey(surrogateKeyValue?, stringValue?, timestampValue?, booleanValue?)` | Inserts a default "zero key" record into the target — a placeholder row used to catch unresolved foreign key lookups.<br/>**surrogateKeyValue** — value used for the zero record's surrogate key column only. Default `"0"`.<br/>Numeric columns (integer, decimal, float) always get `0`; override any column with a column-level `@zeroKey(value)`.<br/>**stringValue** — default value for string/varchar columns, pasted into the SQL verbatim — include your own quotes. Default `"'UNKNOWN'"`.<br/>**timestampValue** — default value for date/time/timestamp columns. Default `"1900-01-01 00:00:00"`.<br/>**booleanValue** — default value for boolean columns. Default `true`.<br/>*Not specified in the SQL editor → the zero record is not inserted.*<br/>**Note:** Ignored on Views.<br/>Example: `@zeroKey("0", "'UNKNOWN'", "1900-01-01 00:00:00", true)`<br/>**Known issue:** the current `coa` build's validator rejects any multi-argument `@zeroKey(...)` call regardless of quoting — only a single-argument call passes `coa validate`. This is a bug in the CLI's annotation parser, not a syntax issue; the multi-argument form above is still the semantically correct one to use once the bug is fixed upstream. |
+| `@zeroKey(surrogateKeyValue?, stringValue?, timestampValue?, booleanValue?)` | Inserts a default "zero key" record into the target — a placeholder row used to catch unresolved foreign key lookups.<br/>**surrogateKeyValue** — value used for the zero record's surrogate key column only. Default `"0"`.<br/>Numeric columns (integer, decimal, float) always get `0`; override any column with a column-level `@zeroKey(value)`.<br/>**stringValue** — default value for string/varchar columns, pasted into the SQL verbatim — include your own quotes. Default `"'UNKNOWN'"`.<br/>**timestampValue** — default value for date/time/timestamp columns. Default `"1900-01-01 00:00:00"`.<br/>**booleanValue** — default value for boolean columns. Default `true`.<br/>*Not specified in the SQL editor → the zero record is not inserted.*<br/>**Note:** Ignored on Views.<br/>Example: `@zeroKey("0", "'UNKNOWN'", "1900-01-01 00:00:00", true)`|
 | `@disableTests`**²** | Controls whether configured tests are skipped.<br/>*Specified in the SQL editor → all node- and column-level tests are skipped.*<br/>*Not specified in the SQL editor → tests run normally.*<br/>To turn tests back on, remove the annotation. Useful while developing a node — iterate on the SQL first, then re-enable once the logic is settled.<br/>Example: `@disableTests` |
 | `@tests(querySQL, continueOnFailure?, runOrder?)`**²** | ***(repeatable)*** Node-level data quality test.<br/>Runs `querySQL` against the target; fails if it returns any records.<br/>Skipped entirely when **@disableTests** is set.<br/>[Refer to Node-Level Tests for more details.](#node-level-tests--tests)<br/>Example: `@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")`|
 | `@preSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `before` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)")` |
@@ -508,8 +508,6 @@ CAST(
 | continueOnFailure |**(optional)** `true`(default) or `false`. Marks whether the run is meant to continue when the test fails. In the current `coa` build a failing `false` test is reported, but the load still runs. |
 | runOrder |**(optional)** `Before` or `After`(default). Determines whether the test is executed before or after the load operation. |
 
-**Known issue:** the current `coa` build's validator rejects the multi-argument form of `@tests(...)` with "@tests argument must be quoted" — only the single-argument form `@tests("<querySQL>")` passes `coa validate`. This is a bug in the CLI's annotation parser: the multi-argument form still runs as written.
-
 #### tests() Examples
 
 ```text
@@ -603,6 +601,10 @@ Common ways to use the SQL nodes. The SQL patterns under Work Examples (CTEs, wi
 * [Recursive CTE Date Series](#recursive-cte-date-series)
 * [CTE for Multi-Source Combine](#cte-for-multi-source-combine)
 
+**Data Quality Test Examples**
+* [Column Tests by Datatype](#column-tests-by-datatype)
+* [Node-Level Tests](#node-level-tests)
+
 **Dimension Examples**
 * [Change Tracking SCD1](#change-tracking-scd1)
 * [Change Tracking SCD2](#change-tracking-scd2)
@@ -625,13 +627,13 @@ Common ways to use the SQL nodes. The SQL patterns under Work Examples (CTEs, wi
 @preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)")
 @postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('WRK_NATION', CURRENT_TIMESTAMP())")
 SELECT
-     "N_NATIONKEY" AS "N_NATIONKEY" @not_null @uniqueness @min_value("0") @max_value("100")  @accepted_values("1") @inHash("GH_COL1", 2),
-     "N_NAME" AS "N_NAME" @not_null @empty @accepted_values("'ALGERIA', 'ARGENTINA'") @inHash("GH_COL1", 1),
-     "N_REGIONKEY" AS "N_REGIONKEY" @min_max("0", "4") @notNull @defaultValue("20"),
-     "N_COMMENT" AS "N_COMMENT" @rejected_values("'NA'"),
-     "LAST_MODIFIED" AS L_M_1 @freshness(7, "DAY") @relative_time("<", "L_M_2") @description("timestamp column"),
-     "LAST_MODIFIED" AS L_M_2,
-     CAST({{ get_hash('GH_COL1') }} AS STRING) AS "GH_COL1" @description("Hash Column")
+    "N_NATIONKEY"                             AS "N_NATIONKEY"         @not_null @uniqueness @min_value(0) @max_value(100)  @accepted_values("1, 2, 3") @inHash("GH_COL1", 2),
+    "N_NAME"                                  AS "N_NAME"              @not_null @empty @accepted_values("'ALGERIA', 'ARGENTINA'") @inHash("GH_COL1", 1),
+    "N_REGIONKEY"                             AS "N_REGIONKEY"         @min_max(0, 4) @notNull @defaultValue("20"),
+    "N_COMMENT"                               AS "N_COMMENT"           @rejected_values("'NA'"),
+    "LAST_MODIFIED"                           AS L_M_1                 @freshness(7, "DAY") @relative_time("<", "L_M_2") @description("timestamp column"),
+    "LAST_MODIFIED"                           AS L_M_2,
+    CAST({{ get_hash('GH_COL1') }} AS STRING) AS "GH_COL1"             @description("Hash Column")
 FROM {{ ref('SOURCE_DATA', 'NATION') }} "NATION"
 ```
 
@@ -641,11 +643,11 @@ FROM {{ ref('SOURCE_DATA', 'NATION') }} "NATION"
 @writeMode("append")
 @description("Table description")
 SELECT DISTINCT
-     "N_NATIONKEY" AS "N_NATIONKEY",
-     "N_NAME" AS "N_NAME",
-     "N_REGIONKEY" AS "N_REGIONKEY",
-     "N_COMMENT" AS "N_COMMENT",
-     "LAST_MODIFIED" AS L_M @freshness(7, "DAY")
+    "N_NATIONKEY"                            AS "N_NATIONKEY",
+    "N_NAME"                                 AS "N_NAME",
+    "N_REGIONKEY"                            AS "N_REGIONKEY",
+    "N_COMMENT"                              AS "N_COMMENT",
+    "LAST_MODIFIED"                          AS L_M                   @freshness(7, "DAY")
 FROM {{ ref('SOURCE_DATA', 'NATION') }} "NATION"
 ```
 
@@ -655,11 +657,11 @@ Standard pattern for renaming columns and handling nulls.
 
 ```sql
 SELECT
-     "O_ORDERKEY" AS "O_ORDERKEY",
-     "O_CUSTKEY" AS "O_CUSTKEY",
-     UPPER("O_ORDERSTATUS") AS "O_ORDERSTATUS",
-     COALESCE("O_TOTALPRICE", 0) AS "O_TOTALPRICE",
-     "O_ORDERDATE" AS "O_ORDERDATE"
+    "O_ORDERKEY"                             AS "O_ORDERKEY",
+    "O_CUSTKEY"                              AS "O_CUSTKEY",
+    UPPER("O_ORDERSTATUS")                   AS "O_ORDERSTATUS",
+    COALESCE("O_TOTALPRICE", 0)              AS "O_TOTALPRICE",
+    "O_ORDERDATE"                            AS "O_ORDERDATE"
 FROM {{ ref('SRC', 'ORDERS') }} "ORDERS"
 WHERE "O_ORDERSTATUS" != 'F'
 ```
@@ -675,8 +677,8 @@ WITH "ORDER_COUNTS" AS (
     GROUP BY MOD("ORDER_ID", 25)
 )
 SELECT
-     "NATION_KEY" AS "NATION_KEY",
-     "ORDER_COUNT" AS "ORDER_COUNT"
+    "NATION_KEY"                             AS "NATION_KEY",
+    "ORDER_COUNT"                            AS "ORDER_COUNT"
 FROM "ORDER_COUNTS"
 ```
 
@@ -768,11 +770,11 @@ WITH RECURSIVE "NATION_MANAGERS" AS (
     JOIN "NATION_CHAIN" "C" ON "N"."MANAGER_ID" = "C"."NATION_ID"
 )
 SELECT
-     "NC"."NATION_ID" AS "NATION_ID",
-     "NC"."NATION_NAME" AS "NATION_NAME",
-     "NC"."ORG_LEVEL" AS "ORG_LEVEL",
-     "NC"."PATH" AS "PATH",
-     COUNT("O"."ORDER_ID") AS "ORDER_COUNT"
+    "NC"."NATION_ID"                         AS "NATION_ID",
+    "NC"."NATION_NAME"                       AS "NATION_NAME",
+    "NC"."ORG_LEVEL"                         AS "ORG_LEVEL",
+    "NC"."PATH"                              AS "PATH",
+    COUNT("O"."ORDER_ID")                    AS "ORDER_COUNT"
 FROM "NATION_CHAIN" "NC"
 JOIN {{ ref('SRC', 'ORDERS_TEST') }} "O" ON "NC"."NATION_ID" = MOD("O"."ORDER_ID", 25)
 GROUP BY "NC"."NATION_ID", "NC"."NATION_NAME", "NC"."ORG_LEVEL", "NC"."PATH"
@@ -804,6 +806,52 @@ WITH ALL_NATIONS AS (
 )
 SELECT * FROM ALL_NATIONS
 ```
+
+#### Data Quality Test Examples
+
+##### Column Tests by Datatype
+
+Each column test runs **After** the load, continues the run on failure, and lets NULL values pass (except `@not_null`). Values are pasted into the SQL as written, so quote them to match the column's datatype.
+
+```sql
+SELECT
+    "CUSTOMER_ID"                            AS "CUSTOMER_ID"         @not_null @uniqueness @min_value("1"),
+    "NAME"                                   AS "NAME"                @not_null @empty,
+    "SEGMENT"                                AS "SEGMENT"             @accepted_values("'RETAIL', 'CORPORATE'") @accepted_values("'SMB'"),
+    "STATUS"                                 AS "STATUS"              @rejected_values("'DELETED'", "'TEST'"),
+    "BALANCE"                                AS "BALANCE"             @min_max("-1000", "100000"),
+    "DISCOUNT"                               AS "DISCOUNT"            @min_value("0") @max_value("0.5"),
+    "IS_ACTIVE"                              AS "IS_ACTIVE"           @accepted_values(true),
+    "SIGNUP_DATE"                            AS "SIGNUP_DATE"         @min_max("DATE '2000-01-01'", "CURRENT_DATE"),
+    "CREATED_AT"                             AS "CREATED_AT"          @max_value("CURRENT_TIMESTAMP"),
+    "UPDATED_AT"                             AS "UPDATED_AT"          @freshness(1, "DAY") @relative_time(">=", "CREATED_AT"),
+    "OPEN_TIME"                              AS "OPEN_TIME"           @min_max("'08:00:00'", "'18:00:00'")
+FROM {{ ref('SRC', 'CUSTOMER') }}
+```
+* **Number** — `@min_value("1")`, a negative bound in double quotes `"-1000"`, a decimal `"0.5"`.
+* **String** — single quotes inside double quotes; `@accepted_values` can repeat and the lists are merged.
+* **Boolean** — `true`/`false`. **Date/time** — a literal or expression, e.g. `"DATE '2000-01-01'"`, `"CURRENT_TIMESTAMP"`, `"'08:00:00'"`.
+* `@relative_time` compares two columns of the same datatype.
+* The same annotations work on a Dimension node — add an `@id("<value>")` to each column there.
+
+##### Node-Level Tests
+
+A node-level test fails when its query returns any rows. `Before` tests usually read the source; `After` tests read the loaded target through `{{ this }}`.
+
+```sql
+@tests("SELECT CUSTOMER_ID FROM {{ ref('SRC', 'CUSTOMER') }} GROUP BY CUSTOMER_ID HAVING COUNT(*) > 1", false, "Before")
+@tests("SELECT 1 FROM {{ ref('SRC', 'CUSTOMER') }} HAVING COUNT(*) = 0", true, "Before")
+@tests("SELECT 1 FROM {{ this }} WHERE BALANCE < 0 AND STATUS = 'ACTIVE'")
+@tests("SELECT 1 FROM {{ this }} HAVING COUNT(*) <> (SELECT COUNT(*) FROM {{ ref('SRC', 'CUSTOMER') }})", true, "After")
+SELECT
+    "CUSTOMER_ID"                            AS "CUSTOMER_ID",
+    "BALANCE"                                AS "BALANCE",
+    "STATUS"                                 AS "STATUS"
+FROM {{ ref('SRC', 'CUSTOMER') }}
+```
+* Line 1 — duplicate keys in the source, before the load. Line 2 — an empty source. Line 3 — a business rule on the loaded rows (`After` by default). Line 4 — the target row count matches the source.
+* `continueOnFailure` is the second argument. In the current `coa` build a failing `false` test is reported, but the load still runs.
+* `@disableTests` on the node skips every node-level and column-level test.
 
 #### Dimension Examples
 
@@ -928,17 +976,16 @@ Every merge strategy matches rows on the business key, so the source must return
 @mergeStrategy("changeTracking")
 @tests("SELECT N_NATIONKEY, N_NAME FROM {{ ref('SOURCE_DATA', 'NATION') }} GROUP BY N_NATIONKEY, N_NAME HAVING COUNT(*) > 1 OR N_NATIONKEY IS NULL OR N_NAME IS NULL", false, "Before")
 SELECT
-     0 AS "DIM_NATION_KEY" @id("a1b2c3") @isSurrogateKey,
-     "N_NATIONKEY" AS "N_NATIONKEY" @id("b2c3d4") @isBusinessKey,
-     "N_NAME" AS "N_NAME" @id("c3d4e5") @isBusinessKey,
-     "N_REGIONKEY" AS "N_REGIONKEY" @id("d4e5f6"),
-     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("e5f6a7") @isSystemCreateDate,
-     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @id("f6a7b8") @isSystemUpdateDate
+    0                                        AS "DIM_NATION_KEY"      @id("a1b2c3") @isSurrogateKey,
+    "N_NATIONKEY"                            AS "N_NATIONKEY"         @id("b2c3d4") @isBusinessKey,
+    "N_NAME"                                 AS "N_NAME"              @id("c3d4e5") @isBusinessKey,
+    "N_REGIONKEY"                            AS "N_REGIONKEY"         @id("d4e5f6"),
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @id("e5f6a7") @isSystemCreateDate,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_UPDATE_DATE"  @id("f6a7b8") @isSystemUpdateDate
 FROM {{ ref('SOURCE_DATA', 'NATION') }} "NATION"
 ```
 * The test query must read the same source, CTE and filters as the node's SELECT, so it checks the rows that are actually loaded. List every `@isBusinessKey` column in the `GROUP BY` and the `IS NULL` checks.
 * For a case-sensitive column name, double each inner quote — `""Nation_Key""` — see [Quote Style for Case-Sensitive Identifiers](#quote-style-for-case-sensitive-identifiers).
-* The three-argument `@tests(...)` form is flagged by the current `coa validate` (a known CLI parser bug) but runs normally.
 
 ---
 
