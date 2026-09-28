@@ -505,7 +505,7 @@ CAST(
 | Parameter | Description |
 |-----------|-------------|
 | querySQL | SQL statement to execute as a validation test. The test fails if the query returns any records. |
-| continueOnFailure |**(optional)** `true`(default) or `false`. Marks whether the run is meant to continue when the test fails. In the current `coa` build a failing `false` test is reported, but the load still runs. |
+| continueOnFailure |**(optional)** `true`(default) or `false`. Marks whether the run is meant to continue when the test fails. |
 | runOrder |**(optional)** `Before` or `After`(default). Determines whether the test is executed before or after the load operation. |
 
 #### tests() Examples
@@ -850,7 +850,7 @@ SELECT
 FROM {{ ref('SRC', 'CUSTOMER') }}
 ```
 * Line 1 — duplicate keys in the source, before the load. Line 2 — an empty source. Line 3 — a business rule on the loaded rows (`After` by default). Line 4 — the target row count matches the source.
-* `continueOnFailure` is the second argument. In the current `coa` build a failing `false` test is reported, but the load still runs.
+* `continueOnFailure` is the second argument.
 * `@disableTests` on the node skips every node-level and column-level test.
 
 #### Dimension Examples
