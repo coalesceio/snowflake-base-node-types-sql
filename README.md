@@ -362,6 +362,11 @@ If the column name's casing must be preserved exactly, swap the outer quotes to 
 ```
 @preSQL(' SELECT 1 FROM {{ this }} GROUP BY "N_Name" HAVING COUNT(*) > 1 ')
 ```
+Or keep the outer `"..."` double quotes and double each inner quote — `""` inside the annotation string becomes a single `"` in the SQL. Use this form when the SQL also needs single quotes, e.g. a `{{ ref('...', '...') }}` or a string literal:
+```
+@tests("SELECT ""Nation_Key"" FROM {{ ref('SRC', 'NATION') }} GROUP BY ""Nation_Key"" HAVING COUNT(*) > 1", false, "Before")
+```
+A backslash (`\"`) does not escape a quote inside an annotation string and fails with a syntax error.
 
 ### Column-Level Data Quality Tests
 
@@ -509,7 +514,7 @@ Every strategy merges on the business key, so the SELECT/CTE must return exactly
 
     @tests("SELECT N_NATIONKEY FROM {{ ref('SRC', 'NATION') }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1 OR N_NATIONKEY IS NULL", false, "Before")
 
-    Point the query at the same source, CTE and filters as the node's SELECT so it sees the rows that are actually loaded. For a case-sensitive column name, double each inner quote — `""N_NationKey""` — or see [Quote Style for Case-Sensitive Identifiers](#quote-style-for-case-sensitive-identifiers).
+    Point the query at the same source, CTE and filters as the node's SELECT so it sees the rows that are actually loaded. For a case-sensitive column name, double each inner quote — `""Nation_Key""` — see [Quote Style for Case-Sensitive Identifiers](#quote-style-for-case-sensitive-identifiers).
 
 ---
 
