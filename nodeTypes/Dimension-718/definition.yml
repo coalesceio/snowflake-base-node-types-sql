@@ -39,6 +39,8 @@ metadata:
           description: |-
             • Picks the change-detection method; different methods require different column annotations.
             • If not specified, defaults to changeTracking - 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭
+            • The value is not case-sensitive; any other value fails the run.
+            • Every strategy needs the SELECT/CTE to return exactly one row per business key, with no NULL business key — a pre-load check fails the run otherwise.
             • Ignored on views.
 
             ◆ 𝗰𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴
@@ -55,7 +57,7 @@ metadata:
             ◆ 𝘂𝗽𝘀𝗲𝗿𝘁
               • No change detection at all — a matched row is always updated, an unmatched row is inserted.
               • Doesn't assert any SCD type of its own — if the upstream SELECT/CTE already implements SCD1/SCD2 logic, this strategy just merges that result through as-is, without re-deriving or re-checking it.
-              • The SELECT/CTE should return one row per business key (e.g. de-duplicated upstream); duplicates make the merge fail.
+              • The SELECT/CTE should return one row per business key (e.g. de-duplicated upstream).
               • System columns are optional; any that are present are written exactly as the SELECT/CTE computes them. SYSTEM_CREATE_DATE keeps its first-inserted value on update.
               • For SCD2 logic, match on a key that is unique per version (e.g. mark a per-version key column as isBusinessKey) and have the CTE return both the row that expires the old version and the new version.
               • Requires no isChangeTracking/lastModifiedTracking columns
@@ -80,6 +82,7 @@ metadata:
         - name: zeroKey
           description: |-
             • Inserts a default "zero key" record into the target — a placeholder row used to catch unresolved foreign key lookups.
+            • Numeric columns (integer, decimal, float) always get 0 — 𝘀𝘂𝗿𝗿𝗼𝗴𝗮𝘁𝗲𝗞𝗲𝘆𝗩𝗮𝗹𝘂𝗲 applies to the surrogate key column only. Override any column with a column-level zeroKey.
             • Ignored on views.
           isRequired: false
           parameters:
@@ -211,6 +214,7 @@ metadata:
             • Marks the column used to detect newer source rows for an 𝗶𝗻𝗰𝗿𝗲𝗺𝗲𝗻𝘁𝗮𝗹 𝗹𝗼𝗮𝗱.
             • 𝗗𝗮𝘁𝗮𝘁𝘆𝗽𝗲 - DATE/TIME or any incrementing NUMERIC type.
             • Can only be applied to one column.
+            • Must not be NULL in the source — a pre-load check fails the run if it is, since a NULL value can never compare as newer.
             • Ignored on views.
           isRequired: false
           parameters:
@@ -257,6 +261,9 @@ metadata:
             • Marks this column as the SCD version number, incremented each time a business key gets a new version.
             • Required for SCD Type 2 — shows which version of a row this is. Each time a business key's row changes, the expired row is kept and a new row is inserted with this value incremented by 1.
             • Optional for SCD Type 1 — new-vs-existing is detected off the business key alone, so this column can be dropped entirely; if kept, it is always written as 1 and never incremented.
+            • Value written under changeTracking/lastModified: 1 on a new key; previous version + 1 on a new SCD2 version.
+            • The expression in the SELECT is only used to derive the column's datatype — its value is ignored under changeTracking/lastModified (upsert writes it as computed).
+            • To use different values (e.g. 'Yes'/'No' flags or another end-date sentinel), use upsert and compute them in the SELECT/CTE.
 
             Expected expression:
             1 AS "SYSTEM_VERSION" @isSystemVersion
@@ -270,6 +277,9 @@ metadata:
             • Marks this column as the SCD "is current" flag — 'Y' on the active version of a row, overwritten to 'N' when it's expired.
             • Required for SCD Type 2 — used to filter the target down to each business key's one current row before comparing it against the incoming source row.
             • Optional for SCD Type 1 —  safe to omit; if kept, it is always written as 'Y'.
+            • Value written under changeTracking/lastModified: 'Y' on the current row; 'N' on an expired SCD2 row.
+            • The expression in the SELECT is only used to derive the column's datatype — its value is ignored under changeTracking/lastModified (upsert writes it as computed).
+            • To use different values (e.g. 'Yes'/'No' flags or another end-date sentinel), use upsert and compute them in the SELECT/CTE.
 
             Expected expression:
             'Y' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag
@@ -282,6 +292,9 @@ metadata:
             ⚙ This is a system column.
             • Marks this column as the timestamp a row (or, under SCD Type 2, a specific row version) was first created.
             • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝘂𝗻𝗹𝗲𝘀𝘀 mergeStrategy 𝗶𝘀 𝘂𝗽𝘀𝗲𝗿𝘁
+            • Value written under changeTracking/lastModified: CURRENT_TIMESTAMP on first insert, then kept unchanged.
+            • The expression in the SELECT is only used to derive the column's datatype — its value is ignored under changeTracking/lastModified (upsert writes it as computed).
+            • To use different values (e.g. 'Yes'/'No' flags or another end-date sentinel), use upsert and compute them in the SELECT/CTE.
 
             Expected expression:
             CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate
@@ -295,6 +308,9 @@ metadata:
             • Marks this column as the timestamp a row was last updated.
             • Required for SCD Type 2 — read back from the target and refreshed to the current timestamp whenever a row is inserted as a new version or its prior current version is expired.
             • Required for SCD Type 1 — recomputed to the current timestamp on every inserted or changed row, so every row change carries an audit trail of when it was last updated.
+            • Value written under changeTracking/lastModified: CURRENT_TIMESTAMP whenever the row is inserted or changed.
+            • The expression in the SELECT is only used to derive the column's datatype — its value is ignored under changeTracking/lastModified (upsert writes it as computed).
+            • To use different values (e.g. 'Yes'/'No' flags or another end-date sentinel), use upsert and compute them in the SELECT/CTE.
 
             Expected expression:
             CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
@@ -308,6 +324,9 @@ metadata:
             • Marks this column as the SCD Type 2 expiration timestamp — a far-future sentinel while the row is current, set to the actual expiry time once superseded.
             • Required for SCD Type 2 — this is what makes a version's active window queryable; omitting it leaves expired versions with no expiry marker.
             • Optional for SCD Type 1 — (no versioning, so nothing ever expires) — safe to omit entirely.
+            • Value written under changeTracking/lastModified: '2999-12-31 00:00:00' on the current row; the expiry time (one millisecond before the load) on an expired SCD2 row.
+            • The expression in the SELECT is only used to derive the column's datatype — its value is ignored under changeTracking/lastModified (upsert writes it as computed).
+            • To use different values (e.g. 'Yes'/'No' flags or another end-date sentinel), use upsert and compute them in the SELECT/CTE.
 
             Expected expression:
             CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate
@@ -339,9 +358,10 @@ metadata:
           description: |-
            🚦 Column-level data quality test.
             • Fails on rows whose value is outside the allow list.
-            • One annotation per column — pass a comma-separated list or any number of separate arguments in that single call; every argument is itself comma-splittable.
+            • Repeatable — every occurrence on the column is merged into one list. Each call takes a comma-separated list or any number of separate arguments; every argument is itself comma-splittable.
                 accepted_values("0, 1, 2")
-                accepted_values("0", "1", "2") 
+                accepted_values("0", "1", "2")
+                accepted_values("0") accepted_values("1, 2")
             • Each value is pasted into the SQL verbatim, so quote it to match the column's data type
                 positive number/float/decimal/bool as "<value>" or <value>
                 negative number/float/decimal as "-<value>"
@@ -357,9 +377,10 @@ metadata:
           description: |-
            🚦 Column-level data quality test.
             • Fails on rows whose value is in the deny list.
-            • One annotation per column — pass a comma-separated list or any number of separate arguments in that single call; every argument is itself comma-splittable.
+            • Repeatable — every occurrence on the column is merged into one list. Each call takes a comma-separated list or any number of separate arguments; every argument is itself comma-splittable.
                 rejected_values("0, 1, 2")
-                rejected_values("0", "1", "2") 
+                rejected_values("0", "1", "2")
+                rejected_values("0") rejected_values("1, 2")
             • Each value is pasted into the SQL verbatim, so quote it to match the column's data type
                 positive number/float/decimal/bool as "<value>" or <value>
                 negative number/float/decimal as "-<value>"

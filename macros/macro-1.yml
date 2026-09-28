@@ -253,12 +253,14 @@ macroString: |-
             {%- if col.dataType | upper == 'VARIANT' -%}
                 {%- set ns.zk_type = 'variant' -%}
                 {%- set ns.zk_value = none -%}
-            {%- elif col.dataType[:3] | upper in ('VAR', 'CHA', 'STR') -%}
+            {%- elif col.dataType[:3] | upper in ('VAR', 'CHA', 'STR', 'TEX') -%}
                 {%- set ns.zk_type = 'string' -%}
                 {%- set ns.zk_value = zkParams[1] if zkParams | length > 1 else "'UNKNOWN'" -%}
-            {%- elif col.dataType[:3] | upper in ('NUM','INT', 'DEC', 'FLO') -%}
+            {# Every numeric type (NUMBER/NUMERIC/DECIMAL, INT/INTEGER/BIGINT/SMALLINT/TINYINT/BYTEINT, FLOAT/DOUBLE/REAL) always gets 0 —
+               the node-level surrogateKeyValue applies to the surrogate key column only; override per column with @zeroKey(value). #}
+            {%- elif col.dataType[:3] | upper in ('NUM', 'INT', 'DEC', 'FLO', 'DOU', 'REA', 'BIG', 'SMA', 'TIN', 'BYT') -%}
                 {%- set ns.zk_type = 'numeric' -%}
-                {%- set ns.zk_value = zkParams[0] if zkParams | length > 1 else 0 -%}
+                {%- set ns.zk_value = 0 -%}
             {%- elif col.dataType | upper == 'BOOLEAN' -%}
                 {%- set ns.zk_type = 'boolean' -%}
                 {%- set ns.zk_value = zkParams[3] if zkParams | length > 3 else true -%}
@@ -368,14 +370,24 @@ macroString: |-
 
         {%- set mergeStrategyExplicit = config.mergeStrategy is defined and config.mergeStrategy.parameters is defined and config.mergeStrategy.parameters | length > 0 -%}
         {%- if mergeStrategyExplicit -%}
-            {%- set mergeStrategy = config.mergeStrategy.parameters[0] | trim -%}
+            {# Matched case-insensitively (must match run.sql.j2). #}
+            {%- set mergeStrategyRaw = config.mergeStrategy.parameters[0] | string | trim -%}
+            {%- set mergeStrategy = mergeStrategyRaw | lower -%}
         {%- else -%}
             {# No @mergeStrategy given — always default to changeTracking, regardless of which tracking columns are present. #}
-            {%- set mergeStrategy = 'changeTracking' -%}
+            {%- set mergeStrategy = 'changetracking' -%}
         {%- endif -%}
         {%- set isSimpleUpsert = mergeStrategy == 'upsert' -%}
-        {%- set isLastModifiedStrategy = mergeStrategy == 'lastModified' -%}
-        {%- set isChangeTrackingStrategy = mergeStrategy == 'changeTracking' %}
+        {%- set isLastModifiedStrategy = mergeStrategy == 'lastmodified' -%}
+        {%- set isChangeTrackingStrategy = mergeStrategy == 'changetracking' %}
+
+        {# An unrecognised strategy would otherwise fall through to change tracking without any warning. #}
+        {%- if not (isSimpleUpsert or isLastModifiedStrategy or isChangeTrackingStrategy) %}
+            {%- set reason = '@mergeStrategy("' ~ mergeStrategyRaw ~ '") is not a recognised strategy. Use "changeTracking", "lastModified" or "upsert".' %}
+            {{ test_stage('Invalid configuration: mergeStrategy', false) }}
+            -- {{ reason }}
+            {{ fail_select(reason) }}
+        {%- endif -%}
 
         {# These cross-checks only apply when @mergeStrategy is set explicitly, since an inferred strategy can't conflict with itself. #}
         {%- if mergeStrategyExplicit and isSimpleUpsert and (lastModifiedCount > 0 or changeTrackingCount > 0) %}
