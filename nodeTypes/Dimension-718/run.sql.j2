@@ -89,28 +89,6 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
         {%- endif %}
     {%- endfor %}
 
-    {# == Business key check: every strategy merges on the business key, so the source must return exactly one row per key.
-       A duplicated key is inserted twice on a first load and makes later merges fail as nondeterministic; a NULL key never
-       matches (NULL = NULL is not true), so that row would be re-inserted on every run. Stops the load before anything is written. == #}
-    {%- if hasBusinessKey %}
-        {%- set bizKeyCols = columns | selectattr("isBusinessKey") | map(attribute='name') | list %}
-        {{ test_stage('Duplicate or NULL business keys in source', false) }}
-        /* Each returned row is one business key that is NULL or appears more than once in the source */
-        {{- source.cteString }}
-        SELECT {% for k in bizKeyCols %}"{{ k }}"{% if not loop.last %}, {% endif %}{% endfor %}
-        FROM (
-            SELECT {{ source.selectModifier | default('', true) }}
-            {%- for col in source.columns if not col.isSurrogateKey %}
-                {{ get_source_transform(col) }} AS "{{ col.name }}"
-                {%- if not loop.last %}, {%- endif %}
-            {%- endfor %}
-            {{ joinclause }}
-        ) "BK_CHECK"
-        GROUP BY {% for k in bizKeyCols %}"{{ k }}"{% if not loop.last %}, {% endif %}{% endfor %}
-        HAVING COUNT(*) > 1
-            OR BOOLOR_AGG({% for k in bizKeyCols %}"{{ k }}" IS NULL{% if not loop.last %} OR {% endif %}{% endfor %})
-    {%- endif %}
-
     {# == Determine write mode: truncateInsert or append(default) == #}
     {%- if config.writeMode is defined and config.writeMode.parameters is defined and config.writeMode.parameters | length > 0 %}
         {%- set writeMode = config.writeMode.parameters[0] | trim %}

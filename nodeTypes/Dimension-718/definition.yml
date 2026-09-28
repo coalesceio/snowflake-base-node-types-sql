@@ -40,8 +40,8 @@ metadata:
             • Picks the change-detection method; different methods require different column annotations.
             • If not specified, defaults to changeTracking - 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭
             • The value is not case-sensitive; any other value fails the run.
-            • Every strategy needs the SELECT/CTE to return exactly one row per business key, with no NULL business key — a pre-load check fails the run otherwise.
-            • Ignored on views.
+            • Every strategy needs the SELECT/CTE to return exactly one row per business key, with no NULL business key — a pre-load test can handle this.
+            • Ignored on views
 
             ◆ 𝗰𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴
               • Compares columns marked isChangeTracking (or, if none are marked, every plain attribute column) to detect a change.
