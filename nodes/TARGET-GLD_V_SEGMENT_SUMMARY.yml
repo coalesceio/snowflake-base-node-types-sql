@@ -2,6 +2,11 @@ fileVersion: 1
 id: 3c2345e5-eb7c-4956-aa19-8eb15f9fd676
 name: GLD_V_SEGMENT_SUMMARY
 operation:
+  config:
+    groupByAll: false
+    secureoption: false
+    selectDistinct: false
+    testsEnabled: false
   database: ""
   deployEnabled: true
   description: "Gold: current customers and total balance per market segment and nation (view)"
@@ -9,6 +14,7 @@ operation:
   locationName: TARGET
   materializationType: view
   metadata:
+    appliedNodeTests: []
     columns:
       - acceptedValues:
           strictMatch: true
@@ -18,16 +24,16 @@ operation:
           columnCounter: 74eef946-e7b3-4067-ac5e-a50e01e44215
           stepCounter: 3c2345e5-eb7c-4956-aa19-8eb15f9fd676
         config: {}
-        dataType: "VARCHAR"
+        dataType: VARCHAR
         defaultValue: ""
         description: ""
-        name: "C_MKTSEGMENT"
+        name: C_MKTSEGMENT
         nullable: true
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: "bdf675"
-                stepCounter: "9345bbc4-5348-4500-a3b7-0af0c557a9d9"
+              - columnCounter: bdf675
+                stepCounter: 9345bbc4-5348-4500-a3b7-0af0c557a9d9
             transform: "\"GLD_DIM_CUSTOMER\".\"C_MKTSEGMENT\""
         transform: "\"GLD_DIM_CUSTOMER\".\"C_MKTSEGMENT\""
         uniqueKey: false
@@ -39,16 +45,16 @@ operation:
           columnCounter: 95aa6493-9899-4018-afcc-18719d798bba
           stepCounter: 3c2345e5-eb7c-4956-aa19-8eb15f9fd676
         config: {}
-        dataType: "VARCHAR"
+        dataType: VARCHAR
         defaultValue: ""
         description: ""
-        name: "NATION_NAME"
+        name: NATION_NAME
         nullable: true
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: "bfd5cb"
-                stepCounter: "9345bbc4-5348-4500-a3b7-0af0c557a9d9"
+              - columnCounter: bfd5cb
+                stepCounter: 9345bbc4-5348-4500-a3b7-0af0c557a9d9
             transform: "\"GLD_DIM_CUSTOMER\".\"NATION_NAME\""
         transform: "\"GLD_DIM_CUSTOMER\".\"NATION_NAME\""
         uniqueKey: false
@@ -60,18 +66,18 @@ operation:
           columnCounter: 7a4cc7cc-ab7d-46ef-af2c-61d237b1fa69
           stepCounter: 3c2345e5-eb7c-4956-aa19-8eb15f9fd676
         config: {}
-        dataType: "NUMBER(18,0)"
+        dataType: NUMBER(18,0)
         defaultValue: ""
         description: ""
-        name: "CUSTOMER_COUNT"
+        name: CUSTOMER_COUNT
         nullable: true
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: "cc5b77"
-                stepCounter: "9345bbc4-5348-4500-a3b7-0af0c557a9d9"
-            transform: "COUNT(DISTINCT \"GLD_DIM_CUSTOMER\".\"C_CUSTKEY\")"
-        transform: "COUNT(DISTINCT \"GLD_DIM_CUSTOMER\".\"C_CUSTKEY\")"
+              - columnCounter: cc5b77
+                stepCounter: 9345bbc4-5348-4500-a3b7-0af0c557a9d9
+            transform: COUNT(DISTINCT "GLD_DIM_CUSTOMER"."C_CUSTKEY")
+        transform: COUNT(DISTINCT "GLD_DIM_CUSTOMER"."C_CUSTKEY")
         uniqueKey: false
       - acceptedValues:
           strictMatch: true
@@ -81,19 +87,20 @@ operation:
           columnCounter: 62b144ee-2399-47a8-aa3f-1d165b38ece1
           stepCounter: 3c2345e5-eb7c-4956-aa19-8eb15f9fd676
         config: {}
-        dataType: "NUMBER(18,2)"
+        dataType: NUMBER(18,2)
         defaultValue: ""
         description: ""
-        name: "TOTAL_ACCTBAL"
+        name: TOTAL_ACCTBAL
         nullable: true
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: "1c93be"
-                stepCounter: "9345bbc4-5348-4500-a3b7-0af0c557a9d9"
-            transform: "SUM(\"GLD_DIM_CUSTOMER\".\"C_ACCTBAL\")"
-        transform: "SUM(\"GLD_DIM_CUSTOMER\".\"C_ACCTBAL\")"
+              - columnCounter: 1c93be
+                stepCounter: 9345bbc4-5348-4500-a3b7-0af0c557a9d9
+            transform: SUM("GLD_DIM_CUSTOMER"."C_ACCTBAL")
+        transform: SUM("GLD_DIM_CUSTOMER"."C_ACCTBAL")
         uniqueKey: false
+    enabledColumnTestIDs: []
     sourceMapping:
       - aliases: {}
         customSQL:
@@ -102,17 +109,15 @@ operation:
           - locationName: TARGET
             nodeName: GLD_DIM_CUSTOMER
         join:
-          joinCondition: "FROM {{ ref('TARGET', 'GLD_DIM_CUSTOMER') }} \"GLD_DIM_CUSTOMER\"\nWHERE \"GLD_DIM_CUSTOMER\".\"SYSTEM_CURRENT_FLAG\" = 'Y'\nGROUP BY \"GLD_DIM_CUSTOMER\".\"C_MKTSEGMENT\", \"GLD_DIM_CUSTOMER\".\"NATION_NAME\""
+          joinCondition: |-
+            FROM {{ ref('TARGET', 'GLD_DIM_CUSTOMER') }} "GLD_DIM_CUSTOMER"
+            WHERE "GLD_DIM_CUSTOMER"."SYSTEM_CURRENT_FLAG" = 'Y'
+            GROUP BY "GLD_DIM_CUSTOMER"."C_MKTSEGMENT", "GLD_DIM_CUSTOMER"."NATION_NAME"
         name: GLD_V_SEGMENT_SUMMARY
         noLinkRefs: []
   name: GLD_V_SEGMENT_SUMMARY
   schema: ""
-  sqlType: "base-node-types:::188"
+  sqlType: base-node-types:::188
   type: sql
   version: 1
-  config:
-    selectDistinct: false
-    groupByAll: false
-    secureoption: false
-    testsEnabled: false
 type: Node

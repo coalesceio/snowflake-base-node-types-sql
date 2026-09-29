@@ -1,5 +1,11 @@
 fileVersion: 1
 id: "921"
-mappingDefinitions: {}
+mappingDefinitions:
+  SRC:
+    database: TANVI_DEV
+    schema: SOURCE
+  TARGET:
+    database: TANVI_DEV
+    schema: QA_PHASE
 name: OtherNodeTypes_With_Annot_Support
 type: Environment

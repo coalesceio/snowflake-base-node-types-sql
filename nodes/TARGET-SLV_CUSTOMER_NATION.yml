@@ -2,6 +2,11 @@ fileVersion: 1
 id: f99009c0-85fc-4fe3-ae46-8290650ee8b5
 name: SLV_CUSTOMER_NATION
 operation:
+  config:
+    groupByAll: false
+    insertStrategy: INSERT
+    selectDistinct: false
+    testsEnabled: false
   database: ""
   deployEnabled: true
   description: "Silver: customer enriched with nation name and region (Work materialized as a view)"
@@ -9,6 +14,7 @@ operation:
   locationName: TARGET
   materializationType: view
   metadata:
+    appliedNodeTests: []
     columns:
       - acceptedValues:
           strictMatch: true
@@ -18,16 +24,16 @@ operation:
           columnCounter: 4aab36a3-b925-47d8-a91b-a5fbb080f22f
           stepCounter: f99009c0-85fc-4fe3-ae46-8290650ee8b5
         config: {}
-        dataType: "NUMBER(38,0)"
+        dataType: NUMBER(38,0)
         defaultValue: ""
         description: ""
-        name: "C_CUSTKEY"
+        name: C_CUSTKEY
         nullable: true
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
               - columnCounter: "031461"
-                stepCounter: "30c664f4-93ae-4113-af16-ed31e6a8295e"
+                stepCounter: 30c664f4-93ae-4113-af16-ed31e6a8295e
             transform: "\"SLV_CUSTOMER\".\"C_CUSTKEY\""
         transform: "\"SLV_CUSTOMER\".\"C_CUSTKEY\""
         uniqueKey: false
@@ -39,16 +45,16 @@ operation:
           columnCounter: 9b98c30f-f887-4ff0-a4f5-9dfb42ac20ea
           stepCounter: f99009c0-85fc-4fe3-ae46-8290650ee8b5
         config: {}
-        dataType: "VARCHAR"
+        dataType: VARCHAR
         defaultValue: ""
         description: ""
-        name: "C_NAME"
+        name: C_NAME
         nullable: true
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: "92698c"
-                stepCounter: "30c664f4-93ae-4113-af16-ed31e6a8295e"
+              - columnCounter: 92698c
+                stepCounter: 30c664f4-93ae-4113-af16-ed31e6a8295e
             transform: "\"SLV_CUSTOMER\".\"C_NAME\""
         transform: "\"SLV_CUSTOMER\".\"C_NAME\""
         uniqueKey: false
@@ -60,16 +66,16 @@ operation:
           columnCounter: efdce88c-334a-4c3c-abaa-53feaedf3b7a
           stepCounter: f99009c0-85fc-4fe3-ae46-8290650ee8b5
         config: {}
-        dataType: "VARCHAR"
+        dataType: VARCHAR
         defaultValue: ""
         description: ""
-        name: "C_ADDRESS"
+        name: C_ADDRESS
         nullable: true
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: "9ac333"
-                stepCounter: "30c664f4-93ae-4113-af16-ed31e6a8295e"
+              - columnCounter: 9ac333
+                stepCounter: 30c664f4-93ae-4113-af16-ed31e6a8295e
             transform: "\"SLV_CUSTOMER\".\"C_ADDRESS\""
         transform: "\"SLV_CUSTOMER\".\"C_ADDRESS\""
         uniqueKey: false
@@ -81,16 +87,16 @@ operation:
           columnCounter: 64314bc0-d6f7-4f55-a111-88dbac9b24bd
           stepCounter: f99009c0-85fc-4fe3-ae46-8290650ee8b5
         config: {}
-        dataType: "VARCHAR"
+        dataType: VARCHAR
         defaultValue: ""
         description: ""
-        name: "C_PHONE"
+        name: C_PHONE
         nullable: true
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: "4368fb"
-                stepCounter: "30c664f4-93ae-4113-af16-ed31e6a8295e"
+              - columnCounter: 4368fb
+                stepCounter: 30c664f4-93ae-4113-af16-ed31e6a8295e
             transform: "\"SLV_CUSTOMER\".\"C_PHONE\""
         transform: "\"SLV_CUSTOMER\".\"C_PHONE\""
         uniqueKey: false
@@ -102,16 +108,16 @@ operation:
           columnCounter: 476f9a64-53e1-43a6-a62f-a5fd8602d15b
           stepCounter: f99009c0-85fc-4fe3-ae46-8290650ee8b5
         config: {}
-        dataType: "NUMBER(12,2)"
+        dataType: NUMBER(12,2)
         defaultValue: ""
         description: ""
-        name: "C_ACCTBAL"
+        name: C_ACCTBAL
         nullable: true
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: "9fc838"
-                stepCounter: "30c664f4-93ae-4113-af16-ed31e6a8295e"
+              - columnCounter: 9fc838
+                stepCounter: 30c664f4-93ae-4113-af16-ed31e6a8295e
             transform: "\"SLV_CUSTOMER\".\"C_ACCTBAL\""
         transform: "\"SLV_CUSTOMER\".\"C_ACCTBAL\""
         uniqueKey: false
@@ -123,16 +129,16 @@ operation:
           columnCounter: 4119acea-f2c7-4db0-ab0b-30a8e5a35d7e
           stepCounter: f99009c0-85fc-4fe3-ae46-8290650ee8b5
         config: {}
-        dataType: "VARCHAR"
+        dataType: VARCHAR
         defaultValue: ""
         description: ""
-        name: "C_MKTSEGMENT"
+        name: C_MKTSEGMENT
         nullable: true
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: "49af3e"
-                stepCounter: "30c664f4-93ae-4113-af16-ed31e6a8295e"
+              - columnCounter: 49af3e
+                stepCounter: 30c664f4-93ae-4113-af16-ed31e6a8295e
             transform: "\"SLV_CUSTOMER\".\"C_MKTSEGMENT\""
         transform: "\"SLV_CUSTOMER\".\"C_MKTSEGMENT\""
         uniqueKey: false
@@ -144,16 +150,16 @@ operation:
           columnCounter: 8cd9f5ba-2f4f-4f48-a657-6a530a7517af
           stepCounter: f99009c0-85fc-4fe3-ae46-8290650ee8b5
         config: {}
-        dataType: "NUMBER(38,0)"
+        dataType: NUMBER(38,0)
         defaultValue: ""
         description: ""
-        name: "C_NATIONKEY"
+        name: C_NATIONKEY
         nullable: true
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: "9dd6df"
-                stepCounter: "30c664f4-93ae-4113-af16-ed31e6a8295e"
+              - columnCounter: 9dd6df
+                stepCounter: 30c664f4-93ae-4113-af16-ed31e6a8295e
             transform: "\"SLV_CUSTOMER\".\"C_NATIONKEY\""
         transform: "\"SLV_CUSTOMER\".\"C_NATIONKEY\""
         uniqueKey: false
@@ -165,16 +171,16 @@ operation:
           columnCounter: da7b1a13-b8e9-4496-a231-70add374597c
           stepCounter: f99009c0-85fc-4fe3-ae46-8290650ee8b5
         config: {}
-        dataType: "VARCHAR(25)"
+        dataType: VARCHAR(25)
         defaultValue: ""
         description: ""
-        name: "NATION_NAME"
+        name: NATION_NAME
         nullable: true
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: "ca6ca8bf-7819-43a7-aa0e-efe80c71b4e7"
-                stepCounter: "6b020c42-2b2b-4f35-aa09-92e9fa7281f4"
+              - columnCounter: ca6ca8bf-7819-43a7-aa0e-efe80c71b4e7
+                stepCounter: 6b020c42-2b2b-4f35-aa09-92e9fa7281f4
             transform: "\"SLV_NATION\".\"NATION_NAME\""
         transform: "\"SLV_NATION\".\"NATION_NAME\""
         uniqueKey: false
@@ -186,16 +192,16 @@ operation:
           columnCounter: 4ecf0b08-0dab-427f-aab1-b5ae73727366
           stepCounter: f99009c0-85fc-4fe3-ae46-8290650ee8b5
         config: {}
-        dataType: "NUMBER(38,0)"
+        dataType: NUMBER(38,0)
         defaultValue: ""
         description: ""
-        name: "REGION_KEY"
+        name: REGION_KEY
         nullable: true
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: "301b3d51-416f-427f-a34f-8b5fe837099c"
-                stepCounter: "6b020c42-2b2b-4f35-aa09-92e9fa7281f4"
+              - columnCounter: 301b3d51-416f-427f-a34f-8b5fe837099c
+                stepCounter: 6b020c42-2b2b-4f35-aa09-92e9fa7281f4
             transform: "\"SLV_NATION\".\"REGION_KEY\""
         transform: "\"SLV_NATION\".\"REGION_KEY\""
         uniqueKey: false
@@ -207,19 +213,20 @@ operation:
           columnCounter: cd931234-14a1-4527-a2df-f3319aa6082e
           stepCounter: f99009c0-85fc-4fe3-ae46-8290650ee8b5
         config: {}
-        dataType: "TIMESTAMP"
+        dataType: TIMESTAMP
         defaultValue: ""
         description: ""
-        name: "LOAD_TS"
+        name: LOAD_TS
         nullable: true
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: "dd5218"
-                stepCounter: "30c664f4-93ae-4113-af16-ed31e6a8295e"
+              - columnCounter: dd5218
+                stepCounter: 30c664f4-93ae-4113-af16-ed31e6a8295e
             transform: "\"SLV_CUSTOMER\".\"LOAD_TS\""
         transform: "\"SLV_CUSTOMER\".\"LOAD_TS\""
         uniqueKey: false
+    enabledColumnTestIDs: []
     sourceMapping:
       - aliases: {}
         customSQL:
@@ -230,17 +237,15 @@ operation:
           - locationName: TARGET
             nodeName: SLV_NATION
         join:
-          joinCondition: "FROM {{ ref('TARGET', 'SLV_CUSTOMER') }} \"SLV_CUSTOMER\"\nLEFT JOIN {{ ref('TARGET', 'SLV_NATION') }} \"SLV_NATION\"\n  ON \"SLV_CUSTOMER\".\"C_NATIONKEY\" = \"SLV_NATION\".\"NATION_KEY\""
+          joinCondition: |-
+            FROM {{ ref('TARGET', 'SLV_CUSTOMER') }} "SLV_CUSTOMER"
+            LEFT JOIN {{ ref('TARGET', 'SLV_NATION') }} "SLV_NATION"
+              ON "SLV_CUSTOMER"."C_NATIONKEY" = "SLV_NATION"."NATION_KEY"
         name: SLV_CUSTOMER_NATION
         noLinkRefs: []
   name: SLV_CUSTOMER_NATION
   schema: ""
-  sqlType: "base-node-types:::204"
+  sqlType: base-node-types:::204
   type: sql
   version: 1
-  config:
-    selectDistinct: false
-    groupByAll: false
-    testsEnabled: false
-    insertStrategy: "INSERT"
 type: Node
