@@ -1004,7 +1004,7 @@ FROM {{ ref('SOURCE_DATA', 'NATION') }} "NATION"
 WITH "EXISTING" AS (
     -- Current rows already in this dimension
     SELECT "CUSTOMER_ID", "CITY", "CITY_PREV", "CITY_CHANGED_DATE"
-    FROM MY_DB.TARGET.DIM_CUSTOMER
+    FROM {{ ref('TARGET', 'DIM_CUSTOMER') }} "SRC"
 )
 SELECT
     "SRC"."CUSTOMER_ID"                      AS "CUSTOMER_ID"         @id("0b0001") @isBusinessKey,
