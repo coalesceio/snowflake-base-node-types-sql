@@ -1,0 +1,141 @@
+fileVersion: 1
+id: 1e7bc288-b235-4e67-ac53-d553c10337bf
+name: BRZ_NATION
+operation:
+  database: ""
+  deployEnabled: true
+  description: "Bronze: raw copy of SRC.Nation_Test with standard column names"
+  isMultisource: false
+  locationName: TARGET
+  materializationType: table
+  metadata:
+    columns:
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: bdcc5764-cb29-4ae9-a5be-30db3aaa1cf1
+          stepCounter: 1e7bc288-b235-4e67-ac53-d553c10337bf
+        config: {}
+        dataType: "NUMBER(38,0)"
+        defaultValue: ""
+        description: ""
+        name: "NATION_KEY"
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: "a487d975-d666-4306-91f0-6893d9987231"
+                stepCounter: "1610aab1-7820-4366-b317-87606f480f7f"
+            transform: "\"Nation_Test\".\"NAtionKey\""
+        transform: "\"Nation_Test\".\"NAtionKey\""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 4bd0f967-248d-4fa4-ab42-e8c136c03296
+          stepCounter: 1e7bc288-b235-4e67-ac53-d553c10337bf
+        config: {}
+        dataType: "VARCHAR(25)"
+        defaultValue: ""
+        description: ""
+        name: "NATION_NAME"
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: "def546ac-625e-47bb-a977-ef8eecce28a5"
+                stepCounter: "1610aab1-7820-4366-b317-87606f480f7f"
+            transform: "\"Nation_Test\".\"name\""
+        transform: "\"Nation_Test\".\"name\""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: c4fe22bf-2cfb-49ae-a578-f8d049d0a408
+          stepCounter: 1e7bc288-b235-4e67-ac53-d553c10337bf
+        config: {}
+        dataType: "NUMBER(38,0)"
+        defaultValue: ""
+        description: ""
+        name: "REGION_KEY"
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: "bf7327c1-083b-469b-bfec-91508c7eab26"
+                stepCounter: "1610aab1-7820-4366-b317-87606f480f7f"
+            transform: "\"Nation_Test\".\"REGIONKEY\""
+        transform: "\"Nation_Test\".\"REGIONKEY\""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 67b9099d-6a62-428f-a184-6da9cf04081c
+          stepCounter: 1e7bc288-b235-4e67-ac53-d553c10337bf
+        config: {}
+        dataType: "VARCHAR(152)"
+        defaultValue: ""
+        description: ""
+        name: "NATION_COMMENT"
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: "5325c202-4ae8-454f-a6c2-f83966273a15"
+                stepCounter: "1610aab1-7820-4366-b317-87606f480f7f"
+            transform: "\"Nation_Test\".\"CommenT\""
+        transform: "\"Nation_Test\".\"CommenT\""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 3d4340ce-2fd8-48c7-a56c-39734ca70312
+          stepCounter: 1e7bc288-b235-4e67-ac53-d553c10337bf
+        config: {}
+        dataType: "TIMESTAMP_LTZ(9)"
+        defaultValue: ""
+        description: ""
+        name: "LOAD_TS"
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: "4d1c468c-4bf7-443a-9e0c-6994f9e48961"
+                stepCounter: "1610aab1-7820-4366-b317-87606f480f7f"
+            transform: "\"Nation_Test\".\"N_Load_Timestamp\""
+        transform: "\"Nation_Test\".\"N_Load_Timestamp\""
+        uniqueKey: false
+    sourceMapping:
+      - aliases: {}
+        customSQL:
+          customSQL: ""
+        dependencies:
+          - locationName: SRC
+            nodeName: Nation_Test
+        join:
+          joinCondition: "FROM {{ ref('SRC', 'Nation_Test') }} \"Nation_Test\""
+        name: BRZ_NATION
+        noLinkRefs: []
+  name: BRZ_NATION
+  schema: ""
+  sqlType: "base-node-types:::204"
+  type: sql
+  version: 1
+  config:
+    truncateBefore: true
+    selectDistinct: false
+    groupByAll: false
+    testsEnabled: false
+    orderby: false
+    insertStrategy: "INSERT"
+type: Node
