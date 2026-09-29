@@ -21,26 +21,28 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
     {%- set mergeStrategyExplicit = config.mergeStrategy is defined and config.mergeStrategy.parameters is defined and config.mergeStrategy.parameters | length > 0 %}
     {%- if mergeStrategyExplicit %}
-        {%- set mergeStrategy = config.mergeStrategy.parameters[0] | trim %}
+        {# Matched case-insensitively; an unrecognised value is rejected by validate_dimension_requirements before any load runs. #}
+        {%- set mergeStrategy = config.mergeStrategy.parameters[0] | string | trim | lower %}
     {%- else %}
         {# No @mergeStrategy given — always default to changeTracking, regardless of which tracking columns are present (must match validate_dimension_requirements). #}
-        {%- set mergeStrategy = 'changeTracking' %}
+        {%- set mergeStrategy = 'changetracking' %}
     {%- endif %}
     {%- set isSimpleUpsert = mergeStrategy == 'upsert' %}
-    {%- set isLastModifiedStrategy = mergeStrategy == 'lastModified' %}
-    {%- set isChangeTrackingStrategy = mergeStrategy == 'changeTracking' %}
+    {%- set isLastModifiedStrategy = mergeStrategy == 'lastmodified' %}
+    {%- set isChangeTrackingStrategy = mergeStrategy == 'changetracking' %}
 
+    {# lastModified with a tracking column present — the no-column case is rejected by validate_dimension_requirements, and there'd be nothing to compare. #}
     {%- set lastModifiedComparison = isLastModifiedStrategy and lastModifiedCount > 0 %}
+    {%- if lastModifiedComparison %}
+        {%- set lastModifiedCol = columns | selectattr("lastModifiedTracking") | first %}
+        {%- set lastModifiedColName = lastModifiedCol.name %}
+    {%- endif %}
     {%- if hasBusinessKey %}
         {%- if lastModifiedComparison %}
-            {%- set lastModifiedCol = columns | selectattr("lastModifiedTracking") | first %}
-            {%- set lastModifiedColName = lastModifiedCol.name %}
             {# A bare @lastModifiedTracking (no scdType) comes through as `true`, not a mapping — guard for that and default scdType to 1. #}
             {%- set lastModifiedTrackingParams = lastModifiedCol.lastModifiedTracking.parameters if (lastModifiedCol.lastModifiedTracking is mapping and lastModifiedCol.lastModifiedTracking.parameters is defined) else [] %}
             {%- set scdType = lastModifiedTrackingParams[0] | default(1, true) | string %}
             {%- set type2Dimension = scdType == '2' %}
-            {%- set dt = lastModifiedCol.dataType | upper %}
-            {%- set isTimeStamp = dt.startswith('TIME') or dt.startswith('DATE') %}
         {%- else %}
             {%- set type2Dimension = changeTrackingCount > 0 %}
         {%- endif %}
@@ -53,19 +55,13 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
         {%- set type2Dimension = false %}
     {%- endif %}
 
-    {%- set hasSystemCreateDate = columns | selectattr("isSystemCreateDate") | list | length > 0 %}
-    {%- set hasSystemUpdateDate = columns | selectattr("isSystemUpdateDate") | list | length > 0 %}
-    {%- if type2Dimension %}
-        {%- set hasSystemVersion = columns | selectattr("isSystemVersion") | list | length > 0 %}
-        {%- set hasSystemCurrentFlag = columns | selectattr("isSystemCurrentFlag") | list | length > 0 %}
-        {%- set hasSystemEndDate = columns | selectattr("isSystemEndDate") | list | length > 0 %}
-    {%- endif %}
-
     {%- set source = sources[0] %}
     {%- set joinclause = source.join %}
+    {# The node's own CTEs (source.cteString) already open a WITH clause; the load's CTEs must continue it with a comma, since a second WITH is invalid SQL. #}
+    {%- set sourceDataCteOpen = ', ' if (source.cteString | default('', true) | trim | length > 0) else 'WITH ' %}
 
-    {%- if not isSimpleUpsert and lastModifiedComparison and isTimeStamp %}
-        {# Test stage for checking NULL values in source - last modified column #} 
+    {%- if lastModifiedComparison %}
+        {# Test stage for checking NULL values in source - last modified column (any datatype: a NULL date/time or numeric value can never compare as newer, so the row would never be picked up as changed) #}
         {{ test_stage('Check NULL values for ' ~ lastModifiedColName ~ ' column', false) }}
         /* If NULL values are detected, this stage will fail and execution will be terminated */
         {%- set ns = namespace(first=true) %}
@@ -135,9 +131,10 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                 "{{ node.name }}"."{{ col.name }}" = {{ zeroKeySurrogateValue }}
             {%- endfor %}
 
+            {# SYSTEM_CREATE_DATE keeps the zero record's first-inserted value; everything else is refreshed. #}
             WHEN MATCHED THEN UPDATE
             SET
-            {%- for col in columns if (not col.isSurrogateKey) %}
+            {%- for col in columns if not (col.isSurrogateKey or col.isSystemCreateDate) %}
                 "{{ node.name }}"."{{ col.name }}" = "SOURCE_ZERO"."{{ col.name }}"
                 {%- if not loop.last %}, {%- endif %}			
             {%- endfor %}
@@ -188,7 +185,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
             {%- set sysUpdateDateCol = get_value_by_column_attribute("isSystemUpdateDate") %}
             {%- set sysEndDateCol = get_value_by_column_attribute("isSystemEndDate") %}
 
-            WITH "SOURCE_DATA" AS (
+            {{ sourceDataCteOpen }}"SOURCE_DATA" AS (
                 /* Incoming source rows, transformed and aliased to the target column names */
                 SELECT {{ source.selectModifier | default('', true) }}
                 {%- for col in source.columns if not (col.isSurrogateKey or col.isSystemVersion or col.isSystemCurrentFlag or col.isSystemCreateDate or col.isSystemUpdateDate or col.isSystemEndDate) %}
@@ -233,8 +230,6 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                         WHEN "SOURCE_DATA"."{{ lastModifiedColName }}" > "TARGET_CURRENT"."TGT_{{ lastModifiedColName }}" THEN 'CHANGED'
                         {%- else %}
                         -- Change-tracking-driven: any @isChangeTracking column differing means a change
-                        -- (a change here always produces a new SCD2 version, unlike the plain-attribute
-                        -- comparison below)
                         WHEN (
                             {%- for col in columns if col.isChangeTracking %}
                             {%- if not loop.first %} OR {%- endif %}
@@ -259,7 +254,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                 LEFT JOIN "TARGET_CURRENT" ON
                 {%- for col in columns if col.isBusinessKey %}
                     {%- if not loop.first %} AND {%- endif %}
-                    "SOURCE_DATA"."{{ col.name }}" = "TARGET_CURRENT"."{{ col.name }}"
+                    {{ safe_equals('"SOURCE_DATA"."' ~ col.name ~ '"', '"TARGET_CURRENT"."' ~ col.name ~ '"', col.dataType) }}
                 {%- endfor %}
             ),
 
@@ -313,11 +308,13 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
                 UNION ALL
 
-                /* Expire the prior current version */
+                /* Expire the prior current version — expiring is an update, so SYSTEM_UPDATE_DATE is stamped with the load time */
                 SELECT
                 {%- for col in columns if not col.isSurrogateKey %}
-                    {%- if col.isBusinessKey or col.isSystemVersion or col.isSystemCreateDate or col.isSystemUpdateDate %}
+                    {%- if col.isBusinessKey or col.isSystemVersion or col.isSystemCreateDate %}
                     "{{ col.name }}"
+                    {%- elif col.isSystemUpdateDate %}
+                    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
                     {%- elif col.isSystemCurrentFlag %}
                     'N'
                     {%- elif col.isSystemEndDate %}
@@ -375,7 +372,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
             {{ joinclause }}
             {%- else %}
 
-            WITH "SOURCE_DATA" AS (
+            {{ sourceDataCteOpen }}"SOURCE_DATA" AS (
                 /* Incoming source rows, transformed and aliased to the target column names */
                 SELECT {{ source.selectModifier | default('', true) }}
                 {%- for col in source.columns if not (col.isSurrogateKey or col.isSystemVersion or col.isSystemCurrentFlag or col.isSystemCreateDate or col.isSystemUpdateDate or col.isSystemEndDate) %}
@@ -422,12 +419,17 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                         -- Change-tracking-driven, SCD1: no column can be marked @isChangeTracking here —
                         -- that annotation is exactly what makes a dimension type2 — so SCD1 instead
                         -- compares every plain attribute column for a difference.
+                        {%- set scd1AttrCols = columns | rejectattr("isBusinessKey") | rejectattr("isSurrogateKey") | rejectattr("isSystemVersion") | rejectattr("isSystemCurrentFlag") | rejectattr("isSystemCreateDate") | rejectattr("isSystemUpdateDate") | rejectattr("isSystemEndDate") | list %}
+                        {%- if scd1AttrCols | length > 0 %}
                         WHEN (
-                            {%- for col in columns if not (col.isBusinessKey or col.isSurrogateKey or col.isSystemVersion or col.isSystemCurrentFlag or col.isSystemCreateDate or col.isSystemUpdateDate or col.isSystemEndDate) %}
+                            {%- for col in scd1AttrCols %}
                             {%- if not loop.first %} OR {%- endif %}
                             {{ safe_compare('"SOURCE_DATA"."' ~ col.name ~ '"', '"TARGET_CURRENT"."TGT_' ~ col.name ~ '"', col.dataType) }}
                             {%- endfor %}
                         ) THEN 'CHANGED'
+                        {%- else %}
+                        -- No plain attribute columns (key-only dimension): an existing key has nothing that can change.
+                        {%- endif %}
                         {%- endif %}
                         ELSE 'NOCHANGE'
                     END AS "CHANGE_TYPE"
@@ -435,7 +437,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                 LEFT JOIN "TARGET_CURRENT" ON
                 {%- for col in columns if col.isBusinessKey %}
                     {%- if not loop.first %} AND {%- endif %}
-                    "SOURCE_DATA"."{{ col.name }}" = "TARGET_CURRENT"."{{ col.name }}"
+                    {{ safe_equals('"SOURCE_DATA"."' ~ col.name ~ '"', '"TARGET_CURRENT"."' ~ col.name ~ '"', col.dataType) }}
                 {%- endfor %}
             )
             /* Final SCD1 row set: one row per source key, tagged with the CHANGE_TYPE the
@@ -469,7 +471,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
     {%- for col in columns if col.isBusinessKey %}
         {%- if not loop.first %} AND {%- endif %}
-        "TGT"."{{ col.name }}" = "SRC"."{{ col.name }}"
+        {{ safe_equals('"TGT"."' ~ col.name ~ '"', '"SRC"."' ~ col.name ~ '"', col.dataType) }}
     {%- endfor %}
 
     {%- if type2Dimension %}
@@ -509,7 +511,6 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                                         col.isSurrogateKey or
                                         col.isSystemVersion or
                                         col.isSystemCurrentFlag or
-                                        col.isSystemStartDate or
                                         col.isSystemCreateDate) %}
             "TGT"."{{ col.name }}" = "SRC"."{{ col.name }}"
             {%- if not loop.last %}, {%- endif %}
