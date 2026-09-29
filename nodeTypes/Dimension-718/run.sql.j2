@@ -254,7 +254,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                 LEFT JOIN "TARGET_CURRENT" ON
                 {%- for col in columns if col.isBusinessKey %}
                     {%- if not loop.first %} AND {%- endif %}
-                    "SOURCE_DATA"."{{ col.name }}" = "TARGET_CURRENT"."{{ col.name }}"
+                    {{ safe_equals('"SOURCE_DATA"."' ~ col.name ~ '"', '"TARGET_CURRENT"."' ~ col.name ~ '"', col.dataType) }}
                 {%- endfor %}
             ),
 
@@ -437,7 +437,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                 LEFT JOIN "TARGET_CURRENT" ON
                 {%- for col in columns if col.isBusinessKey %}
                     {%- if not loop.first %} AND {%- endif %}
-                    "SOURCE_DATA"."{{ col.name }}" = "TARGET_CURRENT"."{{ col.name }}"
+                    {{ safe_equals('"SOURCE_DATA"."' ~ col.name ~ '"', '"TARGET_CURRENT"."' ~ col.name ~ '"', col.dataType) }}
                 {%- endfor %}
             )
             /* Final SCD1 row set: one row per source key, tagged with the CHANGE_TYPE the
@@ -471,7 +471,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
     {%- for col in columns if col.isBusinessKey %}
         {%- if not loop.first %} AND {%- endif %}
-        "TGT"."{{ col.name }}" = "SRC"."{{ col.name }}"
+        {{ safe_equals('"TGT"."' ~ col.name ~ '"', '"SRC"."' ~ col.name ~ '"', col.dataType) }}
     {%- endfor %}
 
     {%- if type2Dimension %}

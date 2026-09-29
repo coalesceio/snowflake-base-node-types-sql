@@ -307,22 +307,27 @@ macroString: |-
 
         {%- set dt = data_type | upper -%}
 
-        {%- if 'GEOGRAPHY' in dt -%}
-            (
-                ST_DISTANCE(
-                    COALESCE({{ src_expr }}, TO_GEOGRAPHY('POINT(0 0)')),
-                    COALESCE({{ tgt_expr }}, TO_GEOGRAPHY('POINT(0 0)'))
-                ) > 0
-            )
-        {%- elif 'GEOMETRY' in dt -%}
-            (
-                ST_DISTANCE(
-                    COALESCE({{ src_expr }}, TO_GEOMETRY('POINT(0 0)')),
-                    COALESCE({{ tgt_expr }}, TO_GEOMETRY('POINT(0 0)'))
-                ) > 0
-            )
+        {%- if 'GEOGRAPHY' in dt or 'GEOMETRY' in dt -%}
+            ST_ASWKB({{ src_expr }}) IS DISTINCT FROM ST_ASWKB({{ tgt_expr }})
         {%- else -%}
             {{ src_expr }} IS DISTINCT FROM {{ tgt_expr }}
+        {%- endif -%}
+
+    {%- endmacro -%}
+
+    {#===========================================================================
+    Description: Builds a datatype-aware equality condition for matching business keys. GEOGRAPHY/GEOMETRY can't be compared with =, so they're compared on their WKB binary form (exact match, still an equi-join).
+    Input: left_expr (string), right_expr (string), data_type (string)
+    Output: SQL boolean condition. NULL never matches, same as =.
+    ===========================================================================#}
+    {%- macro safe_equals(left_expr, right_expr, data_type) -%}
+
+        {%- set dt = data_type | upper -%}
+
+        {%- if 'GEOGRAPHY' in dt or 'GEOMETRY' in dt -%}
+            ST_ASWKB({{ left_expr }}) = ST_ASWKB({{ right_expr }})
+        {%- else -%}
+            {{ left_expr }} = {{ right_expr }}
         {%- endif -%}
 
     {%- endmacro -%}
