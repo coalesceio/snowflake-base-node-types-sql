@@ -63,6 +63,8 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
     {%- set source = sources[0] %}
     {%- set joinclause = source.join %}
+    {# A user-authored CTE already opens the WITH clause, so the template's own CTEs must continue that list with a comma instead of starting a second WITH. #}
+    {%- set cteOpener = ',' if (source.cteString | default('', true) | trim | length > 0) else 'WITH' %}
 
     {%- if not isSimpleUpsert and lastModifiedComparison and isTimeStamp %}
         {# Test stage for checking NULL values in source - last modified column #} 
@@ -188,7 +190,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
             {%- set sysUpdateDateCol = get_value_by_column_attribute("isSystemUpdateDate") %}
             {%- set sysEndDateCol = get_value_by_column_attribute("isSystemEndDate") %}
 
-            WITH "SOURCE_DATA" AS (
+            {{ cteOpener }} "SOURCE_DATA" AS (
                 /* Incoming source rows, transformed and aliased to the target column names */
                 SELECT {{ source.selectModifier | default('', true) }}
                 {%- for col in source.columns if not (col.isSurrogateKey or col.isSystemVersion or col.isSystemCurrentFlag or col.isSystemCreateDate or col.isSystemUpdateDate or col.isSystemEndDate) %}
@@ -375,7 +377,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
             {{ joinclause }}
             {%- else %}
 
-            WITH "SOURCE_DATA" AS (
+            {{ cteOpener }} "SOURCE_DATA" AS (
                 /* Incoming source rows, transformed and aliased to the target column names */
                 SELECT {{ source.selectModifier | default('', true) }}
                 {%- for col in source.columns if not (col.isSurrogateKey or col.isSystemVersion or col.isSystemCurrentFlag or col.isSystemCreateDate or col.isSystemUpdateDate or col.isSystemEndDate) %}
