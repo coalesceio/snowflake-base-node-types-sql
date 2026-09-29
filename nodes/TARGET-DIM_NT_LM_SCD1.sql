@@ -7,7 +7,7 @@ SELECT
     "name"                                   AS "name"                @id("9d8cdd") @isBusinessKey,
     "REGIONKEY"                              AS "REGIONKEY"           @id("ea2d5e"),
     "CommenT"                                AS "CommenT"             @id("ca2ca9"),
-    "N_Load_Timestamp"                       AS "N_Load_Timestamp"    @id("8bdecf") @lastModifiedTracking(1),
+    "N_Load_Timestamp"                       AS "N_Load_Timestamp"    @id("8bdecf") @lastModifiedTracking(2),
     1                                        AS "SYSTEM_VERSION"      @id("a1388a") @isSystemVersion,
     'Y'                                      AS "SYSTEM_CURRENT_FLAG" @id("498a84") @isSystemCurrentFlag,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @id("db4e08") @isSystemCreateDate,

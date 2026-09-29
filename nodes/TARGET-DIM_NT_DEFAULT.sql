@@ -1,5 +1,6 @@
 @id("7a5ba443-2500-4319-a6bc-08489d706a2e")
 @nodeType("718")
+@mergeStrategy("upsert")
 SELECT
     0                                        AS "DIM_NT_DEFAULT_KEY"  @id("f261b5") @isSurrogateKey,
     "NAtionKey"                              AS "NAtionKey"           @id("672f16") @isBusinessKey,

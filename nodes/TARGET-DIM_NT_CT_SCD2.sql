@@ -5,7 +5,7 @@ SELECT
     0                                        AS "DIM_NT_CT_SCD2_KEY"  @id("76e88f") @isSurrogateKey,
     "NAtionKey"                              AS "NAtionKey"           @id("89a2f7") @isBusinessKey,
     "name"                                   AS "name"                @id("c5a8f2") @isBusinessKey,
-    "REGIONKEY"                              AS "REGIONKEY"           @id("3161b5") @isChangeTracking,
+    "REGIONKEY"                              AS "REGIONKEY"           @id("3161b5"),
     "CommenT"                                AS "CommenT"             @id("a8efdb"),
     "N_Load_Timestamp"                       AS "N_Load_Timestamp"    @id("2cca3f"),
     1                                        AS "SYSTEM_VERSION"      @id("b67c27") @isSystemVersion,

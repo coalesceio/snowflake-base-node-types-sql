@@ -1,0 +1,92 @@
+fileVersion: 1
+id: b1121703-e9d6-4c9f-8667-7aaac4f56c52
+name: TEST_GEO_GEOMETRY
+operation:
+  database: ""
+  deployEnabled: true
+  description: ""
+  locationName: SRC
+  metadata:
+    columns:
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 2969692f-eb8f-4e1a-b735-035ac73c2c38
+          stepCounter: b1121703-e9d6-4c9f-8667-7aaac4f56c52
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: ID
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 2ff20b77-926a-433b-b5d7-85d5c9c3b7bd
+          stepCounter: b1121703-e9d6-4c9f-8667-7aaac4f56c52
+        config: {}
+        dataType: VARCHAR(16777216)
+        defaultValue: ""
+        description: ""
+        name: NAME
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: f9cf810e-fb53-4ee6-ae4d-e97538462ef4
+          stepCounter: b1121703-e9d6-4c9f-8667-7aaac4f56c52
+        config: {}
+        dataType: GEOGRAPHY
+        defaultValue: ""
+        description: ""
+        name: LOCATION_GEO
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 8777b747-8735-4d69-9833-c622558e9f1b
+          stepCounter: b1121703-e9d6-4c9f-8667-7aaac4f56c52
+        config: {}
+        dataType: GEOMETRY
+        defaultValue: ""
+        description: ""
+        name: LOCATION_GEOM
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+  name: TEST_GEO_GEOMETRY
+  schema: ""
+  sqlType: Source
+  type: sourceInput
+  version: 1
+type: Node
