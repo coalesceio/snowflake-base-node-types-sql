@@ -1,8 +1,8 @@
 fileVersion: 1
-id: "870"
+id: "924"
 mappingDefinitions:
   SRC2:
     database: ""
     schema: ""
-name: "[NewSQL-Version]"
+name: "[dim_sql_test_pr]"
 type: Environment

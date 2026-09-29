@@ -1,5 +1,8 @@
 fileVersion: 1
 id: "883"
-mappingDefinitions: {}
+mappingDefinitions:
+  SRC2:
+    database: ""
+    schema: ""
 name: SQLWork_NewVersion_Test
 type: Environment

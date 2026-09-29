@@ -1,5 +1,8 @@
 fileVersion: 1
 id: "842"
-mappingDefinitions: {}
+mappingDefinitions:
+  SRC2:
+    database: ""
+    schema: ""
 name: "[SQL Nodes Test]"
 type: Environment

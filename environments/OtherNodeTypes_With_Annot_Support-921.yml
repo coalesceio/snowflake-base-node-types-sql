@@ -1,5 +1,8 @@
 fileVersion: 1
 id: "921"
-mappingDefinitions: {}
+mappingDefinitions:
+  SRC2:
+    database: ""
+    schema: ""
 name: OtherNodeTypes_With_Annot_Support
 type: Environment

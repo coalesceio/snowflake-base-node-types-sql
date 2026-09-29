@@ -1,5 +1,8 @@
 fileVersion: 1
 id: "801"
-mappingDefinitions: {}
+mappingDefinitions:
+  SRC2:
+    database: ""
+    schema: ""
 name: QA-Test_2
 type: Environment
