@@ -572,8 +572,8 @@ This node only supports data retrieval and transformation logic. DML or DDL comm
 * **Reserved Keywords as Annotation Names**:  
 Avoid naming custom annotations after words that are reserved keywords in the platform's SQL grammar — e.g. `UNIQUE`, `AS`, `PRIMARY`. The parser may fail to parse such annotations and throw a validation error.
 
-* **Switching Between V1 and V2 Node Types**:  
-Converting an existing V1 (`.yml`) node to a V2 (`.sql`) node, or vice versa, is not supported.
+* **Switching Between YAML and SQL Node Types**:  
+Converting an existing YAML (`.yml`) node to a SQL (`.sql`) node, or vice versa, is not supported.
 
 * **Large or High-Precision Numbers in Test Values**:  
 An unquoted number in an annotation is read as a floating-point value, so integers beyond roughly 15–16 digits and decimals with more than about 16 significant digits are rounded before the test runs (e.g. `12345678901234567890` becomes `1.2345678901234567e+19`). Wrap such values in double quotes — `@accepted_values("12345678901234567890")` — to pass them through exactly.
