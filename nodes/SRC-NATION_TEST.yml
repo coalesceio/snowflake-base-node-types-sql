@@ -1,0 +1,130 @@
+fileVersion: 1
+id: 5d712e61-f6fc-481a-9021-a5cc051bd1d7
+name: NATION_TEST
+operation:
+  database: ""
+  deployEnabled: true
+  description: ""
+  locationName: SRC
+  metadata:
+    columns:
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 46d17611-0162-42fa-ac80-5e1a5509573a
+          stepCounter: 5d712e61-f6fc-481a-9021-a5cc051bd1d7
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: N_NATIONKEY
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 9f104e7d-979e-48a3-aba7-fb59b7407648
+          stepCounter: 5d712e61-f6fc-481a-9021-a5cc051bd1d7
+        config: {}
+        dataType: VARCHAR(25)
+        defaultValue: ""
+        description: ""
+        name: N_NAME
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 479b8b57-7d62-4d87-abc9-9aec8353966b
+          stepCounter: 5d712e61-f6fc-481a-9021-a5cc051bd1d7
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: N_REGIONKEY
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: a5b3412b-8512-4e56-b07a-b5dcb2d5d1a9
+          stepCounter: 5d712e61-f6fc-481a-9021-a5cc051bd1d7
+        config: {}
+        dataType: VARCHAR(152)
+        defaultValue: ""
+        description: ""
+        name: N_COMMENT
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 4e692d4f-6754-400c-800e-f2313a1a9bd7
+          stepCounter: 5d712e61-f6fc-481a-9021-a5cc051bd1d7
+        config: {}
+        dataType: TIMESTAMP_LTZ(9)
+        defaultValue: ""
+        description: ""
+        name: N_LOAD_TIMESTAMP
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 46064ef7-639b-4538-9e0b-c11c1f78000f
+          stepCounter: 5d712e61-f6fc-481a-9021-a5cc051bd1d7
+        config: {}
+        dataType: DATE
+        defaultValue: ""
+        description: ""
+        name: N_DATE
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+  name: NATION_TEST
+  schema: ""
+  sqlType: Source
+  type: sourceInput
+  version: 1
+type: Node
