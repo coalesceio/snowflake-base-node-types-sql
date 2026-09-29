@@ -13,7 +13,7 @@ WITH "ORDER_COUNTS" AS (
 )
 SELECT
      "N"."N_NATIONKEY" AS "N_NATIONKEY" @notNull,
-     "N"."N_NAME" AS "N_NAME",
+     "N"."N_NAME" AS "N_NAME" @accepted_values("'1'") @accepted_values("'2'", "'3'")  @accepted_values("'4, 5'"),
      "N"."N_REGIONKEY" AS "N_REGIONKEY",
      "SUB"."ORDER_COUNT" AS "ORDER_COUNT",
      "SUB"."ORDER_ID_SUM" AS "ORDER_ID_SUM",

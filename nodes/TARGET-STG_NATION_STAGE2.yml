@@ -8,7 +8,7 @@ operation:
     preSQL: ""
   database: ""
   deployEnabled: false
-  description: ""
+  description: abc
   isMultisource: false
   locationName: TARGET
   materializationType: table
