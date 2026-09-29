@@ -7,11 +7,11 @@
 @tests("SELECT 1 FROM {{ this }} WHERE CUSTOMER_COUNT < 0 OR ORDER_COUNT < 0", true, "After")
 WITH "CUSTOMER_AGG" AS (
     SELECT
-        "C_NATIONKEY" AS "NATION_KEY",
+        MOD("CUSTOMER_ID", 25) AS "NATION_KEY",
         COUNT(*) AS "CUSTOMER_COUNT",
-        SUM("C_ACCTBAL") AS "TOTAL_ACCTBAL"
-    FROM {{ ref('SRC', 'CUSTOMER') }}
-    GROUP BY "C_NATIONKEY"
+        MAX("SIGNUP_DATE") AS "LATEST_SIGNUP_DATE"
+    FROM {{ ref('SRC', 'CUSTOMERS') }}
+    GROUP BY MOD("CUSTOMER_ID", 25)
 ),
 "ORDER_AGG" AS (
     SELECT
@@ -26,7 +26,7 @@ SELECT
      "N"."N_NAME" AS "N_NAME" @id("03206e") @empty,
      "N"."N_REGIONKEY" AS "N_REGIONKEY" @id("b2aa6a"),
      CAST(COALESCE("CA"."CUSTOMER_COUNT", 0) AS NUMBER(38,0)) AS "CUSTOMER_COUNT" @id("35aaa9") @inHash("GH_NATION_STATS", 2),
-     CAST(COALESCE("CA"."TOTAL_ACCTBAL", 0) AS NUMBER(18,2)) AS "TOTAL_ACCTBAL" @id("a80f49"),
+     CAST("CA"."LATEST_SIGNUP_DATE" AS DATE) AS "LATEST_SIGNUP_DATE" @id("a80f49"),
      CAST(COALESCE("OA"."ORDER_COUNT", 0) AS NUMBER(38,0)) AS "ORDER_COUNT" @id("e8e480") @inHash("GH_NATION_STATS", 3),
      "N"."N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" @id("920bd6") @lastModifiedTracking(2) @not_null,
      {{ get_hash('GH_NATION_STATS', algo='SHA256', delimiter='~') }}::STRING AS "GH_NATION_STATS" @id("ffdede"),
