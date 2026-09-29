@@ -620,6 +620,7 @@ Common ways to use the SQL nodes. The SQL patterns under Work Examples (CTEs, wi
 * [Zero Key Record](#zero-key-record)
 * [Dimension as a View](#dimension-as-a-view)
 * [Duplicate or NULL Business Key Check](#duplicate-or-null-business-key-check)
+* [Upsert with Custom SCD Logic](#upsert-with-custom-scd-logic)
 
 #### Work Examples
 
@@ -992,6 +993,39 @@ FROM {{ ref('SOURCE_DATA', 'NATION') }} "NATION"
 ```
 * The test query must read the same source, CTE and filters as the node's SELECT, so it checks the rows that are actually loaded. List every `@isBusinessKey` column in the `GROUP BY` and the `IS NULL` checks.
 * For a case-sensitive column name, double each inner quote — `""Nation_Key""` — see [Quote Style for Case-Sensitive Identifiers](#quote-style-for-case-sensitive-identifiers).
+
+##### Upsert with Custom SCD Logic
+
+`upsert` writes each row exactly as the SELECT computes it, so the SELECT can implement its own change logic. This example keeps the previous `CITY` (SCD3 style): the SELECT joins the source to the node's own table, and when the city changes, the old value moves to `CITY_PREV`.
+
+```sql
+@nodeType("718")
+@mergeStrategy("upsert")
+WITH "EXISTING" AS (
+    -- Current rows already in this dimension
+    SELECT "CUSTOMER_ID", "CITY", "CITY_PREV", "CITY_CHANGED_DATE"
+    FROM MY_DB.TARGET.DIM_CUSTOMER
+)
+SELECT
+    "SRC"."CUSTOMER_ID"                      AS "CUSTOMER_ID"         @id("0b0001") @isBusinessKey,
+    "SRC"."NAME"                             AS "NAME"                @id("0b0002"),
+    "SRC"."CITY"                             AS "CITY"                @id("0b0003"),
+    CASE WHEN NOT EQUAL_NULL("SRC"."CITY", "EXISTING"."CITY") AND "EXISTING"."CUSTOMER_ID" IS NOT NULL
+         THEN "EXISTING"."CITY"
+         ELSE "EXISTING"."CITY_PREV" END     AS "CITY_PREV"           @id("0b0004"),
+    CASE WHEN NOT EQUAL_NULL("SRC"."CITY", "EXISTING"."CITY") AND "EXISTING"."CUSTOMER_ID" IS NOT NULL
+         THEN CURRENT_TIMESTAMP
+         ELSE "EXISTING"."CITY_CHANGED_DATE" END AS "CITY_CHANGED_DATE" @id("0b0005"),
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @id("0b0008") @isSystemCreateDate,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_UPDATE_DATE"  @id("0b0009") @isSystemUpdateDate
+FROM {{ ref('SRC', 'CUSTOMER') }} "SRC"
+LEFT JOIN "EXISTING" ON "SRC"."CUSTOMER_ID" = "EXISTING"."CUSTOMER_ID"
+```
+* New customer — no match in `EXISTING`, so `CITY_PREV` and `CITY_CHANGED_DATE` are NULL.
+* City changed — the old city moves to `CITY_PREV` and `CITY_CHANGED_DATE` is stamped.
+* City unchanged — the stored `CITY_PREV` and `CITY_CHANGED_DATE` are kept.
+* `EXISTING` reads the node's own target table by its full name (replace `MY_DB.TARGET.DIM_CUSTOMER`), because a node can't `ref()` itself.
+* `@isSystemCreateDate` keeps its first-insert value on update; every other column is overwritten from the SELECT.
 
 ---
 
