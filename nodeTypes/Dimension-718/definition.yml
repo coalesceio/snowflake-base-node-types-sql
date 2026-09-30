@@ -51,7 +51,7 @@ metadata:
             ◆ 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱
               • Compares a single lastModifiedTracking timestamp column against the target's stored value.
               • Requires exactly one column marked lastModifiedTracking — the run fails if none is present.
-              • 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 𝗼�� 𝟮 comes from that column's own 𝘀𝗰𝗱𝗧𝘆𝗽𝗲 parameter.
+              • 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭 𝗼𝗿 𝟮 comes from that column's own 𝘀𝗰𝗱𝗧𝘆𝗽𝗲 parameter.
               • Requires no isChangeTracking column
 
             ◆ 𝘂𝗽𝘀𝗲𝗿𝘁
