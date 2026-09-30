@@ -18,7 +18,6 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 	(
 		{%- for col in columns %}
 			"{{ col.name }}" {{ col.dataType }}
-            {%- if col.isSurrogateKey %} identity {%- endif %}
 			{%- if col.nullable == false %} NOT NULL {%- endif %}
 			{%- if col.defaultValue %} DEFAULT {{ col.defaultValue }} {%- endif %}
 			{%- if col.description | trim | length > 0 %} COMMENT '{{ col.description | escape }}' {%- endif %}
@@ -44,7 +43,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     {{ sources[0].cteString }}
     SELECT {{ sources[0].selectModifier | default('', true) }}
     {%- for col in sources[0].columns %}
-        {%- if col.isSurrogateKey or col.isSystemVersion or col.isSystemCurrentFlag or col.isSystemCreateDate or col.isSystemUpdateDate or col.isSystemEndDate %}
+        {%- if col.isSystemCreateDate or col.isSystemUpdateDate %}
             CAST(NULL AS {{ col.dataType }})
         {%- else %}
             {{ get_source_transform(col) }}

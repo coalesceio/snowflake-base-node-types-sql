@@ -8,6 +8,7 @@ The Coalesce Base Node Types - SQL Package includes:
 
 * [Work](#work)
 * [Dimension](#dimension)
+* [Fact](#fact)
 
 Concepts shared across every node type — quote style, hash columns, data quality tests, known limitations, and usage examples — are documented once in [Common Reference](#common-reference) and linked to from each node type below.
 
@@ -17,39 +18,39 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 
 ### Node Annotations Matrix
 
-| Annotation | Work | Dimension |
-|---|---|---|
-| `@description` ***(reserved)*** | ✅ | ✅ |
-| `@materializationType` ***(reserved)*** | ✅ | ✅ |
-| `@deployDisabled` ***(reserved)*** | ✅ | ✅ |
-| `@writeMode` | ✅ | ✅ |
-| `@mergeStrategy` | ➖ | ✅ |
-| `@zeroKey` (node-level) | ➖ | ✅ |
-| `@disableTests` | ✅ | ✅ |
-| `@tests` | ✅ | ✅ |
-| `@preSQL` | ✅ | ✅ |
-| `@postSQL` | ✅ | ✅ |
+| Annotation | Work | Dimension | Fact |
+|---|---|---|---|
+| `@description` ***(reserved)*** | ✅ | ✅ | ✅ |
+| `@materializationType` ***(reserved)*** | ✅ | ✅ | ✅ |
+| `@deployDisabled` ***(reserved)*** | ✅ | ✅ | ✅ |
+| `@writeMode` | ✅ | ✅ | ✅ |
+| `@mergeStrategy` | ➖ | ✅ | ✅ |
+| `@zeroKey` (node-level) | ➖ | ✅ | ➖ |
+| `@disableTests` | ✅ | ✅ | ✅ |
+| `@tests` | ✅ | ✅ | ✅ |
+| `@preSQL` | ✅ | ✅ | ✅ |
+| `@postSQL` | ✅ | ✅ | ✅ |
 
 ### Column Annotations Matrix
 
-| Annotation | Work | Dimension |
-|---|---|---|
-| `@id` ***(required)***<br/>(column-level) | ➖ | ✅ |
-| `@description` ***(reserved)*** | ✅ | ✅ |
-| `@notNull` ***(reserved)*** | ✅ | ✅ |
-| `@defaultValue` ***(reserved)*** | ✅ | ✅ |
-| `@inHash` | ✅ | ✅ |
-| `@isBusinessKey` ***(required)*** | ➖ | ✅ |
-| `@isChangeTracking` | ➖ | ✅ |
-| `@lastModifiedTracking` | ➖ | ✅ |
-| `@zeroKey` (column-level) | ➖ | ✅ |
-| `@isSurrogateKey` | ➖ | ✅ |
-| `@isSystemVersion` | ➖ | ✅ |
-| `@isSystemCurrentFlag` | ➖ | ✅ |
-| `@isSystemCreateDate` | ➖ | ✅ |
-| `@isSystemUpdateDate` | ➖ | ✅ |
-| `@isSystemEndDate` | ➖ | ✅  |
-| all column tests | ✅ | ✅ |
+| Annotation | Work | Dimension | Fact |
+|---|---|---|---|
+| `@id` ***(required)***<br/>(column-level) | ➖ | ✅ | ✅ |
+| `@description` ***(reserved)*** | ✅ | ✅ | ✅ |
+| `@notNull` ***(reserved)*** | ✅ | ✅ | ✅ |
+| `@defaultValue` ***(reserved)*** | ✅ | ✅ | ✅ |
+| `@inHash` | ✅ | ✅ | ✅ |
+| `@isBusinessKey` | ➖ | ✅ ***(required)*** | ✅ ***(optional)*** |
+| `@isChangeTracking` | ➖ | ✅ | ➖ |
+| `@lastModifiedTracking` | ➖ | ✅ | ✅ |
+| `@zeroKey` (column-level) | ➖ | ✅ | ➖ |
+| `@isSurrogateKey` | ➖ | ✅ | ➖ |
+| `@isSystemVersion` | ➖ | ✅ | ➖ |
+| `@isSystemCurrentFlag` | ➖ | ✅ | ➖ |
+| `@isSystemCreateDate` | ➖ | ✅ | ✅ |
+| `@isSystemUpdateDate` | ➖ | ✅ | ✅ |
+| `@isSystemEndDate` | ➖ | ✅  | ➖ |
+| all column tests | ✅ | ✅ | ✅ |
 
 > See [Column-Level Data Quality Tests](#column-level-data-quality-tests) for the shared quality-test annotations in the last row.
 
@@ -403,6 +404,208 @@ The stage executed:
 
 ---
 
+## Fact
+
+The Fact node is a specialized transformation node within Coalesce, used to materialize fact tables that hold measurable business events. It loads incoming source data into the target in one of three ways: a plain insert when no business key is marked, an SCD Type 1 merge on the business key (`changeTracking` or `lastModified`), or a merge with no change detection (`upsert`, or `allColumnMatch`, which inserts only rows that don't already exist). Facts never keep versioned (SCD Type 2) history and have no surrogate key or zero key record. Like the other node types, it comes with a built-in library of column- and node-level data quality tests.
+
+### Fact Node Configuration
+
+The Fact Node type has three configuration groups:
+
+* [General](#fact-general-options)
+* [Node Annotations](#fact-node-annotations)
+* [Column Annotations](#fact-column-annotations)
+
+#### Fact General Options
+
+| **Property** | **Description** |
+|----------|-------------|
+| **Storage Location** | Storage Location where the Fact table or view will be created |
+
+### Fact Node Annotations
+
+| **Property** | **Description** |
+|---------|-------------|
+| `@id(id)` ***(reserved)*** | Unique identifier for the node.<br/>Static and auto-generated when the node is created — not meant to be edited. |
+| `@nodeType(type)` ***(reserved)*** | Identifies the node's type.<br/>Set automatically based on the node type chosen when the node is created.|
+| `@description(text)` ***(reserved)*** | Node-level description.<br/>Can be edited via this annotation or in the node description field below the node name in the UI.<br/>Example: `@description("Table description")` |
+| `@materializationType(type)` ***(reserved)*** | table/view.<br/>Value is strictly case-sensitive — must be lowercase `table` or `view`.<br/>*Not specified in the SQL editor → defaults to **table**.*<br/>Example: `@materializationType("view")` |
+| `@deployDisabled` ***(reserved)*** | Excludes this node from deployment. |
+| `@writeMode("truncateInsert \| append")` | **truncateInsert** — clears the table before loading, replacing its contents entirely.<br/>**append** — loads the new rows alongside whatever is already there.<br/>*Not specified in the SQL editor → defaults to **append**.*<br/>**Note:** Ignored on Views.<br/>Example: `@writeMode("truncateInsert")` |
+| `@mergeStrategy("changeTracking \| lastModified \| upsert \| allColumnMatch")` | Chooses how rows are matched against the target, and therefore which column annotations are required.<br/><br/>**changeTracking** — SCD Type 1. Compares every plain attribute column against the target; a changed row is overwritten in place, a new key is inserted. Doesn't use `@lastModifiedTracking` — if present, a warning is raised and it's ignored.<br/><br/>**lastModified** — SCD Type 1. Compares a single `@lastModifiedTracking` column against the target's stored value; a newer value overwrites the row in place. Requires exactly one column marked `@lastModifiedTracking` — a validation check flags it if none (or more than one) is present.<br/><br/>**upsert** — no change detection at all; a matched row is always updated, an unmatched row is inserted. The SELECT/CTE should return one row per business key (de-duplicate upstream). System columns are optional; any that are present are written exactly as the SELECT/CTE computes them. `@lastModifiedTracking` isn't used — if present, a warning is raised and it's ignored.<br/><br/>**allColumnMatch** — treats every non-system column as the business key: a source row is inserted only if no target row matches it on all of those columns, and an existing matching row is never updated. `@isBusinessKey` isn't needed — if present, a warning is raised, it's ignored and all columns are used for the comparison. `@lastModifiedTracking` isn't used either — a warning is raised and it's ignored. System columns are optional, are left out of the comparison, and are written exactly as the SELECT/CTE computes them.<br/><br/>*Not specified in the SQL editor → defaults to **changeTracking** - SCD Type 1.*<br/>The value is not case-sensitive; any other value is flagged by a validation check.<br/>`changeTracking`, `lastModified` and `upsert` need at least one `@isBusinessKey` column — without one the node is loaded as a [plain insert](#fact-load-behaviour) and this annotation is ignored (a warning is raised).<br/>**Note:** Ignored on Views.<br/>Example: `@mergeStrategy("allColumnMatch")` |
+| `@disableTests`**²** | Controls whether configured tests are skipped.<br/>*Specified in the SQL editor → all node- and column-level tests are skipped.*<br/>*Not specified in the SQL editor → tests run normally.*<br/>To turn tests back on, remove the annotation. Useful while developing a node — iterate on the SQL first, then re-enable once the logic is settled.<br/>Example: `@disableTests` |
+| `@tests(querySQL, continueOnFailure?, runOrder?)`**²** | ***(repeatable)*** Node-level data quality test.<br/>Runs `querySQL` against the target; fails if it returns any records.<br/>Skipped entirely when **@disableTests** is set.<br/>[Refer to Node-Level Tests for more details.](#node-level-tests--tests)<br/>Example: `@tests("SELECT 1 FROM {{ this }} GROUP BY ORDER_ID HAVING COUNT(*) > 1", false, "After")`|
+| `@preSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `before` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@preSQL("DELETE FROM {{ this }} WHERE ORDER_DATE < DATEADD(DAY, -90, CURRENT_DATE())")` |
+| `@postSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `after` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('FCT_ORDERS', CURRENT_TIMESTAMP())")` |
+
+>**Note:** Quote style matters for **case-sensitive** identifiers when writing `@tests`, `@preSQL`, and `@postSQL` — see [Quote Style for Case-Sensitive Identifiers](#quote-style-for-case-sensitive-identifiers).
+
+### Fact Column Annotations
+
+| **Property** | **Description** |
+|---------|-------------|
+| `@id("<value>")` | Stable column ID for lineage tracking.<br/>Required on every column — the SQL editor generates a fresh `@id("<value>")` for each column it creates, and a validation check flags any column that is missing one.<br/>Not for manual editing — value is a stable identifier generated once at creation time.<br/>**Column added later:** make sure it gets its own `@id` too. If you're editing by hand, add a new, unique 6-hex-digit `@id("<value>")` along with the column; an agent can generate one for you. Don't reuse a value already on the node.<br/>Example: `@id("110e75")` |
+| `@notNull` ***(reserved)*** | Marks column as NOT NULL.<br/>**Note:** Ignored on Views.<br/>Example: `@notNull` |
+| `@description(<text>)` ***(reserved)*** | Adds column description.<br/>Example: `@description("timestamp column")` |
+| `@defaultValue(<value>)` ***(reserved)*** | Adds default value.<br/>Quote to match the column's data type - <br/>number: `defaultValue("<num>")`<br/>string: `defaultValue("'<string>'")`<br/>**Note:** Ignored on Views.<br/>Example: `@defaultValue("20")` `@defaultValue("'NA'")` |
+| `@inHash("<hashName>", <hashOrder>)`**¹** | ***(repeatable)*** Marks a column as an input to a generated hash key.<br/>**hashName** — columns sharing the same value are grouped together into the same hash.<br/>**hashOrder** — this column's position within that group.<br/>Call `get_hash("<hashName>")` elsewhere in the SELECT to produce the hash column from the marked columns.<br/>[Refer to Hash Columns for more details.](#hash-columns--get_hash)<br/>Example:<br/>`<col_name> AS <col_name> @inHash("GH_COL", 1),`<br/>`{{ get_hash('GH_COL') }}::STRING AS "GH_COL"`|
+| `@isBusinessKey` | Marks a column as part of the business key used to match existing rows during the merge.<br/>Optional — if no column is marked, there is no merge and every source row is simply inserted.<br/>Ignored under `@mergeStrategy("allColumnMatch")`, which uses every non-system column as the key (a warning is raised).<br/>**Note:** Ignored on Views.<br/>Example: `@isBusinessKey` |
+| `@lastModifiedTracking` | Marks the column used to detect newer source rows for an incremental load (SCD Type 1).<br/>Datatype — DATE/TIME or any incrementing NUMERIC type.<br/>Can only be applied to one column.<br/>Must not be NULL in the source — a pre-load check flags it, since a NULL value can never compare as newer: a row loaded with a NULL tracking value is never updated again.<br/>Only this column decides a change — other columns that change without a newer tracking value are never applied.<br/>Used only by `@mergeStrategy("lastModified")`.<br/>**Note:** Ignored on Views.<br/>Example: `@lastModifiedTracking` |
+| `@isSystemCreateDate` | Marks this column as the timestamp a row was first created.<br/>Required for `changeTracking`/`lastModified` — read back from the target and preserved unchanged on every row after its initial insert.<br/>Optional for `upsert`, `allColumnMatch` and plain insert — if kept, it is written from the SELECT/CTE on insert and never overwritten on update.<br/>**Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.<br/>Expected expression: `CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate` |
+| `@isSystemUpdateDate` | Marks this column as the timestamp a row was last updated.<br/>Required for `changeTracking`/`lastModified` — set to the current timestamp on every inserted or changed row.<br/>Optional for `upsert`, `allColumnMatch` and plain insert — if kept, it is written exactly as the SELECT/CTE computes it.<br/>**Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.<br/>Expected expression: `CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate` |
+
+🚦 The full set of column-level data quality tests (`@not_null`, `@uniqueness`, `@empty`, `@accepted_values`, `@rejected_values`, `@min_max`, `@min_value`, `@max_value`, `@freshness`, `@relative_time`) applies to Fact columns exactly as described in [Column-Level Data Quality Tests](#column-level-data-quality-tests).
+
+---
+
+### Fact Load Behaviour
+
+How a Fact table is loaded depends on `@mergeStrategy` and on whether any column is marked `@isBusinessKey`:
+
+| `@isBusinessKey` | `@mergeStrategy` | Load | Existing matching row | New row |
+|---|---|---|---|---|
+| none | not set, or `changeTracking` / `lastModified` / `upsert` (ignored, warning) | Plain insert | — (no matching) | Inserted |
+| marked | `changeTracking` (default) | SCD1 merge on the business key | Overwritten if any attribute column changed | Inserted |
+| marked | `lastModified` | SCD1 merge on the business key | Overwritten if the `@lastModifiedTracking` value is newer | Inserted |
+| marked | `upsert` | Merge on the business key | Always overwritten | Inserted |
+| any (ignored, warning if marked) | `allColumnMatch` | Merge on every non-system column | Left untouched | Inserted |
+
+Requirement level of each column annotation, by load:
+
+| Annotation | `changeTracking` / `lastModified` | `upsert` | `allColumnMatch` | Plain insert |
+|---|:---:|:---:|:---:|:---:|
+| `@isBusinessKey` | 🔴 | 🔴 | ⚪¹ | — |
+| `@lastModifiedTracking` | 🔴 for `lastModified` only | — | — | — |
+| `@isSystemCreateDate` | 🔴 | ⚪ | ⚪ | ⚪ |
+| `@isSystemUpdateDate` | 🔴 | ⚪ | ⚪ | ⚪ |
+
+**Legend:** 🔴 Required · ⚪ Optional · — Not used
+
+* ¹ Ignored if present — every non-system column is used as the business key and a warning is raised.
+* Under `changeTracking` / `lastModified` the load writes fixed values into the system columns: `@isSystemCreateDate` gets `CURRENT_TIMESTAMP` on first insert and is then kept; `@isSystemUpdateDate` gets `CURRENT_TIMESTAMP` whenever the row is inserted or changed. The expression the SELECT gives them is only used to derive the column's datatype.
+* Under `upsert`, `allColumnMatch` and plain insert, system columns are written exactly as the SELECT/CTE computes them. `@isSystemCreateDate` keeps its first-inserted value on an `upsert` update.
+* Business key matching (including every column under `allColumnMatch`) uses plain equality, so a NULL never matches — see [Duplicate or NULL Business Keys](#known-limitations).
+
+---
+
+### Fact Deployment
+
+#### Fact Initial Deployment
+
+When deployed for the first time into an Environment the Fact Node will execute the below stage:
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Create Fact Table** | This will execute a CREATE OR REPLACE statement and create a table in the target Environment |
+| **Create Fact View** | This will execute a CREATE OR REPLACE statement and create a view in the target Environment |
+
+#### Fact View
+
+A Fact Node of materialization type view is a plain `CREATE OR REPLACE VIEW` over the node's SELECT:
+
+* None of the Fact validation checks run — `@isBusinessKey`, system columns, `@id` and `@mergeStrategy` aren't required or checked.
+* There is no load; the run shows **Load Skipped for View**. `@mergeStrategy`, `@writeMode`, `@preSQL`, `@postSQL` and `@lastModifiedTracking` are ignored.
+* `@isSystemCreateDate` / `@isSystemUpdateDate` columns are selected as a typed `NULL`, keeping the column's datatype.
+* Column-level data quality tests and node-level `@tests` still run.
+
+#### Fact Load
+
+Every deployment of a Fact Node of materialization type table runs its configured data quality tests, then loads data into the target using the stages below:
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Pre Load Test `<n>`** | Node-level `@tests(..., "Before")` tests, in the order they appear. |
+| **Missing Column IDs \| Invalid configuration: … \| Missing Required System Columns** | Validation checks — rendered only when the node's annotations have a problem. See [Fact Validation Checks](#fact-validation-checks). |
+| **Check NULL values for `<column>` column** | Pre-load check for `@mergeStrategy("lastModified")` — flags a NULL `@lastModifiedTracking` value in the source. |
+| **Pre-SQL `<n>`** | Each `@preSQL` statement, in the order they appear. |
+| **Truncate table** | Executed only when `@writeMode("truncateInsert")` is set — clears the target before the load. |
+| **Load table Using Insert** | Executed when no column is marked `@isBusinessKey` (and the strategy isn't `allColumnMatch`) — inserts every source row with `INSERT INTO … SELECT`. |
+| **Load table Using Merge - Change Tracking - SCD1** | Executed for `@mergeStrategy("changeTracking")` (the default) — compares every plain attribute column against the target, then updates changed rows in place and inserts new keys. |
+| **Load table Using Merge - Last Modified Comparison - SCD1** | Executed for `@mergeStrategy("lastModified")` — compares the `@lastModifiedTracking` column against the target, then updates newer rows in place and inserts new keys. |
+| **Load table Using Merge - Upsert** | Executed for `@mergeStrategy("upsert")` — every matched row is updated from the SELECT/CTE (system columns included, `@isSystemCreateDate` excepted) and every unmatched row is inserted. |
+| **Load table Using Merge - All Column Match** | Executed for `@mergeStrategy("allColumnMatch")` — matches on every non-system column and inserts only rows that don't already exist; nothing is updated. |
+| **Post-SQL `<n>`** | Each `@postSQL` statement, in the order they appear. |
+| **`<column>: <test>` \| Post Load Test `<n>`** | Column-level data quality tests and node-level `@tests(..., "After")` tests, run after the load. |
+
+#### Fact Validation Checks
+
+Each check is rendered as its own stage only when it's triggered. A **Fail** stops the run (and, on create, raises an error before the table is created); a **Warning** is reported but the load still runs.
+
+| **Check** | **Triggered when** | **Result** |
+|---|---|---|
+| **Missing Column IDs** | A column has no `@id` | Fail |
+| **Invalid configuration: mergeStrategy** | `@mergeStrategy` isn't one of `changeTracking`, `lastModified`, `upsert`, `allColumnMatch` | Fail |
+| **Invalid configuration: No Business Key** | No `@isBusinessKey` column, but `@mergeStrategy` or `@lastModifiedTracking` is set (not for `allColumnMatch`) — they're ignored and the node is a plain insert | Warning |
+| **Invalid configuration: mergeStrategy** | `allColumnMatch` with an `@isBusinessKey` column — the key is ignored and all columns are compared | Warning |
+| **Invalid configuration: mergeStrategy** | `upsert` or `allColumnMatch` with an `@lastModifiedTracking` column — it's never read | Warning |
+| **Invalid configuration: mergeStrategy** | `changeTracking` with an `@lastModifiedTracking` column — it's ignored | Warning |
+| **Invalid configuration: mergeStrategy** | `lastModified` with no `@lastModifiedTracking` column | Fail |
+| **Invalid configuration: Last Modified Column** | `lastModified` with more than one `@lastModifiedTracking` column | Fail |
+| **Missing Required System Columns** | `changeTracking`/`lastModified` with a business key, and `@isSystemCreateDate` and/or `@isSystemUpdateDate` missing — lists each missing column with an example | Fail |
+
+#### Fact Redeployment
+
+After the Fact Node with materialization type table has been deployed for the first time into a target Environment, subsequent deployments may result in either altering the Fact Table or recreating the Fact table.
+
+#### Altering the Fact Tables
+
+A few types of column or table changes will result in an ALTER statement to modify the Fact Table in the target Environment, whether these changes are made individually or all together:
+
+* Changing table names
+* Dropping existing columns
+* Altering column data types
+* Adding new columns
+
+The following stages are executed:
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Clone Table** | Creates an internal table |
+| **Rename Table\| Alter Column \| Delete Column \| Add Column \| Edit table description** | Alter table statement is executed to perform the alter operation |
+| **Swap Cloned Table** | Upon successful completion of all updates, the clone replaces the main table ensuring that no data is lost |
+| **Delete Table** | Drops the internal table |
+
+#### Recreating the Fact Tables
+
+If the materialization type is changed from Table to View, then the following stages are executed:
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Delete Table** | Drops the existing table |
+| **Create View** | Recreates the node as a view |
+
+#### Recreating the Fact Views
+
+The subsequent deployment of the Fact Node of materialization type view with changes in view definition, adding table description or renaming view results in deleting the existing view and recreating the view.
+
+The following stages are executed:
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Delete View** | Removes existing view |
+| **Create View** | Creates new view with updated definition |
+
+### Removing a Fact Node
+
+If a Fact Node of materialization type table is deleted from a SQL Workspace, that SQL Workspace is committed to Git and that commit deployed to a higher-level Environment, then the Fact Table in the target Environment will be dropped.
+
+This is executed in two stages:
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Delete Table** | Coalesce Internal table is dropped |
+| **Delete Table** | Target table in Snowflake is dropped |
+
+If a Fact Node of materialization type view is deleted from a Workspace, that Workspace is committed to Git and that commit deployed to a higher-level Environment, then the Fact View in the target Environment will be dropped.
+
+The stage executed:
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Delete View** | Drops the existing Fact view from the target Environment |
+
+---
+
 ## Common Reference
 
 Concepts and reusable building blocks that apply across every node type in this package.
@@ -593,7 +796,7 @@ Every strategy merges on the business key, so the SELECT/CTE must return exactly
 
 ### Usage Examples
 
-Common ways to use the SQL nodes. The SQL patterns under Work Examples (CTEs, window functions, DISTINCT) work the same way in a Dimension node.
+Common ways to use the SQL nodes. The SQL patterns under Work Examples (CTEs, window functions, DISTINCT) work the same way in a Dimension or Fact node.
 
 **Work Examples**
 * [Sample Node with Annotations](#sample-node-with-annotations)
@@ -620,6 +823,13 @@ Common ways to use the SQL nodes. The SQL patterns under Work Examples (CTEs, wi
 * [Dimension as a View](#dimension-as-a-view)
 * [Duplicate or NULL Business Key Check](#duplicate-or-null-business-key-check)
 * [Upsert with Custom SCD Logic](#upsert-with-custom-scd-logic)
+
+**Fact Examples**
+* [Fact Plain Insert](#fact-plain-insert)
+* [Fact Change Tracking SCD1](#fact-change-tracking-scd1)
+* [Fact Last Modified SCD1](#fact-last-modified-scd1)
+* [Fact Upsert](#fact-upsert)
+* [Fact All Column Match](#fact-all-column-match)
 
 #### Work Examples
 
@@ -1026,6 +1236,85 @@ LEFT JOIN "EXISTING" ON "SRC"."CUSTOMER_ID" = "EXISTING"."CUSTOMER_ID"
 * `EXISTING` reads the node's own target table by its full name (replace `MY_DB.TARGET.DIM_CUSTOMER`), because a node can't `ref()` itself.
 * `@isSystemCreateDate` keeps its first-insert value on update; every other column is overwritten from the SELECT.
 
+#### Fact Examples
+
+##### Fact Plain Insert
+
+No `@isBusinessKey` column, so every source row is inserted with no matching. System columns are optional and written as the SELECT computes them.
+
+```sql
+@nodeType("724")
+SELECT
+    "ORDER_ID"                               AS "ORDER_ID"            @id("1a0001"),
+    "CUSTOMER_ID"                            AS "CUSTOMER_ID"         @id("1a0002"),
+    "AMOUNT"                                 AS "AMOUNT"              @id("1a0003"),
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @id("1a0008") @isSystemCreateDate
+FROM {{ ref('SRC', 'ORDERS') }}
+```
+
+##### Fact Change Tracking SCD1
+
+The default strategy. Any change in a non-key column overwrites the row; new keys are inserted.
+
+```sql
+@nodeType("724")
+SELECT
+    "ORDER_ID"                               AS "ORDER_ID"            @id("1b0001") @isBusinessKey,
+    "STATUS"                                 AS "STATUS"              @id("1b0002"),
+    "AMOUNT"                                 AS "AMOUNT"              @id("1b0003"),
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @id("1b0008") @isSystemCreateDate,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_UPDATE_DATE"  @id("1b0009") @isSystemUpdateDate
+FROM {{ ref('SRC', 'ORDERS') }}
+```
+
+##### Fact Last Modified SCD1
+
+A row is overwritten only when its `@lastModifiedTracking` value is newer than the stored one.
+
+```sql
+@nodeType("724")
+@mergeStrategy("lastModified")
+SELECT
+    "ORDER_ID"                               AS "ORDER_ID"            @id("1c0001") @isBusinessKey,
+    "STATUS"                                 AS "STATUS"              @id("1c0002"),
+    "UPDATED_AT"                             AS "UPDATED_AT"          @id("1c0003") @lastModifiedTracking,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @id("1c0008") @isSystemCreateDate,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_UPDATE_DATE"  @id("1c0009") @isSystemUpdateDate
+FROM {{ ref('SRC', 'ORDERS') }}
+```
+
+##### Fact Upsert
+
+No change detection: existing keys are updated, new keys inserted. System columns are optional.
+
+```sql
+@nodeType("724")
+@mergeStrategy("upsert")
+SELECT
+    "ORDER_ID"                               AS "ORDER_ID"            @id("1d0001") @isBusinessKey,
+    "STATUS"                                 AS "STATUS"              @id("1d0002"),
+    "AMOUNT"                                 AS "AMOUNT"              @id("1d0003")
+FROM {{ ref('SRC', 'ORDERS') }}
+```
+
+##### Fact All Column Match
+
+Every non-system column is compared; a row is inserted only if an identical row doesn't already exist. Nothing is ever updated, and no `@isBusinessKey` is needed.
+
+```sql
+@nodeType("724")
+@mergeStrategy("allColumnMatch")
+SELECT
+    "ORDER_ID"                               AS "ORDER_ID"            @id("1e0001"),
+    "PRODUCT_ID"                             AS "PRODUCT_ID"          @id("1e0002"),
+    "QUANTITY"                               AS "QUANTITY"            @id("1e0003"),
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @id("1e0008") @isSystemCreateDate
+FROM {{ ref('SRC', 'ORDER_LINES') }}
+```
+* `SYSTEM_CREATE_DATE` is left out of the comparison, so re-running the load doesn't insert the same row again.
+* Matching uses plain equality — a row with a NULL in any compared column never matches and is inserted on every run.
+* Two identical source rows that aren't in the target yet are both inserted — add `DISTINCT` to the SELECT if that's not wanted.
+
 ---
 
 ### Code
@@ -1041,6 +1330,12 @@ LEFT JOIN "EXISTING" ON "SRC"."CUSTOMER_ID" = "EXISTING"."CUSTOMER_ID"
 * [Node definition](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Dimension-718/definition.yml)
 * [Create Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Dimension-718/create.sql.j2)
 * [Run Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Dimension-718/run.sql.j2)
+
+#### Fact
+
+* [Node definition](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Fact-724/definition.yml)
+* [Create Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Fact-724/create.sql.j2)
+* [Run Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Fact-724/run.sql.j2)
 
 #### Macro
 
