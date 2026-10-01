@@ -715,7 +715,11 @@ CAST(
 
 ### Notes & Supported SQL Functionality
 
-- Verify that all **column datatypes** are successfully resolved before creating the object. Columns with an `UNKNOWN` datatype may cause stage generation or runtime failures. This typically happens when a CTE builds a column through a `UNION`/`UNION ALL` inside a derived table — wrap the column in an explicit `CAST(... AS <type>)` in the final SELECT.
+- Verify that all **column datatypes** are successfully resolved before creating the object. Columns with an `UNKNOWN` datatype may cause stage generation or runtime failures. This typically happens when:
+    * a CTE builds a column through a `UNION`/`UNION ALL` inside a derived table — wrap the column in an explicit `CAST(... AS <type>)` in the final SELECT;
+    * the final SELECT reads a CTE by its bare name (`FROM "CUST"`, `"CUST"."C_NAME"`) — give the CTE a table alias and qualify the columns with it (`FROM "CUST" "CU"`, `"CU"."C_NAME"`), and every column then resolves to its real datatype. Nodes downstream of an `UNKNOWN` column inherit it, so fix it at the first node.
+
+    The create dry-run still reports `passed` with `UNKNOWN` in the DDL, so check the rendered column list rather than the status.
 
 - Any keyword that is valid immediately after **SELECT** is accepted in the final **SELECT** clause (right after any CTEs) — for example **DISTINCT** or **ALL**. This does not extend to keywords like `DEFAULT` that, while valid SQL keywords elsewhere, don't fit in a `SELECT` clause.
 
