@@ -21,12 +21,13 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 | Annotation | Work | Dimension | Fact |
 |---|---|---|---|
 | `@writeMode` | ✅ | ✅ | ✅ |
-| `@mergeStrategy` | ➖ | ✅ | ✅ |
+| @mergeStrategy | ➖ | ✅<br/>* changeTracking<br/>* lastModified<br/>* upsert | ✅<br/>* changeTracking<br/>* lastModified<br/>* upsert<br/>* allColumnMatch |
 | `@zeroKey` (node-level) | ➖ | ✅ | ➖ |
 | `@disableTests` | ✅ | ✅ | ✅ |
 | `@tests` | ✅ | ✅ | ✅ |
 | `@preSQL` | ✅ | ✅ | ✅ |
 | `@postSQL` | ✅ | ✅ | ✅ |
+| Target Load | INSERT | MERGE | MERGE + INSERT |
 
 ### Column Annotations Matrix
 
