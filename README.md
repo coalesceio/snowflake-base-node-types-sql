@@ -768,6 +768,9 @@ Avoid naming custom annotations after words that are reserved keywords in the pl
 * **Switching Between YAML and SQL Node Types**:  
 Converting an existing YAML (`.yml`) node to a SQL (`.sql`) node, or vice versa, is not supported.
 
+* **Changing `@nodeType` on a Deployed Node**:  
+The switch deploys as a metadata update — the existing table is kept, not rebuilt for the new type. Work/Fact → Dimension overwrites every row via the zero-key merge (no identity surrogate key), Dimension → Fact rewrites every row and its surrogate keys, and → Work appends duplicates on each run; only Work → Fact is safe. Drop and redeploy the table when changing a node's type.
+
 * **Large or High-Precision Numbers in Test Values**:  
 An unquoted number in an annotation is read as a floating-point value, so integers beyond roughly 15–16 digits and decimals with more than about 16 significant digits are rounded before the test runs (e.g. `12345678901234567890` becomes `1.2345678901234567e+19`). Wrap such values in double quotes — `@accepted_values("12345678901234567890")` — to pass them through exactly.
 
