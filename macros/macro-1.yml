@@ -619,11 +619,19 @@ macroString: |-
             {{ fail_select(reason) }}
         {%- endif -%}
 
-        {# No business key = plain insert: @mergeStrategy and @lastModifiedTracking are never read. Warn only — the insert still runs.
-           Not for allColumnMatch, which needs no @isBusinessKey — every column is the match key. #}
-        {%- if not hasBusinessKey and not isAllColumnMatch and (mergeStrategyExplicit or lastModifiedCount > 0) %}
+        {# @mergeStrategy always takes priority. An explicit changeTracking/lastModified/upsert merges on the business key, so a missing @isBusinessKey stops the load.
+           Not for allColumnMatch, which needs no @isBusinessKey — every column is the match key. An unrecognised value is already flagged above. #}
+        {%- if not hasBusinessKey and mergeStrategyExplicit and (isSimpleUpsert or isLastModifiedStrategy or isChangeTrackingStrategy) %}
+            {%- set reason = '@mergeStrategy("' ~ mergeStrategyRaw ~ '") merges on the business key, but no column is marked @isBusinessKey. Mark the business key column(s) with @isBusinessKey, or remove @mergeStrategy to load the node as a plain insert.' %}
+            {{ test_stage('Invalid configuration: No Business Key', false) }}
+            -- {{ reason }}
+            {{ fail_select(reason) }}
+        {%- endif -%}
+
+        {# No @mergeStrategy and no business key = plain insert, so @lastModifiedTracking is never read. Warn only — the insert still runs. #}
+        {%- if not hasBusinessKey and not mergeStrategyExplicit and lastModifiedCount > 0 %}
             {{ test_stage('Invalid configuration: No Business Key', true) }}
-            -- No column is marked @isBusinessKey, so this node is loaded as a plain insert — {{ '@mergeStrategy("' ~ mergeStrategyRaw ~ '")' if mergeStrategyExplicit else '' }}{{ ' and ' if (mergeStrategyExplicit and lastModifiedCount > 0) else '' }}{{ '@lastModifiedTracking' if lastModifiedCount > 0 else '' }} will be ignored. Mark the business key column(s) with @isBusinessKey to merge instead, or remove the annotation(s).
+            -- No @mergeStrategy and no column marked @isBusinessKey, so this node is loaded as a plain insert — @lastModifiedTracking will be ignored. Mark the business key column(s) with @isBusinessKey and set @mergeStrategy("lastModified") to use it, or remove the annotation.
             SELECT 1
         {%- endif -%}
 

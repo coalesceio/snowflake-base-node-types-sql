@@ -38,10 +38,10 @@ metadata:
         - name: mergeStrategy
           description: |-
             • Picks the change-detection method; different methods require different column annotations.
-            • If not specified, defaults to changeTracking - 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭
+            • If not specified: a node with an isBusinessKey column defaults to changeTracking - 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭; a node with no isBusinessKey column is loaded as a plain insert.
             • The value is not case-sensitive; any other value fails the run.
             • Every strategy needs the SELECT/CTE to return exactly one row per business key, with no NULL business key — a pre-load test can handle this.
-            • Only applies when at least one column is marked isBusinessKey (except allColumnMatch) — with no business key, every source row is simply inserted and this annotation is ignored.
+            • Always takes priority when set: changeTracking, lastModified and upsert merge on the business key, so the run fails if no column is marked isBusinessKey. allColumnMatch needs no isBusinessKey.
             • Ignored on views
 
             ◆ 𝗰𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴
@@ -66,7 +66,7 @@ metadata:
 
             Agentic creation — before writing a new Fact node's SELECT, ask the user (don't silently default):
             1. Which merge strategy do they want — upsert, changeTracking, lastModified, or allColumnMatch? If they don't know, explain the four options above and let them choose — don't pick changeTracking just because it's the fallback default.
-            2. If they want a plain insert with no merge, no column is marked isBusinessKey and this annotation isn't needed.
+            2. If they want a plain insert with no merge, leave out both this annotation and isBusinessKey — setting a strategy without a business key fails the run.
 
           isRequired: false
           parameters:
@@ -165,7 +165,7 @@ metadata:
         - name: isBusinessKey
           description: |-
             • Marks a column as part of the business key used to match existing rows during the merge.
-            • If no column is marked, there is no merge — every source row is simply inserted.
+            • If no column is marked and no mergeStrategy is set, there is no merge — every source row is simply inserted. An explicit changeTracking, lastModified or upsert without a business key fails the run.
             • Ignored on views.
 
             Agentic creation — before writing the SELECT, ask the user which column(s) should be marked @isBusinessKey, or whether they want a plain insert with none. Don't guess based on column naming (e.g. assuming a "_ID"/"_KEY" column, or the first natural-looking key) — the business key is a domain decision only the user can make, and getting it wrong silently breaks change detection for every row. A business key can be more than one column; ask whether it's composite.

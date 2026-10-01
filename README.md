@@ -40,7 +40,7 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 | `@notNull` ***(reserved)*** | ✅ | ✅ | ✅ |
 | `@defaultValue` ***(reserved)*** | ✅ | ✅ | ✅ |
 | `@inHash` | ✅ | ✅ | ✅ |
-| `@isBusinessKey` | ➖ | ✅ ***(required)*** | ✅ ***(optional)*** |
+| `@isBusinessKey` | ➖ | ✅ ***(required)*** | ✅ ***(conditional)***³ |
 | `@isChangeTracking` | ➖ | ✅ | ➖ |
 | `@lastModifiedTracking` | ➖ | ✅ | ✅ |
 | `@zeroKey` (column-level) | ➖ | ✅ | ➖ |
@@ -53,6 +53,8 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 | all column tests | ✅ | ✅ | ✅ |
 
 > See [Column-Level Data Quality Tests](#column-level-data-quality-tests) for the shared quality-test annotations in the last row.
+>
+> ³ Fact: required for an explicit `@mergeStrategy` of `changeTracking`, `lastModified` or `upsert`; optional otherwise — with neither `@mergeStrategy` nor `@isBusinessKey` the node is a plain insert, and `allColumnMatch` ignores it. See [Fact Load Behaviour](#fact-load-behaviour).
 
 ## Work
 
@@ -406,7 +408,7 @@ The stage executed:
 
 ## Fact
 
-The Fact node is a specialized transformation node within Coalesce, used to materialize fact tables that hold measurable business events. It loads incoming source data into the target in one of three ways: a plain insert when no business key is marked, an SCD Type 1 merge on the business key (`changeTracking` or `lastModified`), or a merge with no change detection (`upsert`, or `allColumnMatch`, which inserts only rows that don't already exist). Facts never keep versioned (SCD Type 2) history and have no surrogate key or zero key record. Like the other node types, it comes with a built-in library of column- and node-level data quality tests.
+The Fact node is a specialized transformation node within Coalesce, used to materialize fact tables that hold measurable business events. It loads incoming source data into the target in one of three ways: a plain insert when neither `@mergeStrategy` nor a business key is set, an SCD Type 1 merge on the business key (`changeTracking` or `lastModified`), or a merge with no change detection (`upsert`, or `allColumnMatch`, which inserts only rows that don't already exist). Facts never keep versioned (SCD Type 2) history and have no surrogate key or zero key record. Like the other node types, it comes with a built-in library of column- and node-level data quality tests.
 
 ### Fact Node Configuration
 
@@ -432,7 +434,7 @@ The Fact Node type has three configuration groups:
 | `@materializationType(type)` ***(reserved)*** | table/view.<br/>Value is strictly case-sensitive — must be lowercase `table` or `view`.<br/>*Not specified in the SQL editor → defaults to **table**.*<br/>Example: `@materializationType("view")` |
 | `@deployDisabled` ***(reserved)*** | Excludes this node from deployment. |
 | `@writeMode("truncateInsert \| append")` | **truncateInsert** — clears the table before loading, replacing its contents entirely.<br/>**append** — loads the new rows alongside whatever is already there.<br/>*Not specified in the SQL editor → defaults to **append**.*<br/>**Note:** Ignored on Views.<br/>Example: `@writeMode("truncateInsert")` |
-| `@mergeStrategy("changeTracking \| lastModified \| upsert \| allColumnMatch")` | Chooses how rows are matched against the target, and therefore which column annotations are required.<br/><br/>**changeTracking** — SCD Type 1. Compares every plain attribute column against the target; a changed row is overwritten in place, a new key is inserted. Doesn't use `@lastModifiedTracking` — if present, a warning is raised and it's ignored.<br/><br/>**lastModified** — SCD Type 1. Compares a single `@lastModifiedTracking` column against the target's stored value; a newer value overwrites the row in place. Requires exactly one column marked `@lastModifiedTracking` — a validation check flags it if none (or more than one) is present.<br/><br/>**upsert** — no change detection at all; a matched row is always updated, an unmatched row is inserted. The SELECT/CTE should return one row per business key (de-duplicate upstream). System columns are optional; any that are present are written exactly as the SELECT/CTE computes them. `@lastModifiedTracking` isn't used — if present, a warning is raised and it's ignored.<br/><br/>**allColumnMatch** — treats every non-system column as the business key: a source row is inserted only if no target row matches it on all of those columns, and an existing matching row is never updated. `@isBusinessKey` isn't needed — if present, a warning is raised, it's ignored and all columns are used for the comparison. `@lastModifiedTracking` isn't used either — a warning is raised and it's ignored. System columns are optional, are left out of the comparison, and are written exactly as the SELECT/CTE computes them.<br/><br/>*Not specified in the SQL editor → defaults to **changeTracking** - SCD Type 1.*<br/>The value is not case-sensitive; any other value is flagged by a validation check.<br/>`changeTracking`, `lastModified` and `upsert` need at least one `@isBusinessKey` column — without one the node is loaded as a [plain insert](#fact-load-behaviour) and this annotation is ignored (a warning is raised).<br/>**Note:** Ignored on Views.<br/>Example: `@mergeStrategy("allColumnMatch")` |
+| `@mergeStrategy("changeTracking \| lastModified \| upsert \| allColumnMatch")` | Chooses how rows are matched against the target, and therefore which column annotations are required.<br/><br/>**changeTracking** — SCD Type 1. Compares every plain attribute column against the target; a changed row is overwritten in place, a new key is inserted. Doesn't use `@lastModifiedTracking` — if present, a warning is raised and it's ignored.<br/><br/>**lastModified** — SCD Type 1. Compares a single `@lastModifiedTracking` column against the target's stored value; a newer value overwrites the row in place. Requires exactly one column marked `@lastModifiedTracking` — a validation check flags it if none (or more than one) is present.<br/><br/>**upsert** — no change detection at all; a matched row is always updated, an unmatched row is inserted. The SELECT/CTE should return one row per business key (de-duplicate upstream). System columns are optional; any that are present are written exactly as the SELECT/CTE computes them. `@lastModifiedTracking` isn't used — if present, a warning is raised and it's ignored.<br/><br/>**allColumnMatch** — treats every non-system column as the business key: a source row is inserted only if no target row matches it on all of those columns, and an existing matching row is never updated. `@isBusinessKey` isn't needed — if present, a warning is raised, it's ignored and all columns are used for the comparison. `@lastModifiedTracking` isn't used either — a warning is raised and it's ignored. System columns are optional, are left out of the comparison, and are written exactly as the SELECT/CTE computes them.<br/><br/>*Not specified in the SQL editor → defaults to **changeTracking** - SCD Type 1 when a column is marked `@isBusinessKey`, otherwise the node is loaded as a [plain insert](#fact-load-behaviour).*<br/>The value is not case-sensitive; any other value is flagged by a validation check.<br/>When set, `@mergeStrategy` always takes priority: `changeTracking`, `lastModified` and `upsert` merge on the business key, so without an `@isBusinessKey` column a validation check fails and the load stops. `allColumnMatch` needs no `@isBusinessKey`.<br/>**Note:** Ignored on Views.<br/>Example: `@mergeStrategy("allColumnMatch")` |
 | `@disableTests`**²** | Controls whether configured tests are skipped.<br/>*Specified in the SQL editor → all node- and column-level tests are skipped.*<br/>*Not specified in the SQL editor → tests run normally.*<br/>To turn tests back on, remove the annotation. Useful while developing a node — iterate on the SQL first, then re-enable once the logic is settled.<br/>Example: `@disableTests` |
 | `@tests(querySQL, continueOnFailure?, runOrder?)`**²** | ***(repeatable)*** Node-level data quality test.<br/>Runs `querySQL` against the target; fails if it returns any records.<br/>Skipped entirely when **@disableTests** is set.<br/>[Refer to Node-Level Tests for more details.](#node-level-tests--tests)<br/>Example: `@tests("SELECT 1 FROM {{ this }} GROUP BY ORDER_ID HAVING COUNT(*) > 1", false, "After")`|
 | `@preSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `before` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@preSQL("DELETE FROM {{ this }} WHERE ORDER_DATE < DATEADD(DAY, -90, CURRENT_DATE())")` |
@@ -449,7 +451,7 @@ The Fact Node type has three configuration groups:
 | `@description(<text>)` ***(reserved)*** | Adds column description.<br/>Example: `@description("timestamp column")` |
 | `@defaultValue(<value>)` ***(reserved)*** | Adds default value.<br/>Quote to match the column's data type - <br/>number: `defaultValue("<num>")`<br/>string: `defaultValue("'<string>'")`<br/>**Note:** Ignored on Views.<br/>Example: `@defaultValue("20")` `@defaultValue("'NA'")` |
 | `@inHash("<hashName>", <hashOrder>)`**¹** | ***(repeatable)*** Marks a column as an input to a generated hash key.<br/>**hashName** — columns sharing the same value are grouped together into the same hash.<br/>**hashOrder** — this column's position within that group.<br/>Call `get_hash("<hashName>")` elsewhere in the SELECT to produce the hash column from the marked columns.<br/>[Refer to Hash Columns for more details.](#hash-columns--get_hash)<br/>Example:<br/>`<col_name> AS <col_name> @inHash("GH_COL", 1),`<br/>`{{ get_hash('GH_COL') }}::STRING AS "GH_COL"`|
-| `@isBusinessKey` | Marks a column as part of the business key used to match existing rows during the merge.<br/>Optional — if no column is marked, there is no merge and every source row is simply inserted.<br/>Ignored under `@mergeStrategy("allColumnMatch")`, which uses every non-system column as the key (a warning is raised).<br/>**Note:** Ignored on Views.<br/>Example: `@isBusinessKey` |
+| `@isBusinessKey` | Marks a column as part of the business key used to match existing rows during the merge.<br/>Optional when `@mergeStrategy` isn't set — if no column is marked, there is no merge and every source row is simply inserted.<br/>Required for an explicit `changeTracking`, `lastModified` or `upsert` — without it the load stops with a validation error.<br/>Ignored under `@mergeStrategy("allColumnMatch")`, which uses every non-system column as the key (a warning is raised).<br/>**Note:** Ignored on Views.<br/>Example: `@isBusinessKey` |
 | `@lastModifiedTracking` | Marks the column used to detect newer source rows for an incremental load (SCD Type 1).<br/>Datatype — DATE/TIME or any incrementing NUMERIC type.<br/>Can only be applied to one column.<br/>Must not be NULL in the source — a pre-load check flags it, since a NULL value can never compare as newer: a row loaded with a NULL tracking value is never updated again.<br/>Only this column decides a change — other columns that change without a newer tracking value are never applied.<br/>Used only by `@mergeStrategy("lastModified")`.<br/>**Note:** Ignored on Views.<br/>Example: `@lastModifiedTracking` |
 | `@isSystemCreateDate` | Marks this column as the timestamp a row was first created.<br/>Required for `changeTracking`/`lastModified` — read back from the target and preserved unchanged on every row after its initial insert.<br/>Optional for `upsert`, `allColumnMatch` and plain insert — if kept, it is written from the SELECT/CTE on insert and never overwritten on update.<br/>**Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.<br/>Expected expression: `CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate` |
 | `@isSystemUpdateDate` | Marks this column as the timestamp a row was last updated.<br/>Required for `changeTracking`/`lastModified` — set to the current timestamp on every inserted or changed row.<br/>Optional for `upsert`, `allColumnMatch` and plain insert — if kept, it is written exactly as the SELECT/CTE computes it.<br/>**Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.<br/>Expected expression: `CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate` |
@@ -464,8 +466,9 @@ How a Fact table is loaded depends on `@mergeStrategy` and on whether any column
 
 | `@isBusinessKey` | `@mergeStrategy` | Load | Existing matching row | New row |
 |---|---|---|---|---|
-| none | not set, or `changeTracking` / `lastModified` / `upsert` (ignored, warning) | Plain insert | — (no matching) | Inserted |
-| marked | `changeTracking` (default) | SCD1 merge on the business key | Overwritten if any attribute column changed | Inserted |
+| none | not set | Plain insert (default without a business key) | — (no matching) | Inserted |
+| none | `changeTracking` / `lastModified` / `upsert` | ❌ Validation error — the load stops | — | — |
+| marked | not set, or `changeTracking` | SCD1 merge on the business key (default with a business key) | Overwritten if any attribute column changed | Inserted |
 | marked | `lastModified` | SCD1 merge on the business key | Overwritten if the `@lastModifiedTracking` value is newer | Inserted |
 | marked | `upsert` | Merge on the business key | Always overwritten | Inserted |
 | any (ignored, warning if marked) | `allColumnMatch` | Merge on every non-system column | Left untouched | Inserted |
@@ -519,8 +522,8 @@ Every deployment of a Fact Node of materialization type table runs its configure
 | **Check NULL values for `<column>` column** | Pre-load check for `@mergeStrategy("lastModified")` — flags a NULL `@lastModifiedTracking` value in the source. |
 | **Pre-SQL `<n>`** | Each `@preSQL` statement, in the order they appear. |
 | **Truncate table** | Executed only when `@writeMode("truncateInsert")` is set — clears the target before the load. |
-| **Load table Using Insert** | Executed when no column is marked `@isBusinessKey` (and the strategy isn't `allColumnMatch`) — inserts every source row with `INSERT INTO … SELECT`. |
-| **Load table Using Merge - Change Tracking - SCD1** | Executed for `@mergeStrategy("changeTracking")` (the default) — compares every plain attribute column against the target, then updates changed rows in place and inserts new keys. |
+| **Load table Using Insert** | Executed when no `@mergeStrategy` is set and no column is marked `@isBusinessKey` — inserts every source row with `INSERT INTO … SELECT`. |
+| **Load table Using Merge - Change Tracking - SCD1** | Executed for `@mergeStrategy("changeTracking")`, and by default when no `@mergeStrategy` is set and a column is marked `@isBusinessKey` — compares every plain attribute column against the target, then updates changed rows in place and inserts new keys. |
 | **Load table Using Merge - Last Modified Comparison - SCD1** | Executed for `@mergeStrategy("lastModified")` — compares the `@lastModifiedTracking` column against the target, then updates newer rows in place and inserts new keys. |
 | **Load table Using Merge - Upsert** | Executed for `@mergeStrategy("upsert")` — every matched row is updated from the SELECT/CTE (system columns included, `@isSystemCreateDate` excepted) and every unmatched row is inserted. |
 | **Load table Using Merge - All Column Match** | Executed for `@mergeStrategy("allColumnMatch")` — matches on every non-system column and inserts only rows that don't already exist; nothing is updated. |
@@ -535,7 +538,8 @@ Each check is rendered as its own stage only when it's triggered. A **Fail** sto
 |---|---|---|
 | **Missing Column IDs** | A column has no `@id` | Fail |
 | **Invalid configuration: mergeStrategy** | `@mergeStrategy` isn't one of `changeTracking`, `lastModified`, `upsert`, `allColumnMatch` | Fail |
-| **Invalid configuration: No Business Key** | No `@isBusinessKey` column, but `@mergeStrategy` or `@lastModifiedTracking` is set (not for `allColumnMatch`) — they're ignored and the node is a plain insert | Warning |
+| **Invalid configuration: No Business Key** | `@mergeStrategy` is explicitly `changeTracking`, `lastModified` or `upsert`, but no column is marked `@isBusinessKey` | Fail |
+| **Invalid configuration: No Business Key** | No `@mergeStrategy` and no `@isBusinessKey` (plain insert), but an `@lastModifiedTracking` column is present — it's ignored | Warning |
 | **Invalid configuration: mergeStrategy** | `allColumnMatch` with an `@isBusinessKey` column — the key is ignored and all columns are compared | Warning |
 | **Invalid configuration: mergeStrategy** | `upsert` or `allColumnMatch` with an `@lastModifiedTracking` column — it's never read | Warning |
 | **Invalid configuration: mergeStrategy** | `changeTracking` with an `@lastModifiedTracking` column — it's ignored | Warning |
@@ -788,6 +792,9 @@ Values are split on every comma, trimmed, and re-joined with `", "`. A string wr
 
 * **Keys Deleted from the Source**:  
 A business key that disappears from the source is left as it is in the target — under SCD Type 2 its current row stays current (`SYSTEM_CURRENT_FLAG` = `'Y'`, open `SYSTEM_END_DATE`), and under SCD Type 1 the row is kept unchanged. Deletes are never detected, expired or flagged; handle them separately (e.g. with `@postSQL`) if the dimension needs to reflect removed keys.
+
+* **System Columns Added to a Loaded Table**:  
+Adding `@isSystemCreateDate` / `@isSystemUpdateDate` to a table that already holds rows (for example when switching a node from `upsert` to `changeTracking`) adds the columns with NULL in every existing row. `@isSystemCreateDate` is carried over from the target on every later update, so it stays NULL for those rows; `@isSystemUpdateDate` is only filled once a row actually changes. Backfill them once (e.g. with `@postSQL`) or reload with `@writeMode("truncateInsert")` if they need values.
 
 * **Duplicate or NULL Business Keys**:  
 Every strategy merges on the business key, so the SELECT/CTE must return exactly one row per key, with no NULL key. Otherwise a duplicated key is inserted more than once on a first load and later merges fail with "Duplicate row detected during DML action", and a NULL key never matches, so that row is re-inserted on every run. De-duplicate upstream (e.g. `QUALIFY ROW_NUMBER() OVER (PARTITION BY <business key> ORDER BY <timestamp> DESC) = 1`). To check it before each load, add a `Before` node-level test — see [Duplicate or NULL Business Key Check](#duplicate-or-null-business-key-check).
@@ -1240,7 +1247,7 @@ LEFT JOIN "EXISTING" ON "SRC"."CUSTOMER_ID" = "EXISTING"."CUSTOMER_ID"
 
 ##### Fact Plain Insert
 
-No `@isBusinessKey` column, so every source row is inserted with no matching. System columns are optional and written as the SELECT computes them.
+No `@mergeStrategy` and no `@isBusinessKey` column, so every source row is inserted with no matching. System columns are optional and written as the SELECT computes them. Adding `@mergeStrategy("changeTracking")`, `"lastModified"` or `"upsert"` here without a business key would stop the load with a validation error.
 
 ```sql
 @nodeType("724")
