@@ -40,7 +40,7 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 | `@notNull` ***(reserved)*** | ✅ | ✅ | ✅ |
 | `@defaultValue` ***(reserved)*** | ✅ | ✅ | ✅ |
 | `@inHash` | ✅ | ✅ | ✅ |
-| `@isBusinessKey` | ➖ | ✅ ***(required)*** | ✅ ***(conditional)***³ |
+| `@isBusinessKey` | ➖ | ✅<br/>***(required)*** | ✅<br/>***(conditional)*** ³ |
 | `@isChangeTracking` | ➖ | ✅ | ➖ |
 | `@lastModifiedTracking` | ➖ | ✅ | ✅ |
 | `@zeroKey` (column-level) | ➖ | ✅ | ➖ |
@@ -420,11 +420,15 @@ The Fact Node type has three configuration groups:
 
 #### Fact General Options
 
+<img width="511" height="311" alt="image" src="https://github.com/user-attachments/assets/8a8bd7d1-a705-4f5f-866b-ea53e5c9c6ef" />
+
 | **Property** | **Description** |
 |----------|-------------|
 | **Storage Location** | Storage Location where the Fact table or view will be created |
 
 ### Fact Node Annotations
+
+<img width="511" height="672" alt="image" src="https://github.com/user-attachments/assets/27b2ebed-c6f5-4598-b239-a683e5405ca9" />
 
 | **Property** | **Description** |
 |---------|-------------|
@@ -443,6 +447,8 @@ The Fact Node type has three configuration groups:
 >**Note:** Quote style matters for **case-sensitive** identifiers when writing `@tests`, `@preSQL`, and `@postSQL` — see [Quote Style for Case-Sensitive Identifiers](#quote-style-for-case-sensitive-identifiers).
 
 ### Fact Column Annotations
+
+<img width="517" height="514" alt="image" src="https://github.com/user-attachments/assets/6933718d-6148-49d6-8145-a7d6acec465f" />
 
 | **Property** | **Description** |
 |---------|-------------|
@@ -464,25 +470,25 @@ The Fact Node type has three configuration groups:
 
 How a Fact table is loaded depends on `@mergeStrategy` and on whether any column is marked `@isBusinessKey`:
 
-| `@isBusinessKey` | `@mergeStrategy` | Load | Existing matching row | New row |
-|---|---|---|---|---|
-| none | not set | Plain insert (default without a business key) | — (no matching) | Inserted |
-| none | `changeTracking` / `lastModified` / `upsert` | ❌ Validation error — the load stops | — | — |
-| marked | not set, or `changeTracking` | SCD1 merge on the business key (default with a business key) | Overwritten if any attribute column changed | Inserted |
-| marked | `lastModified` | SCD1 merge on the business key | Overwritten if the `@lastModifiedTracking` value is newer | Inserted |
-| marked | `upsert` | Merge on the business key | Always overwritten | Inserted |
-| any (ignored, warning if marked) | `allColumnMatch` | Merge on every non-system column | Left untouched | Inserted |
+| `@isBusinessKey` | `@mergeStrategy` | Load |
+|---|---|---|
+| none | not set | Plain insert (default without a business key) |
+| none | `changeTracking` / `lastModified` / `upsert` | ❌ Validation error — the load stops |
+| marked | not set, or `changeTracking` | SCD1 merge on the business key (default with a business key) |
+| marked | `lastModified` | SCD1 merge on the business key |
+| marked | `upsert` | Merge on the business key |
+| any (ignored, warning if marked) | `allColumnMatch` | Merge on every non-system column |
 
 Requirement level of each column annotation, by load:
 
 | Annotation | `changeTracking` / `lastModified` | `upsert` | `allColumnMatch` | Plain insert |
 |---|:---:|:---:|:---:|:---:|
 | `@isBusinessKey` | 🔴 | 🔴 | ⚪¹ | — |
-| `@lastModifiedTracking` | 🔴 for `lastModified` only | — | — | — |
-| `@isSystemCreateDate` | 🔴 | ⚪ | ⚪ | ⚪ |
+| `@lastModifiedTracking` | 🔴<br/>for `lastModified` only | — | — | — |
+| `@isSystemCreateDate` | 🔴 | ⚪ | 🟡 | 🟡 |
 | `@isSystemUpdateDate` | 🔴 | ⚪ | ⚪ | ⚪ |
 
-**Legend:** 🔴 Required · ⚪ Optional · — Not used
+**Legend:** 🔴 Required · 🟡 Recommended · ⚪ Optional · — Not used
 
 * ¹ Ignored if present — every non-system column is used as the business key and a warning is raised.
 * Under `changeTracking` / `lastModified` the load writes fixed values into the system columns: `@isSystemCreateDate` gets `CURRENT_TIMESTAMP` on first insert and is then kept; `@isSystemUpdateDate` gets `CURRENT_TIMESTAMP` whenever the row is inserted or changed. The expression the SELECT gives them is only used to derive the column's datatype.
@@ -518,7 +524,7 @@ Every deployment of a Fact Node of materialization type table runs its configure
 | **Stage** | **Description** |
 |-----------|----------------|
 | **Pre Load Test `<n>`** | Node-level `@tests(..., "Before")` tests, in the order they appear. |
-| **Missing Column IDs \| Invalid configuration: … \| Missing Required System Columns** | Validation checks — rendered only when the node's annotations have a problem. See [Fact Validation Checks](#fact-validation-checks). |
+| **Missing Column IDs \| Invalid configuration: … \| Missing Required System Columns** | Validation checks — rendered only when the node's annotations have a problem. |
 | **Check NULL values for `<column>` column** | Pre-load check for `@mergeStrategy("lastModified")` — flags a NULL `@lastModifiedTracking` value in the source. |
 | **Pre-SQL `<n>`** | Each `@preSQL` statement, in the order they appear. |
 | **Truncate table** | Executed only when `@writeMode("truncateInsert")` is set — clears the target before the load. |
@@ -529,23 +535,6 @@ Every deployment of a Fact Node of materialization type table runs its configure
 | **Load table Using Merge - All Column Match** | Executed for `@mergeStrategy("allColumnMatch")` — matches on every non-system column and inserts only rows that don't already exist; nothing is updated. |
 | **Post-SQL `<n>`** | Each `@postSQL` statement, in the order they appear. |
 | **`<column>: <test>` \| Post Load Test `<n>`** | Column-level data quality tests and node-level `@tests(..., "After")` tests, run after the load. |
-
-#### Fact Validation Checks
-
-Each check is rendered as its own stage only when it's triggered. A **Fail** stops the run (and, on create, raises an error before the table is created); a **Warning** is reported but the load still runs.
-
-| **Check** | **Triggered when** | **Result** |
-|---|---|---|
-| **Missing Column IDs** | A column has no `@id` | Fail |
-| **Invalid configuration: mergeStrategy** | `@mergeStrategy` isn't one of `changeTracking`, `lastModified`, `upsert`, `allColumnMatch` | Fail |
-| **Invalid configuration: No Business Key** | `@mergeStrategy` is explicitly `changeTracking`, `lastModified` or `upsert`, but no column is marked `@isBusinessKey` | Fail |
-| **Invalid configuration: No Business Key** | No `@mergeStrategy` and no `@isBusinessKey` (plain insert), but an `@lastModifiedTracking` column is present — it's ignored | Warning |
-| **Invalid configuration: mergeStrategy** | `allColumnMatch` with an `@isBusinessKey` column — the key is ignored and all columns are compared | Warning |
-| **Invalid configuration: mergeStrategy** | `upsert` or `allColumnMatch` with an `@lastModifiedTracking` column — it's never read | Warning |
-| **Invalid configuration: mergeStrategy** | `changeTracking` with an `@lastModifiedTracking` column — it's ignored | Warning |
-| **Invalid configuration: mergeStrategy** | `lastModified` with no `@lastModifiedTracking` column | Fail |
-| **Invalid configuration: Last Modified Column** | `lastModified` with more than one `@lastModifiedTracking` column | Fail |
-| **Missing Required System Columns** | `changeTracking`/`lastModified` with a business key, and `@isSystemCreateDate` and/or `@isSystemUpdateDate` missing — lists each missing column with an example | Fail |
 
 #### Fact Redeployment
 
