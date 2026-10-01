@@ -1,0 +1,13 @@
+fileVersion: 1
+id: d6459eea-47f1-4d9d-8e79-fe89e1ebbe0a
+name: sb_nodetype_change
+steps:
+  - 1610aab1-7820-4366-b317-87606f480f7f
+  - 270c1586-1c9b-4941-8129-ebf0b430a5f8
+  - 38d76a28-8025-49c9-8e49-1e831563932f
+  - 584cb3de-f229-4414-adad-4556112c8f72
+  - 67cc5955-a223-40d1-873e-4345169dce42
+  - 73a5d373-e417-48b7-833f-2eeb8d527efc
+  - 9de6f258-3917-42ac-80d6-edf01264ee58
+  - ff768c61-e32f-4627-8fd4-1b93660d8d54
+type: Subgraph
