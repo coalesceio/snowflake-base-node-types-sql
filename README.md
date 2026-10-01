@@ -21,18 +21,19 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 | Annotation | Work | Dimension | Fact |
 |---|---|---|---|
 | `@writeMode` | ✅ | ✅ | ✅ |
-| @mergeStrategy | ➖ | ✅<br/>* changeTracking<br/>* lastModified<br/>* upsert | ✅<br/>* changeTracking<br/>* lastModified<br/>* upsert<br/>* allColumnMatch |
+| `@mergeStrategy` | ➖ | ✅<br/>* changeTracking<br/>* lastModified<br/>* upsert | ✅<br/>* changeTracking<br/>* lastModified<br/>* upsert<br/>* allColumnMatch |
 | `@zeroKey` (node-level) | ➖ | ✅ | ➖ |
 | `@disableTests` | ✅ | ✅ | ✅ |
 | `@tests` | ✅ | ✅ | ✅ |
 | `@preSQL` | ✅ | ✅ | ✅ |
 | `@postSQL` | ✅ | ✅ | ✅ |
-| Target Load | INSERT | MERGE | MERGE + INSERT |
+| Target Load | INSERT (OVERWRITE) | (TRUNCATE) MERGE | (TRUNCATE) MERGE + INSERT |
 
 ### Column Annotations Matrix
 
 | Annotation | Work | Dimension | Fact |
 |---|---|---|---|
+| `@id`**(reserved)** | ➖ | ✅ | ✅ |
 | `@isBusinessKey` | ➖ | ✅<br/>***(required)*** | ✅<br/>***(conditional)*** ³ |
 | `@isChangeTracking` | ➖ | ✅ | ➖ |
 | `@lastModifiedTracking` | ➖ | ✅ | ✅ |
