@@ -1,0 +1,140 @@
+fileVersion: 1
+id: "dc388b57-facb-4a3b-8bc3-05721432be8a"
+name: "GLD_V_SEGMENT_SUMMARY"
+operation:
+  config:
+    insertStrategy: "UNION"
+    selectDistinct: false
+    testsEnabled: false
+  database: ""
+  deployEnabled: true
+  description: "Gold: latest segment snapshot (YAML View)"
+  isMultisource: false
+  locationName: "TARGET"
+  materializationType: "view"
+  metadata:
+    appliedNodeTests: []
+    columns:
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: "c7d9a281-71b5-4a63-8f58-3c14ab6ba3c8"
+          stepCounter: "dc388b57-facb-4a3b-8bc3-05721432be8a"
+        config: {}
+        dataType: "DATE"
+        defaultValue: ""
+        description: ""
+        name: "SNAPSHOT_DATE"
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: "69317f"
+                stepCounter: "f54968fd-dbda-4ab9-80f2-0b0aa4dfadba"
+            transform: "\"GLD_FCT_SEGMENT_SNAPSHOT\".\"SNAPSHOT_DATE\""
+        transform: "\"GLD_FCT_SEGMENT_SNAPSHOT\".\"SNAPSHOT_DATE\""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: "250202ec-8854-4636-896f-3ffefd3eafd3"
+          stepCounter: "dc388b57-facb-4a3b-8bc3-05721432be8a"
+        config: {}
+        dataType: "VARCHAR(25)"
+        defaultValue: ""
+        description: ""
+        name: "NATION_NAME"
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: "16abf0"
+                stepCounter: "f54968fd-dbda-4ab9-80f2-0b0aa4dfadba"
+            transform: "\"GLD_FCT_SEGMENT_SNAPSHOT\".\"NATION_NAME\""
+        transform: "\"GLD_FCT_SEGMENT_SNAPSHOT\".\"NATION_NAME\""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: "48f120ba-c130-4a18-8eac-667fd6b1f68a"
+          stepCounter: "dc388b57-facb-4a3b-8bc3-05721432be8a"
+        config: {}
+        dataType: "VARCHAR(10)"
+        defaultValue: ""
+        description: ""
+        name: "C_MKTSEGMENT"
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: "7400d3"
+                stepCounter: "f54968fd-dbda-4ab9-80f2-0b0aa4dfadba"
+            transform: "\"GLD_FCT_SEGMENT_SNAPSHOT\".\"C_MKTSEGMENT\""
+        transform: "\"GLD_FCT_SEGMENT_SNAPSHOT\".\"C_MKTSEGMENT\""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: "ccbe0605-d26b-4fd1-8b10-070c2b11c568"
+          stepCounter: "dc388b57-facb-4a3b-8bc3-05721432be8a"
+        config: {}
+        dataType: "NUMBER(18,0)"
+        defaultValue: ""
+        description: ""
+        name: "CUSTOMER_COUNT"
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: "c3edaf"
+                stepCounter: "f54968fd-dbda-4ab9-80f2-0b0aa4dfadba"
+            transform: "\"GLD_FCT_SEGMENT_SNAPSHOT\".\"CUSTOMER_COUNT\""
+        transform: "\"GLD_FCT_SEGMENT_SNAPSHOT\".\"CUSTOMER_COUNT\""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: "7fd4cc20-b406-414f-8f38-d996df3b8474"
+          stepCounter: "dc388b57-facb-4a3b-8bc3-05721432be8a"
+        config: {}
+        dataType: "NUMBER(38,2)"
+        defaultValue: ""
+        description: ""
+        name: "TOTAL_ACCTBAL"
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: "1acc6e"
+                stepCounter: "f54968fd-dbda-4ab9-80f2-0b0aa4dfadba"
+            transform: "\"GLD_FCT_SEGMENT_SNAPSHOT\".\"TOTAL_ACCTBAL\""
+        transform: "\"GLD_FCT_SEGMENT_SNAPSHOT\".\"TOTAL_ACCTBAL\""
+        uniqueKey: false
+    enabledColumnTestIDs: []
+    sourceMapping:
+      - aliases: {}
+        customSQL:
+          customSQL: ""
+        dependencies:
+          - locationName: "TARGET"
+            nodeName: "GLD_FCT_SEGMENT_SNAPSHOT"
+        join:
+          joinCondition: "FROM {{ ref('TARGET', 'GLD_FCT_SEGMENT_SNAPSHOT') }} \"GLD_FCT_SEGMENT_SNAPSHOT\"\nWHERE \"GLD_FCT_SEGMENT_SNAPSHOT\".\"SNAPSHOT_DATE\" = (SELECT MAX(\"SNAPSHOT_DATE\") FROM {{ ref('TARGET', 'GLD_FCT_SEGMENT_SNAPSHOT') }})"
+        name: "GLD_V_SEGMENT_SUMMARY"
+        noLinkRefs: []
+  name: "GLD_V_SEGMENT_SUMMARY"
+  schema: ""
+  sqlType: "base-node-types:::188"
+  type: "sql"
+  version: 1
+type: "Node"
