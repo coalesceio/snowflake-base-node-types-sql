@@ -20,9 +20,6 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 
 | Annotation | Work | Dimension | Fact |
 |---|---|---|---|
-| `@description` ***(reserved)*** | ✅ | ✅ | ✅ |
-| `@materializationType` ***(reserved)*** | ✅ | ✅ | ✅ |
-| `@deployDisabled` ***(reserved)*** | ✅ | ✅ | ✅ |
 | `@writeMode` | ✅ | ✅ | ✅ |
 | `@mergeStrategy` | ➖ | ✅ | ✅ |
 | `@zeroKey` (node-level) | ➖ | ✅ | ➖ |
@@ -35,11 +32,6 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 
 | Annotation | Work | Dimension | Fact |
 |---|---|---|---|
-| `@id` ***(required)***<br/>(column-level) | ➖ | ✅ | ✅ |
-| `@description` ***(reserved)*** | ✅ | ✅ | ✅ |
-| `@notNull` ***(reserved)*** | ✅ | ✅ | ✅ |
-| `@defaultValue` ***(reserved)*** | ✅ | ✅ | ✅ |
-| `@inHash` | ✅ | ✅ | ✅ |
 | `@isBusinessKey` | ➖ | ✅<br/>***(required)*** | ✅<br/>***(conditional)*** ³ |
 | `@isChangeTracking` | ➖ | ✅ | ➖ |
 | `@lastModifiedTracking` | ➖ | ✅ | ✅ |
