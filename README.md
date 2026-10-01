@@ -27,7 +27,7 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 | `@tests` | ✅ | ✅ | ✅ |
 | `@preSQL` | ✅ | ✅ | ✅ |
 | `@postSQL` | ✅ | ✅ | ✅ |
-| Target Load | INSERT (OVERWRITE) | (TRUNCATE) MERGE | (TRUNCATE) MERGE + INSERT |
+| Target Load | INSERT (OVERWRITE) | (TRUNCATE) MERGE | (TRUNCATE) MERGE/INSERT |
 
 ### Column Annotations Matrix
 
