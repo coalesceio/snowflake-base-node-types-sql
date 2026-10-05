@@ -331,6 +331,72 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
+    Description: Checks that every column carries its own @id annotation, reporting duplicate column names and repeated @id values separately. Shared by validate_dimension_requirements and validate_fact_requirements.
+    Input: hardFail (boolean, default false) — passed through from the calling validator.
+    Output: Rendered test_stage(...) + SELECT statements for every check that fails.
+    ===========================================================================#}
+    {%- macro validate_column_ids(hardFail=false) -%}
+        {# A column without a real @id has id equal to its name. When the SELECT repeats a column name, Coalesce renames the extra copy by appending a number (SYSTEM_CREATE_DATE -> SYSTEM_CREATE_DATE1) and drops its @id, so it lands here too — report that as a duplicate name rather than a missing ID. #}
+        {%- set idCheck = namespace(missing=[], duplicates=[]) -%}
+        {%- for col in columns if col.id == col.name -%}
+            {%- set dup = namespace(of=none) -%}
+            {%- for other in columns if other.name != col.name and col.name[:other.name | length] == other.name -%}
+                {%- set suffix = col.name[other.name | length:] -%}
+                {%- if (suffix | int(0)) > 0 and (suffix | int) | string == suffix -%}
+                    {%- set dup.of = other.name -%}
+                {%- endif -%}
+            {%- endfor -%}
+            {%- if dup.of is not none -%}
+                {%- set idCheck.duplicates = idCheck.duplicates + ["'" ~ dup.of ~ "' (extra copy renamed to " ~ col.name ~ ")"] -%}
+            {%- else -%}
+                {%- set idCheck.missing = idCheck.missing + [col.name] -%}
+            {%- endif -%}
+        {%- endfor -%}
+
+        {%- if idCheck.duplicates | length > 0 %}
+            {%- set reason = "Duplicate column name: " ~ (idCheck.duplicates | join(', ')) ~ ". The SELECT returns more than one column with the same name — remove the extra column or give it a different alias." %}
+            {{ test_stage("Duplicate Column Names", false) }}
+            -- {{ reason }}
+            {%- if hardFail %}
+            SELECT 1/0
+            {%- else %}
+            SELECT 1
+            {%- endif -%}
+        {%- endif -%}
+
+        {# Two columns given the same @id value. #}
+        {%- set idDup = namespace(items=[]) -%}
+        {%- for col in columns if col.id != col.name -%}
+            {%- set sharing = columns | selectattr("id", "equalto", col.id) | map(attribute="name") | list -%}
+            {%- set entry = "@id(\"" ~ col.id ~ "\") on " ~ (sharing | join(', ')) -%}
+            {%- if sharing | length > 1 and entry not in idDup.items -%}
+                {%- set idDup.items = idDup.items + [entry] -%}
+            {%- endif -%}
+        {%- endfor -%}
+        {%- if idDup.items | length > 0 %}
+            {%- set reason = "Duplicate column ID: " ~ (idDup.items | join('; ')) ~ '. Each column needs its own unique @id("<6 hex digits>") — change the repeated ID on all but one of them.' %}
+            {{ test_stage("Duplicate Column IDs", false) }}
+            -- {{ reason }}
+            {%- if hardFail %}
+            SELECT 1/0
+            {%- else %}
+            SELECT 1
+            {%- endif -%}
+        {%- endif -%}
+
+        {%- if idCheck.missing | length > 0 %}
+            {%- set reason = "These columns have no real system-generated ID (id equals the column name): " ~ (idCheck.missing | join(', ')) ~ '. Add a unique @id("<6 hex digits>") annotation to each of them.' %}
+            {{ test_stage("Missing Column IDs", false) }}
+            -- {{ reason }}
+            {%- if hardFail %}
+            SELECT 1/0
+            {%- else %}
+            SELECT 1
+            {%- endif -%}
+        {%- endif -%}
+    {%- endmacro -%}
+
+    {#===========================================================================
     Description: Validates a Dimension node's annotations (column IDs, business key, mergeStrategy, required system columns). Shared by create.sql.j2 and run.sql.j2.
     Input: hardFail (boolean, default false) — set true from create.sql.j2 so a failed check raises a real SQL error, since CREATE (unlike RUN) doesn't fail on row count alone.
     Output: Rendered test_stage(...) + SELECT statements for every check that fails.
@@ -346,19 +412,7 @@ macroString: |-
         {%- endmacro -%}
 
         {# Every Dimension column must carry its own @id annotation. #}
-        {%- set invalidIdColumns = namespace(items=[]) -%}
-        {%- for col in columns -%}
-            {%- if col.id == col.name -%}
-                {%- set invalidIdColumns.items = invalidIdColumns.items + [col] -%}
-            {%- endif -%}
-        {%- endfor -%}
-        {%- set invalidIdColumns = invalidIdColumns.items -%}
-        {%- if invalidIdColumns | length > 0 %}
-            {%- set reason = "These columns have no real system-generated ID (id equals the column name): " ~ (invalidIdColumns | map(attribute='name') | join(', ')) ~ '. Add a unique @id("<6 hex digits>") annotation to each of them.' %}
-            {{ test_stage("Missing Column IDs", false) }}
-            -- {{ reason }}
-            {{ fail_select(reason) }}
-        {%- endif -%}
+        {{ validate_column_ids(hardFail) }}
 
         {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) -%}
         {%- if not hasBusinessKey %}
@@ -578,19 +632,7 @@ macroString: |-
         {%- endmacro -%}
 
         {# Every Fact column must carry its own @id annotation. #}
-        {%- set invalidIdColumns = namespace(items=[]) -%}
-        {%- for col in columns -%}
-            {%- if col.id == col.name -%}
-                {%- set invalidIdColumns.items = invalidIdColumns.items + [col] -%}
-            {%- endif -%}
-        {%- endfor -%}
-        {%- set invalidIdColumns = invalidIdColumns.items -%}
-        {%- if invalidIdColumns | length > 0 %}
-            {%- set reason = "These columns have no real system-generated ID (id equals the column name): " ~ (invalidIdColumns | map(attribute='name') | join(', ')) ~ '. Add a unique @id("<6 hex digits>") annotation to each of them.' %}
-            {{ test_stage("Missing Column IDs", false) }}
-            -- {{ reason }}
-            {{ fail_select(reason) }}
-        {%- endif -%}
+        {{ validate_column_ids(hardFail) }}
 
         {# No @isBusinessKey column is valid for a Fact — it's loaded as a plain insert, so the mergeStrategy/tracking/system-column checks below don't apply. #}
         {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) -%}
