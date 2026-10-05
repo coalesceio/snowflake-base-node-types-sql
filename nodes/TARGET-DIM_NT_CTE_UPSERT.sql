@@ -1,5 +1,5 @@
 @id("5d2a2dac-e5b1-48fd-9611-206f38fff80e")
-@nodeType("718")
+@nodeType("SQLDimension")
 @mergeStrategy("upsert")
 WITH "NATION_SRC" AS (
     SELECT "NAtionKey", "name", "REGIONKEY", "CommenT", "N_Load_Timestamp"

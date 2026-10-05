@@ -1,5 +1,5 @@
 @id("7a5ba443-2500-4319-a6bc-08489d706a2e")
-@nodeType("718")
+@nodeType("SQLDimension")
 @mergeStrategy("upsert")
 SELECT
     0                                        AS "DIM_NT_DEFAULT_KEY"  @id("f261b5") @isSurrogateKey,

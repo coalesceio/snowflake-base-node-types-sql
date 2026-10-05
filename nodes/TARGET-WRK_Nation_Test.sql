@@ -1,5 +1,5 @@
 @id("e99da43d-45ce-43a6-8bd9-ad6f4ce21e90")
-@nodeType("707")
+@nodeType("SQLWork")
 @description("Staging copy of Nation_Test with data quality checks and a row hash")
 @writeMode("truncateInsert")
 @tests("SELECT 1 FROM {{ ref('SRC', 'Nation_Test') }} HAVING COUNT(*) = 0", false, "Before")

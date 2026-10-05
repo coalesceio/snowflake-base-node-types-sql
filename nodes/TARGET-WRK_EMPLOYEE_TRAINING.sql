@@ -1,5 +1,5 @@
 @id("b414aae5-b0b8-4d4a-9a36-32808bcc0e9a")
-@nodeType("707")
+@nodeType("SQLWork")
 @writeMode("truncateInsert")
 SELECT
     UPPER(TRIM("EMPLOYEE_TRAINING"."EMPLOYEE_ID"))     AS "EMPLOYEE_ID"     @id("8008b9") @not_null,

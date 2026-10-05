@@ -1,5 +1,5 @@
 @id("9345bbc4-5348-4500-a3b7-0af0c557a9d9")
-@nodeType("718")
+@nodeType("SQLDimension")
 @description("Gold: customer dimension - SCD2 on address and market segment")
 @mergeStrategy("changeTracking")
 SELECT

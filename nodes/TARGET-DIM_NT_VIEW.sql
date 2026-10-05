@@ -1,5 +1,5 @@
 @id("bb16244f-cb9b-45d1-9fe4-9dd8c5087591")
-@nodeType("718")
+@nodeType("SQLDimension")
 @materializationType("view")
 SELECT
     0                                        AS "DIM_NT_VIEW_KEY"     @id("24db2f"),

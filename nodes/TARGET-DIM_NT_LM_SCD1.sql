@@ -1,5 +1,5 @@
 @id("4d5e9bda-180b-4845-ab81-214fd52c4564")
-@nodeType("718")
+@nodeType("SQLDimension")
 @mergeStrategy("lastModified")
 SELECT
     0                                        AS "DIM_NT_LM_SCD1_KEY"  @id("eb0696") @isSurrogateKey,

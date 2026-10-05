@@ -1,5 +1,5 @@
 @id("3f7607d4-153f-4195-84ae-bd5205c1659e")
-@nodeType("707")
+@nodeType("SQLWork")
 @writeMode("truncateInsert")
 SELECT
     UPPER(TRIM("TRAINING"."TRAINING_ID")) AS "TRAINING_ID"   @id("6677fd") @not_null @uniqueness,

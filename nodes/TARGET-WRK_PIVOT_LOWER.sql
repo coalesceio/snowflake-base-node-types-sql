@@ -1,5 +1,5 @@
 @id("042fc482-ee3a-4d1c-8d38-351101211454")
-@nodeType("707")
+@nodeType("SQLWork")
 @truncateBefore
 @tests("SELECT * FROM {{ref('TARGET','WRK_PIVOT_UPPER')}} WHERE Q1 > 2000 ", "After", true)
 @postSQL("  
