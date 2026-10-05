@@ -1,9 +1,7 @@
 @id("4eecd2a6-3811-461a-8edf-9be7ac070227")
 @nodeType("707")
 @description("Pipeline: latest row per nation from NATION_TEST, trimmed and standardised")
-@writeMode("truncateInsert")
-@preSQL("SELECT 'WRK_NATION_CLEAN pre-load'")
-@postSQL("SELECT 'WRK_NATION_CLEAN post-load'")
+@writeMode("append")
 @tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")
 WITH "NATION_LATEST" AS (
     SELECT *

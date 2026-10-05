@@ -14,7 +14,7 @@ SELECT
     UPPER(TRIM("C"."CUSTOMER_NAME"))             AS "CUSTOMER_NAME" @id("1b0002") @not_null @empty @inHash("GH_CUSTOMER", 2),
     "C"."SIGNUP_DATE"                            AS "SIGNUP_DATE"   @id("1b0003") @inHash("GH_CUSTOMER", 3),
     YEAR("C"."SIGNUP_DATE")                      AS "SIGNUP_YEAR"   @id("1b0004"),
-    "C"."CREATED_AT"                             AS "CREATED_AT"    @id("1b0005") @not_null,
+    "C"."CREATED_AT"                             AS "CUSTOMER_CREATED_AT"    @id("1b0005") @not_null,
     MOD("C"."CUSTOMER_ID", 25)                   AS "NATION_KEY"    @id("1b0006") @not_null @min_max(0, 24),
-    {{ get_hash('GH_CUSTOMER', 'MD5') }}::STRING AS "GH_CUSTOMER"   @id("1b0007") @not_null
+    {{ get_hash('GH_CUSTOMER', 'SH1') }}::STRING AS "GH_CUSTOMER"   @id("1b0007") @not_null
 FROM "CUSTOMER_LATEST" "C"

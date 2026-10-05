@@ -11,7 +11,7 @@ SELECT
     "W"."SIGNUP_DATE"                    AS "SIGNUP_DATE"        @id("2b0004"),
     "W"."SIGNUP_YEAR"                    AS "SIGNUP_YEAR"        @id("2b0005"),
     "W"."NATION_KEY"                     AS "NATION_KEY"         @id("2b0006") @zeroKey("-1"),
-    "W"."CREATED_AT"                     AS "CREATED_AT"         @id("2b0007") @lastModifiedTracking(1) @not_null,
+    "W"."CUSTOMER_CREATED_AT"                     AS "CREATED_AT"         @id("2b0007") @lastModifiedTracking(1) @not_null,
     "W"."GH_CUSTOMER"                    AS "GH_CUSTOMER"        @id("2b0008"),
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("2b0009") @isSystemCreateDate @relative_time("<=", "SYSTEM_UPDATE_DATE"),
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @id("2b000a") @isSystemUpdateDate

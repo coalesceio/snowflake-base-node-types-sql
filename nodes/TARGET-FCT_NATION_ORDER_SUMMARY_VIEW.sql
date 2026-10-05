@@ -1,6 +1,7 @@
 @id("d6a0d3f8-9d4b-41ab-8b55-6367291dd137")
 @nodeType("SQLFact")
 @description("Pipeline: per-nation order summary - upsert on DIM_NATION_KEY")
+@materializationType("view")
 @mergeStrategy("upsert")
 @tests("SELECT 1 FROM {{ this }} WHERE ORDER_COUNT < MATCHED_ORDER_COUNT", false, "After")
 WITH "ORDER_STATS" AS (
@@ -16,7 +17,7 @@ WITH "ORDER_STATS" AS (
 )
 SELECT
     "S"."DIM_NATION_KEY"                 AS "DIM_NATION_KEY"      @id("3b0001") @isBusinessKey @not_null @uniqueness,
-    COALESCE("DN"."N_NAME", 'UNKNOWN')   AS "N_NAME"              @id("3b0002") @not_null,
+    COALESCE("DN"."N_NAME", 'UNKNOWN')   AS "N_NATION_NAME"              @id("3b0002") @not_null,
     "S"."ORDER_COUNT"                    AS "ORDER_COUNT"         @id("3b0003") @not_null @min_value(1),
     "S"."MATCHED_ORDER_COUNT"            AS "MATCHED_ORDER_COUNT" @id("3b0004") @not_null @min_value(0),
     "S"."CUSTOMER_COUNT"                 AS "CUSTOMER_COUNT"      @id("3b0005") @min_value(0),

@@ -8,9 +8,9 @@
 SELECT
     0                                        AS "DIM_NATION_KEY"      @id("2a0001") @isSurrogateKey,
     "W"."N_NATIONKEY"                        AS "N_NATIONKEY"         @id("2a0002") @isBusinessKey @zeroKey("-1") @not_null @min_value("-1"),
-    "W"."N_NAME"                             AS "N_NAME"              @id("2a0003") @isChangeTracking @not_null,
-    "W"."N_REGIONKEY"                        AS "N_REGIONKEY"         @id("2a0004") @isChangeTracking @zeroKey("-1") @min_max("-1", "4"),
-    "W"."N_COMMENT"                          AS "N_COMMENT"           @id("2a0005"),
+    "W"."N_NAME"                             AS "N_NAME"              @id("2a0003")  @not_null,
+    "W"."N_REGIONKEY"                        AS "N_REGIONKEY"         @id("2a0004")  @zeroKey("-99") @min_max("-1", "4"),
+    "W"."N_COMMENT"                          AS "N_COMMENT"           @id("2a0005") @isChangeTracking,
     "W"."N_LOAD_TIMESTAMP"                   AS "N_LOAD_TIMESTAMP"    @id("2a0006"),
     "W"."GH_NATION"                          AS "GH_NATION"           @id("2a0007"),
     1                                        AS "SYSTEM_VERSION"      @id("2a0008") @isSystemVersion,

@@ -1,6 +1,7 @@
 @id("afb5fb7a-78d8-475c-a3e8-614dd3cb2c07")
 @nodeType("707")
 @description("Pipeline: orders matched to cleaned customers by name, with a nation key")
+@materializationType("view")
 @writeMode("truncateInsert")
 @tests("SELECT 1 FROM {{ this }} GROUP BY ORDER_ID HAVING COUNT(*) > 1", false, "After")
 WITH "ORDERS_DEDUP" AS (
@@ -17,5 +18,5 @@ SELECT
     IFF("C"."CUSTOMER_ID" IS NULL, 'N', 'Y')            AS "CUSTOMER_MATCHED" @id("1c0006") @accepted_values("'Y', 'N'"),
     {{ get_hash('GH_ORDER') }}::STRING                  AS "GH_ORDER"         @id("1c0007") @not_null
 FROM "ORDERS_DEDUP" "O"
-LEFT JOIN {{ ref('TARGET', 'WRK_CUSTOMER_CLEAN') }} "C"
+INNER JOIN {{ ref('TARGET', 'WRK_CUSTOMER_CLEAN') }} "C"
     ON UPPER(TRIM("O"."CUSTOMER_NAME")) = "C"."CUSTOMER_NAME"
