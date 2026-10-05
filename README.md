@@ -1310,15 +1310,15 @@ FROM {{ ref('SRC', 'ORDER_LINES') }}
 
 #### Work
 
-* [Node definition](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Work-707/definition.yml)
-* [Create Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Work-707/create.sql.j2)
-* [Run Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Work-707/run.sql.j2)
+* [Node definition](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Work-SQLWork/definition.yml)
+* [Create Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Work-SQLWork/create.sql.j2)
+* [Run Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Work-SQLWork/run.sql.j2)
 
 #### Dimension
 
-* [Node definition](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Dimension-718/definition.yml)
-* [Create Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Dimension-718/create.sql.j2)
-* [Run Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Dimension-718/run.sql.j2)
+* [Node definition](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Dimension-SQLDimension/definition.yml)
+* [Create Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Dimension-SQLDimension/create.sql.j2)
+* [Run Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Dimension-SQLDimension/run.sql.j2)
 
 #### Fact
 
