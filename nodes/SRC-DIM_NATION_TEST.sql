@@ -1,5 +1,5 @@
 @id("98c97019-2f23-4dba-a8b5-f820fe174b63")
-@nodeType("718")
+@nodeType("SQLDimension")
 @mergeStrategy("lastModified")
 @zeroKey(0)
 SELECT

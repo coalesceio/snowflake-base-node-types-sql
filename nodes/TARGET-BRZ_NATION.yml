@@ -113,7 +113,7 @@ operation:
         dataType: TIMESTAMP_LTZ(9)
         defaultValue: ""
         description: ""
-        name: LOAD_TS
+        name: SOURCE_LOAD_TS
         nullable: true
         primaryKey: false
         sourceColumnReferences:
