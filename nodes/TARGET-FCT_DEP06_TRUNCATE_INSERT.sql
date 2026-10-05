@@ -1,5 +1,6 @@
 @id("f7f719bf-cd3e-49b7-8ae7-defffad9fe2f")
 @nodeType("SQLFact")
+@materializationType("view")
 @writeMode("truncateInsert")
 SELECT
     "NATION_TEST"."N_NATIONKEY"                 AS "N_NATIONKEY"        @id("0d0601"),

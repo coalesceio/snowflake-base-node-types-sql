@@ -1,6 +1,5 @@
 @id("f4fcfef4-0f0e-404d-9772-b7cfea2b5432")
 @nodeType("SQLFact")
-@materializationType("view")
 SELECT
     "NATION_TEST"."N_NATIONKEY"                 AS "N_NATIONKEY"        @id("0d0701"),
     "NATION_TEST"."N_NAME"                      AS "N_NAME"             @id("0d0702"),

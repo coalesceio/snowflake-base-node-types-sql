@@ -1,6 +1,6 @@
 @id("32eb6dac-27a9-4a30-9579-d08295d15e4a")
 @nodeType("SQLFact")
-@mergeStrategy("changeTracking")
+@mergeStrategy("upsert")
 SELECT
     "NATION_TEST"."N_NATIONKEY"                 AS "N_NATIONKEY"        @id("0d0201") @isBusinessKey,
     "NATION_TEST"."N_NAME"                      AS "N_NAME"             @id("0d0202"),
