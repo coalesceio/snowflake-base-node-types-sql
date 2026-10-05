@@ -2,18 +2,6 @@ fileVersion: 1
 id: 604f19cf-4cf8-4582-8a4b-c6e25598331e
 name: sb_medallion_fact
 steps:
-  - 0d941100-8209-4c48-8611-a5d23dfad33a
   - 1610aab1-7820-4366-b317-87606f480f7f
-  - 2779c9d9-a22f-4e4c-8655-07c551c68b68
-  - 4628ce25-74bc-495b-82e0-b4a65dd27e0b
   - 584cb3de-f229-4414-adad-4556112c8f72
-  - b64688ac-0450-4851-8028-55bf178e9f4c
-  - b8a7d817-ce78-4a3a-8e88-79ea95532c8a
-  - b92b12e7-76c1-4ffe-8b6a-9a23f47e2aeb
-  - bf897c78-8d9f-4983-8d98-471589af9386
-  - c949a821-fc82-4153-83a5-5d653430b51b
-  - da569c9b-b647-4b2b-8d90-3660576d1aeb
-  - dc388b57-facb-4a3b-8bc3-05721432be8a
-  - e8af1afb-4e79-451f-8c90-523148f04afc
-  - f54968fd-dbda-4ab9-80f2-0b0aa4dfadba
 type: Subgraph

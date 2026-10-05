@@ -1,0 +1,54 @@
+fileVersion: 1
+id: 3c02111f-2b41-448d-a31b-494975f74dde
+name: GEOMETRY_TABLE
+operation:
+  database: ""
+  deployEnabled: true
+  description: ""
+  locationName: SRC
+  metadata:
+    columns:
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: fcc04b34-2151-4501-8b5f-3d3d10e6997d
+          stepCounter: 3c02111f-2b41-448d-a31b-494975f74dde
+        config: {}
+        dataType: GEOMETRY
+        defaultValue: ""
+        description: ""
+        name: G
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: d9bcf9c0-124a-4e0d-a0b4-e139e237e862
+          stepCounter: 3c02111f-2b41-448d-a31b-494975f74dde
+        config: {}
+        dataType: VARCHAR(16777216)
+        defaultValue: ""
+        description: ""
+        name: DESCRIPTION
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+  name: GEOMETRY_TABLE
+  schema: ""
+  sqlType: Source
+  type: sourceInput
+  version: 1
+type: Node
