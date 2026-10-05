@@ -6,7 +6,7 @@ SELECT
     "GEOMETRY_TABLE"."G"                         AS "G"                  @id("b651a3") @not_null,
     ST_ASWKT("GEOMETRY_TABLE"."G")               AS "GEOMETRY_WKT"       @id("d60e4d") @inHash("GEOMETRY_ID", 1),
     TRIM("GEOMETRY_TABLE"."DESCRIPTION")         AS "DESCRIPTION"        @id("19f774"),
-    ST_DIMENSION("GEOMETRY_TABLE"."G")           AS "GEOMETRY_DIMENSION" @id("46e663") @accepted_values("0, 1, 2"),
+    CAST(ST_DIMENSION("GEOMETRY_TABLE"."G") AS STRING)   AS "GEOMETRY_DIMENSION" @id("46e663") @accepted_values("0, 1, 2"),
     ST_SRID("GEOMETRY_TABLE"."G")                AS "SRID"               @id("8bda19"),
-    ST_ISVALID("GEOMETRY_TABLE"."G")             AS "IS_VALID"           @id("a88b25")
+    CAST(ST_ISVALID("GEOMETRY_TABLE"."G") AS STRING) AS "IS_VALID"           @id("a88b25")
 FROM {{ ref('SRC', 'GEOMETRY_TABLE') }} "GEOMETRY_TABLE"
