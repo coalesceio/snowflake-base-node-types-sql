@@ -3,7 +3,7 @@
 SELECT
     "N_NATIONKEY"                        AS "N_NATIONKEY"        @id("a10001"),
     "N_NAME"                             AS "N_NAME"             @id("a10002"),
-    "N_REGIONKEY"                        AS "N_REGIONKEY"        @id("a10002"),
+    "N_REGIONKEY"                        AS "N_REGIONKEY"        @id("a10003"),
     "N_COMMENT"                          AS "N_COMMENT"          @id("a10004"),
     "N_LOAD_TIMESTAMP"                   AS "N_LOAD_TIMESTAMP"   @id("a10005"),
     "N_DATE"                             AS "N_DATE"             @id("a10006"),
