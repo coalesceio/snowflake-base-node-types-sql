@@ -1,5 +1,5 @@
 fileVersion: 1
-id: Fact
+id: SQL-Fact
 isDisabled: true
 metadata:
   defaultStorageLocation: null
