@@ -331,6 +331,83 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
+    Description: Checks that every column carries its own @id annotation, reporting duplicate column names and repeated @id values separately. Shared by validate_dimension_requirements and validate_fact_requirements.
+    Input: hardFail (boolean, default false) — passed through from the calling validator.
+    Output: Rendered test_stage(...) + SELECT statements for every check that fails.
+    ===========================================================================#}
+    {%- macro validate_column_ids(hardFail=false) -%}
+        {# A column without a real @id has id equal to its name. When the SELECT repeats a column name, Coalesce renames the extra copy by appending a number (SYSTEM_CREATE_DATE -> SYSTEM_CREATE_DATE1) and drops its @id, so it lands here too — report that as a duplicate name rather than a missing ID. #}
+        {%- set idCheck = namespace(missing=[], duplicates=[]) -%}
+        {%- for col in columns if col.id == col.name -%}
+            {%- set dup = namespace(of=none) -%}
+            {%- for other in columns if other.name != col.name and col.name[:other.name | length] == other.name -%}
+                {%- set suffix = col.name[other.name | length:] -%}
+                {%- if (suffix | int(0)) > 0 and (suffix | int) | string == suffix -%}
+                    {%- set dup.of = other.name -%}
+                {%- endif -%}
+            {%- endfor -%}
+            {%- if dup.of is not none -%}
+                {%- set idCheck.duplicates = idCheck.duplicates + [{"of": dup.of, "renamed": col.name}] -%}
+            {%- else -%}
+                {%- set idCheck.missing = idCheck.missing + [col.name] -%}
+            {%- endif -%}
+        {%- endfor -%}
+
+        {%- if idCheck.duplicates | length > 0 %}
+            {%- set described = namespace(items=[]) -%}
+            {%- for d in idCheck.duplicates -%}
+                {%- set described.items = described.items + ["'" ~ d.of ~ "' (extra copy renamed to " ~ d.renamed ~ ")"] -%}
+            {%- endfor -%}
+            {# A deliberate alias like REGIONKEY1 without an @id is indistinguishable from a renamed copy, so the message covers both. #}
+            {%- set renamed = idCheck.duplicates | map(attribute='renamed') | list -%}
+            {%- if renamed | length > 1 -%}
+                {%- set aliasHint = "If " ~ (renamed | join(', ')) ~ ' are deliberate aliases rather than copies, add a unique @id("<6 hex digits>") to each of them instead.' -%}
+            {%- else -%}
+                {%- set aliasHint = "If " ~ renamed[0] ~ ' is a deliberate alias rather than a copy, add a unique @id("<6 hex digits>") to it instead.' -%}
+            {%- endif -%}
+            {%- set reason = "Duplicate column name: " ~ (described.items | join(', ')) ~ ". The SELECT returns more than one column with the same name — remove the extra column or give it a different alias. " ~ aliasHint %}
+            {{ test_stage("Duplicate Column Names", false) }}
+            -- {{ reason }}
+            {%- if hardFail %}
+            SELECT 1/0
+            {%- else %}
+            SELECT 1
+            {%- endif -%}
+        {%- endif -%}
+
+        {# Two columns given the same @id value (exact string match). #}
+        {%- set idDup = namespace(items=[]) -%}
+        {%- for col in columns if col.id != col.name -%}
+            {%- set sharing = columns | selectattr("id", "equalto", col.id) | map(attribute="name") | list -%}
+            {%- set entry = "@id(\"" ~ col.id ~ "\") on " ~ (sharing | join(', ')) -%}
+            {%- if sharing | length > 1 and entry not in idDup.items -%}
+                {%- set idDup.items = idDup.items + [entry] -%}
+            {%- endif -%}
+        {%- endfor -%}
+        {%- if idDup.items | length > 0 %}
+            {%- set reason = "Duplicate column ID: " ~ (idDup.items | join('; ')) ~ '. Each column needs its own unique @id("<6 hex digits>") — change the repeated ID on all but one of them.' %}
+            {{ test_stage("Duplicate Column IDs", false) }}
+            -- {{ reason }}
+            {%- if hardFail %}
+            SELECT 1/0
+            {%- else %}
+            SELECT 1
+            {%- endif -%}
+        {%- endif -%}
+
+        {%- if idCheck.missing | length > 0 %}
+            {%- set reason = "These columns have no real system-generated ID (id equals the column name): " ~ (idCheck.missing | join(', ')) ~ '. Add a unique @id("<6 hex digits>") annotation to each of them.' %}
+            {{ test_stage("Missing Column IDs", false) }}
+            -- {{ reason }}
+            {%- if hardFail %}
+            SELECT 1/0
+            {%- else %}
+            SELECT 1
+            {%- endif -%}
+        {%- endif -%}
+    {%- endmacro -%}
+
+    {#===========================================================================
     Description: Validates a Dimension node's annotations (column IDs, business key, mergeStrategy, required system columns). Shared by create.sql.j2 and run.sql.j2.
     Input: hardFail (boolean, default false) — set true from create.sql.j2 so a failed check raises a real SQL error, since CREATE (unlike RUN) doesn't fail on row count alone.
     Output: Rendered test_stage(...) + SELECT statements for every check that fails.
@@ -346,19 +423,7 @@ macroString: |-
         {%- endmacro -%}
 
         {# Every Dimension column must carry its own @id annotation. #}
-        {%- set invalidIdColumns = namespace(items=[]) -%}
-        {%- for col in columns -%}
-            {%- if col.id == col.name -%}
-                {%- set invalidIdColumns.items = invalidIdColumns.items + [col] -%}
-            {%- endif -%}
-        {%- endfor -%}
-        {%- set invalidIdColumns = invalidIdColumns.items -%}
-        {%- if invalidIdColumns | length > 0 %}
-            {%- set reason = "These columns have no real system-generated ID (id equals the column name): " ~ (invalidIdColumns | map(attribute='name') | join(', ')) ~ '. Add a unique @id("<6 hex digits>") annotation to each of them.' %}
-            {{ test_stage("Missing Column IDs", false) }}
-            -- {{ reason }}
-            {{ fail_select(reason) }}
-        {%- endif -%}
+        {{ validate_column_ids(hardFail) }}
 
         {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) -%}
         {%- if not hasBusinessKey %}
@@ -546,6 +611,150 @@ macroString: |-
             {%- set onlySurrogateKeyFlagged = missingSystemColumns.items | length == 1 and missingSystemColumns.items[0].annotation == '@isSurrogateKey' and not missingSystemColumns.items[0].required -%}
             {%- set stageName = 'Surrogate Key Not Set/Using Custom Surrogate Key Logic' if onlySurrogateKeyFlagged else 'Missing Required System Columns' %}
             {{ test_stage(stageName, not anyRequired) }}
+            {%- for item in missingSystemColumns.items %}
+            -- {{ loop.index }}. [{{ 'REQUIRED' if item.required else 'RECOMMENDED' }}] {{ item.annotation }}
+            {%- if item.example %}
+            --    Example: {{ item.example }}
+            {%- endif %}
+            --    Reason: {{ item.reason }}
+            {%- endfor %}
+            {# Only hard-fail if a REQUIRED item is present; recommendations-only stays non-blocking. #}
+            {%- if hardFail and anyRequired -%}
+                {{ fail_select("Missing required system column(s): " ~ (missingSystemColumns.items | selectattr('required') | map(attribute='annotation') | join(', ')) ~ ". See the comments above for details.") }}
+            {%- else -%}
+                SELECT 1
+            {%- endif -%}
+        {%- endif -%}
+    {%- endmacro -%}
+
+    {#===========================================================================
+    Description: Validates a Fact node's annotations (column IDs, mergeStrategy, required system columns). Shared by create.sql.j2 and run.sql.j2.
+    Input: hardFail (boolean, default false) — set true from create.sql.j2 so a failed check raises a real SQL error, since CREATE (unlike RUN) doesn't fail on row count alone.
+    Output: Rendered test_stage(...) + SELECT statements for every check that fails.
+    ===========================================================================#}
+    {%- macro validate_fact_requirements(hardFail=false) -%}
+        {# CREATE doesn't fail on row count like RUN does, so hardFail forces a real SQL error instead. #}
+        {%- macro fail_select(reason) -%}
+            {%- if hardFail -%}
+                SELECT 1/0
+            {%- else -%}
+                SELECT 1
+            {%- endif -%}
+        {%- endmacro -%}
+
+        {# Every Fact column must carry its own @id annotation. #}
+        {{ validate_column_ids(hardFail) }}
+
+        {# No @isBusinessKey column is valid for a Fact — it's loaded as a plain insert, so the mergeStrategy/tracking/system-column checks below don't apply. #}
+        {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) -%}
+
+        {%- set lastModifiedCount = columns | selectattr("lastModifiedTracking") | list | length -%}
+
+        {%- set mergeStrategyExplicit = config.mergeStrategy is defined and config.mergeStrategy.parameters is defined and config.mergeStrategy.parameters | length > 0 -%}
+        {%- if mergeStrategyExplicit -%}
+            {# Matched case-insensitively (must match run.sql.j2). #}
+            {%- set mergeStrategyRaw = config.mergeStrategy.parameters[0] | string | trim -%}
+            {%- set mergeStrategy = mergeStrategyRaw | lower -%}
+        {%- else -%}
+            {# No @mergeStrategy given — always default to changeTracking, regardless of which tracking columns are present. #}
+            {%- set mergeStrategy = 'changetracking' -%}
+        {%- endif -%}
+        {%- set isSimpleUpsert = mergeStrategy == 'upsert' -%}
+        {%- set isLastModifiedStrategy = mergeStrategy == 'lastmodified' -%}
+        {%- set isChangeTrackingStrategy = mergeStrategy == 'changetracking' -%}
+        {%- set isAllColumnMatch = mergeStrategy == 'allcolumnmatch' %}
+
+        {# An unrecognised strategy would otherwise fall through to change tracking without any warning. #}
+        {%- if not (isSimpleUpsert or isLastModifiedStrategy or isChangeTrackingStrategy or isAllColumnMatch) %}
+            {%- set reason = '@mergeStrategy("' ~ mergeStrategyRaw ~ '") is not a recognised strategy. Use "changeTracking", "lastModified", "upsert" or "allColumnMatch".' %}
+            {{ test_stage('Invalid configuration: mergeStrategy', false) }}
+            -- {{ reason }}
+            {{ fail_select(reason) }}
+        {%- endif -%}
+
+        {# @mergeStrategy always takes priority. An explicit changeTracking/lastModified/upsert merges on the business key, so a missing @isBusinessKey stops the load.
+           Not for allColumnMatch, which needs no @isBusinessKey — every column is the match key. An unrecognised value is already flagged above. #}
+        {%- if not hasBusinessKey and mergeStrategyExplicit and (isSimpleUpsert or isLastModifiedStrategy or isChangeTrackingStrategy) %}
+            {%- set reason = '@mergeStrategy("' ~ mergeStrategyRaw ~ '") merges on the business key, but no column is marked @isBusinessKey. Mark the business key column(s) with @isBusinessKey, or remove @mergeStrategy to load the node as a plain insert.' %}
+            {{ test_stage('Invalid configuration: No Business Key', false) }}
+            -- {{ reason }}
+            {{ fail_select(reason) }}
+        {%- endif -%}
+
+        {# No @mergeStrategy and no business key = plain insert, so @lastModifiedTracking is never read. Warn only — the insert still runs. #}
+        {%- if not hasBusinessKey and not mergeStrategyExplicit and lastModifiedCount > 0 %}
+            {{ test_stage('Invalid configuration: No Business Key', true) }}
+            -- No @mergeStrategy and no column marked @isBusinessKey, so this node is loaded as a plain insert — @lastModifiedTracking will be ignored. Mark the business key column(s) with @isBusinessKey and set @mergeStrategy("lastModified") to use it, or remove the annotation.
+            SELECT 1
+        {%- endif -%}
+
+        {# allColumnMatch matches on every non-system column, so @isBusinessKey / @lastModifiedTracking are never read. Warn only — the merge still runs. #}
+        {%- if isAllColumnMatch and hasBusinessKey %}
+            {{ test_stage('Invalid configuration: mergeStrategy', true) }}
+            -- @mergeStrategy("allColumnMatch") matches on every non-system column, so @isBusinessKey is ignored — all columns are used as the business key for comparison. Remove @isBusinessKey, or switch mergeStrategy to use it.
+            SELECT 1
+        {%- endif -%}
+
+        {%- if isAllColumnMatch and lastModifiedCount > 0 %}
+            {{ test_stage('Invalid configuration: mergeStrategy', true) }}
+            -- @mergeStrategy("allColumnMatch") performs no change detection, so @lastModifiedTracking columns are never read. Remove them, or switch mergeStrategy to "lastModified" to use them.
+            SELECT 1
+        {%- endif -%}
+
+        {# These cross-checks only apply when @mergeStrategy is set explicitly, since an inferred strategy can't conflict with itself. #}
+        {%- if hasBusinessKey and mergeStrategyExplicit and isSimpleUpsert and lastModifiedCount > 0 %}
+            {{ test_stage('Invalid configuration: mergeStrategy', true) }}
+            -- @mergeStrategy("upsert") performs no change detection, so @lastModifiedTracking columns are never read. Remove them, or switch mergeStrategy to "lastModified" to use them.
+            SELECT 1
+        {%- endif -%}
+
+        {%- if hasBusinessKey and isChangeTrackingStrategy and lastModifiedCount > 0 %}
+            {{ test_stage('Invalid configuration: mergeStrategy', true) }}
+            -- @mergeStrategy("changeTracking") does not use @lastModifiedTracking — that column would be silently ignored. Remove it, or switch mergeStrategy to "lastModified".
+            SELECT 1
+        {%- endif -%}
+
+        {%- if hasBusinessKey and isLastModifiedStrategy and lastModifiedCount == 0 %}
+            {%- set reason = '@mergeStrategy("lastModified") requires exactly one column marked @lastModifiedTracking; none was found.' %}
+            {{ test_stage('Invalid configuration: mergeStrategy', false) }}
+            -- {{ reason }}
+            {{ fail_select(reason) }}
+        {%- endif %}
+
+        {# Only check "at most one @lastModifiedTracking column" once lastModified is the strategy in effect. #}
+        {%- if hasBusinessKey and isLastModifiedStrategy and lastModifiedCount > 1 %}
+            {%- set reason = "@lastModifiedTracking may be applied to at most one column, but " ~ lastModifiedCount ~ " columns were marked. Remove the annotation from all but one column." %}
+            {{ test_stage('Invalid configuration: Last Modified Column', false) }}
+            -- {{ reason }}
+            {{ fail_select(reason) }}
+        {%- endif -%}
+
+        {# Collect every missing/misconfigured system column here so one run reports them all together instead of one at a time. #}
+        {%- set missingSystemColumns = namespace(items=[]) %}
+
+        {%- set hasSystemCreateDate = columns | selectattr("isSystemCreateDate") | list | length > 0 -%}
+        {%- if hasBusinessKey and not isSimpleUpsert and not isAllColumnMatch and not hasSystemCreateDate -%}
+            {%- set missingSystemColumns.items = missingSystemColumns.items + [{
+                'required': true,
+                'annotation': '@isSystemCreateDate',
+                'example': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate',
+                'reason': 'Required because @mergeStrategy("changeTracking"/"lastModified") does change detection against the existing target row: SYSTEM_CREATE_DATE is carried through unchanged from that row into CHANGE_DETECTION so its original insert timestamp is preserved on every update, and only stamped with CURRENT_TIMESTAMP the one time a business key is first inserted.'
+            }] -%}
+        {%- endif %}
+
+        {%- set hasSystemUpdateDate = columns | selectattr("isSystemUpdateDate") | list | length > 0 -%}
+        {%- if hasBusinessKey and not isSimpleUpsert and not isAllColumnMatch and not hasSystemUpdateDate -%}
+            {%- set missingSystemColumns.items = missingSystemColumns.items + [{
+                'required': true,
+                'annotation': '@isSystemUpdateDate',
+                'example': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate',
+                'reason': 'Required for SCD Type 1: without it there\'s no way to tell when a row\'s attributes were last changed — SYSTEM_CREATE_DATE is set once and never touched again.'
+            }] -%}
+        {%- endif -%}
+
+        {%- if missingSystemColumns.items | length > 0 -%}
+            {%- set anyRequired = missingSystemColumns.items | selectattr('required') | list | length > 0 %}
+            {{ test_stage('Missing Required System Columns', not anyRequired) }}
             {%- for item in missingSystemColumns.items %}
             -- {{ loop.index }}. [{{ 'REQUIRED' if item.required else 'RECOMMENDED' }}] {{ item.annotation }}
             {%- if item.example %}

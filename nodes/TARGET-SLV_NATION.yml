@@ -118,7 +118,7 @@ operation:
           - columnReferences:
               - columnCounter: 3d4340ce-2fd8-48c7-a56c-39734ca70312
                 stepCounter: 1e7bc288-b235-4e67-ac53-d553c10337bf
-            transform: "\"BRZ_NATION\".\"LOAD_TS\""
+            transform: "\"BRZ_NATION\".\"SOURCE_LOAD_TS\""
         transform: "\"BRZ_NATION\".\"LOAD_TS\""
         uniqueKey: false
     enabledColumnTestIDs: []

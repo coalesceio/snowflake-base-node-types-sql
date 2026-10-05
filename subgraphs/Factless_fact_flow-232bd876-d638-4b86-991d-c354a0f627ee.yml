@@ -1,0 +1,14 @@
+fileVersion: 1
+id: 232bd876-d638-4b86-991d-c354a0f627ee
+name: Factless_fact_flow
+steps:
+  - 13c1928f-10fe-40d9-a8d3-bc305d026043
+  - 251045c2-5d11-4f42-a6c8-0fda76f6eb20
+  - 3f7607d4-153f-4195-84ae-bd5205c1659e
+  - 4c23fde5-a132-4f7a-aa78-e1f410e76e9b
+  - 59a9fb72-4418-4bcb-b6fc-f55c66a38fe3
+  - 8d06f137-94b2-457c-913c-78910df8db9f
+  - ad5e63b0-9fe2-416a-a918-e0ea9275b57d
+  - b414aae5-b0b8-4d4a-9a36-32808bcc0e9a
+  - e29542f5-3093-4e80-b0fb-05fbd6909aba
+type: Subgraph

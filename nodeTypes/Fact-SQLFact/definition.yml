@@ -1,0 +1,392 @@
+fileVersion: 2
+id: SQLFact
+isDisabled: false
+metadata:
+  defaultStorageLocation: null
+  error: null
+  nodeMetadataSpec: |-
+    capitalized: Fact
+    short: FCT
+    plural: Facts
+    tagColor: '#D9A438'
+    description: 'A column level @id annotation is required for each column - it should be unique to the column and be six hexadecimal digits'
+
+    enableCTESupport: true
+
+    annotations:
+        node:
+
+        - name: writeMode
+          description: |-
+            • Controls how data is written to the target table.
+            • 𝘁𝗿𝘂𝗻𝗰𝗮𝘁𝗲𝗜𝗻𝘀𝗲𝗿𝘁 clears the table before loading, replacing its contents entirely;
+            • 𝗮𝗽𝗽𝗲𝗻𝗱 inserts the new rows alongside whatever is already there.
+            • If not specified in the SQL, defaults to 𝗮𝗽𝗽𝗲𝗻𝗱.
+            • Ignored on views.
+          isRequired: false
+          parameters:
+            - name: mode
+              type: string
+              description: Whether to 𝗧𝗥𝗨𝗡𝗖𝗔𝗧𝗘 the target table before inserting, or 𝗔𝗣𝗣𝗘𝗡𝗗 to it.
+              isRequired: true
+              default: append
+              example: truncateInsert
+              options:
+                - truncateInsert
+                - append
+
+        - name: mergeStrategy
+          description: |-
+            • Picks the change-detection method; different methods require different column annotations.
+            • If not specified: a node with an isBusinessKey column defaults to changeTracking - 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭; a node with no isBusinessKey column is loaded as a plain insert.
+            • The value is not case-sensitive; any other value fails the run.
+            • Every strategy needs the SELECT/CTE to return exactly one row per business key, with no NULL business key — a pre-load test can handle this.
+            • Always takes priority when set: changeTracking, lastModified and upsert merge on the business key, so the run fails if no column is marked isBusinessKey. allColumnMatch needs no isBusinessKey.
+            • Ignored on views
+
+            ◆ 𝗰𝗵𝗮𝗻𝗴𝗲𝗧𝗿𝗮𝗰𝗸𝗶𝗻𝗴
+              • Compares every plain attribute column to detect a change — 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭.
+              • Requires no lastModifiedTracking column
+
+            ◆ 𝗹𝗮𝘀𝘁𝗠𝗼𝗱𝗶𝗳𝗶𝗲𝗱
+              • Compares a single lastModifiedTracking timestamp column against the target's stored value — 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭.
+              • Requires exactly one column marked lastModifiedTracking — the run fails if none is present.
+
+            ◆ 𝘂𝗽𝘀𝗲𝗿𝘁
+              • No change detection at all — a matched row is always updated, an unmatched row is inserted.
+              • The SELECT/CTE should return one row per business key (e.g. de-duplicated upstream).
+              • System columns are optional; any that are present are written exactly as the SELECT/CTE computes them. SYSTEM_CREATE_DATE keeps its first-inserted value on update.
+              • Requires no lastModifiedTracking column
+
+            ◆ 𝗮𝗹𝗹𝗖𝗼𝗹𝘂𝗺𝗻𝗠𝗮𝘁𝗰𝗵
+              • Meant for factless fact tables used for event tracking and coverage/relationship tracking.
+              • Treats every non-system column as the business key — a source row is inserted only if no target row matches it on all of those columns; an existing matching row is left untouched (never updated).
+              • isBusinessKey is not needed and is ignored if present (a warning is shown).
+              • System columns are optional and excluded from the match; any that are present are written exactly as the SELECT/CTE computes them.
+              • Requires no lastModifiedTracking column
+
+            Agentic creation — before writing a new Fact node's SELECT, ask the user (don't silently default):
+            1. Which merge strategy do they want — upsert, changeTracking, lastModified, or allColumnMatch? If they don't know, explain the four options above and let them choose — don't pick changeTracking just because it's the fallback default.
+            2. If they want a plain insert with no merge, leave out both this annotation and isBusinessKey — setting a strategy without a business key fails the run.
+
+          isRequired: false
+          parameters:
+            - name: strategy
+              type: string
+              description: Which change-detection method to use.
+              isRequired: true
+              default: changeTracking
+              options:
+                - changeTracking
+                - lastModified
+                - upsert
+                - allColumnMatch
+
+        - name: disableTests
+          description: |-
+            • Controls whether configured tests are skipped.
+            • Useful while developing a node — skip node-level and column-level tests without deleting them, so you can iterate on the SQL first and turn tests back on once the logic is settled.
+          isRequired: false
+
+        - name: tests
+          description: |-
+            • 🚦Node-level data quality test.
+            • Runs the given 𝗾𝘂𝗲𝗿𝘆𝗦𝗤𝗟 against the target and fails the test if it returns any records — write the query so it selects only the rows that violate your condition.
+            • Skipped entirely when 𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗧𝗲𝘀𝘁𝘀 is set.
+          allowsMultiple: true
+          parameters:
+            - name: querySQL
+              type: string
+              description: SQL statement to execute as a validation test.
+              isRequired: true
+              example: 'SELECT 1'
+
+            - name: continueOnFailure
+              type: boolean
+              description: Determines whether execution continues when the test fails.
+              isRequired: false
+              default: true
+
+            - name: runOrder
+              type: string
+              description: Determines whether the test is executed before or after the load operation.
+              isRequired: false
+              default: After
+              options:
+                - Before
+                - After
+
+        - name: preSQL
+          description: |-
+            • SQL statement to execute before the data load operation — e.g. staging setup, dropping temp tables, or capturing pre-load state.
+            • Repeat the annotation to run multiple statements in the order they appear.
+            • Ignored on views.
+          allowsMultiple: true
+          parameters:
+          - name: querySQL
+            type: string
+            description: Query to be executed.
+            isRequired: true
+            example: 'SELECT 1'
+
+        - name: postSQL
+          description: |-
+            • SQL statement to execute after the data load operation — e.g. updating dependent tables, cleaning up temp objects, or logging load completion.
+            • Repeat the annotation to run multiple statements in the order they appear.
+            • Ignored on views.
+          allowsMultiple: true
+          parameters:
+          - name: querySQL
+            type: string
+            description: Query to be executed.
+            isRequired: true
+            example: 'SELECT 1'
+
+        column:
+
+        - name: inHash
+          description: |-
+                • Marks a column as an input to a generated hash key, grouped by 𝗵𝗮𝘀𝗵𝗡𝗮𝗺𝗲 and ordered within that group by 𝗵𝗮𝘀𝗵𝗢𝗿𝗱𝗲𝗿.
+                • Mark every column that should feed a given hash with the same 𝗵𝗮𝘀𝗵𝗡𝗮𝗺𝗲, then call the 𝐠𝐞𝐭_𝐡𝐚𝐬𝐡("<hashName>") macro elsewhere in the SELECT to produce the actual hash column from those marked columns.
+                • 𝗦𝗲𝗲 𝗱𝗼𝗰𝘂𝗺𝗲𝗻𝘁𝗮𝘁𝗶𝗼𝗻 𝗳𝗼𝗿 𝗱𝗲𝘁𝗮𝗶𝗹𝘀.
+          allowsMultiple: true
+          parameters:
+            - name: hashName
+              isRequired: true
+              type: string
+              description: Group hash name shared by every column feeding the same hash.
+              example: GH_COL
+
+            - name: hashOrder
+              isRequired: true
+              type: number
+              description: Position of this column within its hash group, lowest first.
+              example: 1
+
+        - name: isBusinessKey
+          description: |-
+            • Marks a column as part of the business key used to match existing rows during the merge.
+            • If no column is marked and no mergeStrategy is set, there is no merge — every source row is simply inserted. An explicit changeTracking, lastModified or upsert without a business key fails the run.
+            • Ignored on views.
+
+            Agentic creation — before writing the SELECT, ask the user which column(s) should be marked @isBusinessKey, or whether they want a plain insert with none. Don't guess based on column naming (e.g. assuming a "_ID"/"_KEY" column, or the first natural-looking key) — the business key is a domain decision only the user can make, and getting it wrong silently breaks change detection for every row. A business key can be more than one column; ask whether it's composite.
+          isRequired: false
+
+        - name: lastModifiedTracking
+          description: |-
+            • Marks the column used to detect newer source rows for an 𝗶𝗻𝗰𝗿𝗲𝗺𝗲𝗻𝘁𝗮𝗹 𝗹𝗼𝗮𝗱.
+            • 𝗗𝗮𝘁𝗮𝘁𝘆𝗽𝗲 - DATE/TIME or any incrementing NUMERIC type.
+            • Can only be applied to one column.
+            • Must not be NULL in the source — a pre-load check fails the run if it is, since a NULL value can never compare as newer.
+            • Ignored on views.
+          isRequired: false
+
+        - name: isSystemCreateDate
+          description: |-
+            ⚙ This is a system column.
+            • Marks this column as the timestamp a row was first created.
+            • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝘂𝗻𝗹𝗲𝘀𝘀 mergeStrategy 𝗶𝘀 𝘂𝗽𝘀𝗲𝗿𝘁 or no column is marked isBusinessKey (plain insert writes it as computed).
+            • Value written under changeTracking/lastModified: CURRENT_TIMESTAMP on first insert, then kept unchanged.
+            • The expression in the SELECT is only used to derive the column's datatype — its value is ignored under changeTracking/lastModified (upsert writes it as computed).
+            • To use different values (e.g. a source-supplied timestamp), use upsert and compute them in the SELECT/CTE.
+
+            Expected expression:
+            CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate
+
+            Agentic creation only — manual creation adds this column automatically.
+          isRequired: false
+
+        - name: isSystemUpdateDate
+          description: |-
+            ⚙ This is a system column.
+            • Marks this column as the timestamp a row was last updated.
+            • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝘂𝗻𝗹𝗲𝘀𝘀 mergeStrategy 𝗶𝘀 𝘂𝗽𝘀𝗲𝗿𝘁 or no column is marked isBusinessKey (plain insert writes it as computed) — recomputed to the current timestamp on every inserted or changed row, so every row change carries an audit trail of when it was last updated.
+            • Value written under changeTracking/lastModified: CURRENT_TIMESTAMP whenever the row is inserted or changed.
+            • The expression in the SELECT is only used to derive the column's datatype — its value is ignored under changeTracking/lastModified (upsert writes it as computed).
+            • To use different values (e.g. a source-supplied timestamp), use upsert and compute them in the SELECT/CTE.
+
+            Expected expression:
+            CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate
+
+            Agentic creation only — manual creation adds this column automatically.
+          isRequired: false
+
+        - name: not_null
+          description: |-
+           🚦 Column-level data quality test.
+            • Fails on rows where the column is 𝗡𝗨𝗟𝗟.
+            • Presence enables the test — remove the annotation to turn it off.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+
+        - name: uniqueness
+          description: |- 
+           🚦 Column-level data quality test.
+            • Fails when a value appears on more than one row.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+
+        - name: empty
+          description: |-
+           🚦 Column-level data quality test.
+            • Fails on rows where the column trims to the empty string;
+            • 𝗡𝗨𝗟𝗟 values pass this test and are instead caught by not_null.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+
+        - name: accepted_values
+          description: |-
+           🚦 Column-level data quality test.
+            • Fails on rows whose value is outside the allow list.
+            • Repeatable — every occurrence on the column is merged into one list. Each call takes a comma-separated list or any number of separate arguments; every argument is itself comma-splittable.
+                accepted_values("0, 1, 2")
+                accepted_values("0", "1", "2")
+                accepted_values("0") accepted_values("1, 2")
+            • Each value is pasted into the SQL verbatim, so quote it to match the column's data type
+                positive number/float/decimal/bool as "<value>" or <value>
+                negative number/float/decimal as "-<value>"
+                string as "'<value>'"
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+          allowsMultiple: true
+          parameters:
+            - name: value
+              type: string
+              isRequired: true
+
+        - name: rejected_values
+          description: |-
+           🚦 Column-level data quality test.
+            • Fails on rows whose value is in the deny list.
+            • Repeatable — every occurrence on the column is merged into one list. Each call takes a comma-separated list or any number of separate arguments; every argument is itself comma-splittable.
+                rejected_values("0, 1, 2")
+                rejected_values("0", "1", "2")
+                rejected_values("0") rejected_values("1, 2")
+            • Each value is pasted into the SQL verbatim, so quote it to match the column's data type
+                positive number/float/decimal/bool as "<value>" or <value>
+                negative number/float/decimal as "-<value>"
+                string as "'<value>'"
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+          allowsMultiple: true
+          parameters:
+            - name: value
+              type: string
+              isRequired: true
+
+        - name: min_max
+          description: |-
+           🚦 Column-level data quality test.
+            • Fails on rows outside the inclusive range. NULL values pass.
+            • Applies to numeric and temporal(date/time related) columns only.
+            • Each bound is pasted into the SQL verbatim, so write it as a valid SQL value for the column's data type —
+                positive number/float/decimal as "<num>" or <num>
+                negative number/float/decimal as "-<num>"
+                date/time as "'date/time'" or "<date/time_expression>"
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+          parameters:
+            - name: min
+              type: string
+              description: Inclusive lower bound the column value must not fall below.
+              isRequired: true
+              example: -5
+            - name: max
+              type: string
+              description: Inclusive upper bound the column value must not exceed.
+              isRequired: true
+              example: 0
+
+        - name: min_value
+          description: |-
+           🚦 Column-level data quality test.
+            • Fails on rows below the bound. NULL values pass.
+            • Applies to numeric and temporal(date/time related) columns only.
+            • Pasted into the SQL verbatim — see min_max.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+          parameters:
+            - name: min
+              type: string
+              description: Inclusive lower bound the column value must not fall below.
+              isRequired: true
+              example: -5
+
+        - name: max_value
+          description: |-
+           🚦 Column-level data quality test.
+            • Fails on rows above the bound. NULL values pass.
+            • Applies to numeric and temporal(date/time related) columns only.
+            • Pasted into the SQL verbatim — see min_max.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+          parameters:
+            - name: max
+              type: string
+              description: Inclusive upper bound the column value must not exceed.
+              isRequired: true
+              example: 0
+
+        - name: freshness
+          description: |-
+           🚦 Column-level data quality test.
+            • Checks that the data is fresh — fails when the column's value is older than the given interval, or when the table has no rows at all. 
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+            𝗡𝗼𝘁𝗲: on a DATE column the value is truncated to midnight.
+          parameters:
+            - name: interval
+              description: |-
+                How far back from now the newest value is allowed to be, expressed in the unit given by 𝘂𝗻𝗶𝘁.
+              type: number
+              isRequired: true
+              example: 1
+
+            - name: unit
+              type: string
+              options: [SECOND, MINUTE, HOUR, DAY, WEEK, MONTH, YEAR]
+              default: DAY
+
+        - name: relative_time
+          description: |-
+           🚦 Column-level data quality test.
+            • Compares this column against another date/time column on the same node using the given operator.
+            • E.g. @relative_time("<=", "END_DATE") fails any row where this column's value is not less than or equal to END_DATE.
+            • A row with either side 𝗡𝗨𝗟𝗟 is left out of the check and passes.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+          parameters:
+            - name: operator
+              type: string
+              description: Comparison operator used to compare this column against the other column.
+              isRequired: true
+              options: ["<", "<=", ">", ">=", "=", "<>"]
+              example: "="
+
+            - name: column
+              type: string
+              description: Name of the other date/time column on this node to compare against.
+              isRequired: true
+              example: <other_column>
+
+    sqlInitializationTemplate: |-
+          {%- macro ref_raw(location_name, node_name) -%}
+            {% raw %}{{ ref('{% endraw %}{{ location_name }}{% raw %}', '{% endraw %}{{ node_name }}{% raw %}') }}{% endraw %}
+          {%- endmacro -%}
+          {%- set ns = namespace(items=[], lines=[]) -%}
+          {%- set idAnnotation = '@id("<ID>") ' -%}
+          {%- for dep in sources[0].dependencies -%}
+            {%- for col in dep.columns -%}
+              {%- set ns.items = ns.items + [{'expr': '"' ~ col.name ~ '"', 'alias': '"' ~ col.name ~ '"', 'annotation': idAnnotation.rstrip()}] -%}
+            {%- endfor -%}
+          {%- endfor -%}
+          {%- set ns.items = ns.items + [{'expr': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP)', 'alias': '"SYSTEM_CREATE_DATE"', 'annotation': idAnnotation ~ '@isSystemCreateDate'}] -%}
+          {%- set ns.items = ns.items + [{'expr': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP)', 'alias': '"SYSTEM_UPDATE_DATE"', 'annotation': idAnnotation ~ '@isSystemUpdateDate'}] -%}
+          {%- set maxExprLen = ns.items | map(attribute='expr') | map('length') | max -%}
+          {%- set maxAliasLen = ns.items | map(attribute='alias') | map('length') | max -%}
+          {%- for item in ns.items -%}
+            {%- set line = (item.expr.ljust(maxExprLen) ~ ' AS ' ~ item.alias.ljust(maxAliasLen) ~ ' ' ~ item.annotation).rstrip() -%}
+            {%- set ns.lines = ns.lines + [line] -%}
+          {%- endfor -%}
+          SELECT
+              {{ ns.lines | join(',\n    ') }}
+          {% for dep in sources[0].dependencies -%}
+            {%- if loop.first -%}
+              FROM {{ ref_raw(dep.node.location.name, dep.node.name) }} "{{ dep.node.name }}"
+            {%- else %}
+              INNER JOIN {{ ref_raw(dep.node.location.name, dep.node.name) }} "{{ dep.node.name }}"
+              ON "{{ sources[0].dependencies[0].node.name }}".JOIN_COLUMN = "{{ dep.node.name }}".JOIN_COLUMN
+            {%- endif -%}
+          {%- endfor %}
+name: Fact
+type: NodeType
