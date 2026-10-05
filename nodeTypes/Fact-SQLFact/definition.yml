@@ -1,5 +1,5 @@
 fileVersion: 2
-id: SQLFact
+id: "SQLFact"
 isDisabled: false
 metadata:
   defaultStorageLocation: null
@@ -59,6 +59,7 @@ metadata:
               • Requires no lastModifiedTracking column
 
             ◆ 𝗮𝗹𝗹𝗖𝗼𝗹𝘂𝗺𝗻𝗠𝗮𝘁𝗰𝗵
+              • Meant for factless fact tables used for event tracking and coverage/relationship tracking.
               • Treats every non-system column as the business key — a source row is inserted only if no target row matches it on all of those columns; an existing matching row is left untouched (never updated).
               • isBusinessKey is not needed and is ignored if present (a warning is shown).
               • System columns are optional and excluded from the match; any that are present are written exactly as the SELECT/CTE computes them.
