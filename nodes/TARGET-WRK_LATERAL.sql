@@ -1,5 +1,5 @@
 @id("0f634ca5-6574-4c32-8e01-80aed244adde")
-@nodeType("707")
+@nodeType("SQLWork")
 WITH ProductData AS (
     SELECT 1 AS ID, 'Electronics,Sale,Refurbished' AS Tags
 )

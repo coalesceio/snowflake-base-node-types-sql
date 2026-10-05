@@ -1,5 +1,5 @@
 @id("ac7b3e27-ad3e-4088-b0e8-956625d1248b")
-@nodeType("718")
+@nodeType("SQLDimension")
 @mergeStrategy("upsert")
 SELECT
     0                                        AS "DIM_NT_UPSERT_KEY"   @id("275e2b") @isSurrogateKey,
@@ -13,4 +13,4 @@ SELECT
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @id("fc776c") @isSystemCreateDate,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_UPDATE_DATE"  @id("5719c4") @isSystemUpdateDate,
     CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE"     @id("369407") @isSystemEndDate
-FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
+FROM {{ ref('SRC', 'Nation_Test_CamelCase') }} "Nation_Test_CamelCase"

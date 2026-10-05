@@ -34,10 +34,10 @@ operation:
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: a487d975-d666-4306-91f0-6893d9987231
-                stepCounter: 1610aab1-7820-4366-b317-87606f480f7f
-            transform: "\"Nation_Test\".\"NAtionKey\""
-        transform: "\"Nation_Test\".\"NAtionKey\""
+              - columnCounter: ef07c411-af74-46eb-9b3d-76ced8e6dac0
+                stepCounter: 72963a97-78c9-4d96-bda1-38009df13212
+            transform: "\"Nation_Test_CamelCase\".\"NAtionKey\""
+        transform: "\"Nation_Test_CamelCase\".\"NAtionKey\""
         uniqueKey: false
       - acceptedValues:
           strictMatch: true
@@ -55,10 +55,10 @@ operation:
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: def546ac-625e-47bb-a977-ef8eecce28a5
-                stepCounter: 1610aab1-7820-4366-b317-87606f480f7f
-            transform: "\"Nation_Test\".\"name\""
-        transform: "\"Nation_Test\".\"name\""
+              - columnCounter: fe998272-5e40-4dc5-9457-8d540163bd09
+                stepCounter: 72963a97-78c9-4d96-bda1-38009df13212
+            transform: "\"Nation_Test_CamelCase\".\"name\""
+        transform: "\"Nation_Test_CamelCase\".\"name\""
         uniqueKey: false
       - acceptedValues:
           strictMatch: true
@@ -76,10 +76,10 @@ operation:
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: bf7327c1-083b-469b-bfec-91508c7eab26
-                stepCounter: 1610aab1-7820-4366-b317-87606f480f7f
-            transform: "\"Nation_Test\".\"REGIONKEY\""
-        transform: "\"Nation_Test\".\"REGIONKEY\""
+              - columnCounter: f338faf9-0ccd-4efc-a9c3-f299cc126085
+                stepCounter: 72963a97-78c9-4d96-bda1-38009df13212
+            transform: "\"Nation_Test_CamelCase\".\"REGIONKEY\""
+        transform: "\"Nation_Test_CamelCase\".\"REGIONKEY\""
         uniqueKey: false
       - acceptedValues:
           strictMatch: true
@@ -97,10 +97,10 @@ operation:
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: 5325c202-4ae8-454f-a6c2-f83966273a15
-                stepCounter: 1610aab1-7820-4366-b317-87606f480f7f
-            transform: "\"Nation_Test\".\"CommenT\""
-        transform: "\"Nation_Test\".\"CommenT\""
+              - columnCounter: f4dbefbf-25c6-4f3a-8c3e-54c7878d317a
+                stepCounter: 72963a97-78c9-4d96-bda1-38009df13212
+            transform: "\"Nation_Test_CamelCase\".\"CommenT\""
+        transform: "\"Nation_Test_CamelCase\".\"CommenT\""
         uniqueKey: false
       - acceptedValues:
           strictMatch: true
@@ -113,15 +113,15 @@ operation:
         dataType: TIMESTAMP_LTZ(9)
         defaultValue: ""
         description: ""
-        name: LOAD_TS
+        name: SOURCE_LOAD_TS
         nullable: true
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: 4d1c468c-4bf7-443a-9e0c-6994f9e48961
-                stepCounter: 1610aab1-7820-4366-b317-87606f480f7f
-            transform: "\"Nation_Test\".\"N_Load_Timestamp\""
-        transform: "\"Nation_Test\".\"N_Load_Timestamp\""
+              - columnCounter: 7590f98e-b1b4-4978-9215-33e6a48012f4
+                stepCounter: 72963a97-78c9-4d96-bda1-38009df13212
+            transform: "\"Nation_Test_CamelCase\".\"N_Load_Timestamp\""
+        transform: "\"Nation_Test_CamelCase\".\"N_Load_Timestamp\""
         uniqueKey: false
     enabledColumnTestIDs: []
     sourceMapping:
@@ -130,9 +130,9 @@ operation:
           customSQL: ""
         dependencies:
           - locationName: SRC
-            nodeName: Nation_Test
+            nodeName: Nation_Test_CamelCase
         join:
-          joinCondition: FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
+          joinCondition: FROM {{ ref('SRC', 'Nation_Test_CamelCase') }} "Nation_Test_CamelCase"
         name: BRZ_NATION
         noLinkRefs: []
   name: BRZ_NATION

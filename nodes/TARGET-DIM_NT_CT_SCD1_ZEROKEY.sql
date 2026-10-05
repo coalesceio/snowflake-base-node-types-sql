@@ -1,5 +1,5 @@
 @id("360ab446-eadc-432e-985a-8f2a7408109e")
-@nodeType("718")
+@nodeType("SQLDimension")
 @mergeStrategy("changeTracking")
 @zeroKey("0")
 SELECT
@@ -14,4 +14,4 @@ SELECT
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"         @id("deee36") @isSystemCreateDate,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_UPDATE_DATE"         @id("9ddee6") @isSystemUpdateDate,
     CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE"            @id("e29d96") @isSystemEndDate
-FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
+FROM {{ ref('SRC', 'Nation_Test_CamelCase') }} "Nation_Test_CamelCase"

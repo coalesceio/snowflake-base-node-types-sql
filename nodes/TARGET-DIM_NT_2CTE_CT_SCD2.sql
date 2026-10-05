@@ -1,10 +1,10 @@
 @id("5a7c2e91-4b3d-4f60-9a1e-2c8d7f0b6e34")
-@nodeType("718")
+@nodeType("SQLDimension")
 @description("Nation dimension (SCD2 change tracking) built from two CTEs")
 @mergeStrategy("changeTracking")
 WITH "NATION_SRC" AS (
     SELECT "NAtionKey", "name", "REGIONKEY", "CommenT", "N_Load_Timestamp"
-    FROM {{ ref('SRC', 'Nation_Test') }}
+    FROM {{ ref('SRC', 'Nation_Test_CamelCase') }}
 ),
 "NATION_CLEAN" AS (
     SELECT "NAtionKey", UPPER(TRIM("name")) AS "NATION_NAME", "REGIONKEY", "CommenT", "N_Load_Timestamp"

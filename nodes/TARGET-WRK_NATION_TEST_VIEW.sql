@@ -1,5 +1,5 @@
 @id("2a77fc94-f426-4db8-ae12-db44553ba07a")
-@nodeType("707")
+@nodeType("SQLWork")
 @materializationType("view")
 @disableTests
 SELECT

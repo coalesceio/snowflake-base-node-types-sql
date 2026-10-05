@@ -1,5 +1,5 @@
 @id("1e527d31-c17b-477c-8220-2128fc924540")
-@nodeType("718")
+@nodeType("SQLDimension")
 SELECT
     0                                        AS "DIM_Nation_Test_KEY" @id("327e7e") @isSurrogateKey,
     "NAtionKey"                              AS "NAtionKey"           @id("4273a2") @isBusinessKey,
@@ -12,4 +12,4 @@ SELECT
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @id("0246d4") @isSystemCreateDate,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_UPDATE_DATE"  @id("b92e26") @isSystemUpdateDate,
     CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE"     @id("f8e539") @isSystemEndDate
-FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
+FROM {{ ref('SRC', 'Nation_Test_CamelCase') }} "Nation_Test_CamelCase"

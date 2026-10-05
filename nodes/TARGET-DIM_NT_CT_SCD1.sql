@@ -1,5 +1,5 @@
 @id("25ff7619-0229-415b-bee5-a448ad857253")
-@nodeType("718")
+@nodeType("SQLDimension")
 @mergeStrategy("changeTracking")
 SELECT
     0                                        AS "DIM_NT_CT_SCD1_KEY"  @id("b080b3") @isSurrogateKey,
@@ -13,4 +13,4 @@ SELECT
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @id("b7aec5") @isSystemCreateDate,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_UPDATE_DATE"  @id("34567d") @isSystemUpdateDate,
     CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE"     @id("e1d5c1") @isSystemEndDate
-FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
+FROM {{ ref('SRC', 'Nation_Test_CamelCase') }} "Nation_Test_CamelCase"

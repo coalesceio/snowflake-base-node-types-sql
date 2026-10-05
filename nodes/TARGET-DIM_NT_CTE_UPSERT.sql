@@ -1,9 +1,9 @@
 @id("5d2a2dac-e5b1-48fd-9611-206f38fff80e")
-@nodeType("718")
+@nodeType("SQLDimension")
 @mergeStrategy("upsert")
 WITH "NATION_SRC" AS (
     SELECT "NAtionKey", "name", "REGIONKEY", "CommenT", "N_Load_Timestamp"
-    FROM {{ ref('SRC', 'Nation_Test') }}
+    FROM {{ ref('SRC', 'Nation_Test_CamelCase') }}
 )
 SELECT
     0                                        AS "DIM_NT_CTE_UPSERT_KEY" @id("aca460") @isSurrogateKey,

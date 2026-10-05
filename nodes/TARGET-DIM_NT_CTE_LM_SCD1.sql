@@ -1,9 +1,9 @@
 @id("318a874f-be4c-4b27-9ea5-ccd6b068f64b")
-@nodeType("718")
+@nodeType("SQLDimension")
 @mergeStrategy("lastModified")
 WITH "NATION_SRC" AS (
     SELECT "NAtionKey", "name", "REGIONKEY", "CommenT", "N_Load_Timestamp"
-    FROM {{ ref('SRC', 'Nation_Test') }}
+    FROM {{ ref('SRC', 'Nation_Test_CamelCase') }}
 )
 SELECT
     0                                        AS "DIM_NT_CTE_LM_SCD1_KEY" @id("abe2c5") @isSurrogateKey,

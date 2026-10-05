@@ -1,5 +1,5 @@
 @id("bb16244f-cb9b-45d1-9fe4-9dd8c5087591")
-@nodeType("718")
+@nodeType("SQLDimension")
 @materializationType("view")
 SELECT
     0                                        AS "DIM_NT_VIEW_KEY"     @id("24db2f"),
@@ -13,4 +13,4 @@ SELECT
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_CREATE_DATE"  @id("d4459a"),
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP)     AS "SYSTEM_UPDATE_DATE"  @id("6a886d"),
     CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE"     @id("878f62")
-FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
+FROM {{ ref('SRC', 'Nation_Test_CamelCase') }} "Nation_Test_CamelCase"
