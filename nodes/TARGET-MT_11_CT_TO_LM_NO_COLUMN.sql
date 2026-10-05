@@ -1,5 +1,5 @@
 @id("7e57a000-0000-4000-8000-000000000011")
-@nodeType("724")
+@nodeType("SQLFact")
 @mergeStrategy("changeTracking")
 @tests("SELECT 1 FROM {{ this }} GROUP BY ""NAtionKey"" HAVING COUNT(*) > 1")
 @tests("SELECT 1 FROM (SELECT COUNT(*) AS C FROM {{ this }}) WHERE C <> (SELECT COUNT(*) FROM {{ ref('SRC', 'Nation_Test') }})")

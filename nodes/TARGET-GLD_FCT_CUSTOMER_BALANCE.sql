@@ -1,5 +1,5 @@
 @id("b92b12e7-76c1-4ffe-8b6a-9a23f47e2aeb")
-@nodeType("724")
+@nodeType("SQLFact")
 @description("Gold: customer balance fact - default changeTracking merge (SQL Fact)")
 @tests("SELECT 1 FROM {{ this }} GROUP BY C_CUSTKEY HAVING COUNT(*) > 1")
 SELECT

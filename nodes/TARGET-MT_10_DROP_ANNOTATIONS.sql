@@ -1,5 +1,5 @@
 @id("7e57a000-0000-4000-8000-000000000010")
-@nodeType("724")
+@nodeType("SQLFact")
 @mergeStrategy("changeTracking")
 @writeMode("truncateInsert")
 @description("Phase A: annotations present")

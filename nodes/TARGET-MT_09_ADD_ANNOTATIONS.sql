@@ -1,5 +1,5 @@
 @id("7e57a000-0000-4000-8000-000000000009")
-@nodeType("724")
+@nodeType("SQLFact")
 SELECT
     "NAtionKey"                              AS "NAtionKey"           @id("7ea091") @isBusinessKey,
     "name"                                   AS "name"                @id("7ea092"),

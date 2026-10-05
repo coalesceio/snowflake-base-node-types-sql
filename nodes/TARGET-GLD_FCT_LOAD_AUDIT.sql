@@ -1,5 +1,5 @@
 @id("0d941100-8209-4c48-8611-a5d23dfad33a")
-@nodeType("724")
+@nodeType("SQLFact")
 @description("Gold: load audit - plain insert, one row appended per run (SQL Fact)")
 SELECT
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "AUDIT_TS"           @id("a3f94d"),

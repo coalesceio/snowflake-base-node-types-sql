@@ -1074,7 +1074,6 @@ FROM {{ ref('SRC', 'CUSTOMER') }}
 The default strategy. Any change in a non-key column overwrites the row.
 
 ```sql
-@nodeType("718")
 SELECT
     "CUSTOMER_ID"                            AS "CUSTOMER_ID"         @id("a10001") @isBusinessKey,
     "NAME"                                   AS "NAME"                @id("a10002"),
@@ -1089,7 +1088,6 @@ FROM {{ ref('SRC', 'CUSTOMER') }}
 A change in a column marked `@isChangeTracking` keeps the old row and adds a new version. Other columns are updated in place.
 
 ```sql
-@nodeType("718")
 @mergeStrategy("changeTracking")
 SELECT
     "CUSTOMER_ID"                            AS "CUSTOMER_ID"         @id("b10001") @isBusinessKey,
@@ -1108,7 +1106,6 @@ FROM {{ ref('SRC', 'CUSTOMER') }}
 A row is overwritten only when its `@lastModifiedTracking` value is newer than the stored one.
 
 ```sql
-@nodeType("718")
 @mergeStrategy("lastModified")
 SELECT
     "CUSTOMER_ID"                            AS "CUSTOMER_ID"         @id("c10001") @isBusinessKey,
@@ -1124,7 +1121,6 @@ FROM {{ ref('SRC', 'CUSTOMER') }}
 Same as above, but a newer value keeps the old row and adds a new version.
 
 ```sql
-@nodeType("718")
 @mergeStrategy("lastModified")
 SELECT
     "CUSTOMER_ID"                            AS "CUSTOMER_ID"         @id("d10001") @isBusinessKey,
@@ -1143,7 +1139,6 @@ FROM {{ ref('SRC', 'CUSTOMER') }}
 No change detection: existing keys are updated, new keys inserted. System columns are optional.
 
 ```sql
-@nodeType("718")
 @mergeStrategy("upsert")
 SELECT
     "CUSTOMER_ID"                            AS "CUSTOMER_ID"         @id("e10001") @isBusinessKey,
@@ -1157,7 +1152,6 @@ FROM {{ ref('SRC', 'CUSTOMER') }}
 Adds a placeholder row for unmatched lookups. Needs a surrogate key column.
 
 ```sql
-@nodeType("718")
 @zeroKey(0)
 SELECT
     0                                        AS "CUSTOMER_KEY"        @id("f10000") @isSurrogateKey,
@@ -1173,7 +1167,6 @@ FROM {{ ref('SRC', 'CUSTOMER') }}
 No business key or system columns needed; nothing is merged.
 
 ```sql
-@nodeType("718")
 @materializationType("view")
 SELECT
     "CUSTOMER_ID"                            AS "CUSTOMER_ID"         @id("0a0001"),
@@ -1186,7 +1179,6 @@ FROM {{ ref('SRC', 'CUSTOMER') }}
 Every merge strategy matches rows on the business key, so the source must return exactly one row per key, with no NULL key. A `Before` test runs ahead of the load and fails if the source returns a duplicated or NULL key.
 
 ```sql
-@nodeType("718")
 @mergeStrategy("changeTracking")
 @tests("SELECT N_NATIONKEY, N_NAME FROM {{ ref('SOURCE_DATA', 'NATION') }} GROUP BY N_NATIONKEY, N_NAME HAVING COUNT(*) > 1 OR N_NATIONKEY IS NULL OR N_NAME IS NULL", false, "Before")
 SELECT
@@ -1206,7 +1198,6 @@ FROM {{ ref('SOURCE_DATA', 'NATION') }} "NATION"
 `upsert` writes each row exactly as the SELECT computes it, so the SELECT can implement its own change logic. This example keeps the previous `CITY` (SCD3 style): the SELECT joins the source to the node's own table, and when the city changes, the old value moves to `CITY_PREV`.
 
 ```sql
-@nodeType("718")
 @mergeStrategy("upsert")
 WITH "EXISTING" AS (
     -- Current rows already in this dimension
@@ -1241,7 +1232,6 @@ LEFT JOIN "EXISTING" ON "SRC"."CUSTOMER_ID" = "EXISTING"."CUSTOMER_ID"
 No `@mergeStrategy` and no `@isBusinessKey` column, so every source row is inserted with no matching. System columns are optional and written as the SELECT computes them. Adding `@mergeStrategy("changeTracking")`, `"lastModified"` or `"upsert"` here without a business key would stop the load with a validation error.
 
 ```sql
-@nodeType("724")
 SELECT
     "ORDER_ID"                               AS "ORDER_ID"            @id("1a0001"),
     "CUSTOMER_ID"                            AS "CUSTOMER_ID"         @id("1a0002"),
@@ -1255,7 +1245,6 @@ FROM {{ ref('SRC', 'ORDERS') }}
 The default strategy. Any change in a non-key column overwrites the row; new keys are inserted.
 
 ```sql
-@nodeType("724")
 SELECT
     "ORDER_ID"                               AS "ORDER_ID"            @id("1b0001") @isBusinessKey,
     "STATUS"                                 AS "STATUS"              @id("1b0002"),
@@ -1270,7 +1259,6 @@ FROM {{ ref('SRC', 'ORDERS') }}
 A row is overwritten only when its `@lastModifiedTracking` value is newer than the stored one.
 
 ```sql
-@nodeType("724")
 @mergeStrategy("lastModified")
 SELECT
     "ORDER_ID"                               AS "ORDER_ID"            @id("1c0001") @isBusinessKey,
@@ -1286,7 +1274,6 @@ FROM {{ ref('SRC', 'ORDERS') }}
 No change detection: existing keys are updated, new keys inserted. System columns are optional.
 
 ```sql
-@nodeType("724")
 @mergeStrategy("upsert")
 SELECT
     "ORDER_ID"                               AS "ORDER_ID"            @id("1d0001") @isBusinessKey,
@@ -1305,7 +1292,6 @@ Every non-system column is compared; a row is inserted only if an identical row 
 * **Coverage / relationship tracking** — records which combinations are valid or in effect, e.g. which products are on promotion in which stores, so you can also find what *didn't* happen (promoted products that didn't sell).
 
 ```sql
-@nodeType("724")
 @mergeStrategy("allColumnMatch")
 SELECT
     "ORDER_ID"                               AS "ORDER_ID"            @id("1e0001"),

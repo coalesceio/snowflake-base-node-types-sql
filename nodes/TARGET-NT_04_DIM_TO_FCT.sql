@@ -1,5 +1,5 @@
 @id("67cc5955-a223-40d1-873e-4345169dce42")
-@nodeType("724")
+@nodeType("SQLFact")
 @description("Node-type switch test: 718 -> 724, combined Work/Dimension/Fact annotation set")
 @mergeStrategy("changeTracking")
 @writeMode("append")

@@ -1,5 +1,5 @@
 @id("83958036-0bec-443a-8294-b0ab30489abf")
-@nodeType("724")
+@nodeType("SQLFact")
 @description("Nation fact (changeTracking SCD1) enriched with region-level aggregates via CTEs and joins")
 @mergeStrategy("changeTracking")
 WITH "NATION_SRC" AS (
