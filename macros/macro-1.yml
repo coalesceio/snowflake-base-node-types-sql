@@ -347,14 +347,25 @@ macroString: |-
                 {%- endif -%}
             {%- endfor -%}
             {%- if dup.of is not none -%}
-                {%- set idCheck.duplicates = idCheck.duplicates + ["'" ~ dup.of ~ "' (extra copy renamed to " ~ col.name ~ ")"] -%}
+                {%- set idCheck.duplicates = idCheck.duplicates + [{"of": dup.of, "renamed": col.name}] -%}
             {%- else -%}
                 {%- set idCheck.missing = idCheck.missing + [col.name] -%}
             {%- endif -%}
         {%- endfor -%}
 
         {%- if idCheck.duplicates | length > 0 %}
-            {%- set reason = "Duplicate column name: " ~ (idCheck.duplicates | join(', ')) ~ ". The SELECT returns more than one column with the same name — remove the extra column or give it a different alias." %}
+            {%- set described = namespace(items=[]) -%}
+            {%- for d in idCheck.duplicates -%}
+                {%- set described.items = described.items + ["'" ~ d.of ~ "' (extra copy renamed to " ~ d.renamed ~ ")"] -%}
+            {%- endfor -%}
+            {# A deliberate alias like REGIONKEY1 without an @id is indistinguishable from a renamed copy, so the message covers both. #}
+            {%- set renamed = idCheck.duplicates | map(attribute='renamed') | list -%}
+            {%- if renamed | length > 1 -%}
+                {%- set aliasHint = "If " ~ (renamed | join(', ')) ~ ' are deliberate aliases rather than copies, add a unique @id("<6 hex digits>") to each of them instead.' -%}
+            {%- else -%}
+                {%- set aliasHint = "If " ~ renamed[0] ~ ' is a deliberate alias rather than a copy, add a unique @id("<6 hex digits>") to it instead.' -%}
+            {%- endif -%}
+            {%- set reason = "Duplicate column name: " ~ (described.items | join(', ')) ~ ". The SELECT returns more than one column with the same name — remove the extra column or give it a different alias. " ~ aliasHint %}
             {{ test_stage("Duplicate Column Names", false) }}
             -- {{ reason }}
             {%- if hardFail %}
@@ -364,7 +375,7 @@ macroString: |-
             {%- endif -%}
         {%- endif -%}
 
-        {# Two columns given the same @id value. #}
+        {# Two columns given the same @id value (exact string match). #}
         {%- set idDup = namespace(items=[]) -%}
         {%- for col in columns if col.id != col.name -%}
             {%- set sharing = columns | selectattr("id", "equalto", col.id) | map(attribute="name") | list -%}
