@@ -1,6 +1,6 @@
 @id("50d6ddcf-2892-4175-becc-195445fd418a")
 @nodeType("SQLFact")
-@mergeStrategy("changeTracking")
+@mergeStrategy("upsert")
 SELECT
     "N_NATIONKEY"                        AS "N_NATIONKEY"        @id("f60001") @isBusinessKey,
     "N_NAME"                             AS "N_NAME"             @id("f60002"),
@@ -8,6 +8,6 @@ SELECT
     "N_COMMENT"                          AS "N_COMMENT"          @id("f60004"),
     "N_LOAD_TIMESTAMP"                   AS "N_LOAD_TIMESTAMP"   @id("f60005"),
     "N_DATE"                             AS "N_DATE"             @id("f60006"),
-    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("f60007") @isSystemCreateDate,
-    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @id("f60008") @isSystemUpdateDate
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("0d0307") @isSystemCreateDate,
+    CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @id("0d0308") @isSystemUpdateDate
 FROM {{ ref('SRC', 'NATION_TEST') }} "NATION_TEST"
