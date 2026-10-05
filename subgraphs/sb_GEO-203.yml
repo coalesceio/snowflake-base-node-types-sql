@@ -1,11 +1,5 @@
 fileVersion: 1
 id: "203"
 name: sb_GEO
-steps:
-  - 7d6a0e21-3c4b-4f8e-a1d2-000000000001
-  - 7d6a0e21-3c4b-4f8e-a1d2-000000000002
-  - 7d6a0e21-3c4b-4f8e-a1d2-000000000003
-  - 7d6a0e21-3c4b-4f8e-a1d2-000000000004
-  - 7d6a0e21-3c4b-4f8e-a1d2-000000000005
-  - b1121703-e9d6-4c9f-8667-7aaac4f56c52
+steps: []
 type: Subgraph
