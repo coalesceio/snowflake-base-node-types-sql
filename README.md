@@ -228,7 +228,7 @@ The Dimension Node type has three configuration groups:
 
 | **Property** | **Description** |
 |---------|-------------|
-| `@id("<value>")` | Stable column ID for lineage tracking.<br/>Required on every column — the SQL editor generates a fresh `@id("<value>")` for each column it creates, and a validation check flags any column that is missing one.<br/>Not for manual editing — value is a stable identifier generated once at creation time.<br/>**Column added later:** make sure it gets its own `@id` too. If you're editing by hand, add a new, unique 6-hex-digit `@id("<value>")` along with the column; an agent can generate one for you. Don't reuse a value already on the node.<br/>Example: `@id("110e75")` |
+| `@id("<value>")` | Stable column ID for lineage tracking.<br/>Required on every column — the SQL editor generates a fresh `@id("<value>")` for each column it creates, and a validation check flags any column that is missing one.<br/>Not for manual editing — value is a stable identifier generated once at creation time.<br/>**Column added later:** make sure it gets its own `@id` too. If you're editing by hand, add a new, unique 6-hex-digit `@id("<value>")` along with the column; an agent can generate one for you. Don't reuse a value already on the node — a repeated value fails the **Duplicate Column IDs** check.<br/>**Duplicate column names:** if the SELECT returns the same column name twice, Coalesce renames the extra copy (`SYSTEM_CREATE_DATE` → `SYSTEM_CREATE_DATE1`) and drops its `@id`; this is reported by the **Duplicate Column Names** check rather than as a missing ID.<br/>Example: `@id("110e75")` |
 | `@notNull` ***(reserved)*** | Marks column as NOT NULL.<br/>**Note:** Ignored on Views.<br/>Example: `@notNull` |
 | `@description(<text>)` ***(reserved)*** | Adds column description.<br/>Example: `@description("timestamp column")` |
 | `@defaultValue(<value>)` ***(reserved)*** | Adds default value.<br/>Quote to match the column's data type - <br/>number: `defaultValue("<num>")`<br/>string: `defaultValue("'<string>'")`<br/>**Note:** Ignored on Views.<br/>Example: `@defaultValue("20")` `@defaultValue("'NA'")` |
@@ -325,7 +325,7 @@ Every deployment of a Dimension Node of materialization type table runs its conf
 | **Stage** | **Description** |
 |-----------|----------------|
 | **Pre Load Test `<n>`** | Node-level `@tests(..., "Before")` tests, in the order they appear. |
-| **Missing Column IDs \| Missing Business Key \| Invalid configuration: … \| Missing Required System Columns** | Validation checks — rendered only when the node's annotations have a problem (a column without `@id`, no `@isBusinessKey`, an unrecognised or conflicting `@mergeStrategy`/tracking column, or a missing system column). Each one flags the problem; see the individual annotations for what triggers it. |
+| **Duplicate Column Names \| Duplicate Column IDs \| Missing Column IDs \| Missing Business Key \| Invalid configuration: … \| Missing Required System Columns** | Validation checks — rendered only when the node's annotations have a problem (the SELECT returns the same column name twice, two columns share an `@id` value, a column without `@id`, no `@isBusinessKey`, an unrecognised or conflicting `@mergeStrategy`/tracking column, or a missing system column). Each one flags the problem; see the individual annotations for what triggers it. |
 | **Check NULL values for `<column>` column** | Pre-load check for `@mergeStrategy("lastModified")` — flags a NULL `@lastModifiedTracking` value in the source. |
 | **Pre-SQL `<n>`** | Each `@preSQL` statement, in the order they appear. |
 | **Truncate table** | Executed only when `@writeMode("truncateInsert")` is set — clears the target before the merge. |
@@ -446,7 +446,7 @@ The Fact Node type has three configuration groups:
 
 | **Property** | **Description** |
 |---------|-------------|
-| `@id("<value>")` | Stable column ID for lineage tracking.<br/>Required on every column — the SQL editor generates a fresh `@id("<value>")` for each column it creates, and a validation check flags any column that is missing one.<br/>Not for manual editing — value is a stable identifier generated once at creation time.<br/>**Column added later:** make sure it gets its own `@id` too. If you're editing by hand, add a new, unique 6-hex-digit `@id("<value>")` along with the column; an agent can generate one for you. Don't reuse a value already on the node.<br/>Example: `@id("110e75")` |
+| `@id("<value>")` | Stable column ID for lineage tracking.<br/>Required on every column — the SQL editor generates a fresh `@id("<value>")` for each column it creates, and a validation check flags any column that is missing one.<br/>Not for manual editing — value is a stable identifier generated once at creation time.<br/>**Column added later:** make sure it gets its own `@id` too. If you're editing by hand, add a new, unique 6-hex-digit `@id("<value>")` along with the column; an agent can generate one for you. Don't reuse a value already on the node — a repeated value fails the **Duplicate Column IDs** check.<br/>**Duplicate column names:** if the SELECT returns the same column name twice, Coalesce renames the extra copy (`SYSTEM_CREATE_DATE` → `SYSTEM_CREATE_DATE1`) and drops its `@id`; this is reported by the **Duplicate Column Names** check rather than as a missing ID.<br/>Example: `@id("110e75")` |
 | `@notNull` ***(reserved)*** | Marks column as NOT NULL.<br/>**Note:** Ignored on Views.<br/>Example: `@notNull` |
 | `@description(<text>)` ***(reserved)*** | Adds column description.<br/>Example: `@description("timestamp column")` |
 | `@defaultValue(<value>)` ***(reserved)*** | Adds default value.<br/>Quote to match the column's data type - <br/>number: `defaultValue("<num>")`<br/>string: `defaultValue("'<string>'")`<br/>**Note:** Ignored on Views.<br/>Example: `@defaultValue("20")` `@defaultValue("'NA'")` |
@@ -519,7 +519,7 @@ Every deployment of a Fact Node of materialization type table runs its configure
 | **Stage** | **Description** |
 |-----------|----------------|
 | **Pre Load Test `<n>`** | Node-level `@tests(..., "Before")` tests, in the order they appear. |
-| **Missing Column IDs \| Invalid configuration: … \| Missing Required System Columns** | Validation checks — rendered only when the node's annotations have a problem. |
+| **Duplicate Column Names \| Duplicate Column IDs \| Missing Column IDs \| Invalid configuration: … \| Missing Required System Columns** | Validation checks — rendered only when the node's annotations have a problem (the SELECT returns the same column name twice, two columns share an `@id` value, a column without `@id`, an unrecognised or conflicting `@mergeStrategy`/tracking column, or a missing system column). |
 | **Check NULL values for `<column>` column** | Pre-load check for `@mergeStrategy("lastModified")` — flags a NULL `@lastModifiedTracking` value in the source. |
 | **Pre-SQL `<n>`** | Each `@preSQL` statement, in the order they appear. |
 | **Truncate table** | Executed only when `@writeMode("truncateInsert")` is set — clears the target before the load. |
