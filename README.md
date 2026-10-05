@@ -485,6 +485,7 @@ Requirement level of each column annotation, by load:
 **Legend:** 🔴 Required · 🟡 Recommended · ⚪ Optional · — Not used
 
 * ¹ Ignored if present — every non-system column is used as the business key and a warning is raised.
+* `allColumnMatch` is meant for **factless fact tables** (no measures — the row itself is the fact), used for event tracking and coverage/relationship tracking. See [Fact All Column Match](#fact-all-column-match).
 * Under `changeTracking` / `lastModified` the load writes fixed values into the system columns: `@isSystemCreateDate` gets `CURRENT_TIMESTAMP` on first insert and is then kept; `@isSystemUpdateDate` gets `CURRENT_TIMESTAMP` whenever the row is inserted or changed. The expression the SELECT gives them is only used to derive the column's datatype.
 * Under `upsert`, `allColumnMatch` and plain insert, system columns are written exactly as the SELECT/CTE computes them. `@isSystemCreateDate` keeps its first-inserted value on an `upsert` update.
 * Business key matching (including every column under `allColumnMatch`) uses plain equality, so a NULL never matches — see [Duplicate or NULL Business Keys](#known-limitations).
@@ -1297,6 +1298,11 @@ FROM {{ ref('SRC', 'ORDERS') }}
 ##### Fact All Column Match
 
 Every non-system column is compared; a row is inserted only if an identical row doesn't already exist. Nothing is ever updated, and no `@isBusinessKey` is needed.
+
+`allColumnMatch` is how you build a **factless fact table** — a table with no measures, where the existence of a row is the fact itself. Typical uses:
+
+* **Event tracking** — records that something happened, e.g. a student attended a class or a customer visited a page on a date.
+* **Coverage / relationship tracking** — records which combinations are valid or in effect, e.g. which products are on promotion in which stores, so you can also find what *didn't* happen (promoted products that didn't sell).
 
 ```sql
 @nodeType("724")
