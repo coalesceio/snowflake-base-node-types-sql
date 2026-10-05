@@ -6,7 +6,7 @@ SELECT
     "N_REGIONKEY"                        AS "N_REGIONKEY"        @id("769bf0"),
     "N_COMMENT"                          AS "N_COMMENT"          @id("40d8c1"),
     "N_LOAD_TIMESTAMP"                   AS "N_LOAD_TIMESTAMP"   @id("155f85"),
-    "N_DATE"                             AS "N_DATE"             @id("d57b0e"),
+    "N_DATE"                             AS "N_DATE"             @id("d57b0f"),
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("49bfc2") @isSystemCreateDate,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @id("326521") @isSystemUpdateDate
 FROM {{ ref('SRC', 'NATION_TEST') }} "NATION_TEST"
