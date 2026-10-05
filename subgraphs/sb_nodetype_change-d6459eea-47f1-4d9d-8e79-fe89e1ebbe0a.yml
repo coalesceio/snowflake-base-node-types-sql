@@ -2,6 +2,5 @@ fileVersion: 1
 id: d6459eea-47f1-4d9d-8e79-fe89e1ebbe0a
 name: sb_nodetype_change
 steps:
-  - 1610aab1-7820-4366-b317-87606f480f7f
   - 584cb3de-f229-4414-adad-4556112c8f72
 type: Subgraph

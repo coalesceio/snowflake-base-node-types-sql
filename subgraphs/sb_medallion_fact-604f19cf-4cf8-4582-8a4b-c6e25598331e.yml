@@ -2,6 +2,5 @@ fileVersion: 1
 id: 604f19cf-4cf8-4582-8a4b-c6e25598331e
 name: sb_medallion_fact
 steps:
-  - 1610aab1-7820-4366-b317-87606f480f7f
   - 584cb3de-f229-4414-adad-4556112c8f72
 type: Subgraph

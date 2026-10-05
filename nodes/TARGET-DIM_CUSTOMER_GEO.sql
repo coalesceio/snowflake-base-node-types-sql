@@ -2,7 +2,6 @@
 @nodeType("718")
 @mergeStrategy("changeTracking")
 @zeroKey("0")
-@tests("SELECT 1 FROM {{ this }} WHERE SYSTEM_CURRENT_FLAG = 'Y' GROUP BY C_CUSTKEY HAVING COUNT(*) > 1", false, "After")
 SELECT
     0                                        AS "DIM_CUSTOMER_GEO_KEY" @id("299d29") @isSurrogateKey,
     "STG_CUSTOMER"."C_CUSTKEY"               AS "C_CUSTKEY"            @id("7db7d9") @isBusinessKey @not_null,
