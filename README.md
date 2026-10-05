@@ -1322,9 +1322,9 @@ FROM {{ ref('SRC', 'ORDER_LINES') }}
 
 #### Fact
 
-* [Node definition](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Fact-724/definition.yml)
-* [Create Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Fact-724/create.sql.j2)
-* [Run Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Fact-724/run.sql.j2)
+* [Node definition](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Fact-SQLFact/definition.yml)
+* [Create Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Fact-SQLFact/create.sql.j2)
+* [Run Template](https://github.com/coalesceio/snowflake-base-node-types-sql/blob/main/nodeTypes/Fact-SQLFact/run.sql.j2)
 
 #### Macro
 
