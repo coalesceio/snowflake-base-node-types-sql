@@ -1,6 +1,6 @@
 @id("d5a70000-0000-4000-8000-000000000011")
 @nodeType("SQLWork")
-@materializationType("table")
+@materializationType("view")
 SELECT
      "NAtionKey"  AS "NATION_KEY"     @id("v11-c1"),
      "name"       AS "NATION_NAME"    @id("v11-c2"),

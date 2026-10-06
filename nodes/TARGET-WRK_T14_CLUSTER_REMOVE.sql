@@ -2,7 +2,7 @@
 @nodeType("SQLWork")
 @materializationType("table")
 SELECT
-     "NAtionKey"  AS "NATION_KEY"     @id("t14-c1"),
+     "NAtionKey"  AS "NATION_KEY"     @id("t14-c1") @clusterKey(1),
      "name"       AS "NATION_NAME"    @id("t14-c2"),
      "REGIONKEY"  AS "REGION_KEY"     @id("t14-c3")
 FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
