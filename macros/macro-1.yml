@@ -60,6 +60,10 @@ macroString: |-
           {%- if not idStillDesired and not nameStillDesired -%}
             {%- set nsNodeVariables.droppedColumns = nsNodeVariables.droppedColumns + ['"' + curCol.name + '"'] -%}
           {%- endif -%}
+          {#- Same id, new name: the column is renamed (old name recorded) #}
+          {%- if idStillDesired and (idStillDesired | first).name != curCol.name -%}
+            {%- set nsNodeVariables.renamedColumns = nsNodeVariables.renamedColumns + ['"' + curCol.name + '"'] -%}
+          {%- endif -%}
         {%- endfor -%}
       {%- endif -%}
 
@@ -100,6 +104,8 @@ macroString: |-
         curObjectNameFullPath / desObjectNameFullPath : "DB"."SCHEMA"."NAME"
         droppedColumns  : quoted names of current columns being dropped, e.g. ['"A"', '"B"']
                           (redeploy only; read by alter_drop_columns_sql and the cluster-key macros)
+        renamedColumns  : quoted current (old) names of columns being renamed — same id, new name
+                          (redeploy only; read by the cluster-key macros)
         desiredClusterKey / currentClusterKey : CLUSTER BY terms ordered by position,
                           e.g. ['"N_REGIONKEY"', 'trunc("N_NAME", -5)']
         currentClusterKeyColumns : quoted names of current columns carrying @clusterKey
@@ -113,6 +119,7 @@ macroString: |-
                                         desObjectNameFullPath = "",
                                         curObjectNameFullPath = "",
                                         droppedColumns = [],
+                                        renamedColumns = [],
                                         desiredClusterKey = [],
                                         currentClusterKey = [],
                                         currentClusterKeyColumns = [],
@@ -1480,10 +1487,11 @@ macroString: |-
       Macro : alter_drop_cluster_key_sql()
 
       Description:
-        Redeploy stage that drops the table's clustering key before columns are dropped —
-        call it just before alter_drop_columns_sql(). A clustered column can't be dropped
-        while it's in the key, so the key is dropped first when:
-          - a column carrying @clusterKey is being dropped, or
+        Redeploy stage that drops the table's clustering key before columns are dropped or
+        renamed — call it just before alter_drop_columns_sql(). Snowflake rejects dropping
+        or renaming a column that belongs to the clustering key (error 003320), so the key
+        is dropped first when:
+          - a column carrying @clusterKey is being dropped or renamed, or
           - the key is changing in the same deploy that drops columns (another column's
             expression may reference a dropped column, e.g. trunc("B", -5) on "A").
         The new key, if any, is applied later by alter_cluster_key_sql(). Sets
@@ -1495,10 +1503,12 @@ macroString: |-
         DROP CLUSTERING KEY, or '' (empty string) when the key can stay.
     ===========================================================================#}
     {%- macro alter_drop_cluster_key_sql() -%}
-        {%- set ns = namespace(clusteredDropped=[]) -%}
+        {%- set ns = namespace(clusteredDropped=[], clusteredRenamed=[]) -%}
         {%- for colName in nsNodeVariables.currentClusterKeyColumns -%}
             {%- if colName in nsNodeVariables.droppedColumns -%}
                 {%- set ns.clusteredDropped = ns.clusteredDropped + [colName] -%}
+            {%- elif colName in nsNodeVariables.renamedColumns -%}
+                {%- set ns.clusteredRenamed = ns.clusteredRenamed + [colName] -%}
             {%- endif -%}
         {%- endfor -%}
         {#- Whitespace-insensitive, so trunc(a,-5) vs trunc(a, -5) is not a change #}
@@ -1506,10 +1516,19 @@ macroString: |-
                           != (nsNodeVariables.currentClusterKey | map('replace', ' ', '') | list) -%}
         {%- set label = node.materializationType + ' ' + nsNodeVariables.desObjectNameFullPath -%}
 
-        {%- if ns.clusteredDropped | length > 0
+        {#- Stage reason names the clustered columns being dropped and/or renamed #}
+        {%- set nsReason = namespace(parts=[]) -%}
+        {%- if ns.clusteredDropped | length > 0 -%}
+            {%- set nsReason.parts = nsReason.parts + ['before dropping clustered columns: ' + (ns.clusteredDropped | join(', '))] -%}
+        {%- endif -%}
+        {%- if ns.clusteredRenamed | length > 0 -%}
+            {%- set nsReason.parts = nsReason.parts + ['before renaming clustered columns: ' + (ns.clusteredRenamed | join(', '))] -%}
+        {%- endif -%}
+
+        {%- if nsReason.parts | length > 0
                 or (keyChanged and nsNodeVariables.droppedColumns | length > 0 and nsNodeVariables.currentClusterKey | length > 0) %}
-            {%- if ns.clusteredDropped | length > 0 %}
-                {{ stage('Drop clustering key of ' + label + ' (before dropping clustered columns: ' + (ns.clusteredDropped | join(', ')) + ')') }}
+            {%- if nsReason.parts | length > 0 %}
+                {{ stage('Drop clustering key of ' + label + ' (' + (nsReason.parts | join('; ')) + ')') }}
             {%- else %}
                 {{ stage('Drop clustering key of ' + label + ' (key changing while columns are dropped)') }}
             {%- endif %}
