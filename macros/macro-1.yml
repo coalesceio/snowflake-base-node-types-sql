@@ -22,7 +22,7 @@ macroString: |-
     ===========================================================================#}
     {%- macro initializeNodeVariables(nsNodeVariables) -%}
 
-      {%- if currentState is defined -%}
+      {%- if currentState is defined and currentState -%}
         {%- set currentDatabase = currentState.storageLocations 
                                   | selectattr('name', 'equalto', currentState.node.location.name)
                                   | map(attribute='database')
@@ -37,7 +37,7 @@ macroString: |-
 
       {%- endif -%}
 
-      {%- if desiredState is defined -%}
+      {%- if desiredState is defined and desiredState -%}
         {%- set desiredDatabase = storageLocations
                                   | selectattr('name', 'equalto', node.location.name)
                                   | map(attribute='database')
@@ -52,7 +52,73 @@ macroString: |-
 
       {%- endif -%}
 
+      {#- Redeploy: current columns with no desired match by id or by name are being dropped #}
+      {%- if currentState is defined and currentState and desiredState is defined and desiredState -%}
+        {%- for curCol in currentState.columns -%}
+          {%- set idStillDesired = columns | default([]) | selectattr('id', 'equalto', curCol.id) | list -%}
+          {%- set nameStillDesired = curCol.name in (columns | default([]) | map(attribute='name') | list) -%}
+          {%- if not idStillDesired and not nameStillDesired -%}
+            {%- set nsNodeVariables.droppedColumns = nsNodeVariables.droppedColumns + ['"' + curCol.name + '"'] -%}
+          {%- endif -%}
+        {%- endfor -%}
+      {%- endif -%}
+
+      {#- Cluster key terms from @clusterKey(<position>, "<expression>"), ordered by position.
+          A term is the expression, or the quoted column name when none is given. #}
+      {%- set nsCluster = namespace(desired=[], current=[]) -%}
+      {%- if desiredState is defined and desiredState -%}
+        {%- for col in columns -%}
+          {%- for cluster in col.clusterKey | default([]) -%}
+            {%- set nsCluster.desired = nsCluster.desired + [{"position": cluster.parameters[0] | int,
+                                                               "term": cluster.parameters[1] | default('"' + col.name + '"', true)}] -%}
+          {%- endfor -%}
+        {%- endfor -%}
+        {%- set nsNodeVariables.desiredClusterKey = nsCluster.desired | sort(attribute='position') | map(attribute='term') | list -%}
+      {%- endif -%}
+      {%- if currentState is defined and currentState -%}
+        {%- for col in currentState.columns -%}
+          {%- for cluster in col.clusterKey | default([]) -%}
+            {%- set nsCluster.current = nsCluster.current + [{"position": cluster.parameters[0] | int,
+                                                               "term": cluster.parameters[1] | default('"' + col.name + '"', true)}] -%}
+          {%- endfor -%}
+          {%- if col.clusterKey | default([]) | length > 0 -%}
+            {%- set nsNodeVariables.currentClusterKeyColumns = nsNodeVariables.currentClusterKeyColumns + ['"' + col.name + '"'] -%}
+          {%- endif -%}
+        {%- endfor -%}
+        {%- set nsNodeVariables.currentClusterKey = nsCluster.current | sort(attribute='position') | map(attribute='term') | list -%}
+      {%- endif -%}
+
     {%- endmacro -%}
+
+    {#===========================================================================
+      Shared node variables for node types that use the advanced deployment
+      strategy, created and initialized once per render — every node renders
+      the macros + its own template separately, so nothing is shared between
+      nodes. Templates and the alter_ macros use nsNodeVariables
+      directly:
+        currentDatabaseSchema / desiredDatabaseSchema : "DB.SCHEMA"
+        curObjectNameFullPath / desObjectNameFullPath : "DB"."SCHEMA"."NAME"
+        droppedColumns  : quoted names of current columns being dropped, e.g. ['"A"', '"B"']
+                          (redeploy only; read by alter_drop_columns_sql and the cluster-key macros)
+        desiredClusterKey / currentClusterKey : CLUSTER BY terms ordered by position,
+                          e.g. ['"N_REGIONKEY"', 'trunc("N_NAME", -5)']
+        currentClusterKeyColumns : quoted names of current columns carrying @clusterKey
+        clusterKeyDropped : set true by alter_drop_cluster_key_sql when it drops the key early
+        metaDataChanged : set true by any redeploy stage that changes the object
+      Paths stay empty when the corresponding state is absent (e.g. no
+      currentState on a first deploy, neither state on non-advanced node types).
+    ===========================================================================#}
+    {%- set nsNodeVariables = namespace(currentDatabaseSchema = "",
+                                        desiredDatabaseSchema = "",
+                                        desObjectNameFullPath = "",
+                                        curObjectNameFullPath = "",
+                                        droppedColumns = [],
+                                        desiredClusterKey = [],
+                                        currentClusterKey = [],
+                                        currentClusterKeyColumns = [],
+                                        clusterKeyDropped = false,
+                                        metaDataChanged = false) -%}
+    {{- initializeNodeVariables(nsNodeVariables) -}}
     {#===========================================================================
     Purpose          : Executes data quality tests associated with the node
                       and its columns, based on the configured run order.
@@ -856,32 +922,51 @@ macroString: |-
         - If no valid terms are found:
             '' (empty string)
     ===========================================================================#}
-      {%- macro get_clusterby_sql() -%}
+    {%- macro get_clusterby_sql() -%}
+        {#- Terms are built once in initializeNodeVariables (nsNodeVariables.desiredClusterKey) #}
+        {%- if nsNodeVariables.desiredClusterKey | length > 0 -%}
+            CLUSTER BY ({{ nsNodeVariables.desiredClusterKey | join(', ') }})
+        {%- endif -%}
+    {%- endmacro -%}
 
-          {%- set cols = namespace(items=[]) -%}
-          {# Collect columns participating in this clustreBy #}
-          {%- for col in columns -%}
-              {%- if col.clusterKey is defined -%}
-                  {%- for cluster in col.clusterKey -%}
-                      {%- set cols.items = cols.items + [{
-                              "position":  cluster.parameters[0] | int,
-                              "column": cluster.parameters[1] | default('"' + col.name + '"', true)
-                          }] -%}
-                  {%- endfor -%}
-              {%- endif -%}
-          {%- endfor -%}
+    {#===========================================================================
+      Macro : view_definition_sql(state, withTags=true)
 
-          {%- if cols.items | length > 0 -%}
-              CLUSTER BY (
-                  {{- cols.items
-                      | sort(attribute='position')
-                      | map(attribute='column')
-                      | join(', ')
-                  -}}
-              )
-          {%- endif -%}
+      Description:
+        Renders a view's definition — everything after CREATE OR REPLACE VIEW <path> — for
+        the given state (desiredState or currentState): the column list with column
+        comments, the view comment, and the AS <cte> SELECT <transforms> <join> query, plus
+        column and view WITH TAG clauses when withTags is true. The object path is left
+        out, since renames/moves are handled separately.
+        With withTags=false, comparing the current and desired output tells whether
+        anything other than tags changed: equal output means only tags (or nothing that
+        affects the view's DDL) changed. Both renders use the same template text, so they
+        differ only where the states differ.
 
-      {%- endmacro -%}
+      Output:
+        ("ID", "NAME" WITH TAG (...) COMMENT '...') COMMENT = '...' WITH TAG (...)
+        AS <cte> SELECT "SRC"."ID" AS "ID", ... <join>
+    ===========================================================================#}
+    {%- macro view_definition_sql(state, withTags=true) -%}
+        (
+            {%- for col in state.columns %}
+                "{{ col.name }}"
+                {%- if withTags %} {{ tag_with_clause(col.tag) }}{% endif %}
+                {%- if col.description | trim | length > 0 %} COMMENT '{{ col.description | escape }}'{% endif %}
+                {%- if not loop.last -%}, {%- endif %}
+            {%- endfor %}
+        )
+        {%- if state.node.description | trim | length > 0 %} COMMENT = '{{ state.node.description | escape }}'{% endif %}
+        {%- if withTags %} {{ tag_with_clause(state.config.tag) }}{% endif %}
+        AS
+        {{ state.sources[0].cteString }}
+        SELECT {{ state.sources[0].selectModifier | default('', true) }}
+        {%- for col in state.sources[0].columns %}
+            {{ get_source_transform(col) }} AS "{{ col.name }}"
+            {%- if not loop.last -%}, {%- endif %}
+        {%- endfor %}
+        {{ state.sources[0].join }}
+    {%- endmacro -%}
 
 
     {#===========================================================================
@@ -905,7 +990,7 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : tag_validate(tagList)
+      Macro : tag_duplicates(tagList)
 
       Description:
         Finds tag names whose (name, location) match another entry in a set of
@@ -918,7 +1003,7 @@ macroString: |-
       Output:
         "COST_CENTER, PII" (comma-separated duplicate names) or '' (empty string) when none.
     ===========================================================================#}
-    {%- macro tag_validate(tagList) -%}
+    {%- macro tag_duplicates(tagList) -%}
         {%- set ns = namespace(entries=[], dupes=[]) -%}
         {%- for t in tagList | default([]) -%}
             {%- set entryKey = t.parameters[0] + '|' + (t.parameters[2] | default(node.location.name, true)) -%}
@@ -930,6 +1015,36 @@ macroString: |-
             {%- endif -%}
         {%- endfor -%}
         {{- ns.dupes | join(', ') -}}
+    {%- endmacro -%}
+
+    {#===========================================================================
+      Macro : tag_check_duplicates()
+
+      Description:
+        Validates the node's @tag annotations: the same tag name + location repeated on the
+        node, or on any one column, is not allowed (see tag_duplicates). Each offending
+        node/column gets a failing test stage that stops the deploy (continue_on_failure
+        false), naming the duplicated tags. Call it at the start of the create template,
+        before any DDL.
+
+      Output:
+        Zero or more "Duplicate Tags Found: <node or column>" test stages, each with a
+        SELECT returning the error message, or '' (empty string) when all tags are valid.
+    ===========================================================================#}
+    {%- macro tag_check_duplicates() -%}
+        {%- set nodeDupeTags = tag_duplicates(config.tag) -%}
+        {%- if nodeDupeTags | trim | length > 0 %}
+            {{ test_stage('Duplicate Tags Found: ' + node.name, false) }}
+            SELECT '{{ nodeDupeTags | escape }} is applied multiple times on {{ node.name | escape }}' AS "ERROR_MESSAGE"
+        {%- endif %}
+
+        {%- for col in columns -%}
+            {%- set colDupeTags = tag_duplicates(col.tag) -%}
+            {%- if colDupeTags | trim | length > 0 %}
+                {{ test_stage('Duplicate Tags Found: ' + col.name, false) }}
+                SELECT '{{ colDupeTags | escape }} is applied multiple times on {{ col.name | escape }}' AS "ERROR_MESSAGE"
+            {%- endif %}
+        {%- endfor -%}
     {%- endmacro -%}
 
     {#===========================================================================
@@ -1011,7 +1126,7 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : tag_alter_sql(nsNodeVariables)
+      Macro : alter_tag_sql()
 
       Description:
         Redeploy stages that bring an existing object's @tag annotations from currentState to
@@ -1023,7 +1138,7 @@ macroString: |-
       Output:
         Zero or more "Unset tags ..." / "Set tags ..." stages with their ALTER statements.
     ===========================================================================#}
-    {%- macro tag_alter_sql(nsNodeVariables) -%}
+    {%- macro alter_tag_sql() -%}
         {%- set objectPath = nsNodeVariables.desObjectNameFullPath -%}
         {%- set objectKind = 'VIEW' if node.materializationType == 'view' else 'TABLE' -%}
         {#- Stage-name label, e.g. table "DB"."SCHEMA"."WRK_CUSTOMER" #}
@@ -1074,6 +1189,330 @@ macroString: |-
             {{ stage('Set tags on ' + label) }}
             ALTER {{ objectKind }} {{ objectPath }}
             SET TAG {{ setTagClause }}
+            {%- set nsNodeVariables.metaDataChanged = true -%}
+        {%- endif %}
+    {%- endmacro -%}
+
+    {#===========================================================================
+      Macro : alter_metadata_sql()
+
+      Description:
+        Redeploy fallback for tables and views: when the node changed (currentState !=
+        desiredState) but no redeploy stage changed the object (nsNodeVariables.
+        metaDataChanged is still false) — e.g. only tests, writeMode or pre/post SQL
+        changed — emits a no-op stage so the deploy still records the new state. Call it
+        last, after every alter_ macro of the redeploy path.
+
+      Output:
+        "Update metadata for <type> <path> (no DDL change)" stage with select 1=0, or ''
+        (empty string) when something was already altered or nothing changed.
+    ===========================================================================#}
+    {%- macro alter_metadata_sql() -%}
+        {%- if currentState != desiredState and not nsNodeVariables.metaDataChanged %}
+            {{ stage('Update metadata for ' + node.materializationType + ' ' + nsNodeVariables.desObjectNameFullPath + ' (no DDL change)') }}
+            select 1=0
+        {%- endif %}
+    {%- endmacro -%}
+
+    {#===========================================================================
+      Macro : alter_rename_sql()
+
+      Description:
+        Redeploy stage that renames and/or moves the existing object when its name or
+        storage location changed (current vs desired full path). The ALTER keyword (VIEW or
+        TABLE) and the stage-name label come from the current object's materialization.
+        Call it only when the materialization is unchanged — a type change is a drop and
+        create instead. Sets nsNodeVariables.metaDataChanged when the stage is emitted.
+
+      Output:
+        "Rename <type> <current path> to <desired path>" stage with its ALTER ... RENAME TO,
+        or '' (empty string) when the path is unchanged.
+    ===========================================================================#}
+    {%- macro alter_rename_sql() -%}
+        {%- if nsNodeVariables.curObjectNameFullPath != nsNodeVariables.desObjectNameFullPath %}
+            {%- set currentMatType = currentState.node.materializationType -%}
+            {%- set objectKind = 'VIEW' if currentMatType == 'view' else 'TABLE' %}
+            {{ stage('Rename ' + currentMatType + ' ' + nsNodeVariables.curObjectNameFullPath + ' to ' + nsNodeVariables.desObjectNameFullPath) }}
+            ALTER {{ objectKind }} IF EXISTS {{ nsNodeVariables.curObjectNameFullPath }}
+            RENAME TO {{ nsNodeVariables.desObjectNameFullPath }}
+            {%- set nsNodeVariables.metaDataChanged = true -%}
+        {%- endif %}
+    {%- endmacro -%}
+
+    {#===========================================================================
+      Macro : alter_description_sql()
+
+      Description:
+        Redeploy stage that updates the existing object's comment when the node
+        description changed. A missing description counts as empty, so undefined vs ''
+        is not a change. The ALTER keyword (VIEW or TABLE) and the stage-name label come
+        from the desired materialization; the ALTER targets the desired path, so call it
+        after alter_rename_sql(). Sets nsNodeVariables.metaDataChanged when the stage is
+        emitted.
+
+      Output:
+        "Change description of <type> <path>" stage with its ALTER ... SET COMMENT,
+        or '' (empty string) when the description is unchanged.
+    ===========================================================================#}
+    {%- macro alter_description_sql() -%}
+        {%- set desiredDescription = node.description | default('', true) -%}
+        {%- if (currentState.node.description | default('', true)) != desiredDescription %}
+            {%- set objectKind = 'VIEW' if node.materializationType == 'view' else 'TABLE' %}
+            {{ stage('Change description of ' + node.materializationType + ' ' + nsNodeVariables.desObjectNameFullPath) }}
+            ALTER {{ objectKind }} {{ nsNodeVariables.desObjectNameFullPath }}
+            SET COMMENT = '{{ desiredDescription | escape }}'
+            {%- set nsNodeVariables.metaDataChanged = true -%}
+        {%- endif %}
+    {%- endmacro -%}
+
+    {#===========================================================================
+      Macro : alter_drop_columns_sql()
+
+      Description:
+        Redeploy stage that drops the table columns no longer in the node, in a single
+        ALTER TABLE ... DROP COLUMN. The columns come from nsNodeVariables.droppedColumns
+        (current columns with no desired match by id or by name, so a renamed column is
+        not dropped). Tables only — views are recreated instead. Sets
+        nsNodeVariables.metaDataChanged when the stage is emitted.
+
+      Output:
+        "Drop columns from <type> <path>: "A", "B"" stage with its ALTER TABLE ... DROP COLUMN,
+        or '' (empty string) when no column is dropped.
+    ===========================================================================#}
+    {%- macro alter_drop_columns_sql() -%}
+        {%- if nsNodeVariables.droppedColumns | length > 0 %}
+            {{ stage('Drop columns from ' + node.materializationType + ' ' + nsNodeVariables.desObjectNameFullPath + ': ' + (nsNodeVariables.droppedColumns | join(', '))) }}
+            ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
+            DROP COLUMN {{ nsNodeVariables.droppedColumns | join(', ') }}
+            {%- set nsNodeVariables.metaDataChanged = true -%}
+        {%- endif %}
+    {%- endmacro -%}
+
+    {#===========================================================================
+      Macro : alter_add_columns_sql()
+
+      Description:
+        Redeploy stage that adds the node's new columns to the existing table, in a single
+        ALTER TABLE ... ADD COLUMN. A desired column is new when no current column matches
+        it by id or by name (so a renamed column is not re-added). Each column carries its
+        data type, NOT NULL (when nullable == false), DEFAULT, WITH TAG and COMMENT, as on
+        CREATE. Tables only — views are recreated instead. Sets
+        nsNodeVariables.metaDataChanged when the stage is emitted.
+
+      Output:
+        "Add columns to <type> <path>: "C", "D"" stage with its ALTER TABLE ... ADD COLUMN,
+        or '' (empty string) when no column is added.
+    ===========================================================================#}
+    {%- macro alter_add_columns_sql() -%}
+        {%- set ns = namespace(items=[]) -%}
+        {%- for desCol in columns -%}
+            {%- set idAlreadyCurrent = currentState.columns | default([]) | selectattr('id', 'equalto', desCol.id) | list -%}
+            {%- set nameAlreadyCurrent = desCol.name in (currentState.columns | default([]) | map(attribute='name') | list) -%}
+            {%- if not idAlreadyCurrent and not nameAlreadyCurrent -%}
+                {%- set ns.items = ns.items + [desCol] -%}
+            {%- endif -%}
+        {%- endfor -%}
+
+        {%- if ns.items | length > 0 %}
+            {{ stage('Add columns to ' + node.materializationType + ' ' + nsNodeVariables.desObjectNameFullPath + ': "' + (ns.items | map(attribute='name') | join('", "')) + '"') }}
+            ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
+            ADD COLUMN
+            {%- for desCol in ns.items %}
+                "{{ desCol.name }}" {{ desCol.dataType }}
+                {%- if desCol.nullable == false %} NOT NULL {%- endif %}
+                {%- if desCol.defaultValue | length > 0 %} DEFAULT {{ desCol.defaultValue }} {%- endif %}
+                {{ tag_with_clause(desCol.tag) }}
+                {%- if desCol.description | trim | length > 0 %} COMMENT '{{ desCol.description | escape }}'{%- endif %}
+                {%- if not loop.last -%}, {%- endif %}
+            {%- endfor %}
+            {%- set nsNodeVariables.metaDataChanged = true -%}
+        {%- endif %}
+    {%- endmacro -%}
+
+    {#===========================================================================
+      Macro : alter_rename_columns_sql()
+
+      Description:
+        Redeploy stages that rename table columns in place, keeping their data. A column is
+        renamed when a desired column has the same id as a current column but a different
+        name — matching is by id only, so it relies on stable column ids:
+          - Dimension / Fact: columns carry @id, so a rename is a true RENAME COLUMN.
+          - Work (SQL): if a column's id changes along with its name, it is not a rename —
+            the old column is dropped (alter_drop_columns_sql) and the new one added
+            (alter_add_columns_sql), so its existing data is lost.
+        One ALTER per column (Snowflake renames one column per statement). Tables only —
+        views are recreated instead. Sets nsNodeVariables.metaDataChanged when any stage is
+        emitted.
+
+      Output:
+        One "Rename column "OLD" to "NEW" in <type> <path>" stage per renamed column with its
+        ALTER TABLE ... RENAME COLUMN, or '' (empty string) when no column is renamed.
+    ===========================================================================#}
+    {%- macro alter_rename_columns_sql() -%}
+        {%- for curCol in currentState.columns -%}
+            {%- set idMatches = columns | default([]) | selectattr('id', 'equalto', curCol.id) | list -%}
+            {%- if idMatches and (idMatches | first).name != curCol.name %}
+                {%- set newName = (idMatches | first).name %}
+                {{ stage('Rename column "' + curCol.name + '" to "' + newName + '" in ' + node.materializationType + ' ' + nsNodeVariables.desObjectNameFullPath) }}
+                ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
+                RENAME COLUMN "{{ curCol.name }}" TO "{{ newName }}"
+                {%- set nsNodeVariables.metaDataChanged = true -%}
+            {%- endif %}
+        {%- endfor -%}
+    {%- endmacro -%}
+
+    {#===========================================================================
+      Macro : alter_modify_columns_sql()
+
+      Description:
+        Redeploy stages that change attributes of existing table columns in place. Current
+        columns are matched to desired ones by id, then by name; for each match, any change
+        to these attributes is collected:
+          - data type   (case- and whitespace-insensitive: varchar(10) = VARCHAR(10))
+          - nullability (nullable == false means NOT NULL)
+          - description (missing = '')
+          - default     (missing = none)
+        One stage and one ALTER TABLE ... MODIFY per changed column, its name listing what
+        changed. Call it after alter_rename_columns_sql(), so it uses the new column names.
+        Snowflake limits: SET DATA TYPE only widens VARCHAR/NUMBER precision, and SET DEFAULT
+        only accepts sequence defaults — other changes fail at deploy. Tables only. Sets
+        nsNodeVariables.metaDataChanged when any stage is emitted.
+
+      Output:
+        One "Change column "X" in <type> <path>: <changes>" stage per changed column with its
+        ALTER TABLE ... MODIFY, or '' (empty string) when no column attribute changed.
+    ===========================================================================#}
+    {%- macro alter_modify_columns_sql() -%}
+        {%- set label = node.materializationType + ' ' + nsNodeVariables.desObjectNameFullPath -%}
+        {%- for curCol in currentState.columns -%}
+            {%- set matchingCols = columns | default([]) | selectattr('id', 'equalto', curCol.id) | list -%}
+            {%- if not matchingCols -%}
+                {%- set matchingCols = columns | default([]) | selectattr('name', 'equalto', curCol.name) | list -%}
+            {%- endif -%}
+
+            {%- if matchingCols -%}
+                {%- set desCol = matchingCols | first -%}
+                {%- set currentNotNull = curCol.nullable == false -%}
+                {%- set currentDefaultValue = curCol.defaultValue if curCol.defaultValue else none -%}
+                {%- set currentDescription = curCol.description if curCol.description else '' -%}
+                {%- set desiredNotNull = desCol.nullable == false -%}
+                {%- set desiredDefaultValue = desCol.defaultValue if desCol.defaultValue else none -%}
+                {%- set desiredDescription = desCol.description if desCol.description else '' -%}
+
+                {#- Collect a label (for the stage name) and a MODIFY action per changed attribute #}
+                {%- set ns = namespace(labels=[], actions=[]) -%}
+                {%- if (curCol.dataType | upper | replace(' ', '')) != (desCol.dataType | upper | replace(' ', '')) -%}
+                    {%- set ns.labels = ns.labels + ['data type ' ~ curCol.dataType ~ ' -> ' ~ desCol.dataType] -%}
+                    {%- set ns.actions = ns.actions + ['COLUMN "' + desCol.name + '" SET DATA TYPE ' ~ desCol.dataType] -%}
+                {%- endif -%}
+                {%- if currentNotNull != desiredNotNull -%}
+                    {%- if desiredNotNull -%}
+                        {%- set ns.labels = ns.labels + ['set NOT NULL'] -%}
+                        {%- set ns.actions = ns.actions + ['COLUMN "' + desCol.name + '" SET NOT NULL'] -%}
+                    {%- else -%}
+                        {%- set ns.labels = ns.labels + ['drop NOT NULL'] -%}
+                        {%- set ns.actions = ns.actions + ['COLUMN "' + desCol.name + '" DROP NOT NULL'] -%}
+                    {%- endif -%}
+                {%- endif -%}
+                {%- if currentDescription != desiredDescription -%}
+                    {%- set ns.labels = ns.labels + ['description'] -%}
+                    {%- set ns.actions = ns.actions + ['COLUMN "' + desCol.name + '" COMMENT ' ~ "'" ~ (desiredDescription | escape) ~ "'"] -%}
+                {%- endif -%}
+                {%- if currentDefaultValue != desiredDefaultValue -%}
+                    {%- if desiredDefaultValue == none -%}
+                        {%- set ns.labels = ns.labels + ['drop default'] -%}
+                        {%- set ns.actions = ns.actions + ['COLUMN "' + desCol.name + '" DROP DEFAULT'] -%}
+                    {%- else -%}
+                        {%- set ns.labels = ns.labels + ['default'] -%}
+                        {%- set ns.actions = ns.actions + ['COLUMN "' + desCol.name + '" SET DEFAULT ' ~ desiredDefaultValue] -%}
+                    {%- endif -%}
+                {%- endif -%}
+
+                {%- if ns.actions | length > 0 %}
+                    {{ stage('Change column "' + desCol.name + '" in ' + label + ': ' + (ns.labels | join(', '))) }}
+                    ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
+                    MODIFY {{ ns.actions | join(', ') }}
+                    {%- set nsNodeVariables.metaDataChanged = true -%}
+                {%- endif %}
+            {%- endif -%}
+        {%- endfor -%}
+    {%- endmacro -%}
+
+    {#===========================================================================
+      Macro : alter_drop_cluster_key_sql()
+
+      Description:
+        Redeploy stage that drops the table's clustering key before columns are dropped —
+        call it just before alter_drop_columns_sql(). A clustered column can't be dropped
+        while it's in the key, so the key is dropped first when:
+          - a column carrying @clusterKey is being dropped, or
+          - the key is changing in the same deploy that drops columns (another column's
+            expression may reference a dropped column, e.g. trunc("B", -5) on "A").
+        The new key, if any, is applied later by alter_cluster_key_sql(). Sets
+        nsNodeVariables.clusterKeyDropped and nsNodeVariables.metaDataChanged when the
+        stage is emitted. Tables only.
+
+      Output:
+        "Drop clustering key of <type> <path> (<reason>)" stage with its ALTER TABLE ...
+        DROP CLUSTERING KEY, or '' (empty string) when the key can stay.
+    ===========================================================================#}
+    {%- macro alter_drop_cluster_key_sql() -%}
+        {%- set ns = namespace(clusteredDropped=[]) -%}
+        {%- for colName in nsNodeVariables.currentClusterKeyColumns -%}
+            {%- if colName in nsNodeVariables.droppedColumns -%}
+                {%- set ns.clusteredDropped = ns.clusteredDropped + [colName] -%}
+            {%- endif -%}
+        {%- endfor -%}
+        {#- Whitespace-insensitive, so trunc(a,-5) vs trunc(a, -5) is not a change #}
+        {%- set keyChanged = (nsNodeVariables.desiredClusterKey | map('replace', ' ', '') | list)
+                          != (nsNodeVariables.currentClusterKey | map('replace', ' ', '') | list) -%}
+        {%- set label = node.materializationType + ' ' + nsNodeVariables.desObjectNameFullPath -%}
+
+        {%- if ns.clusteredDropped | length > 0
+                or (keyChanged and nsNodeVariables.droppedColumns | length > 0 and nsNodeVariables.currentClusterKey | length > 0) %}
+            {%- if ns.clusteredDropped | length > 0 %}
+                {{ stage('Drop clustering key of ' + label + ' (before dropping clustered columns: ' + (ns.clusteredDropped | join(', ')) + ')') }}
+            {%- else %}
+                {{ stage('Drop clustering key of ' + label + ' (key changing while columns are dropped)') }}
+            {%- endif %}
+            ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
+            DROP CLUSTERING KEY
+            {%- set nsNodeVariables.clusterKeyDropped = true -%}
+            {%- set nsNodeVariables.metaDataChanged = true -%}
+        {%- endif %}
+    {%- endmacro -%}
+
+    {#===========================================================================
+      Macro : alter_cluster_key_sql()
+
+      Description:
+        Redeploy stage that brings the table's clustering key to the desired @clusterKey
+        terms — call it after alter_add_columns_sql() and alter_rename_columns_sql(), so
+        the new key can reference added or renamed columns. Comparison ignores whitespace;
+        position renumbering that keeps the same order is not a change.
+          - desired key set, and changed or dropped early -> CLUSTER BY (<terms>)
+          - no desired key, current key exists, not already dropped -> DROP CLUSTERING KEY
+        Sets nsNodeVariables.metaDataChanged when a stage is emitted. Tables only.
+
+      Output:
+        "Change clustering key of <type> <path>: <terms>" or "Drop clustering key of
+        <type> <path>" stage with its ALTER TABLE, or '' (empty string) when unchanged.
+    ===========================================================================#}
+    {%- macro alter_cluster_key_sql() -%}
+        {%- set keyChanged = (nsNodeVariables.desiredClusterKey | map('replace', ' ', '') | list)
+                          != (nsNodeVariables.currentClusterKey | map('replace', ' ', '') | list) -%}
+        {%- set label = node.materializationType + ' ' + nsNodeVariables.desObjectNameFullPath -%}
+
+        {%- if nsNodeVariables.desiredClusterKey | length > 0 and (keyChanged or nsNodeVariables.clusterKeyDropped) %}
+            {{ stage('Change clustering key of ' + label + ': ' + (nsNodeVariables.desiredClusterKey | join(', '))) }}
+            ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
+            CLUSTER BY ({{ nsNodeVariables.desiredClusterKey | join(', ') }})
+            {%- set nsNodeVariables.metaDataChanged = true -%}
+        {%- elif nsNodeVariables.desiredClusterKey | length == 0 and nsNodeVariables.currentClusterKey | length > 0
+                and not nsNodeVariables.clusterKeyDropped %}
+            {{ stage('Drop clustering key of ' + label) }}
+            ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
+            DROP CLUSTERING KEY
             {%- set nsNodeVariables.metaDataChanged = true -%}
         {%- endif %}
     {%- endmacro -%}

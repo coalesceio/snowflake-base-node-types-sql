@@ -8,12 +8,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 {# == Node Type Description    : This node creates work table or view  == #}
 {#---------------------------------------------------------------------------------------------#}
 
-{%- set nsNodeVariables = namespace(currentDatabaseSchema = "",
-                                    desiredDatabaseSchema = "",
-                                    desObjectNameFullPath = "",
-                                    curObjectNameFullPath = "",
-                                    metaDataChanged = false) %}
-{{ initializeNodeVariables(nsNodeVariables) }}
+{#- nsNodeVariables (object paths, metaDataChanged) is created and initialized in the shared macros #}
 
 {#- Resolves the desired/current materialization type, including "transient table".
     Empty string when the state is absent (first deploy has no currentState; delete has no desiredState). #}
@@ -28,19 +23,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 {%- if desiredState %}
 
     {# Validate: the same name+location tag repeated on the same column/node is not allowed #}
-    {%- set nodeDupeTags = tag_validate(config.tag) %}
-    {%- if nodeDupeTags | trim | length > 0 %}
-        {{ test_stage('Duplicate Tags Found: ' + node.name, false) }}
-        SELECT '{{ nodeDupeTags | escape }} is applied multiple times on {{ node.name | escape }}' AS "ERROR_MESSAGE"
-    {%- endif %}
-
-    {%- for col in columns %}
-        {%- set colDupeTags = tag_validate(col.tag) %}
-        {%- if colDupeTags | trim | length > 0 %}
-            {{ test_stage('Duplicate Tags Found: ' + col.name, false) }}
-            SELECT '{{ colDupeTags | escape }} is applied multiple times on {{ col.name | escape }}' AS "ERROR_MESSAGE"
-        {%- endif %}
-    {%- endfor %}
+    {{ tag_check_duplicates() }}
 
     {%- if desiredMatType == 'view' %}
 
@@ -58,46 +41,17 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
             DROP {{ materialization }} {{ nsNodeVariables.curObjectNameFullPath }}
         {%- endif %}
 
-        {# Did anything besides tags change? (columns, data type, or the underlying SELECT) #}
-        {%- set nsViewTransforms = namespace(desired=[], current=[]) %}
-        {%- if currentState is defined %}
-            {%- for col in sources[0].columns %}
-                {%- set nsViewTransforms.desired = nsViewTransforms.desired + [get_source_transform(col)] %}
-            {%- endfor %}
-            {%- for col in currentState.sources[0].columns %}
-                {%- set nsViewTransforms.current = nsViewTransforms.current + [get_source_transform(col)] %}
-            {%- endfor %}
-        {%- endif %}
-        {# Collect what changed besides tags, so the recreate stage can name it #}
-        {%- set nsViewChanges = namespace(items=[]) %}
-        {%- if currentState is defined %}
-            {%- if (desiredState.columns | map(attribute='name') | list) != (currentState.columns | map(attribute='name') | list) %}
-                {%- set nsViewChanges.items = nsViewChanges.items + ['columns'] %}
-            {%- endif %}
-            {%- if (desiredState.columns | map(attribute='dataType') | map('upper') | map('replace', ' ', '') | list) != (currentState.columns | map(attribute='dataType') | map('upper') | map('replace', ' ', '') | list) %}
-                {%- set nsViewChanges.items = nsViewChanges.items + ['column data types'] %}
-            {%- endif %}
-            {%- if (desiredState.columns | map(attribute='description') | list) != (currentState.columns | map(attribute='description') | list) %}
-                {%- set nsViewChanges.items = nsViewChanges.items + ['column descriptions'] %}
-            {%- endif %}
-            {%- if currentState.node.description != desiredState.node.description %}
-                {%- set nsViewChanges.items = nsViewChanges.items + ['description'] %}
-            {%- endif %}
-            {%- if currentState.sources[0].cteString != desiredState.sources[0].cteString
-                    or currentState.sources[0].join != desiredState.sources[0].join
-                    or (currentState.sources[0].selectModifier | default('', true)) != (desiredState.sources[0].selectModifier | default('', true))
-                    or (currentState.sources[0].columns | map(attribute='name') | list) != (desiredState.sources[0].columns | map(attribute='name') | list)
-                    or nsViewTransforms.current != nsViewTransforms.desired %}
-                {%- set nsViewChanges.items = nsViewChanges.items + ['query'] %}
-            {%- endif %}
-        {%- endif %}
-        {%- set viewNonTagChanged = (nsViewChanges.items | length > 0) if currentState is defined else true %}
+        {# Did anything other than tags change? Render the view definition for both states
+           without tags and compare: equal output means only tags (or nothing in the DDL) changed #}
+        {%- set viewDefinitionChanged = currentState is not defined
+                or (currentState != desiredState
+                    and view_definition_sql(currentState, false) != view_definition_sql(desiredState, false)) %}
 
         {# CreateSQL for View #}
         {%- if currentState is not defined
                 or currentMatType != desiredMatType
                 or nsNodeVariables.curObjectNameFullPath != nsNodeVariables.desObjectNameFullPath
-                or viewNonTagChanged %}
+                or viewDefinitionChanged %}
             {%- if currentState is not defined %}
                 {{ stage('Create ' + desLabel) }}
             {%- elif currentMatType != desiredMatType %}
@@ -105,33 +59,16 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
             {%- elif nsNodeVariables.curObjectNameFullPath != nsNodeVariables.desObjectNameFullPath %}
                 {{ stage('Create ' + desLabel + ' (moved from ' + nsNodeVariables.curObjectNameFullPath + ')') }}
             {%- else %}
-                {{ stage('Recreate ' + desLabel + ': ' + (nsViewChanges.items | join(', ')) + ' changed') }}
+                {{ stage('Recreate ' + desLabel + ' (definition changed)') }}
             {%- endif %}
             CREATE OR REPLACE {{ desiredMatType }} {{ nsNodeVariables.desObjectNameFullPath }}
-            (
-                {%- for col in columns %}
-                    "{{ col.name }}"
-                    {{ tag_with_clause(col.tag) }}
-                    {%- if col.description | trim | length > 0 %} COMMENT '{{ col.description | escape }}' {%- endif %}
-                    {%- if not loop.last -%}, {%- endif %}
-                {%- endfor %}
-            )
-            {%- if desiredState.node.description | trim | length > 0 %} COMMENT = '{{ desiredState.node.description | escape }}' {%- endif %}
-            {{ tag_with_clause(config.tag) }}
-            AS
-            {{ sources[0].cteString }}
-            SELECT {{ sources[0].selectModifier | default('', true) }}
-            {%- for col in sources[0].columns %}
-                {{ get_source_transform(col) }} AS "{{ col.name }}"
-                {%- if not loop.last -%}, {%- endif %}
-            {%- endfor %}
+            {{ view_definition_sql(desiredState) }}
 
-            {{ sources[0].join }}
+        {%- elif currentState != desiredState %}
 
-        {%- elif currentState is defined and not viewNonTagChanged %}
-
-            {# Tag-only changes: alter the existing view's column- and node-level tags (unset before set) #}
-            {{ tag_alter_sql(nsNodeVariables) }}
+            {# Definition unchanged: alter tags only (unset before set), else record a metadata-only change #}
+            {{ alter_tag_sql() }}
+            {{ alter_metadata_sql() }}
 
         {%- endif %}
 
@@ -169,249 +106,34 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
         {%- elif currentState is defined and currentState != desiredState and currentMatType == desiredMatType %}
 
             {# Rename / Move Object #}
-            {%- if nsNodeVariables.curObjectNameFullPath != nsNodeVariables.desObjectNameFullPath %}
-                {{ stage('Rename ' + curLabel + ' to ' + nsNodeVariables.desObjectNameFullPath) }}
-
-                ALTER TABLE IF EXISTS {{ nsNodeVariables.curObjectNameFullPath }}
-                RENAME TO {{ nsNodeVariables.desObjectNameFullPath }}
-
-                {# Metadata changes detected #}
-                {%- set nsNodeVariables.metaDataChanged = true %}          
-            {%- endif %}
+            {{ alter_rename_sql() }}
 
             {# Change table description #}
-            {%- if currentState.node.description != desiredState.node.description %}
-                {{ stage('Change description of ' + desLabel) }}
-                ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
-                SET COMMENT = '{{ desiredState.node.description | escape }}'
+            {{ alter_description_sql() }}
 
-                {# Metadata changes detected #}
-                {%- set nsNodeVariables.metaDataChanged = true %} 
-            {%- endif %}
+            {# Cluster key: drop it first if clustered columns are being dropped #}
+            {{ alter_drop_cluster_key_sql() }}
 
+            {# Drop Columns #}
+            {{ alter_drop_columns_sql() }}
 
-            {# Drop Columns: collect first so the stage name can list them #}
-            {%- set nsDropCols = namespace(items=[]) %}
-            {%- for dropCurCol in currentState.columns %}
-                {%- set idStillDesired = desiredState.columns | default([]) | selectattr('id', 'equalto', dropCurCol.id) | list %}
-                {%- set nameStillDesired = dropCurCol.name in (desiredState.columns | default([]) | map(attribute="name") | list) %}
-                {%- if not idStillDesired and not nameStillDesired %}
-                    {%- set nsDropCols.items = nsDropCols.items + ['"' + dropCurCol.name + '"'] %}
-                {%- endif %}
-            {%- endfor %}
+            {# Add Columns #}
+            {{ alter_add_columns_sql() }}
 
-            {# Cluster key: build the desired and current CLUSTER BY terms, ordered by position.
-               A term is the @clusterKey expression, or the quoted column name when none is given.
-               "owner" is the column carrying the annotation, used to spot clustered columns being dropped. #}
-            {%- set nsCluster = namespace(desired=[], current=[], desiredTerms=[], currentTerms=[],
-                                          changed=false, droppedEarly=false) %}
-            {%- for col in desiredState.columns %}
-                {%- for cluster in col.clusterKey | default([]) %}
-                    {%- set nsCluster.desired = nsCluster.desired + [{
-                            "position": cluster.parameters[0] | int,
-                            "term": cluster.parameters[1] | default('"' + col.name + '"', true)
-                        }] %}
-                {%- endfor %}
-            {%- endfor %}
-            {%- for col in currentState.columns %}
-                {%- for cluster in col.clusterKey | default([]) %}
-                    {%- set nsCluster.current = nsCluster.current + [{
-                            "position": cluster.parameters[0] | int,
-                            "term": cluster.parameters[1] | default('"' + col.name + '"', true),
-                            "owner": '"' + col.name + '"'
-                        }] %}
-                {%- endfor %}
-            {%- endfor %}
-            {%- set nsCluster.desiredTerms = nsCluster.desired | sort(attribute='position') | map(attribute='term') | list %}
-            {%- set nsCluster.currentTerms = nsCluster.current | sort(attribute='position') | map(attribute='term') | list %}
-            {#- Whitespace-insensitive, so trunc(a,-5) vs trunc(a, -5) is not a change #}
-            {%- set nsCluster.changed = (nsCluster.desiredTerms | map('replace', ' ', '') | list)
-                                     != (nsCluster.currentTerms | map('replace', ' ', '') | list) %}
+            {# Rename Columns (matched by id; a Work column whose id changed is dropped + added instead) #}
+            {{ alter_rename_columns_sql() }}
 
-            {# A clustered column can't be dropped while it's in the key: drop the key first;
-               the new key (if any) is re-applied after column adds/renames below #}
-            {%- set nsClusterDrop = namespace(cols=[]) %}
-            {%- for c in nsCluster.current %}
-                {%- if c.owner in nsDropCols.items and c.owner not in nsClusterDrop.cols %}
-                    {%- set nsClusterDrop.cols = nsClusterDrop.cols + [c.owner] %}
-                {%- endif %}
-            {%- endfor %}
-            {#- Also drop early when the key is changing in the same deploy that drops columns:
-                another column's expression may reference a dropped column, e.g. trunc("B", -5) on "A" #}
-            {%- if nsClusterDrop.cols | length > 0
-                    or (nsCluster.changed and nsDropCols.items | length > 0 and nsCluster.currentTerms | length > 0) %}
-                {%- if nsClusterDrop.cols | length > 0 %}
-                    {{ stage('Drop clustering key of ' + desLabel + ' (before dropping clustered columns: ' + (nsClusterDrop.cols | join(', ')) + ')') }}
-                {%- else %}
-                    {{ stage('Drop clustering key of ' + desLabel + ' (key changing while columns are dropped)') }}
-                {%- endif %}
-                ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
-                DROP CLUSTERING KEY
+            {# Change column attributes (data type, nullability, description, default) #}
+            {{ alter_modify_columns_sql() }}
 
-                {%- set nsCluster.droppedEarly = true %}
-                {# Metadata changes detected #}
-                {%- set nsNodeVariables.metaDataChanged = true %}
-            {%- endif %}
-
-            {%- if nsDropCols.items | length > 0 %}
-                {{ stage('Drop columns from ' + desLabel + ': ' + (nsDropCols.items | join(', '))) }}
-                ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
-                DROP COLUMN {{ nsDropCols.items | join(', ') }}
-
-                {# Metadata changes detected #}
-                {%- set nsNodeVariables.metaDataChanged = true %}
-            {%- endif %}
-
-            {# Add Columns: collect first so the stage name can list them #}
-            {%- set nsAddCols = namespace(items=[]) %}
-            {%- for addDesCol in desiredState.columns %}
-                {%- set idAlreadyCurrent = currentState.columns | default([]) | selectattr('id', 'equalto', addDesCol.id) | list -%}
-                {%- set nameAlreadyCurrent = addDesCol.name in (currentState.columns | default([]) | map(attribute="name") | list) -%}
-                {%- if not idAlreadyCurrent and not nameAlreadyCurrent %}
-                    {%- set nsAddCols.items = nsAddCols.items + [addDesCol] %}
-                {%- endif %}
-            {%- endfor %}
-
-            {%- if nsAddCols.items | length > 0 %}
-                {{ stage('Add columns to ' + desLabel + ': "' + (nsAddCols.items | map(attribute='name') | join('", "')) + '"') }}
-                ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
-                ADD COLUMN
-                {%- for addDesCol in nsAddCols.items %}
-                    "{{ addDesCol.name }}" {{ addDesCol.dataType }}
-                    {%- if addDesCol.nullable == false %} NOT NULL {%- endif %}
-                    {%- if addDesCol.defaultValue | length > 0 %} DEFAULT {{ addDesCol.defaultValue }} {%- endif %}
-                    {{ tag_with_clause(addDesCol.tag) }}
-                    {%- if addDesCol.description | trim | length > 0 %} COMMENT '{{ addDesCol.description | escape }}'{%- endif %}
-                    {%- if not loop.last -%}, {%- endif %}
-                {%- endfor %}
-
-                {# Metadata changes detected #}
-                {%- set nsNodeVariables.metaDataChanged = true %}
-            {%- endif %}
-
-            {# Rename Columns #}
-            {%- for renameCurCol in currentState.columns %}
-                {%- set idMatches = desiredState.columns | default([]) | selectattr('id', 'equalto', renameCurCol.id) | list %}
-                {%- if idMatches and (idMatches | first).name != renameCurCol.name %}
-                        {{ stage('Rename column "' + renameCurCol.name + '" to "' + (idMatches | first).name + '" in ' + desLabel) }}
-                        ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
-                        RENAME COLUMN "{{ renameCurCol.name }}"
-                        TO "{{ (idMatches | first).name }}"
-
-                        {# Metadata changes detected #}
-                        {%- set nsNodeVariables.metaDataChanged = true %}
-                {%- endif %}
-            {%- endfor %}
-
-            {# Change data types etc #}
-            {%- for alterCurCol in currentState.columns %}
-
-                {%- set matchingCols = desiredState.columns | default([])
-                                    | selectattr('id', 'equalto', alterCurCol.id)
-                                    | list
-                -%}
-
-                {%- if not matchingCols -%}
-                    {%- set matchingCols = desiredState.columns | default([])
-                                        | selectattr('name', 'equalto', alterCurCol.name)
-                                        | list
-                    -%}
-                {%- endif -%}
-
-                {%- if matchingCols -%}
-                    {%- set desiredCol = matchingCols | first -%}
-                {%- else -%}
-                    {%- set desiredCol = none -%}
-                {%- endif -%}
-
-                {%- if desiredCol %}
-                    {%- set currentDatatype = alterCurCol.dataType %}
-                    {%- set currentNotNull = alterCurCol.nullable == false %}
-                    {%- set currentDefaultValue = alterCurCol.defaultValue if alterCurCol.defaultValue else none %}
-                    {%- set currentDescription = alterCurCol.description if alterCurCol.description else '' %}
-
-                    {%- set desiredColumnName = desiredCol.name %}
-                    {%- set desiredDatatype = desiredCol.dataType %}
-                    {%- set desiredNotNull = desiredCol.nullable == false %}
-                    {%- set desiredDefaultValue = desiredCol.defaultValue if desiredCol.defaultValue else none %}
-                    {%- set desiredDescription = desiredCol.description if desiredCol.description else '' %}
-
-                    {#- Case- and whitespace-insensitive, so varchar(10) vs VARCHAR(10) is not a change #}
-                    {%- set datatypeTest = (currentDatatype | upper | replace(' ', '')) == (desiredDatatype | upper | replace(' ', '')) %}
-                    {%- set nullableTest = currentNotNull == desiredNotNull %}
-                    {%- set defaultValueTest = currentDefaultValue == desiredDefaultValue %}
-                    {%- set descriptionTest = currentDescription == desiredDescription %}
-
-                    {# One stage per changed column, named with the attributes that changed #}
-                    {%- set nsColChange = namespace(labels=[], actions=[]) %}
-                    {%- if datatypeTest == false %}
-                        {%- set nsColChange.labels = nsColChange.labels + ['data type ' ~ currentDatatype ~ ' -> ' ~ desiredDatatype] %}
-                        {%- set nsColChange.actions = nsColChange.actions + ['COLUMN "' + desiredColumnName + '" SET DATA TYPE ' ~ desiredDatatype] %}
-                    {%- endif %}
-                    {%- if nullableTest == false %}
-                        {%- if desiredNotNull %}
-                            {%- set nsColChange.labels = nsColChange.labels + ['set NOT NULL'] %}
-                            {%- set nsColChange.actions = nsColChange.actions + ['COLUMN "' + desiredColumnName + '" SET NOT NULL'] %}
-                        {%- else %}
-                            {%- set nsColChange.labels = nsColChange.labels + ['drop NOT NULL'] %}
-                            {%- set nsColChange.actions = nsColChange.actions + ['COLUMN "' + desiredColumnName + '" DROP NOT NULL'] %}
-                        {%- endif %}
-                    {%- endif %}
-                    {%- if descriptionTest == false %}
-                        {%- set nsColChange.labels = nsColChange.labels + ['description'] %}
-                        {%- set nsColChange.actions = nsColChange.actions + ['COLUMN "' + desiredColumnName + '" COMMENT ' ~ "'" ~ (desiredDescription | escape) ~ "'"] %}
-                    {%- endif %}
-                    {%- if defaultValueTest == false %}
-                        {%- if desiredDefaultValue == none %}
-                            {%- set nsColChange.labels = nsColChange.labels + ['drop default'] %}
-                            {%- set nsColChange.actions = nsColChange.actions + ['COLUMN "' + desiredColumnName + '" DROP DEFAULT'] %}
-                        {%- else %}
-                            {%- set nsColChange.labels = nsColChange.labels + ['default'] %}
-                            {%- set nsColChange.actions = nsColChange.actions + ['COLUMN "' + desiredColumnName + '" SET DEFAULT ' ~ desiredDefaultValue] %}
-                        {%- endif %}
-                    {%- endif %}
-
-                    {%- if nsColChange.actions | length > 0 %}
-                        {{ stage('Change column "' + desiredColumnName + '" in ' + desLabel + ': ' + (nsColChange.labels | join(', '))) }}
-                        ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
-                        MODIFY {{ nsColChange.actions | join(', ') }}
-
-                        {# Metadata changes detected #}
-                        {%- set nsNodeVariables.metaDataChanged = true %}
-                    {%- endif %}
-                {%- endif %}
-            {%- endfor %}
-
-            {# Apply cluster key changes (computed before Drop Columns). Runs after column
-               adds/renames so the new key can reference added or renamed columns. #}
-            {%- if nsCluster.desiredTerms | length > 0 and (nsCluster.changed or nsCluster.droppedEarly) %}
-                {{ stage('Change clustering key of ' + desLabel + ': ' + (nsCluster.desiredTerms | join(', '))) }}
-                ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
-                CLUSTER BY ({{ nsCluster.desiredTerms | join(', ') }})
-
-                {# Metadata changes detected #}
-                {%- set nsNodeVariables.metaDataChanged = true %}
-            {%- elif nsCluster.desiredTerms | length == 0 and nsCluster.currentTerms | length > 0 and not nsCluster.droppedEarly %}
-                {{ stage('Drop clustering key of ' + desLabel) }}
-                ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
-                DROP CLUSTERING KEY
-
-                {# Metadata changes detected #}
-                {%- set nsNodeVariables.metaDataChanged = true %}
-            {%- endif %}
+            {# Cluster key: apply the new key (after column adds/renames, so it can reference them) #}
+            {{ alter_cluster_key_sql() }}
 
             {# Column- and node-level tag changes (unset before set) #}
-            {{ tag_alter_sql(nsNodeVariables) }}
+            {{ alter_tag_sql() }}
 
-            {# == Compare source CTEs and Joins == #}
-            {%- set cteStringTest = currentState.sources[0].cteString == desiredState.sources[0].cteString %}
-            {%- set joinTest = currentState.sources[0].join == desiredState.sources[0].join %}
-
-            {# == Handle undetected metadata changes and Default Update == #}
-            {%- if not nsNodeVariables.metaDataChanged %}
-                {{ stage('Update metadata for ' + desLabel + ' (no DDL change)') }}
-                select 1=0
-            {%- endif %}
+            {# Nothing above altered the table: record a metadata-only change #}
+            {{ alter_metadata_sql() }}
         {%- endif %}
     {%- endif %}
 {%- elif currentState is defined and desiredState is not defined %}
