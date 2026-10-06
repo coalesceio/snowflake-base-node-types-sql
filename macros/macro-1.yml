@@ -1143,13 +1143,12 @@ macroString: |-
         nsNodeVariables.metaDataChanged when any stage is emitted.
 
       Output:
-        Zero or more "Unset tags ..." / "Set tags ..." stages with their ALTER statements.
+        Zero or more "Unset Tags: <column>" / "Set Tags: <column>" / "Unset <View|Table> Tags" /
+        "Set <View|Table> Tags" stages with their ALTER statements.
     ===========================================================================#}
     {%- macro alter_tag_sql() -%}
         {%- set objectPath = nsNodeVariables.desObjectNameFullPath -%}
         {%- set objectKind = 'VIEW' if node.materializationType == 'view' else 'TABLE' -%}
-        {#- Stage-name label, e.g. table "DB"."SCHEMA"."WRK_CUSTOMER" #}
-        {%- set label = node.materializationType + ' ' + objectPath -%}
 
         {#- Column-level tags #}
         {%- for curCol in currentState.columns -%}
@@ -1165,14 +1164,14 @@ macroString: |-
 
                 {#- Unset before set #}
                 {%- if unsetColTagClause | trim | length > 0 %}
-                    {{ stage('Unset tags on column "' + desCol.name + '" of ' + label) }}
+                    {{ stage('Unset Tags: ' + desCol.name) }}
                     ALTER {{ objectKind }} {{ objectPath }}
                     MODIFY COLUMN "{{ desCol.name }}" UNSET TAG {{ unsetColTagClause }}
                     {%- set nsNodeVariables.metaDataChanged = true -%}
                 {%- endif %}
 
                 {%- if setColTagClause | trim | length > 0 %}
-                    {{ stage('Set tags on column "' + desCol.name + '" of ' + label) }}
+                    {{ stage('Set Tags: ' + desCol.name) }}
                     ALTER {{ objectKind }} {{ objectPath }}
                     MODIFY COLUMN "{{ desCol.name }}" SET TAG {{ setColTagClause }}
                     {%- set nsNodeVariables.metaDataChanged = true -%}
@@ -1186,14 +1185,14 @@ macroString: |-
 
         {#- Unset before set #}
         {%- if unsetTagClause | trim | length > 0 %}
-            {{ stage('Unset tags on ' + label) }}
+            {{ stage('Unset ' + objectKind | title + ' Tags') }}
             ALTER {{ objectKind }} {{ objectPath }}
             UNSET TAG {{ unsetTagClause }}
             {%- set nsNodeVariables.metaDataChanged = true -%}
         {%- endif %}
 
         {%- if setTagClause | trim | length > 0 %}
-            {{ stage('Set tags on ' + label) }}
+            {{ stage('Set ' + objectKind | title + ' Tags') }}
             ALTER {{ objectKind }} {{ objectPath }}
             SET TAG {{ setTagClause }}
             {%- set nsNodeVariables.metaDataChanged = true -%}
@@ -1211,12 +1210,12 @@ macroString: |-
         last, after every alter_ macro of the redeploy path.
 
       Output:
-        "Update metadata for <type> <path> (no DDL change)" stage with select 1=0, or ''
+        "Metadata Update-Default" stage with select 1=0, or ''
         (empty string) when something was already altered or nothing changed.
     ===========================================================================#}
     {%- macro alter_metadata_sql() -%}
         {%- if currentState != desiredState and not nsNodeVariables.metaDataChanged %}
-            {{ stage('Update metadata for ' + node.materializationType + ' ' + nsNodeVariables.desObjectNameFullPath + ' (no DDL change)') }}
+            {{ stage('Metadata Update-Default') }}
             select 1=0
         {%- endif %}
     {%- endmacro -%}
@@ -1235,7 +1234,7 @@ macroString: |-
         nsNodeVariables.metaDataChanged when the stage is emitted.
 
       Output:
-        "Drop <type> <current path> (<reason>)" stage with its DROP ... IF EXISTS, or ''
+        "Drop <type>" stage with its DROP ... IF EXISTS, or ''
         (empty string) when the current object can stay.
     ===========================================================================#}
     {%- macro object_drop_sql() -%}
@@ -1252,7 +1251,7 @@ macroString: |-
             {%- endif -%}
 
             {%- if reason | length > 0 %}
-                {{ stage('Drop ' + currentMatType + ' ' + nsNodeVariables.curObjectNameFullPath + ' (' + reason + ')') }}
+                {{ stage('Drop ' + currentMatType) }}
                 DROP {{ dropMaterialization(currentMatType) }} {{ nsNodeVariables.curObjectNameFullPath }}
                 {%- set nsNodeVariables.metaDataChanged = true -%}
             {%- endif %}
@@ -1270,14 +1269,14 @@ macroString: |-
         create instead. Sets nsNodeVariables.metaDataChanged when the stage is emitted.
 
       Output:
-        "Rename <type> <current path> to <desired path>" stage with its ALTER ... RENAME TO,
+        "Rename / Move <type>" stage with its ALTER ... RENAME TO,
         or '' (empty string) when the path is unchanged.
     ===========================================================================#}
     {%- macro alter_rename_sql() -%}
         {%- if nsNodeVariables.curObjectNameFullPath != nsNodeVariables.desObjectNameFullPath %}
             {%- set currentMatType = currentState.node.materializationType -%}
             {%- set objectKind = 'VIEW' if currentMatType == 'view' else 'TABLE' %}
-            {{ stage('Rename ' + currentMatType + ' ' + nsNodeVariables.curObjectNameFullPath + ' to ' + nsNodeVariables.desObjectNameFullPath) }}
+            {{ stage('Rename / Move ' + currentMatType) }}
             ALTER {{ objectKind }} IF EXISTS {{ nsNodeVariables.curObjectNameFullPath }}
             RENAME TO {{ nsNodeVariables.desObjectNameFullPath }}
             {%- set nsNodeVariables.metaDataChanged = true -%}
@@ -1296,14 +1295,14 @@ macroString: |-
         emitted.
 
       Output:
-        "Change description of <type> <path>" stage with its ALTER ... SET COMMENT,
+        "Change <type> description" stage with its ALTER ... SET COMMENT,
         or '' (empty string) when the description is unchanged.
     ===========================================================================#}
     {%- macro alter_description_sql() -%}
         {%- set desiredDescription = node.description | default('', true) -%}
         {%- if (currentState.node.description | default('', true)) != desiredDescription %}
             {%- set objectKind = 'VIEW' if node.materializationType == 'view' else 'TABLE' %}
-            {{ stage('Change description of ' + node.materializationType + ' ' + nsNodeVariables.desObjectNameFullPath) }}
+            {{ stage('Change ' + node.materializationType + ' description') }}
             ALTER {{ objectKind }} {{ nsNodeVariables.desObjectNameFullPath }}
             SET COMMENT = '{{ desiredDescription | escape }}'
             {%- set nsNodeVariables.metaDataChanged = true -%}
@@ -1321,12 +1320,12 @@ macroString: |-
         nsNodeVariables.metaDataChanged when the stage is emitted.
 
       Output:
-        "Drop columns from <type> <path>: "A", "B"" stage with its ALTER TABLE ... DROP COLUMN,
+        "Drop Columns" stage with its ALTER TABLE ... DROP COLUMN,
         or '' (empty string) when no column is dropped.
     ===========================================================================#}
     {%- macro alter_drop_columns_sql() -%}
         {%- if nsNodeVariables.droppedColumns | length > 0 %}
-            {{ stage('Drop columns from ' + node.materializationType + ' ' + nsNodeVariables.desObjectNameFullPath + ': ' + (nsNodeVariables.droppedColumns | join(', '))) }}
+            {{ stage('Drop Columns') }}
             ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
             DROP COLUMN {{ nsNodeVariables.droppedColumns | join(', ') }}
             {%- set nsNodeVariables.metaDataChanged = true -%}
@@ -1345,7 +1344,7 @@ macroString: |-
         nsNodeVariables.metaDataChanged when the stage is emitted.
 
       Output:
-        "Add columns to <type> <path>: "C", "D"" stage with its ALTER TABLE ... ADD COLUMN,
+        "Add Columns" stage with its ALTER TABLE ... ADD COLUMN,
         or '' (empty string) when no column is added.
     ===========================================================================#}
     {%- macro alter_add_columns_sql() -%}
@@ -1359,7 +1358,7 @@ macroString: |-
         {%- endfor -%}
 
         {%- if ns.items | length > 0 %}
-            {{ stage('Add columns to ' + node.materializationType + ' ' + nsNodeVariables.desObjectNameFullPath + ': "' + (ns.items | map(attribute='name') | join('", "')) + '"') }}
+            {{ stage('Add Columns') }}
             ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
             ADD COLUMN
             {%- for desCol in ns.items %}
@@ -1390,7 +1389,7 @@ macroString: |-
         emitted.
 
       Output:
-        One "Rename column "OLD" to "NEW" in <type> <path>" stage per renamed column with its
+        One "Rename Column <old name>" stage per renamed column with its
         ALTER TABLE ... RENAME COLUMN, or '' (empty string) when no column is renamed.
     ===========================================================================#}
     {%- macro alter_rename_columns_sql() -%}
@@ -1398,7 +1397,7 @@ macroString: |-
             {%- set idMatches = columns | default([]) | selectattr('id', 'equalto', curCol.id) | list -%}
             {%- if idMatches and (idMatches | first).name != curCol.name %}
                 {%- set newName = (idMatches | first).name %}
-                {{ stage('Rename column "' + curCol.name + '" to "' + newName + '" in ' + node.materializationType + ' ' + nsNodeVariables.desObjectNameFullPath) }}
+                {{ stage('Rename Column ' + curCol.name) }}
                 ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
                 RENAME COLUMN "{{ curCol.name }}" TO "{{ newName }}"
                 {%- set nsNodeVariables.metaDataChanged = true -%}
@@ -1417,18 +1416,17 @@ macroString: |-
           - nullability (nullable == false means NOT NULL)
           - description (missing = '')
           - default     (missing = none)
-        One stage and one ALTER TABLE ... MODIFY per changed column, its name listing what
-        changed. Call it after alter_rename_columns_sql(), so it uses the new column names.
+        One "Change Column Attributes: <column>" stage per changed column, with one ALTER TABLE ... MODIFY
+        covering all its changes. Call it after alter_rename_columns_sql(), so it uses the new column names.
         Snowflake limits: SET DATA TYPE only widens VARCHAR/NUMBER precision, and SET DEFAULT
         only accepts sequence defaults — other changes fail at deploy. Tables only. Sets
         nsNodeVariables.metaDataChanged when any stage is emitted.
 
       Output:
-        One "Change column "X" in <type> <path>: <changes>" stage per changed column with its
+        One "Change Column Attributes: <column>" stage per changed column with its
         ALTER TABLE ... MODIFY, or '' (empty string) when no column attribute changed.
     ===========================================================================#}
     {%- macro alter_modify_columns_sql() -%}
-        {%- set label = node.materializationType + ' ' + nsNodeVariables.desObjectNameFullPath -%}
         {%- for curCol in currentState.columns -%}
             {%- set matchingCols = columns | default([]) | selectattr('id', 'equalto', curCol.id) | list -%}
             {%- if not matchingCols -%}
@@ -1444,37 +1442,31 @@ macroString: |-
                 {%- set desiredDefaultValue = desCol.defaultValue if desCol.defaultValue else none -%}
                 {%- set desiredDescription = desCol.description if desCol.description else '' -%}
 
-                {#- Collect a label (for the stage name) and a MODIFY action per changed attribute #}
-                {%- set ns = namespace(labels=[], actions=[]) -%}
+                {#- Collect a MODIFY action per changed attribute #}
+                {%- set ns = namespace(actions=[]) -%}
                 {%- if (curCol.dataType | upper | replace(' ', '')) != (desCol.dataType | upper | replace(' ', '')) -%}
-                    {%- set ns.labels = ns.labels + ['data type ' ~ curCol.dataType ~ ' -> ' ~ desCol.dataType] -%}
                     {%- set ns.actions = ns.actions + ['COLUMN "' + desCol.name + '" SET DATA TYPE ' ~ desCol.dataType] -%}
                 {%- endif -%}
                 {%- if currentNotNull != desiredNotNull -%}
                     {%- if desiredNotNull -%}
-                        {%- set ns.labels = ns.labels + ['set NOT NULL'] -%}
                         {%- set ns.actions = ns.actions + ['COLUMN "' + desCol.name + '" SET NOT NULL'] -%}
                     {%- else -%}
-                        {%- set ns.labels = ns.labels + ['drop NOT NULL'] -%}
                         {%- set ns.actions = ns.actions + ['COLUMN "' + desCol.name + '" DROP NOT NULL'] -%}
                     {%- endif -%}
                 {%- endif -%}
                 {%- if currentDescription != desiredDescription -%}
-                    {%- set ns.labels = ns.labels + ['description'] -%}
                     {%- set ns.actions = ns.actions + ['COLUMN "' + desCol.name + '" COMMENT ' ~ "'" ~ (desiredDescription | escape) ~ "'"] -%}
                 {%- endif -%}
                 {%- if currentDefaultValue != desiredDefaultValue -%}
                     {%- if desiredDefaultValue == none -%}
-                        {%- set ns.labels = ns.labels + ['drop default'] -%}
                         {%- set ns.actions = ns.actions + ['COLUMN "' + desCol.name + '" DROP DEFAULT'] -%}
                     {%- else -%}
-                        {%- set ns.labels = ns.labels + ['default'] -%}
                         {%- set ns.actions = ns.actions + ['COLUMN "' + desCol.name + '" SET DEFAULT ' ~ desiredDefaultValue] -%}
                     {%- endif -%}
                 {%- endif -%}
 
                 {%- if ns.actions | length > 0 %}
-                    {{ stage('Change column "' + desCol.name + '" in ' + label + ': ' + (ns.labels | join(', '))) }}
+                    {{ stage('Change Column Attributes: ' + desCol.name) }}
                     ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
                     MODIFY {{ ns.actions | join(', ') }}
                     {%- set nsNodeVariables.metaDataChanged = true -%}
@@ -1499,7 +1491,7 @@ macroString: |-
         stage is emitted. Tables only.
 
       Output:
-        "Drop clustering key of <type> <path> (<reason>)" stage with its ALTER TABLE ...
+        "Drop Cluster Key" stage with its ALTER TABLE ...
         DROP CLUSTERING KEY, or '' (empty string) when the key can stay.
     ===========================================================================#}
     {%- macro alter_drop_cluster_key_sql() -%}
@@ -1514,9 +1506,8 @@ macroString: |-
         {#- Whitespace-insensitive, so trunc(a,-5) vs trunc(a, -5) is not a change #}
         {%- set keyChanged = (nsNodeVariables.desiredClusterKey | map('replace', ' ', '') | list)
                           != (nsNodeVariables.currentClusterKey | map('replace', ' ', '') | list) -%}
-        {%- set label = node.materializationType + ' ' + nsNodeVariables.desObjectNameFullPath -%}
 
-        {#- Stage reason names the clustered columns being dropped and/or renamed #}
+        {#- Clustered columns being dropped and/or renamed force the key to be dropped first #}
         {%- set nsReason = namespace(parts=[]) -%}
         {%- if ns.clusteredDropped | length > 0 -%}
             {%- set nsReason.parts = nsReason.parts + ['before dropping clustered columns: ' + (ns.clusteredDropped | join(', '))] -%}
@@ -1528,9 +1519,9 @@ macroString: |-
         {%- if nsReason.parts | length > 0
                 or (keyChanged and nsNodeVariables.droppedColumns | length > 0 and nsNodeVariables.currentClusterKey | length > 0) %}
             {%- if nsReason.parts | length > 0 %}
-                {{ stage('Drop clustering key of ' + label + ' (' + (nsReason.parts | join('; ')) + ')') }}
+                {{ stage('Drop Cluster Key') }}
             {%- else %}
-                {{ stage('Drop clustering key of ' + label + ' (key changing while columns are dropped)') }}
+                {{ stage('Drop Cluster Key') }}
             {%- endif %}
             ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
             DROP CLUSTERING KEY
@@ -1552,22 +1543,21 @@ macroString: |-
         Sets nsNodeVariables.metaDataChanged when a stage is emitted. Tables only.
 
       Output:
-        "Change clustering key of <type> <path>: <terms>" or "Drop clustering key of
-        <type> <path>" stage with its ALTER TABLE, or '' (empty string) when unchanged.
+        "Recluster Table" or "Drop Cluster Key"
+        stage with its ALTER TABLE, or '' (empty string) when unchanged.
     ===========================================================================#}
     {%- macro alter_cluster_key_sql() -%}
         {%- set keyChanged = (nsNodeVariables.desiredClusterKey | map('replace', ' ', '') | list)
                           != (nsNodeVariables.currentClusterKey | map('replace', ' ', '') | list) -%}
-        {%- set label = node.materializationType + ' ' + nsNodeVariables.desObjectNameFullPath -%}
 
         {%- if nsNodeVariables.desiredClusterKey | length > 0 and (keyChanged or nsNodeVariables.clusterKeyDropped) %}
-            {{ stage('Change clustering key of ' + label + ': ' + (nsNodeVariables.desiredClusterKey | join(', '))) }}
+            {{ stage('Recluster Table') }}
             ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
             CLUSTER BY ({{ nsNodeVariables.desiredClusterKey | join(', ') }})
             {%- set nsNodeVariables.metaDataChanged = true -%}
         {%- elif nsNodeVariables.desiredClusterKey | length == 0 and nsNodeVariables.currentClusterKey | length > 0
                 and not nsNodeVariables.clusterKeyDropped %}
-            {{ stage('Drop clustering key of ' + label) }}
+            {{ stage('Drop Cluster Key') }}
             ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
             DROP CLUSTERING KEY
             {%- set nsNodeVariables.metaDataChanged = true -%}

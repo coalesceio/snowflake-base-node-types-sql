@@ -15,10 +15,6 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 {%- set desiredMatType = desiredState.node.materializationType if desiredState is defined else '' %}
 {%- set currentMatType = currentState.node.materializationType if currentState is defined else '' %}
 
-{#- Stage-name labels: "<materialization> <full path>", e.g. view "DB"."SCHEMA"."WRK_CUSTOMER".
-    Every stage is named "<Action> <label>" plus a ": <what changed>" / "(<reason>)" suffix where useful. #}
-{%- set desLabel = desiredMatType + ' ' + nsNodeVariables.desObjectNameFullPath if desiredState is defined else '' %}
-
 {%- if desiredState %}
 
     {# Validate: the same name+location tag repeated on the same column/node is not allowed #}
@@ -40,15 +36,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                 or currentMatType != desiredMatType
                 or nsNodeVariables.curObjectNameFullPath != nsNodeVariables.desObjectNameFullPath
                 or viewDefinitionChanged %}
-            {%- if currentState is not defined %}
-                {{ stage('Create ' + desLabel) }}
-            {%- elif currentMatType != desiredMatType %}
-                {{ stage('Create ' + desLabel + ' (was ' + currentMatType + ')') }}
-            {%- elif nsNodeVariables.curObjectNameFullPath != nsNodeVariables.desObjectNameFullPath %}
-                {{ stage('Create ' + desLabel + ' (moved from ' + nsNodeVariables.curObjectNameFullPath + ')') }}
-            {%- else %}
-                {{ stage('Recreate ' + desLabel + ' (definition changed)') }}
-            {%- endif %}
+            {{ stage('Create ' + desiredMatType) }}
             CREATE OR REPLACE {{ desiredMatType }} {{ nsNodeVariables.desObjectNameFullPath }}
             {{ view_definition_sql(desiredState) }}
 
@@ -68,11 +56,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
         {%- if currentState is not defined or currentMatType != desiredMatType %}
 
             {# CreateSQL for Table #}
-            {%- if currentState is not defined %}
-                {{ stage('Create ' + desLabel) }}
-            {%- else %}
-                {{ stage('Create ' + desLabel + ' (was ' + currentMatType + ')') }}
-            {%- endif %}
+            {{ stage('Create ' + desiredMatType) }}
             CREATE OR REPLACE {{ desiredMatType }} {{ nsNodeVariables.desObjectNameFullPath }}
             (
                 {%- for col in columns %}
