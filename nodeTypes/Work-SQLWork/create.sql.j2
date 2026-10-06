@@ -28,14 +28,14 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 {%- if desiredState %}
 
     {# Validate: the same name+location tag repeated on the same column/node is not allowed #}
-    {%- set nodeDupeTags = find_duplicate_tag_names(config.tag) %}
+    {%- set nodeDupeTags = tag_validate(config.tag) %}
     {%- if nodeDupeTags | trim | length > 0 %}
         {{ test_stage('Duplicate Tags Found: ' + node.name, false) }}
         SELECT '{{ nodeDupeTags | escape }} is applied multiple times on {{ node.name | escape }}' AS "ERROR_MESSAGE"
     {%- endif %}
 
     {%- for col in columns %}
-        {%- set colDupeTags = find_duplicate_tag_names(col.tag) %}
+        {%- set colDupeTags = tag_validate(col.tag) %}
         {%- if colDupeTags | trim | length > 0 %}
             {{ test_stage('Duplicate Tags Found: ' + col.name, false) }}
             SELECT '{{ colDupeTags | escape }} is applied multiple times on {{ col.name | escape }}' AS "ERROR_MESSAGE"
@@ -111,13 +111,13 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
             (
                 {%- for col in columns %}
                     "{{ col.name }}"
-                    {{ get_tags_sql(col.tag) }}
+                    {{ tag_with_clause(col.tag) }}
                     {%- if col.description | trim | length > 0 %} COMMENT '{{ col.description | escape }}' {%- endif %}
                     {%- if not loop.last -%}, {%- endif %}
                 {%- endfor %}
             )
             {%- if desiredState.node.description | trim | length > 0 %} COMMENT = '{{ desiredState.node.description | escape }}' {%- endif %}
-            {{ get_tags_sql(config.tag) }}
+            {{ tag_with_clause(config.tag) }}
             AS
             {{ sources[0].cteString }}
             SELECT {{ sources[0].selectModifier | default('', true) }}
@@ -130,88 +130,8 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
         {%- elif currentState is defined and not viewNonTagChanged %}
 
-            {# Figure out column-level tag changes for redeployment (view) #}
-            {%- for alterCurCol in currentState.columns %}
-                {%- set matchingCols = desiredState.columns | default([])
-                                    | selectattr('id', 'equalto', alterCurCol.id)
-                                    | list
-                -%}
-                {%- if not matchingCols -%}
-                    {%- set matchingCols = desiredState.columns | default([])
-                                        | selectattr('name', 'equalto', alterCurCol.name)
-                                        | list
-                    -%}
-                {%- endif -%}
-
-                {%- if matchingCols %}
-                    {%- set desiredCol = matchingCols | first %}
-
-                    {%- set nsDesiredViewColTags = namespace(items=[]) %}
-                    {%- for t in desiredCol.tag | default([]) %}
-                        {%- set nsDesiredViewColTags.items = nsDesiredViewColTags.items + [{"name": t.parameters[0], "value": t.parameters[1] | string, "location": t.parameters[2] | default(desiredState.node.location.name, true)}] %}
-                    {%- endfor %}
-
-                    {%- set nsCurrentViewColTags = namespace(items=[]) %}
-                    {%- for t in alterCurCol.tag | default([]) %}
-                        {%- set nsCurrentViewColTags.items = nsCurrentViewColTags.items + [{"name": t.parameters[0], "value": t.parameters[1] | string, "location": t.parameters[2] | default(currentState.node.location.name, true)}] %}
-                    {%- endfor %}
-
-                    {%- set setViewColTagClause = tag_diff_clause(nsDesiredViewColTags.items, nsCurrentViewColTags.items, 'set') %}
-                    {%- set unsetViewColTagClause = tag_diff_clause(nsDesiredViewColTags.items, nsCurrentViewColTags.items, 'unset') %}
-
-                    {# Unset before set #}
-                    {%- if unsetViewColTagClause | trim | length > 0 %}
-                        {{ stage('Unset tags on column "' + desiredCol.name + '" of ' + desLabel) }}
-                        ALTER VIEW {{ nsNodeVariables.desObjectNameFullPath }}
-                        MODIFY COLUMN "{{ desiredCol.name }}" UNSET TAG {{ unsetViewColTagClause }}
-
-                        {# Metadata changes detected #}
-                        {%- set nsNodeVariables.metaDataChanged = true %}
-                    {%- endif %}
-
-                    {%- if setViewColTagClause | trim | length > 0 %}
-                        {{ stage('Set tags on column "' + desiredCol.name + '" of ' + desLabel) }}
-                        ALTER VIEW {{ nsNodeVariables.desObjectNameFullPath }}
-                        MODIFY COLUMN "{{ desiredCol.name }}" SET TAG {{ setViewColTagClause }}
-
-                        {# Metadata changes detected #}
-                        {%- set nsNodeVariables.metaDataChanged = true %}
-                    {%- endif %}
-                {%- endif %}
-            {%- endfor %}
-
-            {# Figure out node-level tag changes for redeployment (view) #}
-            {%- set nsDesiredViewTags = namespace(items=[]) %}
-            {%- for t in desiredState.config.tag | default([]) %}
-                {%- set nsDesiredViewTags.items = nsDesiredViewTags.items + [{"name": t.parameters[0], "value": t.parameters[1] | string, "location": t.parameters[2] | default(desiredState.node.location.name, true)}] %}
-            {%- endfor %}
-
-            {%- set nsCurrentViewTags = namespace(items=[]) %}
-            {%- for t in currentState.config.tag | default([]) %}
-                {%- set nsCurrentViewTags.items = nsCurrentViewTags.items + [{"name": t.parameters[0], "value": t.parameters[1] | string, "location": t.parameters[2] | default(currentState.node.location.name, true)}] %}
-            {%- endfor %}
-
-            {%- set setViewTagClause = tag_diff_clause(nsDesiredViewTags.items, nsCurrentViewTags.items, 'set') %}
-            {%- set unsetViewTagClause = tag_diff_clause(nsDesiredViewTags.items, nsCurrentViewTags.items, 'unset') %}
-
-            {# Unset before set #}
-            {%- if unsetViewTagClause | trim | length > 0 %}
-                {{ stage('Unset tags on ' + desLabel) }}
-                ALTER VIEW {{ nsNodeVariables.desObjectNameFullPath }}
-                UNSET TAG {{ unsetViewTagClause }}
-
-                {# Metadata changes detected #}
-                {%- set nsNodeVariables.metaDataChanged = true %}
-            {%- endif %}
-
-            {%- if setViewTagClause | trim | length > 0 %}
-                {{ stage('Set tags on ' + desLabel) }}
-                ALTER VIEW {{ nsNodeVariables.desObjectNameFullPath }}
-                SET TAG {{ setViewTagClause }}
-
-                {# Metadata changes detected #}
-                {%- set nsNodeVariables.metaDataChanged = true %}
-            {%- endif %}
+            {# Tag-only changes: alter the existing view's column- and node-level tags (unset before set) #}
+            {{ tag_alter_sql(nsNodeVariables) }}
 
         {%- endif %}
 
@@ -237,14 +157,14 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                     "{{ col.name }}" {{ col.dataType }}
                     {%- if col.nullable == false %} NOT NULL {%- endif %}
                     {%- if col.defaultValue %} DEFAULT {{ col.defaultValue }} {%- endif %}
-                    {{ get_tags_sql(col.tag) }}
+                    {{ tag_with_clause(col.tag) }}
                     {%- if col.description | trim | length > 0 %} COMMENT '{{ col.description | escape }}' {%- endif %}
                     {%- if not loop.last -%}, {%- endif %}
                 {%- endfor %}
             )
             {%- if desiredState.node.description | trim | length > 0 %} COMMENT = '{{ desiredState.node.description | escape }}' {%- endif %}
             {{ get_clusterby_sql() }}
-            {{ get_tags_sql(config.tag) }}
+            {{ tag_with_clause(config.tag) }}
 
         {%- elif currentState is defined and currentState != desiredState and currentMatType == desiredMatType %}
 
@@ -360,7 +280,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                     "{{ addDesCol.name }}" {{ addDesCol.dataType }}
                     {%- if addDesCol.nullable == false %} NOT NULL {%- endif %}
                     {%- if addDesCol.defaultValue | length > 0 %} DEFAULT {{ addDesCol.defaultValue }} {%- endif %}
-                    {{ get_tags_sql(addDesCol.tag) }}
+                    {{ tag_with_clause(addDesCol.tag) }}
                     {%- if addDesCol.description | trim | length > 0 %} COMMENT '{{ addDesCol.description | escape }}'{%- endif %}
                     {%- if not loop.last -%}, {%- endif %}
                 {%- endfor %}
@@ -462,56 +382,6 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                 {%- endif %}
             {%- endfor %}
 
-            {# Figure out column-level tag changes for redeployment #}
-            {%- for alterCurCol in currentState.columns %}
-                {%- set matchingCols = desiredState.columns | default([])
-                                    | selectattr('id', 'equalto', alterCurCol.id)
-                                    | list
-                -%}
-                {%- if not matchingCols -%}
-                    {%- set matchingCols = desiredState.columns | default([])
-                                        | selectattr('name', 'equalto', alterCurCol.name)
-                                        | list
-                    -%}
-                {%- endif -%}
-
-                {%- if matchingCols %}
-                    {%- set desiredCol = matchingCols | first %}
-
-                    {%- set nsDesiredColTags = namespace(items=[]) %}
-                    {%- for t in desiredCol.tag | default([]) %}
-                        {%- set nsDesiredColTags.items = nsDesiredColTags.items + [{"name": t.parameters[0], "value": t.parameters[1] | string, "location": t.parameters[2] | default(desiredState.node.location.name, true)}] %}
-                    {%- endfor %}
-
-                    {%- set nsCurrentColTags = namespace(items=[]) %}
-                    {%- for t in alterCurCol.tag | default([]) %}
-                        {%- set nsCurrentColTags.items = nsCurrentColTags.items + [{"name": t.parameters[0], "value": t.parameters[1] | string, "location": t.parameters[2] | default(currentState.node.location.name, true)}] %}
-                    {%- endfor %}
-
-                    {%- set setColTagClause = tag_diff_clause(nsDesiredColTags.items, nsCurrentColTags.items, 'set') %}
-                    {%- set unsetColTagClause = tag_diff_clause(nsDesiredColTags.items, nsCurrentColTags.items, 'unset') %}
-
-                    {# Unset before set #}
-                    {%- if unsetColTagClause | trim | length > 0 %}
-                        {{ stage('Unset tags on column "' + desiredCol.name + '" of ' + desLabel) }}
-                        ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
-                        MODIFY COLUMN "{{ desiredCol.name }}" UNSET TAG {{ unsetColTagClause }}
-
-                        {# Metadata changes detected #}
-                        {%- set nsNodeVariables.metaDataChanged = true %}
-                    {%- endif %}
-
-                    {%- if setColTagClause | trim | length > 0 %}
-                        {{ stage('Set tags on column "' + desiredCol.name + '" of ' + desLabel) }}
-                        ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
-                        MODIFY COLUMN "{{ desiredCol.name }}" SET TAG {{ setColTagClause }}
-
-                        {# Metadata changes detected #}
-                        {%- set nsNodeVariables.metaDataChanged = true %}
-                    {%- endif %}
-                {%- endif %}
-            {%- endfor %}
-
             {# Apply cluster key changes (computed before Drop Columns). Runs after column
                adds/renames so the new key can reference added or renamed columns. #}
             {%- if nsCluster.desiredTerms | length > 0 and (nsCluster.changed or nsCluster.droppedEarly) %}
@@ -530,38 +400,8 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                 {%- set nsNodeVariables.metaDataChanged = true %}
             {%- endif %}
 
-            {# Figure out node-level tag changes for redeployment #}
-            {%- set nsDesiredTags = namespace(items=[]) %}
-            {%- for t in desiredState.config.tag | default([]) %}
-                {%- set nsDesiredTags.items = nsDesiredTags.items + [{"name": t.parameters[0], "value": t.parameters[1] | string, "location": t.parameters[2] | default(desiredState.node.location.name, true)}] %}
-            {%- endfor %}
-
-            {%- set nsCurrentTags = namespace(items=[]) %}
-            {%- for t in currentState.config.tag | default([]) %}
-                {%- set nsCurrentTags.items = nsCurrentTags.items + [{"name": t.parameters[0], "value": t.parameters[1] | string, "location": t.parameters[2] | default(currentState.node.location.name, true)}] %}
-            {%- endfor %}
-
-            {%- set setTagClause = tag_diff_clause(nsDesiredTags.items, nsCurrentTags.items, 'set') %}
-            {%- set unsetTagClause = tag_diff_clause(nsDesiredTags.items, nsCurrentTags.items, 'unset') %}
-
-            {# Unset before set #}
-            {%- if unsetTagClause | trim | length > 0 %}
-                {{ stage('Unset tags on ' + desLabel) }}
-                ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
-                UNSET TAG {{ unsetTagClause }}
-
-                {# Metadata changes detected #}
-                {%- set nsNodeVariables.metaDataChanged = true %}
-            {%- endif %}
-
-            {%- if setTagClause | trim | length > 0 %}
-                {{ stage('Set tags on ' + desLabel) }}
-                ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
-                SET TAG {{ setTagClause }}
-
-                {# Metadata changes detected #}
-                {%- set nsNodeVariables.metaDataChanged = true %}
-            {%- endif %}
+            {# Column- and node-level tag changes (unset before set) #}
+            {{ tag_alter_sql(nsNodeVariables) }}
 
             {# == Compare source CTEs and Joins == #}
             {%- set cteStringTest = currentState.sources[0].cteString == desiredState.sources[0].cteString %}

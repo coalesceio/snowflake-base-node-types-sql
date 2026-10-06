@@ -1,11 +1,12 @@
 fileVersion: 1
 id: "1"
 macroString: |-
-    {#-- The below block of code initialises variables in case of node typess using advance deployment strategy #}
-    {#=========================================================
-      Initialize variables for node types that use the 
-      advanced deployment strategy
-    =========================================================== #}
+    {#===========================================================================
+      Shorthand aliases for node types that use the advanced deployment
+      strategy: columns, storageLocations, config, sources, node and
+      parameters point at desiredState, so templates and macros can use them
+      directly.
+    ===========================================================================#}
     {%- if desiredState -%}
         {%- set columns = desiredState.columns -%}
         {%- set storageLocations = desiredState.storageLocations -%}
@@ -15,10 +16,10 @@ macroString: |-
         {%- set parameters = desiredState.parameters -%}
     {%- endif -%}
 
-    {#=========================================================
+    {#===========================================================================
       Initialize variables for node types that use the 
       advanced deployment strategy
-    ===========================================================#}
+    ===========================================================================#}
     {%- macro initializeNodeVariables(nsNodeVariables) -%}
 
       {%- if currentState is defined -%}
@@ -37,22 +38,22 @@ macroString: |-
       {%- endif -%}
 
       {%- if desiredState is defined -%}
-        {%- set desiredDatabase = desiredState.storageLocations
-                                  | selectattr('name', 'equalto', desiredState.node.location.name)
+        {%- set desiredDatabase = storageLocations
+                                  | selectattr('name', 'equalto', node.location.name)
                                   | map(attribute='database')
                                   | first -%}
-        {%- set desiredSchema = desiredState.storageLocations
-                                  | selectattr('name', 'equalto', desiredState.node.location.name)
+        {%- set desiredSchema = storageLocations
+                                  | selectattr('name', 'equalto', node.location.name)
                                   | map(attribute='schema')
                                   | first -%}
         {%- set nsNodeVariables.desiredDatabaseSchema = desiredDatabase + '.' + desiredSchema -%}
 
-        {%- set nsNodeVariables.desObjectNameFullPath = ref_no_link(desiredState.node.location.name, desiredState.node.name) -%}
+        {%- set nsNodeVariables.desObjectNameFullPath = ref_no_link(node.location.name, node.name) -%}
 
       {%- endif -%}
 
     {%- endmacro -%}
-    {# ========================================================================
+    {#===========================================================================
     Purpose          : Executes data quality tests associated with the node
                       and its columns, based on the configured run order.
                       Supports running tests either before or after data
@@ -64,7 +65,7 @@ macroString: |-
     Returns          : Rendered SQL statements for executing the applicable
                       node-level and column-level data quality tests.
                       No output is generated if tests are disabled.
-    ========================================================================= #}
+    ===========================================================================#}
     {%- macro run_tests(runOrder) -%}
 
         {%- set columnContinueOnFailure = true -%}
@@ -176,7 +177,7 @@ macroString: |-
         {%- endif -%}
     {%- endmacro -%}
 
-    {#===================================================================================================
+    {#===========================================================================
     Description:
     Generates a deterministic hash value by combining and hashing all column values associated with the given `hash_name` using the `@inHash` annotation.
 
@@ -185,7 +186,7 @@ macroString: |-
     Output: - Returns a SQL expression of type `STRING`:
           - A SHA1 hash of concatenated column values  
           - Returns `NULL` if no columns are mapped to the given hash group
-    ====================================================================================================#}
+    ===========================================================================#}
     {%- macro get_hash(hash_name, algo='SHA1', delimiter='||') -%}
 
         {%- set cols = namespace(items=[]) -%}
@@ -235,7 +236,7 @@ macroString: |-
         {%- endif -%}
     {%- endmacro -%}
 
-    {#===================================================================================================
+    {#===========================================================================
     get_boolean_config(flag)
 
     Description:
@@ -269,7 +270,7 @@ macroString: |-
       {% if get_boolean_config("truncateBefore") | trim | lower == "true" %}
         ...
       {% endif %}
-    ====================================================================================================#}
+    ===========================================================================#}
     {%- macro get_boolean_config(flag) -%}
         {%- if config[flag] is defined -%}
             {%- if config[flag] is boolean -%}
@@ -822,8 +823,9 @@ macroString: |-
         {%- endif -%}
     {%- endmacro -%}
 
-    {#-- The below block of code initializes metadata changes variables for the display #}
-    {#-- ===============================================================================#}
+    {#===========================================================================
+    The below block of code initializes metadata changes variables for the display
+    ===========================================================================#}
     {%- macro update_metadata(tag, diff, label) -%}
         {%- set nsMetaVariables.metadataUpdate = nsMetaVariables.metadataUpdate + '-' + tag -%}
 
@@ -836,7 +838,7 @@ macroString: |-
 
     {%- endmacro -%}
 
-    {####################################################################################################################################
+    {#===========================================================================
       Macro : get_clusterby_sql
 
       Description:
@@ -853,12 +855,12 @@ macroString: |-
             CLUSTER BY (N_REGIONKEY, trunc(N_NAME, -5))
         - If no valid terms are found:
             '' (empty string)
-    ####################################################################################################################################}
+    ===========================================================================#}
       {%- macro get_clusterby_sql() -%}
 
           {%- set cols = namespace(items=[]) -%}
           {# Collect columns participating in this clustreBy #}
-          {%- for col in desiredState.columns -%}
+          {%- for col in columns -%}
               {%- if col.clusterKey is defined -%}
                   {%- for cluster in col.clusterKey -%}
                       {%- set cols.items = cols.items + [{
@@ -882,8 +884,8 @@ macroString: |-
       {%- endmacro -%}
 
 
-    {####################################################################################################################################
-      Macro : get_tag_full_name(bareTagName, locationName)
+    {#===========================================================================
+      Macro : tag_full_name(bareTagName, locationName)
 
       Description:
         Fully qualifies a bare Snowflake tag name (e.g. "PII") using the database/schema of
@@ -897,13 +899,13 @@ macroString: |-
 
       Output:
         "DATABASE"."SCHEMA"."tagName"
-    ####################################################################################################################################}
-    {%- macro get_tag_full_name(bareTagName, locationName) -%}
+    ===========================================================================#}
+    {%- macro tag_full_name(bareTagName, locationName) -%}
         {{- ref_no_link(locationName | default(node.location.name, true), bareTagName) -}}
     {%- endmacro -%}
 
-    {####################################################################################################################################
-      Macro : find_duplicate_tag_names(tagList)
+    {#===========================================================================
+      Macro : tag_validate(tagList)
 
       Description:
         Finds tag names whose (name, location) match another entry in a set of
@@ -915,8 +917,8 @@ macroString: |-
 
       Output:
         "COST_CENTER, PII" (comma-separated duplicate names) or '' (empty string) when none.
-    ####################################################################################################################################}
-    {%- macro find_duplicate_tag_names(tagList) -%}
+    ===========================================================================#}
+    {%- macro tag_validate(tagList) -%}
         {%- set ns = namespace(entries=[], dupes=[]) -%}
         {%- for t in tagList | default([]) -%}
             {%- set entryKey = t.parameters[0] + '|' + (t.parameters[2] | default(node.location.name, true)) -%}
@@ -930,76 +932,153 @@ macroString: |-
         {{- ns.dupes | join(', ') -}}
     {%- endmacro -%}
 
-    {####################################################################################################################################
-      Macro : get_tags_sql(tagList)
+    {#===========================================================================
+      Macro : tag_with_clause(tagList)
 
       Description:
-        Generates the WITH TAG clause for a set of repeatable @tag(<tagName>, <tagValue>,
-        <location>) annotations — pass config.tag for the node/table-level tags, or col.tag
-        for a single column's tags.
+        CREATE / ADD COLUMN: generates the WITH TAG clause for a set of repeatable
+        @tag(<tagName>, <tagValue>, <location>) annotations — pass config.tag for the
+        node/table-level tags, or col.tag for a single column's tags.
 
       Output:
         WITH TAG (COST_CENTER = 'FINANCE', PII = 'true')
         or '' (empty string) when tagList has no @tag annotations.
-    ####################################################################################################################################}
-    {%- macro get_tags_sql(tagList) -%}
+    ===========================================================================#}
+    {%- macro tag_with_clause(tagList) -%}
         {%- set ns = namespace(items=[]) -%}
         {%- for t in tagList | default([]) -%}
-            {%- set ns.items = ns.items + [get_tag_full_name(t.parameters[0], t.parameters[2]) + " = '" + (t.parameters[1] | string | escape) + "'"] -%}
+            {%- set ns.items = ns.items + [tag_full_name(t.parameters[0], t.parameters[2]) + " = '" + (t.parameters[1] | string | escape) + "'"] -%}
         {%- endfor -%}
         {%- if ns.items | length > 0 -%}
             WITH TAG ({{ ns.items | join(', ') }})
         {%- endif -%}
     {%- endmacro -%}
 
-    {####################################################################################################################################
-      Macro : tag_diff_clause(desiredTags, currentTags, mode)
+    {#===========================================================================
+      Macro : tag_diff(desiredTagList, currentTagList, mode)
 
       Description:
-        Compares two lists of {name, value, location} tag dicts and returns the
-        comma-separated clause for the redeploy ALTER statement:
+        Redeploy: compares a desired and a current set of @tag(<tagName>, <tagValue>,
+        <location>) annotations (config.tag or col.tag from desiredState / currentState) and
+        returns the comma-separated list for the ALTER statement. Each tag is compared as
+        (name, value, location): the value is stringified so 5 and '5' are equal, and a
+        missing location falls back to that state's own node location.
           mode == 'set'   -> "tag_name = 'tag_value'" for tags that are new or whose
                               value/location changed (for SET TAG)
-          mode == 'unset' -> tags present on currentTags with no exact (name, value,
-                              location) match on desiredTags — covers both tags that were
-                              removed entirely and tags whose value/location changed, so a
-                              changed tag is always unset before being re-set with its new
-                              value (for UNSET TAG)
+          mode == 'unset' -> current tags with no exact (name, value, location) match in
+                              the desired set — covers tags removed entirely and tags whose
+                              value/location changed, so a changed tag is always unset before
+                              being re-set with its new value (for UNSET TAG)
 
       Output:
         "COST_CENTER = 'FINANCE', PII = 'true'" (mode='set')
         "OLD_TAG, ANOTHER_TAG" (mode='unset')
         or '' (empty string) when nothing needs to change.
-    ####################################################################################################################################}
-    {%- macro tag_diff_clause(desiredTags, currentTags, mode) -%}
-        {%- set ns = namespace(items=[]) -%}
+    ===========================================================================#}
+    {%- macro tag_diff(desiredTagList, currentTagList, mode) -%}
+        {%- set ns = namespace(desired=[], current=[], items=[]) -%}
+        {%- for t in desiredTagList | default([]) -%}
+            {%- set ns.desired = ns.desired + [{"name": t.parameters[0], "value": t.parameters[1] | string, "location": t.parameters[2] | default(node.location.name, true)}] -%}
+        {%- endfor -%}
+        {%- for t in currentTagList | default([]) -%}
+            {%- set ns.current = ns.current + [{"name": t.parameters[0], "value": t.parameters[1] | string, "location": t.parameters[2] | default(currentState.node.location.name, true)}] -%}
+        {%- endfor -%}
+
         {%- if mode == 'set' -%}
-            {%- for dt in desiredTags -%}
-                {%- set unchanged = currentTags
+            {%- for dt in ns.desired -%}
+                {%- set unchanged = ns.current
                                   | selectattr('name', 'equalto', dt.name)
                                   | selectattr('value', 'equalto', dt.value)
                                   | selectattr('location', 'equalto', dt.location)
                                   | list -%}
                 {%- if not unchanged -%}
-                    {%- set ns.items = ns.items + [get_tag_full_name(dt.name, dt.location) + " = '" + (dt.value | escape) + "'"] -%}
+                    {%- set ns.items = ns.items + [tag_full_name(dt.name, dt.location) + " = '" + (dt.value | escape) + "'"] -%}
                 {%- endif -%}
             {%- endfor -%}
         {%- else -%}
-            {%- for ct in currentTags -%}
-                {%- set exactMatch = desiredTags
+            {%- for ct in ns.current -%}
+                {%- set exactMatch = ns.desired
                                   | selectattr('name', 'equalto', ct.name)
                                   | selectattr('value', 'equalto', ct.value)
                                   | selectattr('location', 'equalto', ct.location)
                                   | list -%}
                 {%- if not exactMatch -%}
-                    {%- set ns.items = ns.items + [get_tag_full_name(ct.name, ct.location)] -%}
+                    {%- set ns.items = ns.items + [tag_full_name(ct.name, ct.location)] -%}
                 {%- endif -%}
             {%- endfor -%}
         {%- endif -%}
         {{- ns.items | join(', ') -}}
     {%- endmacro -%}
 
-    {###########################################################################################
+    {#===========================================================================
+      Macro : tag_alter_sql(nsNodeVariables)
+
+      Description:
+        Redeploy stages that bring an existing object's @tag annotations from currentState to
+        desiredState — column-level tags first (columns matched by id, then by name), then
+        node-level tags. A changed tag is unset before it is re-set. The ALTER keyword (VIEW or
+        TABLE) and the stage-name label come from desiredState. Sets
+        nsNodeVariables.metaDataChanged when any stage is emitted.
+
+      Output:
+        Zero or more "Unset tags ..." / "Set tags ..." stages with their ALTER statements.
+    ===========================================================================#}
+    {%- macro tag_alter_sql(nsNodeVariables) -%}
+        {%- set objectPath = nsNodeVariables.desObjectNameFullPath -%}
+        {%- set objectKind = 'VIEW' if node.materializationType == 'view' else 'TABLE' -%}
+        {#- Stage-name label, e.g. table "DB"."SCHEMA"."WRK_CUSTOMER" #}
+        {%- set label = node.materializationType + ' ' + objectPath -%}
+
+        {#- Column-level tags #}
+        {%- for curCol in currentState.columns -%}
+            {%- set matchingCols = columns | default([]) | selectattr('id', 'equalto', curCol.id) | list -%}
+            {%- if not matchingCols -%}
+                {%- set matchingCols = columns | default([]) | selectattr('name', 'equalto', curCol.name) | list -%}
+            {%- endif -%}
+
+            {%- if matchingCols -%}
+                {%- set desCol = matchingCols | first -%}
+                {%- set setColTagClause = tag_diff(desCol.tag, curCol.tag, 'set') -%}
+                {%- set unsetColTagClause = tag_diff(desCol.tag, curCol.tag, 'unset') -%}
+
+                {#- Unset before set #}
+                {%- if unsetColTagClause | trim | length > 0 %}
+                    {{ stage('Unset tags on column "' + desCol.name + '" of ' + label) }}
+                    ALTER {{ objectKind }} {{ objectPath }}
+                    MODIFY COLUMN "{{ desCol.name }}" UNSET TAG {{ unsetColTagClause }}
+                    {%- set nsNodeVariables.metaDataChanged = true -%}
+                {%- endif %}
+
+                {%- if setColTagClause | trim | length > 0 %}
+                    {{ stage('Set tags on column "' + desCol.name + '" of ' + label) }}
+                    ALTER {{ objectKind }} {{ objectPath }}
+                    MODIFY COLUMN "{{ desCol.name }}" SET TAG {{ setColTagClause }}
+                    {%- set nsNodeVariables.metaDataChanged = true -%}
+                {%- endif %}
+            {%- endif -%}
+        {%- endfor -%}
+
+        {#- Node-level tags #}
+        {%- set setTagClause = tag_diff(config.tag, currentState.config.tag, 'set') -%}
+        {%- set unsetTagClause = tag_diff(config.tag, currentState.config.tag, 'unset') -%}
+
+        {#- Unset before set #}
+        {%- if unsetTagClause | trim | length > 0 %}
+            {{ stage('Unset tags on ' + label) }}
+            ALTER {{ objectKind }} {{ objectPath }}
+            UNSET TAG {{ unsetTagClause }}
+            {%- set nsNodeVariables.metaDataChanged = true -%}
+        {%- endif %}
+
+        {%- if setTagClause | trim | length > 0 %}
+            {{ stage('Set tags on ' + label) }}
+            ALTER {{ objectKind }} {{ objectPath }}
+            SET TAG {{ setTagClause }}
+            {%- set nsNodeVariables.metaDataChanged = true -%}
+        {%- endif %}
+    {%- endmacro -%}
+
+    {#===========================================================================
     Purpose: Determines the correct Snowflake DROP object syntax based on the materialization type.
      
     Input: materialization (string): The Snowflake object type to be dropped
@@ -1007,7 +1086,7 @@ macroString: |-
      
     Returns: string: The appropriate DROP object keyword with IF EXISTS
       (e.g., 'table IF EXISTS', 'view IF EXISTS', 'materialized view IF EXISTS').
-    #############################################################################################}
+    ===========================================================================#}
     {% macro dropMaterialization(materialization) %}
         {%- if materialization | lower in ['table', 'transient table','temporary table', 'hybrid table'] -%}
             TABLE IF EXISTS
