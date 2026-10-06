@@ -11,7 +11,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 {# == To run data quality tests before data insertion == #}
 {{ run_tests('Before') }}
 
-{%- if node.materializationType == 'table' %}
+{%- if node.materializationType in ['table', 'transient table'] %}
 
     {#== Pre-SQL ==#}
     {%- set ns = namespace(cnt=0) %}

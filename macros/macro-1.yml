@@ -1,19 +1,70 @@
 fileVersion: 1
 id: "1"
 macroString: |-
-  {# ========================================================================
-  Purpose          : Executes data quality tests associated with the node
+    {#-- The below block of code initialises variables in case of node typess using advance deployment strategy #}
+    {#=========================================================
+      Initialize variables for node types that use the 
+      advanced deployment strategy
+    =========================================================== #}
+    {%- if desiredState -%}
+        {%- set columns = desiredState.columns -%}
+        {%- set storageLocations = desiredState.storageLocations -%}
+        {%- set config = desiredState.config -%}
+        {%- set sources = desiredState.sources -%}
+        {%- set node = desiredState.node -%}
+        {%- set parameters = desiredState.parameters -%}
+    {%- endif -%}
+
+    {#=========================================================
+      Initialize variables for node types that use the 
+      advanced deployment strategy
+    ===========================================================#}
+    {%- macro initializeNodeVariables(nsNodeVariables) -%}
+
+      {%- if currentState is defined -%}
+        {%- set currentDatabase = currentState.storageLocations 
+                                  | selectattr('name', 'equalto', currentState.node.location.name)
+                                  | map(attribute='database')
+                                  | first -%}
+        {%- set currentSchema = currentState.storageLocations
+                                | selectattr('name', 'equalto', currentState.node.location.name)
+                                | map(attribute='schema')
+                                | first -%}
+        {%- set nsNodeVariables.currentDatabaseSchema = currentDatabase + '.' + currentSchema -%}
+
+        {%- set nsNodeVariables.curObjectNameFullPath = ref_no_link(currentState.node.location.name, currentState.node.name) -%}
+
+      {%- endif -%}
+
+      {%- if desiredState is defined -%}
+        {%- set desiredDatabase = desiredState.storageLocations
+                                  | selectattr('name', 'equalto', desiredState.node.location.name)
+                                  | map(attribute='database')
+                                  | first -%}
+        {%- set desiredSchema = desiredState.storageLocations
+                                  | selectattr('name', 'equalto', desiredState.node.location.name)
+                                  | map(attribute='schema')
+                                  | first -%}
+        {%- set nsNodeVariables.desiredDatabaseSchema = desiredDatabase + '.' + desiredSchema -%}
+
+        {%- set nsNodeVariables.desObjectNameFullPath = ref_no_link(desiredState.node.location.name, desiredState.node.name) -%}
+
+      {%- endif -%}
+
+    {%- endmacro -%}
+    {# ========================================================================
+    Purpose          : Executes data quality tests associated with the node
                       and its columns, based on the configured run order.
                       Supports running tests either before or after data
                       insertion, and respects the test continuation
                       behavior on failure.
-  Input Parameters : runOrder (String)
+    Input Parameters : runOrder (String)
                       - Determines when the tests should be executed.
                           Expected values: 'Before' or 'After'
-  Returns          : Rendered SQL statements for executing the applicable
+    Returns          : Rendered SQL statements for executing the applicable
                       node-level and column-level data quality tests.
                       No output is generated if tests are disabled.
-  ========================================================================= #}
+    ========================================================================= #}
     {%- macro run_tests(runOrder) -%}
 
         {%- set columnContinueOnFailure = true -%}
@@ -125,16 +176,16 @@ macroString: |-
         {%- endif -%}
     {%- endmacro -%}
 
-  {#===================================================================================================
-  Description:
-  Generates a deterministic hash value by combining and hashing all column values associated with the given `hash_name` using the `@inHash` annotation.
+    {#===================================================================================================
+    Description:
+    Generates a deterministic hash value by combining and hashing all column values associated with the given `hash_name` using the `@inHash` annotation.
 
-  Input: `hash_name` (string) - The hash group identifier used in `@inHash("<hash_name>")` to group columns for hashing.
+    Input: `hash_name` (string) - The hash group identifier used in `@inHash("<hash_name>")` to group columns for hashing.
 
-  Output: - Returns a SQL expression of type `STRING`:
+    Output: - Returns a SQL expression of type `STRING`:
           - A SHA1 hash of concatenated column values  
           - Returns `NULL` if no columns are mapped to the given hash group
-  ====================================================================================================#}
+    ====================================================================================================#}
     {%- macro get_hash(hash_name, algo='SHA1', delimiter='||') -%}
 
         {%- set cols = namespace(items=[]) -%}
@@ -184,7 +235,7 @@ macroString: |-
         {%- endif -%}
     {%- endmacro -%}
 
-  {#===================================================================================================
+    {#===================================================================================================
     get_boolean_config(flag)
 
     Description:
@@ -218,7 +269,7 @@ macroString: |-
       {% if get_boolean_config("truncateBefore") | trim | lower == "true" %}
         ...
       {% endif %}
-  ====================================================================================================#}
+    ====================================================================================================#}
     {%- macro get_boolean_config(flag) -%}
         {%- if config[flag] is defined -%}
             {%- if config[flag] is boolean -%}
@@ -229,11 +280,11 @@ macroString: |-
         {%- endif -%}
     {%- endmacro -%}
 
-  {#===========================================================================
+    {#===========================================================================
     Description: Resolves the zero-key literal for a column (column-level @zeroKey wins, else node-level @zeroKey by dataType, else NULL).
     Input: col (object)
     Output: SQL literal for the resolved zero-key value.
-  ===========================================================================#}
+    ===========================================================================#}
     {%- macro resolve_zero_key(col) -%}
 
         {%- set ns = namespace(zk_type=none, zk_value=none) -%}
@@ -770,5 +821,213 @@ macroString: |-
             {%- endif -%}
         {%- endif -%}
     {%- endmacro -%}
+
+    {#-- The below block of code initializes metadata changes variables for the display #}
+    {#-- ===============================================================================#}
+    {%- macro update_metadata(tag, diff, label) -%}
+        {%- set nsMetaVariables.metadataUpdate = nsMetaVariables.metadataUpdate + '-' + tag -%}
+
+        {# Handle metaDataChanges #}
+        {%- if nsMetaVariables.metaDataChanges -%}
+            {%- set nsMetaVariables.metaDataChanges = nsMetaVariables.metaDataChanges ~ "\n\n" ~ label ~ " Changes:\n" ~ diff -%}
+        {%- else -%}
+            {%- set nsMetaVariables.metaDataChanges = label ~ " Changes:\n" ~ diff -%}
+        {%- endif -%}
+
+    {%- endmacro -%}
+
+    {####################################################################################################################################
+      Macro : get_clusterby_sql
+
+      Description:
+        Generates the CLUSTER BY clause for the node's cluster configuration, from the repeatable
+        @clusterKey(<position>, "<expression>") column annotation. Each occurrence contributes one
+        term, ordered by <position> (lowest first) — omit the expression to cluster by the column
+        itself, or give a transform expression (e.g. trunc(N_NAME, -5)) to cluster by that instead.
+
+      Inputs:
+        - col.clusterKey : list of annotation entries per column, each { parameters: [<position>, <expression>] }
+
+      Output:
+        - If at least one term is present:
+            CLUSTER BY (N_REGIONKEY, trunc(N_NAME, -5))
+        - If no valid terms are found:
+            '' (empty string)
+    ####################################################################################################################################}
+      {%- macro get_clusterby_sql() -%}
+
+          {%- set cols = namespace(items=[]) -%}
+          {# Collect columns participating in this clustreBy #}
+          {%- for col in desiredState.columns -%}
+              {%- if col.clusterKey is defined -%}
+                  {%- for cluster in col.clusterKey -%}
+                      {%- set cols.items = cols.items + [{
+                              "position":  cluster.parameters[0] | int,
+                              "column": cluster.parameters[1] | default('"' + col.name + '"', true)
+                          }] -%}
+                  {%- endfor -%}
+              {%- endif -%}
+          {%- endfor -%}
+
+          {%- if cols.items | length > 0 -%}
+              CLUSTER BY (
+                  {{- cols.items
+                      | sort(attribute='position')
+                      | map(attribute='column')
+                      | join(', ')
+                  -}}
+              )
+          {%- endif -%}
+
+      {%- endmacro -%}
+
+
+    {####################################################################################################################################
+      Macro : get_tag_full_name(bareTagName, locationName)
+
+      Description:
+        Fully qualifies a bare Snowflake tag name (e.g. "PII") using the database/schema of
+        the given storage location, so @tag annotations only need the tag's own name —
+        Snowflake requires a fully-qualified tag reference whenever the current session
+        database differs from the tag's database. Quoted (via ref_no_link()), so the tag
+        name/value must be typed in the exact case the tag was created with in Snowflake.
+        Uses ref_no_link() rather than ref() so a tag reference doesn't register a lineage
+        dependency edge. locationName defaults to this node's own location — never a
+        hardcoded alias — since a location's name can differ across environments.
+
+      Output:
+        "DATABASE"."SCHEMA"."tagName"
+    ####################################################################################################################################}
+    {%- macro get_tag_full_name(bareTagName, locationName) -%}
+        {{- ref_no_link(locationName | default(node.location.name, true), bareTagName) -}}
+    {%- endmacro -%}
+
+    {####################################################################################################################################
+      Macro : find_duplicate_tag_names(tagList)
+
+      Description:
+        Finds tag names whose (name, location) match another entry in a set of
+        @tag(<tagName>, <tagValue>, <location>) annotations — pass config.tag for node-level
+        tags, or col.tag for a single column's tags. A given database.schema.tagname is one
+        entity regardless of value (Snowflake itself rejects two different values for the
+        same tag on one column), so any repeat of the same name+location is a duplicate,
+        even with different values. Same name with a different location is allowed.
+
+      Output:
+        "COST_CENTER, PII" (comma-separated duplicate names) or '' (empty string) when none.
+    ####################################################################################################################################}
+    {%- macro find_duplicate_tag_names(tagList) -%}
+        {%- set ns = namespace(entries=[], dupes=[]) -%}
+        {%- for t in tagList | default([]) -%}
+            {%- set entryKey = t.parameters[0] + '|' + (t.parameters[2] | default(node.location.name, true)) -%}
+            {%- set ns.entries = ns.entries + [{"key": entryKey, "name": t.parameters[0]}] -%}
+        {%- endfor -%}
+        {%- for e in ns.entries -%}
+            {%- if (ns.entries | selectattr('key', 'equalto', e.key) | list | length) > 1 and e.name not in ns.dupes -%}
+                {%- set ns.dupes = ns.dupes + [e.name] -%}
+            {%- endif -%}
+        {%- endfor -%}
+        {{- ns.dupes | join(', ') -}}
+    {%- endmacro -%}
+
+    {####################################################################################################################################
+      Macro : get_tags_sql(tagList)
+
+      Description:
+        Generates the WITH TAG clause for a set of repeatable @tag(<tagName>, <tagValue>,
+        <location>) annotations — pass config.tag for the node/table-level tags, or col.tag
+        for a single column's tags.
+
+      Output:
+        WITH TAG (COST_CENTER = 'FINANCE', PII = 'true')
+        or '' (empty string) when tagList has no @tag annotations.
+    ####################################################################################################################################}
+    {%- macro get_tags_sql(tagList) -%}
+        {%- set ns = namespace(items=[]) -%}
+        {%- for t in tagList | default([]) -%}
+            {%- set ns.items = ns.items + [get_tag_full_name(t.parameters[0], t.parameters[2]) + " = '" + (t.parameters[1] | string | escape) + "'"] -%}
+        {%- endfor -%}
+        {%- if ns.items | length > 0 -%}
+            WITH TAG ({{ ns.items | join(', ') }})
+        {%- endif -%}
+    {%- endmacro -%}
+
+    {####################################################################################################################################
+      Macro : tag_diff_clause(desiredTags, currentTags, mode)
+
+      Description:
+        Compares two lists of {name, value, location} tag dicts and returns the
+        comma-separated clause for the redeploy ALTER statement:
+          mode == 'set'   -> "tag_name = 'tag_value'" for tags that are new or whose
+                              value/location changed (for SET TAG)
+          mode == 'unset' -> tags present on currentTags with no exact (name, value,
+                              location) match on desiredTags — covers both tags that were
+                              removed entirely and tags whose value/location changed, so a
+                              changed tag is always unset before being re-set with its new
+                              value (for UNSET TAG)
+
+      Output:
+        "COST_CENTER = 'FINANCE', PII = 'true'" (mode='set')
+        "OLD_TAG, ANOTHER_TAG" (mode='unset')
+        or '' (empty string) when nothing needs to change.
+    ####################################################################################################################################}
+    {%- macro tag_diff_clause(desiredTags, currentTags, mode) -%}
+        {%- set ns = namespace(items=[]) -%}
+        {%- if mode == 'set' -%}
+            {%- for dt in desiredTags -%}
+                {%- set unchanged = currentTags
+                                  | selectattr('name', 'equalto', dt.name)
+                                  | selectattr('value', 'equalto', dt.value)
+                                  | selectattr('location', 'equalto', dt.location)
+                                  | list -%}
+                {%- if not unchanged -%}
+                    {%- set ns.items = ns.items + [get_tag_full_name(dt.name, dt.location) + " = '" + (dt.value | escape) + "'"] -%}
+                {%- endif -%}
+            {%- endfor -%}
+        {%- else -%}
+            {%- for ct in currentTags -%}
+                {%- set exactMatch = desiredTags
+                                  | selectattr('name', 'equalto', ct.name)
+                                  | selectattr('value', 'equalto', ct.value)
+                                  | selectattr('location', 'equalto', ct.location)
+                                  | list -%}
+                {%- if not exactMatch -%}
+                    {%- set ns.items = ns.items + [get_tag_full_name(ct.name, ct.location)] -%}
+                {%- endif -%}
+            {%- endfor -%}
+        {%- endif -%}
+        {{- ns.items | join(', ') -}}
+    {%- endmacro -%}
+
+    {###########################################################################################
+    Purpose: Determines the correct Snowflake DROP object syntax based on the materialization type.
+     
+    Input: materialization (string): The Snowflake object type to be dropped
+      (e.g., table, view, materialized view, dynamic table, external table).
+     
+    Returns: string: The appropriate DROP object keyword with IF EXISTS
+      (e.g., 'table IF EXISTS', 'view IF EXISTS', 'materialized view IF EXISTS').
+    #############################################################################################}
+    {% macro dropMaterialization(materialization) %}
+        {%- if materialization | lower in ['table', 'transient table','temporary table', 'hybrid table'] -%}
+            TABLE IF EXISTS
+        {%- elif materialization | lower in ['view', 'secure view', 'run view', 'cortex search service'] -%}
+            VIEW IF EXISTS
+        {%- elif materialization | lower in ['dynamic table','transient dynamic table', 'dynamic iceberg table'] -%}
+            DYNAMIC TABLE IF EXISTS
+        {%- elif materialization | lower == 'materialized view' -%}
+            MATERIALIZED VIEW IF EXISTS
+        {%- elif materialization | lower == 'external table' -%}
+            EXTERNAL TABLE IF EXISTS
+        {%- elif materialization | lower == 'iceberg table' -%}
+            ICEBERG TABLE IF EXISTS
+        {%- elif materialization | lower == 'interactive table' -%}
+            INTERACTIVE TABLE IF EXISTS
+        {%- elif materialization | lower == 'stream' -%}
+            STREAM IF EXISTS
+        {%- else -%}
+            TABLE IF EXISTS
+        {%- endif %}
+    {% endmacro %}
 name: macro
 type: Macro

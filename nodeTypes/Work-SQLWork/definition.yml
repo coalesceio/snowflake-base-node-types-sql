@@ -10,10 +10,47 @@ metadata:
     plural: Works
     tagColor: '#2EB67D'
 
+    deployStrategy: advanced
     enableCTESupport: true
 
     annotations:
         node:
+
+        - name: materializationType
+          description: |-
+            • Controls node's materialization type — supports 𝘁𝗮𝗯𝗹𝗲, 𝘃𝗶𝗲𝘄, and 𝘁𝗿𝗮𝗻𝘀𝗶𝗲𝗻𝘁 𝘁𝗮𝗯𝗹𝗲.
+          isRequired: false
+          parameters:
+            - name: type
+              type: string
+              isRequired: true
+              default: table
+              example: transient table
+              options:
+                - table
+                - transient table
+                - view
+
+        - name: tag
+          description: |-
+            • Applies a Snowflake tag to this table/view.
+            • Repeat the annotation to apply multiple tags.
+          allowsMultiple: true
+          parameters:
+            - name: name
+              type: string
+              description: Name of the tag (must already exist in Snowflake).
+              isRequired: true
+
+            - name: value
+              type: string
+              description: Value to assign to the tag.
+              isRequired: true
+
+            - name: storageLocation
+              type: string
+              description: Storage location the tag lives in. Defaults to this node's own location.
+              isRequired: false
 
         - name: writeMode
           description: |-
@@ -44,7 +81,7 @@ metadata:
           description: |-
             • 🚦Node-level data quality test.
             • Runs the given 𝗾𝘂𝗲𝗿𝘆𝗦𝗤𝗟 against the target and fails the test if it returns any records — write the query so it selects only the rows that violate your condition.
-            Skipped entirely when 𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗧𝗲𝘀𝘁𝘀 is set.
+            • Skipped entirely when 𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗧𝗲𝘀𝘁𝘀 is set.
           allowsMultiple: true
           parameters:
             - name: querySQL
@@ -95,6 +132,46 @@ metadata:
             example: 'SELECT 1'
 
         column:
+
+        - name: tag
+          description: |-
+            • Applies a Snowflake tag to this column.
+            • Repeat the annotation to apply multiple tags.
+          allowsMultiple: true
+          parameters:
+            - name: name
+              type: string
+              description: Name of the tag (must already exist in Snowflake).
+              isRequired: true
+
+            - name: value
+              type: string
+              description: Value to assign to the tag.
+              isRequired: true
+
+            - name: storageLocation
+              type: string
+              description: Storage location the tag lives in. Defaults to this node's own location.
+              isRequired: false
+
+        - name: clusterKey
+          description: |-
+            • Marks this column as a term in the table's CLUSTER BY key, at the given position
+            (lowest first).
+            • Pass just the position to cluster by the plain column itself, or add an expression to cluster by that instead.
+              Ex. clusterKey(1)
+              Ex. clusterKey(2, "trunc(<col_name>, -5)")
+            • Ignored on views.
+          allowsMultiple: true
+          parameters:
+            - name: position
+              type: number
+              isRequired: true
+              example: 1
+            - name: expression
+              type: string
+              isRequired: false
+              example: trunc(<col_name>, -5)
 
         - name: inHash
           description: |-
