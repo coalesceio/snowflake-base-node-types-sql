@@ -1,9 +1,0 @@
-@id("2898236a-4ba8-4dd1-9632-496f4ff16696")
-@nodeType("SQLWork")
-SELECT
-     "N_NATIONKEY" AS "N_NATIONKEY",
-     "N_NAME" AS "N_NAME" ,
-     "N_REGIONKEY" AS "N_REGIONKEY" ,
-     "N_COMMENT" AS "N_COMMENT",
-     "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" @min_value("'2026-01-01'")
-FROM {{ ref('SRC', 'NATION_TEST') }} "NATION_TEST"
