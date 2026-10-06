@@ -1030,26 +1030,30 @@ macroString: |-
       Description:
         Validates the node's @tag annotations: the same tag name + location repeated on the
         node, or on any one column, is not allowed (see tag_duplicates). Each offending
-        node/column gets a failing test stage that stops the deploy (continue_on_failure
-        false), naming the duplicated tags. Call it at the start of the create template,
-        before any DDL.
+        node/column gets a test stage that stops the deploy before any DDL, naming the
+        duplicated tags in a SQL comment. CREATE doesn't fail a test stage on its row count
+        like RUN does, so the stage raises a real SQL error (SELECT 1/0), the same hard
+        fail validate_dimension_requirements(true) uses; continue_on_failure false then
+        stops the node. Call it at the start of the create template, before any DDL.
 
       Output:
-        Zero or more "Duplicate Tags Found: <node or column>" test stages, each with a
-        SELECT returning the error message, or '' (empty string) when all tags are valid.
+        Zero or more "Duplicate Tags Found: <node or column>" test stages, each failing
+        with SELECT 1/0, or '' (empty string) when all tags are valid.
     ===========================================================================#}
     {%- macro tag_check_duplicates() -%}
         {%- set nodeDupeTags = tag_duplicates(config.tag) -%}
         {%- if nodeDupeTags | trim | length > 0 %}
             {{ test_stage('Duplicate Tags Found: ' + node.name, false) }}
-            SELECT '{{ nodeDupeTags | escape }} is applied multiple times on {{ node.name | escape }}' AS "ERROR_MESSAGE"
+            -- {{ nodeDupeTags }} is applied multiple times on {{ node.name }}
+            SELECT 1/0
         {%- endif %}
 
         {%- for col in columns -%}
             {%- set colDupeTags = tag_duplicates(col.tag) -%}
             {%- if colDupeTags | trim | length > 0 %}
                 {{ test_stage('Duplicate Tags Found: ' + col.name, false) }}
-                SELECT '{{ colDupeTags | escape }} is applied multiple times on {{ col.name | escape }}' AS "ERROR_MESSAGE"
+                -- {{ colDupeTags }} is applied multiple times on {{ col.name }}
+                SELECT 1/0
             {%- endif %}
         {%- endfor -%}
     {%- endmacro -%}
