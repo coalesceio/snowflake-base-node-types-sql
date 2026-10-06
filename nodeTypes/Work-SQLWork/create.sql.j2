@@ -18,7 +18,6 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 {#- Stage-name labels: "<materialization> <full path>", e.g. view "DB"."SCHEMA"."WRK_CUSTOMER".
     Every stage is named "<Action> <label>" plus a ": <what changed>" / "(<reason>)" suffix where useful. #}
 {%- set desLabel = desiredMatType + ' ' + nsNodeVariables.desObjectNameFullPath if desiredState is defined else '' %}
-{%- set curLabel = currentMatType + ' ' + nsNodeVariables.curObjectNameFullPath if currentState is defined else '' %}
 
 {%- if desiredState %}
 
@@ -27,19 +26,8 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
     {%- if desiredMatType == 'view' %}
 
-        {%- if currentState is defined and (
-                (currentMatType != desiredMatType)
-                or (nsNodeVariables.curObjectNameFullPath != nsNodeVariables.desObjectNameFullPath)
-            )
-        %}
-            {%- if currentMatType != desiredMatType %}
-                {{ stage('Drop ' + curLabel + ' (replaced by ' + desiredMatType + ')') }}
-            {%- else %}
-                {{ stage('Drop ' + curLabel + ' (renamed/moved to ' + nsNodeVariables.desObjectNameFullPath + ')') }}
-            {%- endif %}
-            {%- set materialization = dropMaterialization(currentMatType) %}
-            DROP {{ materialization }} {{ nsNodeVariables.curObjectNameFullPath }}
-        {%- endif %}
+        {# Drop the current object if it was another type, or the view was renamed/moved #}
+        {{ object_drop_sql() }}
 
         {# Did anything other than tags change? Render the view definition for both states
            without tags and compare: equal output means only tags (or nothing in the DDL) changed #}
@@ -74,11 +62,8 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
     {%- elif desiredMatType in ['table', 'transient table']  %}
 
-        {%- if currentState is defined and currentMatType != desiredMatType %}
-            {{ stage('Drop ' + curLabel + ' (replaced by ' + desiredMatType + ')') }}
-            {%- set materialization = dropMaterialization(currentMatType) %}
-            DROP {{ materialization }} {{ nsNodeVariables.curObjectNameFullPath }}
-        {%- endif %}
+        {# Drop the current object if it was another type (a table rename/move is altered in place) #}
+        {{ object_drop_sql() }}
 
         {%- if currentState is not defined or currentMatType != desiredMatType %}
 
@@ -138,8 +123,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     {%- endif %}
 {%- elif currentState is defined and desiredState is not defined %}
 
-    {{ stage('Drop ' + curLabel + ' (node deleted)') }}
-    {%- set materialization = dropMaterialization(currentMatType) %}
-    DROP {{ materialization }} {{ nsNodeVariables.curObjectNameFullPath }}
+    {# Node deleted: drop the current object #}
+    {{ object_drop_sql() }}
 
 {%- endif %}

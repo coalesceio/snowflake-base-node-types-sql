@@ -1215,6 +1215,44 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
+      Macro : object_drop_sql()
+
+      Description:
+        Drops the current object when it can't be altered into the desired one:
+          - the node was deleted (no desiredState)          -> "(node deleted)"
+          - the materialization changed, e.g. view -> table -> "(replaced by <type>)"
+          - a view was renamed or moved                     -> "(renamed/moved to <path>)"
+        A table that is only renamed or moved is not dropped — alter_rename_sql() renames
+        it in place, keeping its data. The DROP keyword comes from dropMaterialization().
+        Call it before the create (or as the whole delete path). Sets
+        nsNodeVariables.metaDataChanged when the stage is emitted.
+
+      Output:
+        "Drop <type> <current path> (<reason>)" stage with its DROP ... IF EXISTS, or ''
+        (empty string) when the current object can stay.
+    ===========================================================================#}
+    {%- macro object_drop_sql() -%}
+        {%- if currentState is defined and currentState -%}
+            {%- set currentMatType = currentState.node.materializationType -%}
+            {%- set reason = '' -%}
+            {%- if desiredState is not defined or not desiredState -%}
+                {%- set reason = 'node deleted' -%}
+            {%- elif currentMatType != node.materializationType -%}
+                {%- set reason = 'replaced by ' + node.materializationType -%}
+            {%- elif node.materializationType == 'view'
+                    and nsNodeVariables.curObjectNameFullPath != nsNodeVariables.desObjectNameFullPath -%}
+                {%- set reason = 'renamed/moved to ' + nsNodeVariables.desObjectNameFullPath -%}
+            {%- endif -%}
+
+            {%- if reason | length > 0 %}
+                {{ stage('Drop ' + currentMatType + ' ' + nsNodeVariables.curObjectNameFullPath + ' (' + reason + ')') }}
+                DROP {{ dropMaterialization(currentMatType) }} {{ nsNodeVariables.curObjectNameFullPath }}
+                {%- set nsNodeVariables.metaDataChanged = true -%}
+            {%- endif %}
+        {%- endif -%}
+    {%- endmacro -%}
+
+    {#===========================================================================
       Macro : alter_rename_sql()
 
       Description:
