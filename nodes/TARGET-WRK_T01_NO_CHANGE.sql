@@ -2,7 +2,7 @@
 @nodeType("SQLWork")
 @materializationType("table")
 @description("T01: deployed once, no change in phase 2")
-@tag("COST_CENTER", "FIN")
+@tag("Cost_Centre", "FIN")
 SELECT
      "NAtionKey"  AS "NATION_KEY"     @id("t01-c1") @clusterKey(1),
      "name"       AS "NATION_NAME"    @id("t01-c2") @description("Nation name") @tag("PII", "true") @clusterKey(2, "substr(""NATION_NAME"", 1, 3)"),

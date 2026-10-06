@@ -2,7 +2,7 @@
 @nodeType("SQLWork")
 @materializationType("view")
 @description("V01: deployed once, no change in phase 2")
-@tag("COST_CENTER", "FIN")
+@tag("Cost_Centre", "FIN")
 SELECT
      "NAtionKey"  AS "NATION_KEY"     @id("v01-c1"),
      "name"       AS "NATION_NAME"    @id("v01-c2") @description("Nation name") @tag("PII", "true"),
