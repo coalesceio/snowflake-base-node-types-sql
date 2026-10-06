@@ -3,6 +3,6 @@
 @materializationType("table")
 SELECT
      "NAtionKey"  AS "NATION_KEY"     @id("t17-c1"),
-     "name"       AS "NATION_NAME"    @id("t17-c2") @clusterKey(1),
+     "name"       AS "NATION_NAME"    @id("t17-c2") @clusterKey(1, "substr(""NATION_NAME"", 1, 2)"),
      "REGIONKEY"  AS "REGION_KEY"     @id("t17-c3")
 FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"

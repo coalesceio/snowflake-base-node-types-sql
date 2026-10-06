@@ -2,7 +2,7 @@
 @nodeType("SQLWork")
 SELECT
      "NAtionKey" AS "NAtionKey",
-     "name" AS "name1" @clusterKey(1, "trunc(""name1"", -5)"),
+     "name" AS "name1" @clusterKey(1, "substr(""name1"", 1, 3)"),
      "REGIONKEY" AS "REGIONKEY",
      "CommenT" AS "CommenT",
      "N_Load_Timestamp" AS "N_Load_Timestamp"
