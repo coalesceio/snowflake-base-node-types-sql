@@ -285,6 +285,26 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
+      validate_clustered_column_drop(): failing "Clustered Column Dropped" check when a table
+      redeploy drops a column that carries @clusterKey (Snowflake 003320). The fix is two
+      deploys: remove its @clusterKey first, then the column. Call before any DDL.
+    ===========================================================================#}
+    {%- macro validate_clustered_column_drop() -%}
+        {%- set clusteredDropped = nsNodeVariables.currentClusterKeyColumns
+                                   | select('in', nsNodeVariables.droppedColumns)
+                                   | map('replace', '"', '') | list -%}
+        {%- if clusteredDropped | length > 0
+                and nsNodeVariables.currentMatType == nsNodeVariables.desiredMatType
+                and nsNodeVariables.desiredMatType != 'view' %}
+            {%- set colList = clusteredDropped | join(', ') %}
+            {{ test_stage('Clustered Column Dropped: ' + node.name, false) }}
+            -- {{ colList }} {{ 'is' if clusteredDropped | length == 1 else 'are' }} part of the cluster key and cannot be dropped while {{ 'it is' if clusteredDropped | length == 1 else 'they are' }}.
+            -- To drop: remove @clusterKey from {{ colList }} and deploy, then remove the {{ 'column' if clusteredDropped | length == 1 else 'columns' }} and deploy again.
+            {{ fail_sql() }}
+        {%- endif %}
+    {%- endmacro -%}
+
+    {#===========================================================================
       validate_column_ids(hardFail): every column needs its own @id; reports duplicate
       names and repeated ids. Used by the Dimension and Fact validators.
     ===========================================================================#}
@@ -852,21 +872,18 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      alter_drop_cluster_key_sql(): "Drop Cluster Key" before a clustered column is dropped
-      or renamed (Snowflake 003320). Call first; alter_cluster_key_sql() re-applies it.
+      alter_drop_cluster_key_sql(): "Drop Cluster Key" before a clustered column is renamed
+      (Snowflake 003320). Call first; alter_cluster_key_sql() re-applies it. Dropping a
+      clustered column never gets here: validate_clustered_column_drop() stops it.
     ===========================================================================#}
     {%- macro alter_drop_cluster_key_sql() -%}
-        {%- set ns = namespace(clusteredDroppedOrRenamed=false) -%}
-        {%- for colName in nsNodeVariables.currentClusterKeyColumns -%}
-            {%- if colName in nsNodeVariables.droppedColumns or colName in nsNodeVariables.renamedColumns -%}
-                {%- set ns.clusteredDroppedOrRenamed = true -%}
-            {%- endif -%}
-        {%- endfor -%}
+        {%- set clusteredRenamed = nsNodeVariables.currentClusterKeyColumns
+                                   | select('in', nsNodeVariables.renamedColumns) | list | length > 0 -%}
         {#- Whitespace-insensitive, so trunc(a,-5) vs trunc(a, -5) is not a change #}
         {%- set keyChanged = (nsNodeVariables.desiredClusterKey | map('replace', ' ', '') | list)
                           != (nsNodeVariables.currentClusterKey | map('replace', ' ', '') | list) -%}
 
-        {%- if ns.clusteredDroppedOrRenamed
+        {%- if clusteredRenamed
                 or (keyChanged and nsNodeVariables.droppedColumns | length > 0 and nsNodeVariables.currentClusterKey | length > 0) %}
             {{ stage('Drop Cluster Key') }}
             ALTER TABLE {{ nsNodeVariables.alterObjectNameFullPath }}

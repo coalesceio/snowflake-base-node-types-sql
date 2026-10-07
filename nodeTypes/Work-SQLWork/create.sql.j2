@@ -23,6 +23,9 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     {# Validate: the same name+location tag repeated on the same column/node is not allowed #}
     {{ tag_check_duplicates() }}
 
+    {# Validate: a column in the cluster key can't be dropped (remove its @clusterKey first) #}
+    {{ validate_clustered_column_drop() }}
+
     {%- if desiredMatType == 'view' %}
 
         {# Drop the current object if it was another type, or the view was renamed/moved #}

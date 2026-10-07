@@ -165,8 +165,10 @@ metadata:
             • Pass just the position to cluster by the plain column itself, or add an expression to cluster by that instead.
               Ex. clusterKey(1)
               Ex. clusterKey(2, "trunc(<col_name>, -5)")
-            • Renaming or dropping a clustered column is supported: the key is dropped first and
-              re-applied after the change (Snowflake does not allow it while the key is in place).
+            • Renaming a clustered column is supported: the key is dropped first and re-applied
+              with the new name (needs a stable @id, otherwise it is a drop + add).
+            • Dropping a clustered column is stopped before any change, as in Snowflake: remove
+              its @clusterKey and deploy first, then remove the column and deploy again.
             • Ignored on views.
           allowsMultiple: true
           parameters:
