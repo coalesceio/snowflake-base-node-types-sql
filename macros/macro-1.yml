@@ -1312,7 +1312,7 @@ macroString: |-
         Sets nsNodeVariables.metaDataChanged when any stage is emitted.
 
       Output:
-        Zero or more "Unset Tags: <column>" / "Set Tags: <column>" / "Unset <View|Table> Tags" /
+        Zero or more "Unset Column Tags: <column>" / "Set Column Tags: <column>" / "Unset <View|Table> Tags" /
         "Set <View|Table> Tags" stages with their ALTER statements.
     ===========================================================================#}
     {%- macro alter_tag_sql() -%}
@@ -1333,14 +1333,14 @@ macroString: |-
 
                 {#- Unset before set #}
                 {%- if unsetColTagClause | trim | length > 0 %}
-                    {{ stage('Unset Tags: ' + desCol.name) }}
+                    {{ stage('Unset Column Tags: ' + desCol.name) }}
                     ALTER {{ objectKind }} {{ objectPath }}
                     MODIFY COLUMN "{{ desCol.name }}" UNSET TAG {{ unsetColTagClause }}
                     {%- set nsNodeVariables.metaDataChanged = true -%}
                 {%- endif %}
 
                 {%- if setColTagClause | trim | length > 0 %}
-                    {{ stage('Set Tags: ' + desCol.name) }}
+                    {{ stage('Set Column Tags: ' + desCol.name) }}
                     ALTER {{ objectKind }} {{ objectPath }}
                     MODIFY COLUMN "{{ desCol.name }}" SET TAG {{ setColTagClause }}
                     {%- set nsNodeVariables.metaDataChanged = true -%}

@@ -2,8 +2,10 @@
 @nodeType("SQLWork")
 @materializationType("view")
 @tag("Cost_Centre", "HR")
+@tag("OWNER", "Tanvi")
+@tag("PII", "true")
 SELECT
      "NAtionKey"  AS "NATION_KEY"     @id("v03-c1"),
-     "name"       AS "NATION_NAME"    @id("v03-c2") @tag("PII", "false"),
+     "name"       AS "NATION_NAME"    @id("v03-c2") @tag("PII", "false") @tag("OWNER", "Tanvi") @tag("Cost_Centre", "FIN"),
      "REGIONKEY"  AS "REGION_KEY"     @id("v03-c3")
 FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
