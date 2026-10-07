@@ -1,6 +1,6 @@
 @id("d5a70000-0000-4000-8000-000000000012")
 @nodeType("SQLWork")
-@materializationType("Table ")
+@materializationType(" Table ")
 @description("T01: deployed once, no change in phase 2")
 @tag("Cost_Centre", "FIN")
 SELECT
