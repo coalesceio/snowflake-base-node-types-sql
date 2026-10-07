@@ -10,12 +10,15 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
 {#- nsNodeVariables (object paths, metaDataChanged) is created and initialized in the shared macros #}
 
-{#- Resolves the desired/current materialization type, including "transient table".
+{#- Desired/current materialization type, normalized ("Table " = "table"), including "transient table".
     Empty string when the state is absent (first deploy has no currentState; delete has no desiredState). #}
-{%- set desiredMatType = desiredState.node.materializationType if desiredState is defined else '' %}
-{%- set currentMatType = currentState.node.materializationType if currentState is defined else '' %}
+{%- set desiredMatType = nsNodeVariables.desiredMatType %}
+{%- set currentMatType = nsNodeVariables.currentMatType %}
 
 {%- if desiredState %}
+
+    {# Validate: the materialization type must be table, transient table or view #}
+    {{ validate_materialization_type() }}
 
     {# Validate: the same name+location tag repeated on the same column/node is not allowed #}
     {{ tag_check_duplicates() }}

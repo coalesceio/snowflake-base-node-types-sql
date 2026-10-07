@@ -21,10 +21,37 @@ macroString: |-
     {%- endif -%}
 
     {#===========================================================================
-      Initialize variables for node types that use the 
+      Macro : get_materialization_type(value)
+
+      Description:
+        Normalizes a materialization type as typed in @materializationType: lower case,
+        surrounding spaces trimmed and inner runs of spaces collapsed, so "Table ",
+        "  taBle" and "Transient   TABLE" read as "table" / "transient table". A missing
+        value gives ''. Defined in the shared setup because initialize_node_variables()
+        uses it before the later sections are rendered.
+
+      Output:
+        The normalized type, e.g. "transient table", or '' (empty string).
+    ===========================================================================#}
+    {%- macro get_materialization_type(value) -%}
+        {{- (value | default('', true) | string).split() | join(' ') | lower -}}
+    {%- endmacro -%}
+
+    {#===========================================================================
+      Initialize variables for node types that use the
       advanced deployment strategy
     ===========================================================================#}
     {%- macro initialize_node_variables(nsNodeVariables) -%}
+
+      {#- Normalized materialization types. The run template has neither state, only node. #}
+      {%- if currentState is defined and currentState -%}
+        {%- set nsNodeVariables.currentMatType = get_materialization_type(currentState.node.materializationType) -%}
+      {%- endif -%}
+      {%- if desiredState is defined and desiredState -%}
+        {%- set nsNodeVariables.desiredMatType = get_materialization_type(desiredState.node.materializationType) -%}
+      {%- elif currentState is not defined and node is defined and node -%}
+        {%- set nsNodeVariables.desiredMatType = get_materialization_type(node.materializationType) -%}
+      {%- endif -%}
 
       {%- if currentState is defined and currentState -%}
         {%- set currentDatabase = currentState.storageLocations 
@@ -60,7 +87,7 @@ macroString: |-
       {#- Redeploy: tables are altered on the clone (swapped in afterwards), views in place #}
       {%- if currentState is defined and currentState and desiredState is defined and desiredState -%}
         {%- set nsNodeVariables.alterObjectNameFullPath = nsNodeVariables.desObjectNameFullPath
-                                                          if node.materializationType == 'view'
+                                                          if nsNodeVariables.desiredMatType == 'view'
                                                           else nsNodeVariables.cloneObjectNameFullPath -%}
       {%- endif -%}
 
@@ -113,6 +140,9 @@ macroString: |-
       nodes. Templates and the alter_ macros use nsNodeVariables
       directly:
         currentDatabaseSchema / desiredDatabaseSchema : "DB.SCHEMA"
+        desiredMatType / currentMatType : normalized materialization type, e.g.
+                          "transient table" (see get_materialization_type); '' when absent.
+                          desiredMatType falls back to node in the run template
         curObjectNameFullPath / desObjectNameFullPath : "DB"."SCHEMA"."NAME"
         cloneObjectNameFullPath : "DB"."SCHEMA"."<current name>_COALESCE_INTERNAL_TABLE", the
                           clone a table redeploy alters (in the current location)
@@ -132,6 +162,8 @@ macroString: |-
     ===========================================================================#}
     {%- set nsNodeVariables = namespace(currentDatabaseSchema = "",
                                         desiredDatabaseSchema = "",
+                                        desiredMatType = "",
+                                        currentMatType = "",
                                         desObjectNameFullPath = "",
                                         curObjectNameFullPath = "",
                                         cloneObjectNameFullPath = "",
@@ -340,6 +372,31 @@ macroString: |-
         {%- else -%}
             SELECT 1
         {%- endif -%}
+    {%- endmacro -%}
+
+    {#===========================================================================
+      Macro : validate_materialization_type(allowedTypes)
+
+      Description:
+        Stops the node when its @materializationType (normalized: case and extra spaces
+        are ignored, see get_materialization_type) is not one the node type supports —
+        otherwise no create/load branch would match and the node would silently do
+        nothing. Call it at the start of the create and run templates.
+
+      Input:
+        allowedTypes (list) : supported types, lower case
+                              (default ['table', 'transient table', 'view'])
+
+      Output:
+        "Unsupported Materialization Type: <node>" test stage failing with fail_sql()
+        (SELECT 1/0), or '' (empty string) when the type is supported.
+    ===========================================================================#}
+    {%- macro validate_materialization_type(allowedTypes=['table', 'transient table', 'view']) -%}
+        {%- if nsNodeVariables.desiredMatType not in allowedTypes %}
+            {{ test_stage('Unsupported Materialization Type: ' + node.name, false) }}
+            -- '{{ node.materializationType | default('', true) }}' is not supported on {{ node.name }}; use one of: {{ allowedTypes | join(', ') }}
+            {{ fail_sql() }}
+        {%- endif %}
     {%- endmacro -%}
 
     {#===========================================================================
@@ -1020,11 +1077,11 @@ macroString: |-
     ===========================================================================#}
     {%- macro object_drop_sql() -%}
         {%- if currentState is defined and currentState -%}
-            {%- set currentMatType = currentState.node.materializationType -%}
+            {%- set currentMatType = nsNodeVariables.currentMatType -%}
             {%- set nodeDeleted = desiredState is not defined or not desiredState -%}
             {%- set dropCurrent = nodeDeleted
-                                  or currentMatType != node.materializationType
-                                  or (node.materializationType == 'view'
+                                  or currentMatType != nsNodeVariables.desiredMatType
+                                  or (nsNodeVariables.desiredMatType == 'view'
                                       and nsNodeVariables.curObjectNameFullPath != nsNodeVariables.desObjectNameFullPath) -%}
 
             {%- if nodeDeleted and currentMatType != 'view' %}
@@ -1228,7 +1285,7 @@ macroString: |-
     {%- macro alter_description_sql() -%}
         {%- set desiredDescription = node.description | default('', true) -%}
         {%- if (currentState.node.description | default('', true)) != desiredDescription %}
-            {%- set objectKind = 'VIEW' if node.materializationType == 'view' else 'TABLE' %}
+            {%- set objectKind = 'VIEW' if nsNodeVariables.desiredMatType == 'view' else 'TABLE' %}
             {{ stage('Edit ' + objectKind | title + ' Description') }}
             ALTER {{ objectKind }} IF EXISTS {{ nsNodeVariables.alterObjectNameFullPath }}
             SET COMMENT = '{{ desiredDescription | escape }}'
@@ -1317,7 +1374,7 @@ macroString: |-
     ===========================================================================#}
     {%- macro alter_tag_sql() -%}
         {%- set objectPath = nsNodeVariables.alterObjectNameFullPath -%}
-        {%- set objectKind = 'VIEW' if node.materializationType == 'view' else 'TABLE' -%}
+        {%- set objectKind = 'VIEW' if nsNodeVariables.desiredMatType == 'view' else 'TABLE' -%}
 
         {#- Column-level tags #}
         {%- for curCol in currentState.columns -%}
@@ -1397,7 +1454,7 @@ macroString: |-
 
         {%- if alterSql | trim | length > 0 or pathChanged %}
             {{ stage('Clone Table') }}
-            CREATE OR REPLACE {{ currentState.node.materializationType | upper }} {{ clonePath }}
+            CREATE OR REPLACE {{ nsNodeVariables.currentMatType | upper }} {{ clonePath }}
             CLONE {{ currentPath }} COPY GRANTS
 
             {{ alterSql }}
