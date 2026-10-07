@@ -2,6 +2,10 @@ fileVersion: 1
 id: "1"
 macroString: |-
     {#===========================================================================
+      SECTION 1: Shared setup (keep first: the aliases and nsNodeVariables are set up before any template code runs)
+    ===========================================================================#}
+
+    {#===========================================================================
       Shorthand aliases for node types that use the advanced deployment
       strategy: columns, storageLocations, config, sources, node and
       parameters point at desiredState, so templates and macros can use them
@@ -126,129 +130,86 @@ macroString: |-
                                         clusterKeyDropped = false,
                                         metaDataChanged = false) -%}
     {{- initializeNodeVariables(nsNodeVariables) -}}
+
     {#===========================================================================
-    Purpose          : Executes data quality tests associated with the node
-                      and its columns, based on the configured run order.
-                      Supports running tests either before or after data
-                      insertion, and respects the test continuation
-                      behavior on failure.
-    Input Parameters : runOrder (String)
-                      - Determines when the tests should be executed.
-                          Expected values: 'Before' or 'After'
-    Returns          : Rendered SQL statements for executing the applicable
-                      node-level and column-level data quality tests.
-                      No output is generated if tests are disabled.
+      SECTION 2: General helpers
     ===========================================================================#}
-    {%- macro run_tests(runOrder) -%}
 
-        {%- set columnContinueOnFailure = true -%}
+    {#===========================================================================
+    get_boolean_config(flag)
 
-        {%- if get_boolean_config("disableTests") != "true" -%}
-            {%- if runOrder == "After" -%}
-                {%- for col in columns -%}
-                    {%- set colName = '"' + col.name + '"' -%}
-                    {%- set target = ref(node.location.name, node.name) -%}
-                    {%- if col.not_null is defined -%}
-                        {{ test_stage(col.name + ': not_null', columnContinueOnFailure) }}
-                        SELECT {{ colName }}
-                        FROM {{ target }}
-                        WHERE {{ colName }} IS NULL
-                    {%- endif -%}
-                    {%- if col.uniqueness is defined -%}
-                        {{ test_stage(col.name + ': uniqueness', columnContinueOnFailure) }}
-                        SELECT {{ colName }}
-                        FROM {{ target }}
-                        GROUP BY {{ colName }}
-                        HAVING COUNT(*) > 1
-                    {%- endif -%}
-                    {%- if col.empty is defined -%}
-                        {{ test_stage(col.name + ': empty', columnContinueOnFailure) }}
-                        SELECT {{ colName }}
-                        FROM {{ target }}
-                        WHERE {{ colName }} IS NOT NULL AND TRIM({{ colName }}) = ''
-                    {%- endif -%}
-                    {%- set nsAccepted = namespace(values=[]) -%}
-                      {%- for v in col.accepted_values | default([]) -%}
-                          {%- for p in v.parameters | default([]) -%}
-                              {%- for val in (p | string).split(',') -%}
-                                  {%- set nsAccepted.values = nsAccepted.values + [val.strip()] -%}
-                              {%- endfor -%}
-                          {%- endfor -%}
-                      {%- endfor -%}
-                      {%- if nsAccepted.values | length > 0 -%}
-                          {{ test_stage(col.name + ': accepted_values', columnContinueOnFailure) }}
-                          SELECT {{ colName }}
-                          FROM {{ target }}
-                          WHERE {{ colName }} IS NOT NULL
-                          AND {{ colName }} NOT IN ({{ nsAccepted.values | join(', ') }})
-                      {%- endif -%}
-                      {%- set nsRejected = namespace(values=[]) -%}
-                      {%- for v in col.rejected_values | default([]) -%}
-                          {%- for p in v.parameters | default([]) -%}
-                              {%- for val in (p | string).split(',') -%}
-                                  {%- set nsRejected.values = nsRejected.values + [val.strip()] -%}
-                              {%- endfor -%}
-                          {%- endfor -%}
-                      {%- endfor -%}
-                      {%- if nsRejected.values | length > 0 -%}
-                          {{ test_stage(col.name + ': rejected_values', columnContinueOnFailure) }}
-                          SELECT {{ colName }}
-                          FROM {{ target }}
-                          WHERE {{ colName }} IN ({{ nsRejected.values | join(', ') }})
-                      {%- endif -%}
-                    {%- if col.min_max is defined and col.min_max.parameters is defined -%}
-                        {{ test_stage(col.name + ': min_max', columnContinueOnFailure) }}
-                        SELECT {{ colName }}
-                        FROM {{ target }}
-                        WHERE {{ colName }} IS NOT NULL
-                        AND ({{ colName }} < {{ col.min_max.parameters[0] }} OR {{ colName }} > {{ col.min_max.parameters[1] }})
-                    {%- endif -%}
-                    {%- if col.min_value is defined and col.min_value.parameters is defined -%}
-                        {{ test_stage(col.name + ': min_value', columnContinueOnFailure) }}
-                        SELECT {{ colName }}
-                        FROM {{ target }}
-                        WHERE {{ colName }} IS NOT NULL AND {{ colName }} < {{ col.min_value.parameters[0] }}
-                    {%- endif -%}
-                    {%- if col.max_value is defined and col.max_value.parameters is defined -%}
-                        {{ test_stage(col.name + ': max_value', columnContinueOnFailure) }}
-                        SELECT {{ colName }}
-                        FROM {{ target }}
-                        WHERE {{ colName }} IS NOT NULL AND {{ colName }} > {{ col.max_value.parameters[0] }}
-                    {%- endif -%}
-                    {%- if col.freshness is defined and col.freshness.parameters is defined -%}
-                        {{ test_stage(col.name + ': freshness', columnContinueOnFailure) }}
-                        SELECT MAX(CAST({{ colName }} AS DATETIME)) AS "LATEST_VALUE"
-                        FROM {{ target }}
-                        HAVING MAX(CAST({{ colName }} AS DATETIME)) IS NULL
-                            OR MAX(CAST({{ colName }} AS DATETIME)) < DATEADD({{ col.freshness.parameters[1] | default('DAY', true) }}, -{{ col.freshness.parameters[0] }}, CURRENT_TIMESTAMP())
-                    {%- endif -%}
-                    {%- if col.relative_time is defined and col.relative_time.parameters is defined -%}
-                        {%- set other = '"' + col.relative_time.parameters[1] + '"' -%}
-                        {{ test_stage(col.name + ': relative_time', columnContinueOnFailure) }}
-                        SELECT {{ colName }}, {{ other }}
-                        FROM {{ target }}
-                        WHERE {{ colName }} IS NOT NULL AND {{ other }} IS NOT NULL
-                        AND NOT ({{ colName }} {{ col.relative_time.parameters[0] }} {{ other }})
-                    {%- endif -%}
-                {%- endfor -%}
+    Description:
+      Extracts the boolean value of a configuration flag, supporting both
+      annotation formats:
+        - @flag
+        - @flag(true) / @flag(false)
+
+    Input:
+      flag: Name of the boolean configuration flag, e.g. "truncateBefore",
+            "testsEnabled", or "clusterDefined".
+
+    Examples:
+      @truncateBefore
+        -> config["truncateBefore"] = true
+        -> Output: true
+
+      @truncateBefore(true)
+        -> config["truncateBefore"] = { parameters: [true] }
+        -> Output: true
+
+      @truncateBefore(false)
+        -> config["truncateBefore"] = { parameters: [false] }
+        -> Output: false
+
+      No annotation
+        -> config["truncateBefore"] is not defined
+        -> Output: empty
+
+    Usage:
+      {% if get_boolean_config("truncateBefore") | trim | lower == "true" %}
+        ...
+      {% endif %}
+    ===========================================================================#}
+    {%- macro get_boolean_config(flag) -%}
+        {%- if config[flag] is defined -%}
+            {%- if config[flag] is boolean -%}
+                {{- config[flag] | trim | lower -}}
+            {%- elif config[flag].parameters is defined and config[flag].parameters|length > 0 -%}
+                {{- config[flag].parameters[0] | trim | lower -}}
             {%- endif -%}
-
-            {%- set ns = namespace(cnt=0) -%}
-            {%- for test in config.tests | default([]) -%}
-                {%- if test is mapping and test.parameters is defined -%}
-                    {%- if test.parameters[2] | default("After") == runOrder -%}
-                        {%- set ns.cnt = ns.cnt + 1 -%}
-                        {{ test_stage(
-                            ('Pre Load Test ' if runOrder == 'Before' else 'Post Load Test ') ~ ns.cnt,
-                            test.parameters[1] | default(true)
-                        ) }}
-                        {{ test.parameters[0] }}
-                    {%- endif -%}
-                {%- endif -%}
-            {%- endfor -%}
-
         {%- endif -%}
     {%- endmacro -%}
+
+    {#===========================================================================
+    Purpose: Determines the correct Snowflake DROP object syntax based on the materialization type.
+     
+    Input: materialization (string): The Snowflake object type to be dropped
+      (e.g., table, view, materialized view, dynamic table, external table).
+     
+    Returns: string: The appropriate DROP object keyword with IF EXISTS
+      (e.g., 'table IF EXISTS', 'view IF EXISTS', 'materialized view IF EXISTS').
+    ===========================================================================#}
+    {% macro dropMaterialization(materialization) %}
+        {%- if materialization | lower in ['table', 'transient table','temporary table', 'hybrid table'] -%}
+            TABLE IF EXISTS
+        {%- elif materialization | lower in ['view', 'secure view', 'run view', 'cortex search service'] -%}
+            VIEW IF EXISTS
+        {%- elif materialization | lower in ['dynamic table','transient dynamic table', 'dynamic iceberg table'] -%}
+            DYNAMIC TABLE IF EXISTS
+        {%- elif materialization | lower == 'materialized view' -%}
+            MATERIALIZED VIEW IF EXISTS
+        {%- elif materialization | lower == 'external table' -%}
+            EXTERNAL TABLE IF EXISTS
+        {%- elif materialization | lower == 'iceberg table' -%}
+            ICEBERG TABLE IF EXISTS
+        {%- elif materialization | lower == 'interactive table' -%}
+            INTERACTIVE TABLE IF EXISTS
+        {%- elif materialization | lower == 'stream' -%}
+            STREAM IF EXISTS
+        {%- else -%}
+            TABLE IF EXISTS
+        {%- endif %}
+    {% endmacro %}
 
     {#===========================================================================
     Description:
@@ -310,118 +271,6 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-    get_boolean_config(flag)
-
-    Description:
-      Extracts the boolean value of a configuration flag, supporting both
-      annotation formats:
-        - @flag
-        - @flag(true) / @flag(false)
-
-    Input:
-      flag: Name of the boolean configuration flag, e.g. "truncateBefore",
-            "testsEnabled", or "clusterDefined".
-
-    Examples:
-      @truncateBefore
-        -> config["truncateBefore"] = true
-        -> Output: true
-
-      @truncateBefore(true)
-        -> config["truncateBefore"] = { parameters: [true] }
-        -> Output: true
-
-      @truncateBefore(false)
-        -> config["truncateBefore"] = { parameters: [false] }
-        -> Output: false
-
-      No annotation
-        -> config["truncateBefore"] is not defined
-        -> Output: empty
-
-    Usage:
-      {% if get_boolean_config("truncateBefore") | trim | lower == "true" %}
-        ...
-      {% endif %}
-    ===========================================================================#}
-    {%- macro get_boolean_config(flag) -%}
-        {%- if config[flag] is defined -%}
-            {%- if config[flag] is boolean -%}
-                {{- config[flag] | trim | lower -}}
-            {%- elif config[flag].parameters is defined and config[flag].parameters|length > 0 -%}
-                {{- config[flag].parameters[0] | trim | lower -}}
-            {%- endif -%}
-        {%- endif -%}
-    {%- endmacro -%}
-
-    {#===========================================================================
-    Description: Resolves the zero-key literal for a column (column-level @zeroKey wins, else node-level @zeroKey by dataType, else NULL).
-    Input: col (object)
-    Output: SQL literal for the resolved zero-key value.
-    ===========================================================================#}
-    {%- macro resolve_zero_key(col) -%}
-
-        {%- set ns = namespace(zk_type=none, zk_value=none) -%}
-
-        {# Column-level zeroKey #}
-        {%- if col.zeroKey is defined
-            and col.zeroKey.parameters is defined
-            and col.zeroKey.parameters | trim | length > 0 -%}
-
-            {%- set ns.zk_value = col.zeroKey.parameters[0] -%}
-
-        {# Node-level zeroKey, matched by column dataType #}
-        {%- else -%}
-            {%- set zkParams = config.zeroKey.parameters if (config.zeroKey is defined and config.zeroKey.parameters is defined) else [] -%}
-            {%- if col.dataType | upper == 'VARIANT' -%}
-                {%- set ns.zk_type = 'variant' -%}
-                {%- set ns.zk_value = none -%}
-            {%- elif col.dataType[:3] | upper in ('VAR', 'CHA', 'STR', 'TEX') -%}
-                {%- set ns.zk_type = 'string' -%}
-                {%- set ns.zk_value = zkParams[1] if zkParams | length > 1 else "'UNKNOWN'" -%}
-            {# Every numeric type (NUMBER/NUMERIC/DECIMAL, INT/INTEGER/BIGINT/SMALLINT/TINYINT/BYTEINT, FLOAT/DOUBLE/REAL) always gets 0 —
-               the node-level surrogateKeyValue applies to the surrogate key column only; override per column with @zeroKey(value). #}
-            {%- elif col.dataType[:3] | upper in ('NUM', 'INT', 'DEC', 'FLO', 'DOU', 'REA', 'BIG', 'SMA', 'TIN', 'BYT') -%}
-                {%- set ns.zk_type = 'numeric' -%}
-                {%- set ns.zk_value = 0 -%}
-            {%- elif col.dataType | upper == 'BOOLEAN' -%}
-                {%- set ns.zk_type = 'boolean' -%}
-                {%- set ns.zk_value = zkParams[3] if zkParams | length > 3 else true -%}
-            {%- elif col.dataType[:4] | upper in ('DATE', 'TIME', 'TIMESTAMP') -%}
-                {%- set ns.zk_type = 'datetime' -%}
-                {%- set ns.zk_value = zkParams[2] if zkParams | length > 2 else '1900-01-01 00:00:00' -%}
-            {%- endif -%}
-        {%- endif -%}
-
-        {# Format the resolved value #}
-        {%- if ns.zk_type == 'numeric' -%}
-            {{ ns.zk_value }}
-        {%- elif ns.zk_type == 'variant' -%}
-            PARSE_JSON('null')
-        {%- elif ns.zk_value is not none -%}
-            {%- if ns.zk_type == 'boolean' -%}
-                {{ ns.zk_value | upper }}
-
-            {%- elif ns.zk_type == 'datetime' -%}
-                TO_TIMESTAMP('{{ ns.zk_value }}')
-
-            {%- elif ns.zk_type == 'string' -%}
-                {# Node-level default: pasted verbatim, same as the column-level override — supply your own quotes in the annotation, e.g. "'UNKNOWN'". #}
-                {{ ns.zk_value }}
-
-            {%- else -%}
-                {# Column-level @zeroKey override: pasted verbatim, exactly as the user wrote it — #}
-                {# they supply their own quotes for a string, or a full expression like CAST(...). #}
-                {{ ns.zk_value }}
-            {%- endif -%}
-
-        {%- else -%}
-            NULL
-        {%- endif -%}
-
-    {%- endmacro -%}
-
-    {#===========================================================================
     Description: Builds a datatype-aware condition that's TRUE when the source and target values differ.
     Input: src_expr (string), tgt_expr (string), data_type (string)
     Output: SQL boolean condition.
@@ -454,6 +303,10 @@ macroString: |-
         {%- endif -%}
 
     {%- endmacro -%}
+
+    {#===========================================================================
+      SECTION 3: Validation (create/run checks that stop the node)
+    ===========================================================================#}
 
     {#===========================================================================
     Description: Checks that every column carries its own @id annotation, reporting duplicate column names and repeated @id values separately. Shared by validate_dimension_requirements and validate_fact_requirements.
@@ -897,84 +750,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-    The below block of code initializes metadata changes variables for the display
+      SECTION 4: Tags (@tag annotations)
     ===========================================================================#}
-    {%- macro update_metadata(tag, diff, label) -%}
-        {%- set nsMetaVariables.metadataUpdate = nsMetaVariables.metadataUpdate + '-' + tag -%}
-
-        {# Handle metaDataChanges #}
-        {%- if nsMetaVariables.metaDataChanges -%}
-            {%- set nsMetaVariables.metaDataChanges = nsMetaVariables.metaDataChanges ~ "\n\n" ~ label ~ " Changes:\n" ~ diff -%}
-        {%- else -%}
-            {%- set nsMetaVariables.metaDataChanges = label ~ " Changes:\n" ~ diff -%}
-        {%- endif -%}
-
-    {%- endmacro -%}
-
-    {#===========================================================================
-      Macro : get_clusterby_sql
-
-      Description:
-        Generates the CLUSTER BY clause for the node's cluster configuration, from the repeatable
-        @clusterKey(<position>, "<expression>") column annotation. Each occurrence contributes one
-        term, ordered by <position> (lowest first) — omit the expression to cluster by the column
-        itself, or give a transform expression (e.g. trunc(N_NAME, -5)) to cluster by that instead.
-
-      Inputs:
-        - col.clusterKey : list of annotation entries per column, each { parameters: [<position>, <expression>] }
-
-      Output:
-        - If at least one term is present:
-            CLUSTER BY (N_REGIONKEY, trunc(N_NAME, -5))
-        - If no valid terms are found:
-            '' (empty string)
-    ===========================================================================#}
-    {%- macro get_clusterby_sql() -%}
-        {#- Terms are built once in initializeNodeVariables (nsNodeVariables.desiredClusterKey) #}
-        {%- if nsNodeVariables.desiredClusterKey | length > 0 -%}
-            CLUSTER BY ({{ nsNodeVariables.desiredClusterKey | join(', ') }})
-        {%- endif -%}
-    {%- endmacro -%}
-
-    {#===========================================================================
-      Macro : view_definition_sql(state, withTags=true)
-
-      Description:
-        Renders a view's definition — everything after CREATE OR REPLACE VIEW <path> — for
-        the given state (desiredState or currentState): the column list with column
-        comments, the view comment, and the AS <cte> SELECT <transforms> <join> query, plus
-        column and view WITH TAG clauses when withTags is true. The object path is left
-        out, since renames/moves are handled separately.
-        With withTags=false, comparing the current and desired output tells whether
-        anything other than tags changed: equal output means only tags (or nothing that
-        affects the view's DDL) changed. Both renders use the same template text, so they
-        differ only where the states differ.
-
-      Output:
-        ("ID", "NAME" WITH TAG (...) COMMENT '...') COMMENT = '...' WITH TAG (...)
-        AS <cte> SELECT "SRC"."ID" AS "ID", ... <join>
-    ===========================================================================#}
-    {%- macro view_definition_sql(state, withTags=true) -%}
-        (
-            {%- for col in state.columns %}
-                "{{ col.name }}"
-                {%- if withTags %} {{ tag_with_clause(col.tag) }}{% endif %}
-                {%- if col.description | trim | length > 0 %} COMMENT '{{ col.description | escape }}'{% endif %}
-                {%- if not loop.last -%}, {%- endif %}
-            {%- endfor %}
-        )
-        {%- if state.node.description | trim | length > 0 %} COMMENT = '{{ state.node.description | escape }}'{% endif %}
-        {%- if withTags %} {{ tag_with_clause(state.config.tag) }}{% endif %}
-        AS
-        {{ state.sources[0].cteString }}
-        SELECT {{ state.sources[0].selectModifier | default('', true) }}
-        {%- for col in state.sources[0].columns %}
-            {{ get_source_transform(col) }} AS "{{ col.name }}"
-            {%- if not loop.last -%}, {%- endif %}
-        {%- endfor %}
-        {{ state.sources[0].join }}
-    {%- endmacro -%}
-
 
     {#===========================================================================
       Macro : tag_full_name(bareTagName, locationName)
@@ -1137,92 +914,76 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : alter_tag_sql()
+      SECTION 5: Create helpers (first deploy / recreate)
+    ===========================================================================#}
+
+    {#===========================================================================
+      Macro : get_clusterby_sql
 
       Description:
-        Redeploy stages that bring an existing object's @tag annotations from currentState to
-        desiredState — column-level tags first (columns matched by id, then by name), then
-        node-level tags. A changed tag is unset before it is re-set. The ALTER keyword (VIEW or
-        TABLE) and the stage-name label come from desiredState. Sets
-        nsNodeVariables.metaDataChanged when any stage is emitted.
+        Generates the CLUSTER BY clause for the node's cluster configuration, from the repeatable
+        @clusterKey(<position>, "<expression>") column annotation. Each occurrence contributes one
+        term, ordered by <position> (lowest first) — omit the expression to cluster by the column
+        itself, or give a transform expression (e.g. trunc(N_NAME, -5)) to cluster by that instead.
+
+      Inputs:
+        - col.clusterKey : list of annotation entries per column, each { parameters: [<position>, <expression>] }
 
       Output:
-        Zero or more "Unset Tags: <column>" / "Set Tags: <column>" / "Unset <View|Table> Tags" /
-        "Set <View|Table> Tags" stages with their ALTER statements.
+        - If at least one term is present:
+            CLUSTER BY (N_REGIONKEY, trunc(N_NAME, -5))
+        - If no valid terms are found:
+            '' (empty string)
     ===========================================================================#}
-    {%- macro alter_tag_sql() -%}
-        {%- set objectPath = nsNodeVariables.desObjectNameFullPath -%}
-        {%- set objectKind = 'VIEW' if node.materializationType == 'view' else 'TABLE' -%}
-
-        {#- Column-level tags #}
-        {%- for curCol in currentState.columns -%}
-            {%- set matchingCols = columns | default([]) | selectattr('id', 'equalto', curCol.id) | list -%}
-            {%- if not matchingCols -%}
-                {%- set matchingCols = columns | default([]) | selectattr('name', 'equalto', curCol.name) | list -%}
-            {%- endif -%}
-
-            {%- if matchingCols -%}
-                {%- set desCol = matchingCols | first -%}
-                {%- set setColTagClause = tag_diff(desCol.tag, curCol.tag, 'set') -%}
-                {%- set unsetColTagClause = tag_diff(desCol.tag, curCol.tag, 'unset') -%}
-
-                {#- Unset before set #}
-                {%- if unsetColTagClause | trim | length > 0 %}
-                    {{ stage('Unset Tags: ' + desCol.name) }}
-                    ALTER {{ objectKind }} {{ objectPath }}
-                    MODIFY COLUMN "{{ desCol.name }}" UNSET TAG {{ unsetColTagClause }}
-                    {%- set nsNodeVariables.metaDataChanged = true -%}
-                {%- endif %}
-
-                {%- if setColTagClause | trim | length > 0 %}
-                    {{ stage('Set Tags: ' + desCol.name) }}
-                    ALTER {{ objectKind }} {{ objectPath }}
-                    MODIFY COLUMN "{{ desCol.name }}" SET TAG {{ setColTagClause }}
-                    {%- set nsNodeVariables.metaDataChanged = true -%}
-                {%- endif %}
-            {%- endif -%}
-        {%- endfor -%}
-
-        {#- Node-level tags #}
-        {%- set setTagClause = tag_diff(config.tag, currentState.config.tag, 'set') -%}
-        {%- set unsetTagClause = tag_diff(config.tag, currentState.config.tag, 'unset') -%}
-
-        {#- Unset before set #}
-        {%- if unsetTagClause | trim | length > 0 %}
-            {{ stage('Unset ' + objectKind | title + ' Tags') }}
-            ALTER {{ objectKind }} {{ objectPath }}
-            UNSET TAG {{ unsetTagClause }}
-            {%- set nsNodeVariables.metaDataChanged = true -%}
-        {%- endif %}
-
-        {%- if setTagClause | trim | length > 0 %}
-            {{ stage('Set ' + objectKind | title + ' Tags') }}
-            ALTER {{ objectKind }} {{ objectPath }}
-            SET TAG {{ setTagClause }}
-            {%- set nsNodeVariables.metaDataChanged = true -%}
-        {%- endif %}
+    {%- macro get_clusterby_sql() -%}
+        {#- Terms are built once in initializeNodeVariables (nsNodeVariables.desiredClusterKey) #}
+        {%- if nsNodeVariables.desiredClusterKey | length > 0 -%}
+            CLUSTER BY ({{ nsNodeVariables.desiredClusterKey | join(', ') }})
+        {%- endif -%}
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : alter_metadata_sql()
+      Macro : view_definition_sql(state, withTags=true)
 
       Description:
-        Redeploy fallback for tables and views: when the node changed (currentState !=
-        desiredState) but no redeploy stage changed the object (nsNodeVariables.
-        metaDataChanged is still false) — e.g. only tests, writeMode or pre/post SQL
-        changed — emits a no-op stage so the deploy still records the new state. Call it
-        last, after every alter_ macro of the redeploy path.
+        Renders a view's definition — everything after CREATE OR REPLACE VIEW <path> — for
+        the given state (desiredState or currentState): the column list with column
+        comments, the view comment, and the AS <cte> SELECT <transforms> <join> query, plus
+        column and view WITH TAG clauses when withTags is true. The object path is left
+        out, since renames/moves are handled separately.
+        With withTags=false, comparing the current and desired output tells whether
+        anything other than tags changed: equal output means only tags (or nothing that
+        affects the view's DDL) changed. Both renders use the same template text, so they
+        differ only where the states differ.
 
       Output:
-        "Metadata Update-Default" stage with select 1=0, or ''
-        (empty string) when something was already altered or nothing changed.
+        ("ID", "NAME" WITH TAG (...) COMMENT '...') COMMENT = '...' WITH TAG (...)
+        AS <cte> SELECT "SRC"."ID" AS "ID", ... <join>
     ===========================================================================#}
-    {%- macro alter_metadata_sql() -%}
-        {%- if currentState != desiredState and not nsNodeVariables.metaDataChanged %}
-            {{ stage('Metadata Update-Default') }}
-            select 1=0
-        {%- endif %}
+    {%- macro view_definition_sql(state, withTags=true) -%}
+        (
+            {%- for col in state.columns %}
+                "{{ col.name }}"
+                {%- if withTags %} {{ tag_with_clause(col.tag) }}{% endif %}
+                {%- if col.description | trim | length > 0 %} COMMENT '{{ col.description | escape }}'{% endif %}
+                {%- if not loop.last -%}, {%- endif %}
+            {%- endfor %}
+        )
+        {%- if state.node.description | trim | length > 0 %} COMMENT = '{{ state.node.description | escape }}'{% endif %}
+        {%- if withTags %} {{ tag_with_clause(state.config.tag) }}{% endif %}
+        AS
+        {{ state.sources[0].cteString }}
+        SELECT {{ state.sources[0].selectModifier | default('', true) }}
+        {%- for col in state.sources[0].columns %}
+            {{ get_source_transform(col) }} AS "{{ col.name }}"
+            {%- if not loop.last -%}, {%- endif %}
+        {%- endfor %}
+        {{ state.sources[0].join }}
     {%- endmacro -%}
+
+    {#===========================================================================
+      SECTION 6: Redeploy (advanced deploy strategy), in the order the stages run
+    ===========================================================================#}
 
     {#===========================================================================
       Macro : object_drop_sql()
@@ -1309,6 +1070,61 @@ macroString: |-
             {{ stage('Change ' + node.materializationType + ' description') }}
             ALTER {{ objectKind }} {{ nsNodeVariables.desObjectNameFullPath }}
             SET COMMENT = '{{ desiredDescription | escape }}'
+            {%- set nsNodeVariables.metaDataChanged = true -%}
+        {%- endif %}
+    {%- endmacro -%}
+
+    {#===========================================================================
+      Macro : alter_drop_cluster_key_sql()
+
+      Description:
+        Redeploy stage that drops the table's clustering key before columns are dropped or
+        renamed — call it just before alter_drop_columns_sql(). Snowflake rejects dropping
+        or renaming a column that belongs to the clustering key (error 003320), so the key
+        is dropped first when:
+          - a column carrying @clusterKey is being dropped or renamed, or
+          - the key is changing in the same deploy that drops columns (another column's
+            expression may reference a dropped column, e.g. trunc("B", -5) on "A").
+        The new key, if any, is applied later by alter_cluster_key_sql(). Sets
+        nsNodeVariables.clusterKeyDropped and nsNodeVariables.metaDataChanged when the
+        stage is emitted. Tables only.
+
+      Output:
+        "Drop Cluster Key" stage with its ALTER TABLE ...
+        DROP CLUSTERING KEY, or '' (empty string) when the key can stay.
+    ===========================================================================#}
+    {%- macro alter_drop_cluster_key_sql() -%}
+        {%- set ns = namespace(clusteredDropped=[], clusteredRenamed=[]) -%}
+        {%- for colName in nsNodeVariables.currentClusterKeyColumns -%}
+            {%- if colName in nsNodeVariables.droppedColumns -%}
+                {%- set ns.clusteredDropped = ns.clusteredDropped + [colName] -%}
+            {%- elif colName in nsNodeVariables.renamedColumns -%}
+                {%- set ns.clusteredRenamed = ns.clusteredRenamed + [colName] -%}
+            {%- endif -%}
+        {%- endfor -%}
+        {#- Whitespace-insensitive, so trunc(a,-5) vs trunc(a, -5) is not a change #}
+        {%- set keyChanged = (nsNodeVariables.desiredClusterKey | map('replace', ' ', '') | list)
+                          != (nsNodeVariables.currentClusterKey | map('replace', ' ', '') | list) -%}
+
+        {#- Clustered columns being dropped and/or renamed force the key to be dropped first #}
+        {%- set nsReason = namespace(parts=[]) -%}
+        {%- if ns.clusteredDropped | length > 0 -%}
+            {%- set nsReason.parts = nsReason.parts + ['before dropping clustered columns: ' + (ns.clusteredDropped | join(', '))] -%}
+        {%- endif -%}
+        {%- if ns.clusteredRenamed | length > 0 -%}
+            {%- set nsReason.parts = nsReason.parts + ['before renaming clustered columns: ' + (ns.clusteredRenamed | join(', '))] -%}
+        {%- endif -%}
+
+        {%- if nsReason.parts | length > 0
+                or (keyChanged and nsNodeVariables.droppedColumns | length > 0 and nsNodeVariables.currentClusterKey | length > 0) %}
+            {%- if nsReason.parts | length > 0 %}
+                {{ stage('Drop Cluster Key') }}
+            {%- else %}
+                {{ stage('Drop Cluster Key') }}
+            {%- endif %}
+            ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
+            DROP CLUSTERING KEY
+            {%- set nsNodeVariables.clusterKeyDropped = true -%}
             {%- set nsNodeVariables.metaDataChanged = true -%}
         {%- endif %}
     {%- endmacro -%}
@@ -1480,61 +1296,6 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : alter_drop_cluster_key_sql()
-
-      Description:
-        Redeploy stage that drops the table's clustering key before columns are dropped or
-        renamed — call it just before alter_drop_columns_sql(). Snowflake rejects dropping
-        or renaming a column that belongs to the clustering key (error 003320), so the key
-        is dropped first when:
-          - a column carrying @clusterKey is being dropped or renamed, or
-          - the key is changing in the same deploy that drops columns (another column's
-            expression may reference a dropped column, e.g. trunc("B", -5) on "A").
-        The new key, if any, is applied later by alter_cluster_key_sql(). Sets
-        nsNodeVariables.clusterKeyDropped and nsNodeVariables.metaDataChanged when the
-        stage is emitted. Tables only.
-
-      Output:
-        "Drop Cluster Key" stage with its ALTER TABLE ...
-        DROP CLUSTERING KEY, or '' (empty string) when the key can stay.
-    ===========================================================================#}
-    {%- macro alter_drop_cluster_key_sql() -%}
-        {%- set ns = namespace(clusteredDropped=[], clusteredRenamed=[]) -%}
-        {%- for colName in nsNodeVariables.currentClusterKeyColumns -%}
-            {%- if colName in nsNodeVariables.droppedColumns -%}
-                {%- set ns.clusteredDropped = ns.clusteredDropped + [colName] -%}
-            {%- elif colName in nsNodeVariables.renamedColumns -%}
-                {%- set ns.clusteredRenamed = ns.clusteredRenamed + [colName] -%}
-            {%- endif -%}
-        {%- endfor -%}
-        {#- Whitespace-insensitive, so trunc(a,-5) vs trunc(a, -5) is not a change #}
-        {%- set keyChanged = (nsNodeVariables.desiredClusterKey | map('replace', ' ', '') | list)
-                          != (nsNodeVariables.currentClusterKey | map('replace', ' ', '') | list) -%}
-
-        {#- Clustered columns being dropped and/or renamed force the key to be dropped first #}
-        {%- set nsReason = namespace(parts=[]) -%}
-        {%- if ns.clusteredDropped | length > 0 -%}
-            {%- set nsReason.parts = nsReason.parts + ['before dropping clustered columns: ' + (ns.clusteredDropped | join(', '))] -%}
-        {%- endif -%}
-        {%- if ns.clusteredRenamed | length > 0 -%}
-            {%- set nsReason.parts = nsReason.parts + ['before renaming clustered columns: ' + (ns.clusteredRenamed | join(', '))] -%}
-        {%- endif -%}
-
-        {%- if nsReason.parts | length > 0
-                or (keyChanged and nsNodeVariables.droppedColumns | length > 0 and nsNodeVariables.currentClusterKey | length > 0) %}
-            {%- if nsReason.parts | length > 0 %}
-                {{ stage('Drop Cluster Key') }}
-            {%- else %}
-                {{ stage('Drop Cluster Key') }}
-            {%- endif %}
-            ALTER TABLE {{ nsNodeVariables.desObjectNameFullPath }}
-            DROP CLUSTERING KEY
-            {%- set nsNodeVariables.clusterKeyDropped = true -%}
-            {%- set nsNodeVariables.metaDataChanged = true -%}
-        {%- endif %}
-    {%- endmacro -%}
-
-    {#===========================================================================
       Macro : alter_cluster_key_sql()
 
       Description:
@@ -1569,34 +1330,286 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-    Purpose: Determines the correct Snowflake DROP object syntax based on the materialization type.
-     
-    Input: materialization (string): The Snowflake object type to be dropped
-      (e.g., table, view, materialized view, dynamic table, external table).
-     
-    Returns: string: The appropriate DROP object keyword with IF EXISTS
-      (e.g., 'table IF EXISTS', 'view IF EXISTS', 'materialized view IF EXISTS').
+      Macro : alter_tag_sql()
+
+      Description:
+        Redeploy stages that bring an existing object's @tag annotations from currentState to
+        desiredState — column-level tags first (columns matched by id, then by name), then
+        node-level tags. A changed tag is unset before it is re-set. The ALTER keyword (VIEW or
+        TABLE) and the stage-name label come from desiredState. Sets
+        nsNodeVariables.metaDataChanged when any stage is emitted.
+
+      Output:
+        Zero or more "Unset Tags: <column>" / "Set Tags: <column>" / "Unset <View|Table> Tags" /
+        "Set <View|Table> Tags" stages with their ALTER statements.
     ===========================================================================#}
-    {% macro dropMaterialization(materialization) %}
-        {%- if materialization | lower in ['table', 'transient table','temporary table', 'hybrid table'] -%}
-            TABLE IF EXISTS
-        {%- elif materialization | lower in ['view', 'secure view', 'run view', 'cortex search service'] -%}
-            VIEW IF EXISTS
-        {%- elif materialization | lower in ['dynamic table','transient dynamic table', 'dynamic iceberg table'] -%}
-            DYNAMIC TABLE IF EXISTS
-        {%- elif materialization | lower == 'materialized view' -%}
-            MATERIALIZED VIEW IF EXISTS
-        {%- elif materialization | lower == 'external table' -%}
-            EXTERNAL TABLE IF EXISTS
-        {%- elif materialization | lower == 'iceberg table' -%}
-            ICEBERG TABLE IF EXISTS
-        {%- elif materialization | lower == 'interactive table' -%}
-            INTERACTIVE TABLE IF EXISTS
-        {%- elif materialization | lower == 'stream' -%}
-            STREAM IF EXISTS
-        {%- else -%}
-            TABLE IF EXISTS
+    {%- macro alter_tag_sql() -%}
+        {%- set objectPath = nsNodeVariables.desObjectNameFullPath -%}
+        {%- set objectKind = 'VIEW' if node.materializationType == 'view' else 'TABLE' -%}
+
+        {#- Column-level tags #}
+        {%- for curCol in currentState.columns -%}
+            {%- set matchingCols = columns | default([]) | selectattr('id', 'equalto', curCol.id) | list -%}
+            {%- if not matchingCols -%}
+                {%- set matchingCols = columns | default([]) | selectattr('name', 'equalto', curCol.name) | list -%}
+            {%- endif -%}
+
+            {%- if matchingCols -%}
+                {%- set desCol = matchingCols | first -%}
+                {%- set setColTagClause = tag_diff(desCol.tag, curCol.tag, 'set') -%}
+                {%- set unsetColTagClause = tag_diff(desCol.tag, curCol.tag, 'unset') -%}
+
+                {#- Unset before set #}
+                {%- if unsetColTagClause | trim | length > 0 %}
+                    {{ stage('Unset Tags: ' + desCol.name) }}
+                    ALTER {{ objectKind }} {{ objectPath }}
+                    MODIFY COLUMN "{{ desCol.name }}" UNSET TAG {{ unsetColTagClause }}
+                    {%- set nsNodeVariables.metaDataChanged = true -%}
+                {%- endif %}
+
+                {%- if setColTagClause | trim | length > 0 %}
+                    {{ stage('Set Tags: ' + desCol.name) }}
+                    ALTER {{ objectKind }} {{ objectPath }}
+                    MODIFY COLUMN "{{ desCol.name }}" SET TAG {{ setColTagClause }}
+                    {%- set nsNodeVariables.metaDataChanged = true -%}
+                {%- endif %}
+            {%- endif -%}
+        {%- endfor -%}
+
+        {#- Node-level tags #}
+        {%- set setTagClause = tag_diff(config.tag, currentState.config.tag, 'set') -%}
+        {%- set unsetTagClause = tag_diff(config.tag, currentState.config.tag, 'unset') -%}
+
+        {#- Unset before set #}
+        {%- if unsetTagClause | trim | length > 0 %}
+            {{ stage('Unset ' + objectKind | title + ' Tags') }}
+            ALTER {{ objectKind }} {{ objectPath }}
+            UNSET TAG {{ unsetTagClause }}
+            {%- set nsNodeVariables.metaDataChanged = true -%}
         {%- endif %}
-    {% endmacro %}
+
+        {%- if setTagClause | trim | length > 0 %}
+            {{ stage('Set ' + objectKind | title + ' Tags') }}
+            ALTER {{ objectKind }} {{ objectPath }}
+            SET TAG {{ setTagClause }}
+            {%- set nsNodeVariables.metaDataChanged = true -%}
+        {%- endif %}
+    {%- endmacro -%}
+
+    {#===========================================================================
+      Macro : alter_metadata_sql()
+
+      Description:
+        Redeploy fallback for tables and views: when the node changed (currentState !=
+        desiredState) but no redeploy stage changed the object (nsNodeVariables.
+        metaDataChanged is still false) — e.g. only tests, writeMode or pre/post SQL
+        changed — emits a no-op stage so the deploy still records the new state. Call it
+        last, after every alter_ macro of the redeploy path.
+
+      Output:
+        "Metadata Update-Default" stage with select 1=0, or ''
+        (empty string) when something was already altered or nothing changed.
+    ===========================================================================#}
+    {%- macro alter_metadata_sql() -%}
+        {%- if currentState != desiredState and not nsNodeVariables.metaDataChanged %}
+            {{ stage('Metadata Update-Default') }}
+            select 1=0
+        {%- endif %}
+    {%- endmacro -%}
+
+    {#===========================================================================
+      SECTION 7: Run (data load)
+    ===========================================================================#}
+
+    {#===========================================================================
+    Purpose          : Executes data quality tests associated with the node
+                      and its columns, based on the configured run order.
+                      Supports running tests either before or after data
+                      insertion, and respects the test continuation
+                      behavior on failure.
+    Input Parameters : runOrder (String)
+                      - Determines when the tests should be executed.
+                          Expected values: 'Before' or 'After'
+    Returns          : Rendered SQL statements for executing the applicable
+                      node-level and column-level data quality tests.
+                      No output is generated if tests are disabled.
+    ===========================================================================#}
+    {%- macro run_tests(runOrder) -%}
+
+        {%- set columnContinueOnFailure = true -%}
+
+        {%- if get_boolean_config("disableTests") != "true" -%}
+            {%- if runOrder == "After" -%}
+                {%- for col in columns -%}
+                    {%- set colName = '"' + col.name + '"' -%}
+                    {%- set target = ref(node.location.name, node.name) -%}
+                    {%- if col.not_null is defined -%}
+                        {{ test_stage(col.name + ': not_null', columnContinueOnFailure) }}
+                        SELECT {{ colName }}
+                        FROM {{ target }}
+                        WHERE {{ colName }} IS NULL
+                    {%- endif -%}
+                    {%- if col.uniqueness is defined -%}
+                        {{ test_stage(col.name + ': uniqueness', columnContinueOnFailure) }}
+                        SELECT {{ colName }}
+                        FROM {{ target }}
+                        GROUP BY {{ colName }}
+                        HAVING COUNT(*) > 1
+                    {%- endif -%}
+                    {%- if col.empty is defined -%}
+                        {{ test_stage(col.name + ': empty', columnContinueOnFailure) }}
+                        SELECT {{ colName }}
+                        FROM {{ target }}
+                        WHERE {{ colName }} IS NOT NULL AND TRIM({{ colName }}) = ''
+                    {%- endif -%}
+                    {%- set nsAccepted = namespace(values=[]) -%}
+                      {%- for v in col.accepted_values | default([]) -%}
+                          {%- for p in v.parameters | default([]) -%}
+                              {%- for val in (p | string).split(',') -%}
+                                  {%- set nsAccepted.values = nsAccepted.values + [val.strip()] -%}
+                              {%- endfor -%}
+                          {%- endfor -%}
+                      {%- endfor -%}
+                      {%- if nsAccepted.values | length > 0 -%}
+                          {{ test_stage(col.name + ': accepted_values', columnContinueOnFailure) }}
+                          SELECT {{ colName }}
+                          FROM {{ target }}
+                          WHERE {{ colName }} IS NOT NULL
+                          AND {{ colName }} NOT IN ({{ nsAccepted.values | join(', ') }})
+                      {%- endif -%}
+                      {%- set nsRejected = namespace(values=[]) -%}
+                      {%- for v in col.rejected_values | default([]) -%}
+                          {%- for p in v.parameters | default([]) -%}
+                              {%- for val in (p | string).split(',') -%}
+                                  {%- set nsRejected.values = nsRejected.values + [val.strip()] -%}
+                              {%- endfor -%}
+                          {%- endfor -%}
+                      {%- endfor -%}
+                      {%- if nsRejected.values | length > 0 -%}
+                          {{ test_stage(col.name + ': rejected_values', columnContinueOnFailure) }}
+                          SELECT {{ colName }}
+                          FROM {{ target }}
+                          WHERE {{ colName }} IN ({{ nsRejected.values | join(', ') }})
+                      {%- endif -%}
+                    {%- if col.min_max is defined and col.min_max.parameters is defined -%}
+                        {{ test_stage(col.name + ': min_max', columnContinueOnFailure) }}
+                        SELECT {{ colName }}
+                        FROM {{ target }}
+                        WHERE {{ colName }} IS NOT NULL
+                        AND ({{ colName }} < {{ col.min_max.parameters[0] }} OR {{ colName }} > {{ col.min_max.parameters[1] }})
+                    {%- endif -%}
+                    {%- if col.min_value is defined and col.min_value.parameters is defined -%}
+                        {{ test_stage(col.name + ': min_value', columnContinueOnFailure) }}
+                        SELECT {{ colName }}
+                        FROM {{ target }}
+                        WHERE {{ colName }} IS NOT NULL AND {{ colName }} < {{ col.min_value.parameters[0] }}
+                    {%- endif -%}
+                    {%- if col.max_value is defined and col.max_value.parameters is defined -%}
+                        {{ test_stage(col.name + ': max_value', columnContinueOnFailure) }}
+                        SELECT {{ colName }}
+                        FROM {{ target }}
+                        WHERE {{ colName }} IS NOT NULL AND {{ colName }} > {{ col.max_value.parameters[0] }}
+                    {%- endif -%}
+                    {%- if col.freshness is defined and col.freshness.parameters is defined -%}
+                        {{ test_stage(col.name + ': freshness', columnContinueOnFailure) }}
+                        SELECT MAX(CAST({{ colName }} AS DATETIME)) AS "LATEST_VALUE"
+                        FROM {{ target }}
+                        HAVING MAX(CAST({{ colName }} AS DATETIME)) IS NULL
+                            OR MAX(CAST({{ colName }} AS DATETIME)) < DATEADD({{ col.freshness.parameters[1] | default('DAY', true) }}, -{{ col.freshness.parameters[0] }}, CURRENT_TIMESTAMP())
+                    {%- endif -%}
+                    {%- if col.relative_time is defined and col.relative_time.parameters is defined -%}
+                        {%- set other = '"' + col.relative_time.parameters[1] + '"' -%}
+                        {{ test_stage(col.name + ': relative_time', columnContinueOnFailure) }}
+                        SELECT {{ colName }}, {{ other }}
+                        FROM {{ target }}
+                        WHERE {{ colName }} IS NOT NULL AND {{ other }} IS NOT NULL
+                        AND NOT ({{ colName }} {{ col.relative_time.parameters[0] }} {{ other }})
+                    {%- endif -%}
+                {%- endfor -%}
+            {%- endif -%}
+
+            {%- set ns = namespace(cnt=0) -%}
+            {%- for test in config.tests | default([]) -%}
+                {%- if test is mapping and test.parameters is defined -%}
+                    {%- if test.parameters[2] | default("After") == runOrder -%}
+                        {%- set ns.cnt = ns.cnt + 1 -%}
+                        {{ test_stage(
+                            ('Pre Load Test ' if runOrder == 'Before' else 'Post Load Test ') ~ ns.cnt,
+                            test.parameters[1] | default(true)
+                        ) }}
+                        {{ test.parameters[0] }}
+                    {%- endif -%}
+                {%- endif -%}
+            {%- endfor -%}
+
+        {%- endif -%}
+    {%- endmacro -%}
+
+    {#===========================================================================
+    Description: Resolves the zero-key literal for a column (column-level @zeroKey wins, else node-level @zeroKey by dataType, else NULL).
+    Input: col (object)
+    Output: SQL literal for the resolved zero-key value.
+    ===========================================================================#}
+    {%- macro resolve_zero_key(col) -%}
+
+        {%- set ns = namespace(zk_type=none, zk_value=none) -%}
+
+        {# Column-level zeroKey #}
+        {%- if col.zeroKey is defined
+            and col.zeroKey.parameters is defined
+            and col.zeroKey.parameters | trim | length > 0 -%}
+
+            {%- set ns.zk_value = col.zeroKey.parameters[0] -%}
+
+        {# Node-level zeroKey, matched by column dataType #}
+        {%- else -%}
+            {%- set zkParams = config.zeroKey.parameters if (config.zeroKey is defined and config.zeroKey.parameters is defined) else [] -%}
+            {%- if col.dataType | upper == 'VARIANT' -%}
+                {%- set ns.zk_type = 'variant' -%}
+                {%- set ns.zk_value = none -%}
+            {%- elif col.dataType[:3] | upper in ('VAR', 'CHA', 'STR', 'TEX') -%}
+                {%- set ns.zk_type = 'string' -%}
+                {%- set ns.zk_value = zkParams[1] if zkParams | length > 1 else "'UNKNOWN'" -%}
+            {# Every numeric type (NUMBER/NUMERIC/DECIMAL, INT/INTEGER/BIGINT/SMALLINT/TINYINT/BYTEINT, FLOAT/DOUBLE/REAL) always gets 0 —
+               the node-level surrogateKeyValue applies to the surrogate key column only; override per column with @zeroKey(value). #}
+            {%- elif col.dataType[:3] | upper in ('NUM', 'INT', 'DEC', 'FLO', 'DOU', 'REA', 'BIG', 'SMA', 'TIN', 'BYT') -%}
+                {%- set ns.zk_type = 'numeric' -%}
+                {%- set ns.zk_value = 0 -%}
+            {%- elif col.dataType | upper == 'BOOLEAN' -%}
+                {%- set ns.zk_type = 'boolean' -%}
+                {%- set ns.zk_value = zkParams[3] if zkParams | length > 3 else true -%}
+            {%- elif col.dataType[:4] | upper in ('DATE', 'TIME', 'TIMESTAMP') -%}
+                {%- set ns.zk_type = 'datetime' -%}
+                {%- set ns.zk_value = zkParams[2] if zkParams | length > 2 else '1900-01-01 00:00:00' -%}
+            {%- endif -%}
+        {%- endif -%}
+
+        {# Format the resolved value #}
+        {%- if ns.zk_type == 'numeric' -%}
+            {{ ns.zk_value }}
+        {%- elif ns.zk_type == 'variant' -%}
+            PARSE_JSON('null')
+        {%- elif ns.zk_value is not none -%}
+            {%- if ns.zk_type == 'boolean' -%}
+                {{ ns.zk_value | upper }}
+
+            {%- elif ns.zk_type == 'datetime' -%}
+                TO_TIMESTAMP('{{ ns.zk_value }}')
+
+            {%- elif ns.zk_type == 'string' -%}
+                {# Node-level default: pasted verbatim, same as the column-level override — supply your own quotes in the annotation, e.g. "'UNKNOWN'". #}
+                {{ ns.zk_value }}
+
+            {%- else -%}
+                {# Column-level @zeroKey override: pasted verbatim, exactly as the user wrote it — #}
+                {# they supply their own quotes for a string, or a full expression like CAST(...). #}
+                {{ ns.zk_value }}
+            {%- endif -%}
+
+        {%- else -%}
+            NULL
+        {%- endif -%}
+
+    {%- endmacro -%}
 name: macro
 type: Macro
