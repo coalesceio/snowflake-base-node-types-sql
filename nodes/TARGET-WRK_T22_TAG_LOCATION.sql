@@ -1,7 +1,7 @@
 @id("d5a70000-0000-4000-8000-000000000033")
 @nodeType("SQLWork")
 @materializationType("table")
-@tag("Cost_Centre", "OPS")
+@tag("Cost_Centre", "OPS", "TARGET")
 SELECT
      "NAtionKey"  AS "NATION_KEY"     @id("t22-c1"),
      "name"       AS "NATION_NAME"    @id("t22-c2"),

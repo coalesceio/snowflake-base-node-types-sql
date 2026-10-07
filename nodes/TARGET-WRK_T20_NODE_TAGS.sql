@@ -1,7 +1,7 @@
 @id("d5a70000-0000-4000-8000-000000000031")
 @nodeType("SQLWork")
 @materializationType("table")
-@tag("Cost_Centre", "FIN")
+@tag("Cost_Centre", "HR")
 @tag("PII", "true")
 @tag("OWNER", "Tanvi")
 SELECT

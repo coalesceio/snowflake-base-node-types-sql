@@ -1,7 +1,7 @@
 @id("d5a70000-0000-4000-8000-000000000035")
 @nodeType("SQLWork")
 @materializationType("table")
-@tag("OWNER", "Tanvi")
+@tag("PII", "true")
 SELECT
      "NAtionKey"  AS "NATION_KEY"     @id("t24-c1"),
      CAST("name" AS VARCHAR(80)) AS "NATION_NAME" @id("t24-c2"),
