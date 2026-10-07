@@ -2,7 +2,6 @@
 @nodeType("SQLWork")
 @materializationType("table")
 @tag("OWNER", "Tanvi")
-@tag("OWNER", "Data")
 SELECT
      "NAtionKey"  AS "NATION_KEY"     @id("t27-c1"),
      "name"       AS "NATION_NAME"    @id("t27-c2")
