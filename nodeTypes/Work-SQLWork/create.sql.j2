@@ -50,7 +50,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
     {%- elif desiredMatType in ['table', 'transient table']  %}
 
-        {# Drop the current object if it was another type (a table rename/move is altered in place) #}
+        {# Drop the current object if it was another type (a table rename/move is cloned to the new path) #}
         {{ object_drop_sql() }}
 
         {%- if currentState is not defined or currentMatType != desiredMatType %}
@@ -74,32 +74,37 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
         {%- elif currentState is defined and currentState != desiredState and currentMatType == desiredMatType %}
 
-            {# Rename / Move Object #}
-            {{ alter_rename_sql() }}
+            {# Every alter runs on the clone (nsNodeVariables.alterObjectNameFullPath) #}
+            {%- set alterSql %}
 
-            {# Change table description #}
-            {{ alter_description_sql() }}
+                {# Cluster key: drop it first if clustered columns are dropped or renamed #}
+                {{ alter_drop_cluster_key_sql() }}
 
-            {# Cluster key: drop it first if clustered columns are being dropped #}
-            {{ alter_drop_cluster_key_sql() }}
+                {# Delete Column #}
+                {{ alter_drop_columns_sql() }}
 
-            {# Drop Columns #}
-            {{ alter_drop_columns_sql() }}
+                {# Alter Column: data type, nullability, description, default (old column names) #}
+                {{ alter_modify_columns_sql() }}
 
-            {# Add Columns #}
-            {{ alter_add_columns_sql() }}
+                {# Add Column #}
+                {{ alter_add_columns_sql() }}
 
-            {# Rename Columns (matched by id; a Work column whose id changed is dropped + added instead) #}
-            {{ alter_rename_columns_sql() }}
+                {# Edit Table Description #}
+                {{ alter_description_sql() }}
 
-            {# Change column attributes (data type, nullability, description, default) #}
-            {{ alter_modify_columns_sql() }}
+                {# Rename Column (matched by id; a Work column whose id changed is dropped + added instead) #}
+                {{ alter_rename_columns_sql() }}
 
-            {# Cluster key: apply the new key (after column adds/renames, so it can reference them) #}
-            {{ alter_cluster_key_sql() }}
+                {# Cluster key: apply the new key (after column adds/renames, so it can reference them) #}
+                {{ alter_cluster_key_sql() }}
 
-            {# Column- and node-level tag changes (unset before set) #}
-            {{ alter_tag_sql() }}
+                {# Column- and node-level tag changes (unset before set) #}
+                {{ alter_tag_sql() }}
+
+            {%- endset %}
+
+            {# Clone Table -> alters -> Swap Cloned Table (or Rename Table when renamed/moved) -> Delete Table #}
+            {{ alter_clone_swap_sql(alterSql) }}
 
             {# Nothing above altered the table: record a metadata-only change #}
             {{ alter_metadata_sql() }}
