@@ -1,6 +1,7 @@
 @id("d5a70000-0000-4000-8000-000000000034")
 @nodeType("SQLWork")
 @materializationType("table")
+@tests("SELECT 1 WHERE 1 = 0", true, "After")
 SELECT
      "NAtionKey"  AS "NATION_KEY"     @id("t23-c1"),
      "name"       AS "NATION_NAME"    @id("t23-c2"),

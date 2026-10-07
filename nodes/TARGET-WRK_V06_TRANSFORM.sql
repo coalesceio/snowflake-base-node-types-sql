@@ -3,7 +3,7 @@
 @materializationType("view")
 SELECT
      "NAtionKey"  AS "NATION_KEY"     @id("v06-c1"),
-     "name"       AS "NATION_NAME"    @id("v06-c2"),
+     UPPER("name") AS "NATION_NAME"   @id("v06-c2"),
      "REGIONKEY"  AS "REGION_KEY"     @id("v06-c3"),
      "CommenT"    AS "NATION_COMMENT" @id("v06-c4")
 FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
