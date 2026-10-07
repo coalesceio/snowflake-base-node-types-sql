@@ -723,69 +723,36 @@ macroString: |-
     ===========================================================================#}
 
     {#===========================================================================
-      tag_full_name(bareTagName, locationName): "DB"."SCHEMA"."TAG" for a tag; location
-      defaults to the node's own. Case-sensitive, no lineage edge (ref_no_link).
-    ===========================================================================#}
-    {%- macro tag_full_name(bareTagName, locationName) -%}
-        {{- ref_no_link(locationName | default(node.location.name, true), bareTagName) -}}
-    {%- endmacro -%}
-
-    {#===========================================================================
-      tag_duplicates(tagList): comma-separated tag names repeated (same name + location)
-      in tagList; '' when none.
-    ===========================================================================#}
-    {%- macro tag_duplicates(tagList) -%}
-        {%- set ns = namespace(entries=[], dupes=[]) -%}
-        {%- for t in tagList | default([]) -%}
-            {%- set entryKey = t.parameters[0] + '|' + (t.parameters[2] | default(node.location.name, true)) -%}
-            {%- set ns.entries = ns.entries + [{"key": entryKey, "name": t.parameters[0]}] -%}
-        {%- endfor -%}
-        {%- for e in ns.entries -%}
-            {%- if (ns.entries | selectattr('key', 'equalto', e.key) | list | length) > 1 and e.name not in ns.dupes -%}
-                {%- set ns.dupes = ns.dupes + [e.name] -%}
-            {%- endif -%}
-        {%- endfor -%}
-        {{- ns.dupes | join(', ') -}}
-    {%- endmacro -%}
-
-    {#===========================================================================
-      tag_check_duplicates(): failing "Duplicate Tags Found: <node|column>" check for each
-      node/column with a repeated tag. Call at the start of create, before any DDL.
+      tag_check_duplicates(): failing "Duplicate Tags Found: <node|column>" check for the
+      node and each column with a repeated tag (same name + location). Call at the start
+      of create, before any DDL.
     ===========================================================================#}
     {%- macro tag_check_duplicates() -%}
-        {%- set nodeDupeTags = tag_duplicates(config.tag) -%}
-        {%- if nodeDupeTags | trim | length > 0 %}
-            {{ test_stage('Duplicate Tags Found: ' + node.name, false) }}
-            -- {{ nodeDupeTags }} is applied multiple times on {{ node.name }}
-            {{ fail_sql() }}
-        {%- endif %}
+        {%- for owner in [{"name": node.name, "tag": config.tag}] + (columns | list) -%}
+            {%- set ns = namespace(entries=[], dupes=[]) -%}
+            {%- for t in owner.tag | default([]) -%}
+                {%- set ns.entries = ns.entries + [{"key": t.parameters[0] + '|' + (t.parameters[2] | default(node.location.name, true)),
+                                                    "name": t.parameters[0]}] -%}
+            {%- endfor -%}
+            {%- for e in ns.entries -%}
+                {%- if (ns.entries | selectattr('key', 'equalto', e.key) | list | length) > 1 and e.name not in ns.dupes -%}
+                    {%- set ns.dupes = ns.dupes + [e.name] -%}
+                {%- endif -%}
+            {%- endfor -%}
 
-        {%- for col in columns -%}
-            {%- set colDupeTags = tag_duplicates(col.tag) -%}
-            {%- if colDupeTags | trim | length > 0 %}
-                {{ test_stage('Duplicate Tags Found: ' + col.name, false) }}
-                -- {{ colDupeTags }} is applied multiple times on {{ col.name }}
+            {%- if ns.dupes | length > 0 %}
+                {{ test_stage('Duplicate Tags Found: ' + owner.name, false) }}
+                -- {{ ns.dupes | join(', ') }} is applied multiple times on {{ owner.name }}
                 {{ fail_sql() }}
             {%- endif %}
         {%- endfor -%}
     {%- endmacro -%}
 
     {#===========================================================================
-      tag_with_clause(tagList): WITH TAG (...) for CREATE / ADD COLUMN; '' when no tags.
-    ===========================================================================#}
-    {%- macro tag_with_clause(tagList) -%}
-        {%- set ns = namespace(items=[]) -%}
-        {%- for t in tagList | default([]) -%}
-            {%- set ns.items = ns.items + [tag_full_name(t.parameters[0], t.parameters[2]) + " = '" + (t.parameters[1] | string | escape) + "'"] -%}
-        {%- endfor -%}
-        {%- if ns.items | length > 0 -%}
-            WITH TAG ({{ ns.items | join(', ') }})
-        {%- endif -%}
-    {%- endmacro -%}
-
-    {#===========================================================================
-      tag_diff(desiredTagList, currentTagList, mode): 'set' -> new/changed tags with values,
-      'unset' -> removed/changed tag names; '' when nothing differs.
+      tag_diff(desiredTagList, currentTagList, mode): 'set' -> new tags and new values as
+      "DB"."SCHEMA"."TAG" = 'value', 'unset' -> removed tags (name/location gone; a value
+      change is only a set); '' when nothing differs. Tag location defaults to the node's own; names are case-sensitive and
+      qualified with ref_no_link (no lineage edge).
     ===========================================================================#}
     {%- macro tag_diff(desiredTagList, currentTagList, mode) -%}
         {%- set ns = namespace(desired=[], current=[], items=[]) -%}
@@ -804,22 +771,33 @@ macroString: |-
                                   | selectattr('location', 'equalto', dt.location)
                                   | list -%}
                 {%- if not unchanged -%}
-                    {%- set ns.items = ns.items + [tag_full_name(dt.name, dt.location) + " = '" + (dt.value | escape) + "'"] -%}
+                    {%- set ns.items = ns.items + [ref_no_link(dt.location, dt.name) + " = '" + (dt.value | escape) + "'"] -%}
                 {%- endif -%}
             {%- endfor -%}
         {%- else -%}
+            {#- A tag still present with a new value is not unset: SET TAG overwrites the value #}
             {%- for ct in ns.current -%}
-                {%- set exactMatch = ns.desired
+                {%- set stillTagged = ns.desired
                                   | selectattr('name', 'equalto', ct.name)
-                                  | selectattr('value', 'equalto', ct.value)
                                   | selectattr('location', 'equalto', ct.location)
                                   | list -%}
-                {%- if not exactMatch -%}
-                    {%- set ns.items = ns.items + [tag_full_name(ct.name, ct.location)] -%}
+                {%- if not stillTagged -%}
+                    {%- set ns.items = ns.items + [ref_no_link(ct.location, ct.name)] -%}
                 {%- endif -%}
             {%- endfor -%}
         {%- endif -%}
         {{- ns.items | join(', ') -}}
+    {%- endmacro -%}
+
+    {#===========================================================================
+      tag_with_clause(tagList): WITH TAG (...) for CREATE / ADD COLUMN — every tag in
+      tagList, via tag_diff against no current tags; '' when no tags.
+    ===========================================================================#}
+    {%- macro tag_with_clause(tagList) -%}
+        {%- set items = tag_diff(tagList, [], 'set') -%}
+        {%- if items | length > 0 -%}
+            WITH TAG ({{ items }})
+        {%- endif -%}
     {%- endmacro -%}
 
     {#===========================================================================
@@ -1070,7 +1048,7 @@ macroString: |-
 
     {#===========================================================================
       alter_tag_sql(): "Unset/Set Column Tags: <column>", then "Unset/Set <Table|View> Tags";
-      unset before set, only changed tags.
+      only changed tags; removed tags are unset before new tags/values are set.
     ===========================================================================#}
     {%- macro alter_tag_sql() -%}
         {%- set objectPath = nsNodeVariables.alterObjectNameFullPath -%}
