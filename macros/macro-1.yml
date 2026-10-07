@@ -1571,6 +1571,33 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
+      Macro : run_pre_post_sql(runOrder)
+
+      Description:
+        Emits the node's @preSQL or @postSQL statements, one stage per statement, in
+        the order they appear on the node. Call run_pre_post_sql('Pre') before the
+        load and run_pre_post_sql('Post') after it.
+
+      Input:
+        runOrder (String) : 'Pre' (config.preSQL) or 'Post' (config.postSQL)
+
+      Output:
+        "Pre-SQL <n>" / "Post-SQL <n>" stages with their SQL, or '' (empty string)
+        when the node has none.
+    ===========================================================================#}
+    {%- macro run_pre_post_sql(runOrder) -%}
+        {%- set sqlList = config.preSQL if runOrder == 'Pre' else config.postSQL -%}
+        {%- set ns = namespace(cnt=0) %}
+        {%- for sql in sqlList | default([], true) %}
+            {%- if sql is mapping and sql.parameters is defined %}
+                {%- set ns.cnt = ns.cnt + 1 %}
+                {{ stage(runOrder ~ '-SQL ' ~ ns.cnt) }}
+                {{ sql.parameters[0] }}
+            {%- endif %}
+        {%- endfor %}
+    {%- endmacro -%}
+
+    {#===========================================================================
     Description: Resolves the zero-key literal for a column (column-level @zeroKey wins, else node-level @zeroKey by dataType, else NULL).
     Input: col (object)
     Output: SQL literal for the resolved zero-key value.
