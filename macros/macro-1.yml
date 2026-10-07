@@ -6,10 +6,8 @@ macroString: |-
     ===========================================================================#}
 
     {#===========================================================================
-      Shorthand aliases for node types that use the advanced deployment
-      strategy: columns, storageLocations, config, sources, node and
-      parameters point at desiredState, so templates and macros can use them
-      directly.
+      Aliases for advanced-strategy node types: columns, storageLocations, config,
+      sources, node and parameters point at desiredState.
     ===========================================================================#}
     {%- if desiredState -%}
         {%- set columns = desiredState.columns -%}
@@ -21,25 +19,17 @@ macroString: |-
     {%- endif -%}
 
     {#===========================================================================
-      Macro : get_materialization_type(value)
-
-      Description:
-        Normalizes a materialization type as typed in @materializationType: lower case,
-        surrounding spaces trimmed and inner runs of spaces collapsed, so "Table ",
-        "  taBle" and "Transient   TABLE" read as "table" / "transient table". A missing
-        value gives ''. Defined in the shared setup because initialize_node_variables()
-        uses it before the later sections are rendered.
-
-      Output:
-        The normalized type, e.g. "transient table", or '' (empty string).
+      get_materialization_type(value): normalizes @materializationType — lower case,
+      spaces trimmed/collapsed ('  Transient  TABLE' -> 'transient table'); '' when missing.
+      Kept here because initialize_node_variables() uses it.
     ===========================================================================#}
     {%- macro get_materialization_type(value) -%}
         {{- (value | default('', true) | string).split() | join(' ') | lower -}}
     {%- endmacro -%}
 
     {#===========================================================================
-      Initialize variables for node types that use the
-      advanced deployment strategy
+      initialize_node_variables(nsNodeVariables): fills nsNodeVariables from
+      desiredState / currentState. Called once, right below.
     ===========================================================================#}
     {%- macro initialize_node_variables(nsNodeVariables) -%}
 
@@ -134,31 +124,17 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Shared node variables for node types that use the advanced deployment
-      strategy, created and initialized once per render — every node renders
-      the macros + its own template separately, so nothing is shared between
-      nodes. Templates and the alter_ macros use nsNodeVariables
-      directly:
-        currentDatabaseSchema / desiredDatabaseSchema : "DB.SCHEMA"
-        desiredMatType / currentMatType : normalized materialization type, e.g.
-                          "transient table" (see get_materialization_type); '' when absent.
-                          desiredMatType falls back to node in the run template
-        curObjectNameFullPath / desObjectNameFullPath : "DB"."SCHEMA"."NAME"
-        cloneObjectNameFullPath : "DB"."SCHEMA"."<current name>_COALESCE_INTERNAL_TABLE", the
-                          clone a table redeploy alters (in the current location)
-        alterObjectNameFullPath : the object the alter_ macros change — the clone for tables,
-                          the desired path for views (redeploy only)
-        droppedColumns  : quoted names of current columns being dropped, e.g. ['"A"', '"B"']
-                          (redeploy only; read by alter_drop_columns_sql and the cluster-key macros)
-        renamedColumns  : quoted current (old) names of columns being renamed — same id, new name
-                          (redeploy only; read by the cluster-key macros)
-        desiredClusterKey / currentClusterKey : CLUSTER BY terms ordered by position,
-                          e.g. ['"N_REGIONKEY"', 'trunc("N_NAME", -5)']
-        currentClusterKeyColumns : quoted names of current columns carrying @clusterKey
-        clusterKeyDropped : set true by alter_drop_cluster_key_sql when it drops the key early
-        metaDataChanged : set true by any redeploy stage that changes the object
-      Paths stay empty when the corresponding state is absent (e.g. no
-      currentState on a first deploy, neither state on non-advanced node types).
+      nsNodeVariables: shared per-render state for the templates and alter_ macros
+        desiredMatType / currentMatType       normalized type, '' when absent
+                                              (desired falls back to node in run)
+        desired/currentDatabaseSchema         "DB.SCHEMA"
+        des/curObjectNameFullPath             "DB"."SCHEMA"."NAME"
+        cloneObjectNameFullPath               <current name>_COALESCE_INTERNAL_TABLE
+        alterObjectNameFullPath               what alter_ macros change: clone (table) / view
+        droppedColumns / renamedColumns       quoted current column names
+        desired/currentClusterKey             CLUSTER BY terms, by position
+        currentClusterKeyColumns              current columns with @clusterKey
+        clusterKeyDropped / metaDataChanged   set by the redeploy macros
     ===========================================================================#}
     {%- set nsNodeVariables = namespace(currentDatabaseSchema = "",
                                         desiredDatabaseSchema = "",
@@ -182,39 +158,8 @@ macroString: |-
     ===========================================================================#}
 
     {#===========================================================================
-    get_boolean_config(flag)
-
-    Description:
-      Extracts the boolean value of a configuration flag, supporting both
-      annotation formats:
-        - @flag
-        - @flag(true) / @flag(false)
-
-    Input:
-      flag: Name of the boolean configuration flag, e.g. "truncateBefore",
-            "testsEnabled", or "clusterDefined".
-
-    Examples:
-      @truncateBefore
-        -> config["truncateBefore"] = true
-        -> Output: true
-
-      @truncateBefore(true)
-        -> config["truncateBefore"] = { parameters: [true] }
-        -> Output: true
-
-      @truncateBefore(false)
-        -> config["truncateBefore"] = { parameters: [false] }
-        -> Output: false
-
-      No annotation
-        -> config["truncateBefore"] is not defined
-        -> Output: empty
-
-    Usage:
-      {% if get_boolean_config("truncateBefore") | trim | lower == "true" %}
-        ...
-      {% endif %}
+      get_boolean_config(flag): 'true' / 'false' for @flag, @flag(true) or @flag(false);
+      '' when absent. Usage: get_boolean_config('truncateBefore') | trim | lower == 'true'
     ===========================================================================#}
     {%- macro get_boolean_config(flag) -%}
         {%- if config[flag] is defined -%}
@@ -227,13 +172,7 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-    Purpose: Determines the correct Snowflake DROP object syntax based on the materialization type.
-     
-    Input: materialization (string): The Snowflake object type to be dropped
-      (e.g., table, view, materialized view, dynamic table, external table).
-     
-    Returns: string: The appropriate DROP object keyword with IF EXISTS
-      (e.g., 'table IF EXISTS', 'view IF EXISTS', 'materialized view IF EXISTS').
+      drop_materialization(materialization): DROP keyword for a type, e.g. 'TABLE IF EXISTS'.
     ===========================================================================#}
     {% macro drop_materialization(materialization) %}
         {%- if materialization | lower in ['table', 'transient table','temporary table', 'hybrid table'] -%}
@@ -258,14 +197,8 @@ macroString: |-
     {% endmacro %}
 
     {#===========================================================================
-    Description:
-    Generates a deterministic hash value by combining and hashing all column values associated with the given `hash_name` using the `@inHash` annotation.
-
-    Input: `hash_name` (string) - The hash group identifier used in `@inHash("<hash_name>")` to group columns for hashing.
-
-    Output: - Returns a SQL expression of type `STRING`:
-          - A SHA1 hash of concatenated column values  
-          - Returns `NULL` if no columns are mapped to the given hash group
+      get_hash(hash_name, algo, delimiter): hash of the columns tagged @inHash(hash_name),
+      in position order; NULL when no column is in the group.
     ===========================================================================#}
     {%- macro get_hash(hash_name, algo='SHA1', delimiter='||') -%}
 
@@ -317,9 +250,7 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-    Description: Builds a datatype-aware condition that's TRUE when the source and target values differ.
-    Input: src_expr (string), tgt_expr (string), data_type (string)
-    Output: SQL boolean condition.
+      safe_compare(src_expr, tgt_expr, data_type): datatype-aware "values differ" condition.
     ===========================================================================#}
     {%- macro safe_compare(src_expr, tgt_expr, data_type) -%}
 
@@ -334,9 +265,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-    Description: Builds a datatype-aware equality condition for matching business keys. GEOGRAPHY/GEOMETRY can't be compared with =, so they're compared on their WKB binary form (exact match, still an equi-join).
-    Input: left_expr (string), right_expr (string), data_type (string)
-    Output: SQL boolean condition. NULL never matches, same as =.
+      safe_equals(left_expr, right_expr, data_type): datatype-aware equality for business keys
+      (GEOGRAPHY/GEOMETRY compared on WKB). NULL never matches.
     ===========================================================================#}
     {%- macro safe_equals(left_expr, right_expr, data_type) -%}
 
@@ -355,16 +285,8 @@ macroString: |-
     ===========================================================================#}
 
     {#===========================================================================
-      Macro : fail_sql(hardFail=true)
-
-      Description:
-        The body of a validation test stage that should stop the node. CREATE doesn't fail
-        a test stage on its row count like RUN does, so a hard fail raises a real SQL error
-        (SELECT 1/0); with hardFail false the check only reports (SELECT 1). Put the reason
-        in a SQL comment on the line above the call.
-
-      Output:
-        SELECT 1/0 (hardFail true, the default) or SELECT 1
+      fail_sql(hardFail): SELECT 1/0 (hardFail, default) or SELECT 1. CREATE does not fail a
+      test stage on row count, so checks that must stop a create use the hard fail.
     ===========================================================================#}
     {%- macro fail_sql(hardFail=true) -%}
         {%- if hardFail -%}
@@ -375,21 +297,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : validate_materialization_type(allowedTypes)
-
-      Description:
-        Stops the node when its @materializationType (normalized: case and extra spaces
-        are ignored, see get_materialization_type) is not one the node type supports —
-        otherwise no create/load branch would match and the node would silently do
-        nothing. Call it at the start of the create and run templates.
-
-      Input:
-        allowedTypes (list) : supported types, lower case
-                              (default ['table', 'transient table', 'view'])
-
-      Output:
-        "Unsupported Materialization Type: <node>" test stage failing with fail_sql()
-        (SELECT 1/0), or '' (empty string) when the type is supported.
+      validate_materialization_type(allowedTypes): failing "Unsupported Materialization Type"
+      check when the normalized type is not allowed. Call first in create and run.
     ===========================================================================#}
     {%- macro validate_materialization_type(allowedTypes=['table', 'transient table', 'view']) -%}
         {%- if nsNodeVariables.desiredMatType not in allowedTypes %}
@@ -400,9 +309,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-    Description: Checks that every column carries its own @id annotation, reporting duplicate column names and repeated @id values separately. Shared by validate_dimension_requirements and validate_fact_requirements.
-    Input: hardFail (boolean, default false) — passed through from the calling validator.
-    Output: Rendered test_stage(...) + SELECT statements for every check that fails.
+      validate_column_ids(hardFail): every column needs its own @id; reports duplicate
+      names and repeated ids. Used by the Dimension and Fact validators.
     ===========================================================================#}
     {%- macro validate_column_ids(hardFail=false) -%}
         {# A column without a real @id has id equal to its name. When the SELECT repeats a column name, Coalesce renames the extra copy by appending a number (SYSTEM_CREATE_DATE -> SYSTEM_CREATE_DATE1) and drops its @id, so it lands here too — report that as a duplicate name rather than a missing ID. #}
@@ -465,9 +373,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-    Description: Validates a Dimension node's annotations (column IDs, business key, mergeStrategy, required system columns). Shared by create.sql.j2 and run.sql.j2.
-    Input: hardFail (boolean, default false) — set true from create.sql.j2 so a failed check raises a real SQL error, since CREATE (unlike RUN) doesn't fail on row count alone.
-    Output: Rendered test_stage(...) + SELECT statements for every check that fails.
+      validate_dimension_requirements(hardFail): Dimension checks (column ids, business key,
+      mergeStrategy, system columns). hardFail = true from create.
     ===========================================================================#}
     {%- macro validate_dimension_requirements(hardFail=false) -%}
 
@@ -677,9 +584,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-    Description: Validates a Fact node's annotations (column IDs, mergeStrategy, required system columns). Shared by create.sql.j2 and run.sql.j2.
-    Input: hardFail (boolean, default false) — set true from create.sql.j2 so a failed check raises a real SQL error, since CREATE (unlike RUN) doesn't fail on row count alone.
-    Output: Rendered test_stage(...) + SELECT statements for every check that fails.
+      validate_fact_requirements(hardFail): Fact checks (column ids, mergeStrategy, system
+      columns). hardFail = true from create.
     ===========================================================================#}
     {%- macro validate_fact_requirements(hardFail=false) -%}
 
@@ -817,38 +723,16 @@ macroString: |-
     ===========================================================================#}
 
     {#===========================================================================
-      Macro : tag_full_name(bareTagName, locationName)
-
-      Description:
-        Fully qualifies a bare Snowflake tag name (e.g. "PII") using the database/schema of
-        the given storage location, so @tag annotations only need the tag's own name —
-        Snowflake requires a fully-qualified tag reference whenever the current session
-        database differs from the tag's database. Quoted (via ref_no_link()), so the tag
-        name/value must be typed in the exact case the tag was created with in Snowflake.
-        Uses ref_no_link() rather than ref() so a tag reference doesn't register a lineage
-        dependency edge. locationName defaults to this node's own location — never a
-        hardcoded alias — since a location's name can differ across environments.
-
-      Output:
-        "DATABASE"."SCHEMA"."tagName"
+      tag_full_name(bareTagName, locationName): "DB"."SCHEMA"."TAG" for a tag; location
+      defaults to the node's own. Case-sensitive, no lineage edge (ref_no_link).
     ===========================================================================#}
     {%- macro tag_full_name(bareTagName, locationName) -%}
         {{- ref_no_link(locationName | default(node.location.name, true), bareTagName) -}}
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : tag_duplicates(tagList)
-
-      Description:
-        Finds tag names whose (name, location) match another entry in a set of
-        @tag(<tagName>, <tagValue>, <location>) annotations — pass config.tag for node-level
-        tags, or col.tag for a single column's tags. A given database.schema.tagname is one
-        entity regardless of value (Snowflake itself rejects two different values for the
-        same tag on one column), so any repeat of the same name+location is a duplicate,
-        even with different values. Same name with a different location is allowed.
-
-      Output:
-        "COST_CENTER, PII" (comma-separated duplicate names) or '' (empty string) when none.
+      tag_duplicates(tagList): comma-separated tag names repeated (same name + location)
+      in tagList; '' when none.
     ===========================================================================#}
     {%- macro tag_duplicates(tagList) -%}
         {%- set ns = namespace(entries=[], dupes=[]) -%}
@@ -865,20 +749,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : tag_check_duplicates()
-
-      Description:
-        Validates the node's @tag annotations: the same tag name + location repeated on the
-        node, or on any one column, is not allowed (see tag_duplicates). Each offending
-        node/column gets a test stage that stops the deploy before any DDL, naming the
-        duplicated tags in a SQL comment. CREATE doesn't fail a test stage on its row count
-        like RUN does, so the stage raises a real SQL error via fail_sql() (SELECT 1/0), the
-        same hard fail validate_dimension_requirements(true) uses; continue_on_failure false
-        then stops the node. Call it at the start of the create template, before any DDL.
-
-      Output:
-        Zero or more "Duplicate Tags Found: <node or column>" test stages, each failing
-        with fail_sql() (SELECT 1/0), or '' (empty string) when all tags are valid.
+      tag_check_duplicates(): failing "Duplicate Tags Found: <node|column>" check for each
+      node/column with a repeated tag. Call at the start of create, before any DDL.
     ===========================================================================#}
     {%- macro tag_check_duplicates() -%}
         {%- set nodeDupeTags = tag_duplicates(config.tag) -%}
@@ -899,16 +771,7 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : tag_with_clause(tagList)
-
-      Description:
-        CREATE / ADD COLUMN: generates the WITH TAG clause for a set of repeatable
-        @tag(<tagName>, <tagValue>, <location>) annotations — pass config.tag for the
-        node/table-level tags, or col.tag for a single column's tags.
-
-      Output:
-        WITH TAG (COST_CENTER = 'FINANCE', PII = 'true')
-        or '' (empty string) when tagList has no @tag annotations.
+      tag_with_clause(tagList): WITH TAG (...) for CREATE / ADD COLUMN; '' when no tags.
     ===========================================================================#}
     {%- macro tag_with_clause(tagList) -%}
         {%- set ns = namespace(items=[]) -%}
@@ -921,25 +784,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : tag_diff(desiredTagList, currentTagList, mode)
-
-      Description:
-        Redeploy: compares a desired and a current set of @tag(<tagName>, <tagValue>,
-        <location>) annotations (config.tag or col.tag from desiredState / currentState) and
-        returns the comma-separated list for the ALTER statement. Each tag is compared as
-        (name, value, location): the value is stringified so 5 and '5' are equal, and a
-        missing location falls back to that state's own node location.
-          mode == 'set'   -> "tag_name = 'tag_value'" for tags that are new or whose
-                              value/location changed (for SET TAG)
-          mode == 'unset' -> current tags with no exact (name, value, location) match in
-                              the desired set — covers tags removed entirely and tags whose
-                              value/location changed, so a changed tag is always unset before
-                              being re-set with its new value (for UNSET TAG)
-
-      Output:
-        "COST_CENTER = 'FINANCE', PII = 'true'" (mode='set')
-        "OLD_TAG, ANOTHER_TAG" (mode='unset')
-        or '' (empty string) when nothing needs to change.
+      tag_diff(desiredTagList, currentTagList, mode): 'set' -> new/changed tags with values,
+      'unset' -> removed/changed tag names; '' when nothing differs.
     ===========================================================================#}
     {%- macro tag_diff(desiredTagList, currentTagList, mode) -%}
         {%- set ns = namespace(desired=[], current=[], items=[]) -%}
@@ -981,22 +827,7 @@ macroString: |-
     ===========================================================================#}
 
     {#===========================================================================
-      Macro : get_clusterby_sql
-
-      Description:
-        Generates the CLUSTER BY clause for the node's cluster configuration, from the repeatable
-        @clusterKey(<position>, "<expression>") column annotation. Each occurrence contributes one
-        term, ordered by <position> (lowest first) — omit the expression to cluster by the column
-        itself, or give a transform expression (e.g. trunc(N_NAME, -5)) to cluster by that instead.
-
-      Inputs:
-        - col.clusterKey : list of annotation entries per column, each { parameters: [<position>, <expression>] }
-
-      Output:
-        - If at least one term is present:
-            CLUSTER BY (N_REGIONKEY, trunc(N_NAME, -5))
-        - If no valid terms are found:
-            '' (empty string)
+      get_clusterby_sql(): CLUSTER BY (...) from @clusterKey for CREATE; '' when none.
     ===========================================================================#}
     {%- macro get_clusterby_sql() -%}
         {#- Terms are built once in initialize_node_variables (nsNodeVariables.desiredClusterKey) #}
@@ -1006,22 +837,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : view_definition_sql(state, withTags=true)
-
-      Description:
-        Renders a view's definition — everything after CREATE OR REPLACE VIEW <path> — for
-        the given state (desiredState or currentState): the column list with column
-        comments, the view comment, and the AS <cte> SELECT <transforms> <join> query, plus
-        column and view WITH TAG clauses when withTags is true. The object path is left
-        out, since renames/moves are handled separately.
-        With withTags=false, comparing the current and desired output tells whether
-        anything other than tags changed: equal output means only tags (or nothing that
-        affects the view's DDL) changed. Both renders use the same template text, so they
-        differ only where the states differ.
-
-      Output:
-        ("ID", "NAME" WITH TAG (...) COMMENT '...') COMMENT = '...' WITH TAG (...)
-        AS <cte> SELECT "SRC"."ID" AS "ID", ... <join>
+      view_definition_sql(state, withTags): view column list, comments, tags and AS SELECT
+      for a state. withTags=false is used to detect tag-only changes.
     ===========================================================================#}
     {%- macro view_definition_sql(state, withTags=true) -%}
         (
@@ -1049,31 +866,14 @@ macroString: |-
     ===========================================================================#}
 
     {#===========================================================================
-      Table redeploy follows the base Work clone pattern:
-        Clone Table -> alter_ stages on the clone -> Swap Cloned Table + Delete Table
-        (same name and location), or Rename Table + Delete Table (renamed / moved).
-      The clone keeps the cluster key, tags and grants (COPY GRANTS), so every change is
-      made on the clone and the live table is untouched until the swap or rename.
-      Views are altered in place (tags only) or recreated.
+      Table redeploy (base Work clone pattern): Clone Table -> alter_ stages on the clone
+      -> Swap Cloned Table (or Rename Table when renamed/moved) -> Delete Table.
+      Views are altered in place (tags) or recreated.
     ===========================================================================#}
 
     {#===========================================================================
-      Macro : object_drop_sql()
-
-      Description:
-        Drops the current object when it can't be altered into the desired one:
-          - the node was deleted (no desiredState)
-          - the materialization changed, e.g. view -> table
-          - a view was renamed or moved
-        A table that is only renamed or moved is not dropped — alter_clone_swap_sql()
-        clones it to the new path, keeping its data. When a table node is deleted, its
-        clone (left over by a failed redeploy) is dropped first. The DROP keyword comes from
-        drop_materialization(). Call it before the create (or as the whole delete path).
-        Sets nsNodeVariables.metaDataChanged when the stage is emitted.
-
-      Output:
-        "Drop <type>" stage with its DROP ... IF EXISTS (after a "Delete Table" stage for
-        the clone of a deleted table), or '' (empty string) when the current object can stay.
+      object_drop_sql(): "Drop <type>" when the node is deleted, the type changed or a view
+      moved/renamed. A deleted table also drops its leftover clone ("Delete Table").
     ===========================================================================#}
     {%- macro object_drop_sql() -%}
         {%- if currentState is defined and currentState -%}
@@ -1098,23 +898,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : alter_drop_cluster_key_sql()
-
-      Description:
-        Redeploy stage that drops the table's clustering key before columns are dropped or
-        renamed — call it first, before alter_drop_columns_sql(). Snowflake rejects dropping
-        or renaming a column that belongs to the clustering key (error 003320), so the key
-        is dropped first when:
-          - a column carrying @clusterKey is being dropped or renamed, or
-          - the key is changing in the same deploy that drops columns (another column's
-            expression may reference a dropped column, e.g. trunc("B", -5) on "A").
-        The new key, if any, is applied later by alter_cluster_key_sql(). Sets
-        nsNodeVariables.clusterKeyDropped and nsNodeVariables.metaDataChanged when the
-        stage is emitted. Tables only.
-
-      Output:
-        "Drop Cluster Key" stage with its ALTER TABLE ... DROP CLUSTERING KEY,
-        or '' (empty string) when the key can stay.
+      alter_drop_cluster_key_sql(): "Drop Cluster Key" before a clustered column is dropped
+      or renamed (Snowflake 003320). Call first; alter_cluster_key_sql() re-applies it.
     ===========================================================================#}
     {%- macro alter_drop_cluster_key_sql() -%}
         {%- set ns = namespace(clusteredDroppedOrRenamed=false) -%}
@@ -1138,18 +923,7 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : alter_drop_columns_sql()
-
-      Description:
-        Redeploy stage that drops the table columns no longer in the node, in a single
-        ALTER TABLE ... DROP. The columns come from nsNodeVariables.droppedColumns
-        (current columns with no desired match by id or by name, so a renamed column is
-        not dropped). Tables only — views are recreated instead. Sets
-        nsNodeVariables.metaDataChanged when the stage is emitted.
-
-      Output:
-        "Delete Column" stage with its ALTER TABLE ... DROP,
-        or '' (empty string) when no column is dropped.
+      alter_drop_columns_sql(): "Delete Column" — one ALTER ... DROP for removed columns.
     ===========================================================================#}
     {%- macro alter_drop_columns_sql() -%}
         {%- if nsNodeVariables.droppedColumns | length > 0 %}
@@ -1161,26 +935,9 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : alter_modify_columns_sql()
-
-      Description:
-        Redeploy stage that changes attributes of existing table columns. Current columns
-        are matched to desired ones by id, then by name; for each match, any change to
-        these attributes is collected:
-          - data type   (case- and whitespace-insensitive: varchar(10) = VARCHAR(10))
-          - nullability (nullable == false means NOT NULL)
-          - description (missing = '')
-          - default     (missing = none)
-        All changes of all columns go in one ALTER TABLE ... ALTER ( ... ), using the
-        current (old) column names — call it before alter_rename_columns_sql().
-        Snowflake limits: SET DATA TYPE only widens VARCHAR/NUMBER precision, and SET DEFAULT
-        only accepts sequence defaults — other changes fail at deploy (on the clone, so the
-        live table is untouched). Tables only. Sets nsNodeVariables.metaDataChanged when the
-        stage is emitted.
-
-      Output:
-        "Alter Column" stage with its ALTER TABLE ... ALTER ( ... ),
-        or '' (empty string) when no column attribute changed.
+      alter_modify_columns_sql(): "Alter Column" — one ALTER ( ... ) with every data type,
+      nullability, description and default change, using the old column names.
+      Call before alter_rename_columns_sql().
     ===========================================================================#}
     {%- macro alter_modify_columns_sql() -%}
         {%- set ns = namespace(actions=[]) -%}
@@ -1229,19 +986,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : alter_add_columns_sql()
-
-      Description:
-        Redeploy stage that adds the node's new columns to the table, in a single
-        ALTER TABLE ... ADD COLUMN. A desired column is new when no current column matches
-        it by id or by name (so a renamed column is not re-added). Each column carries its
-        data type, NOT NULL (when nullable == false), DEFAULT, WITH TAG and COMMENT, as on
-        CREATE. Tables only — views are recreated instead. Sets
-        nsNodeVariables.metaDataChanged when the stage is emitted.
-
-      Output:
-        "Add Column" stage with its ALTER TABLE ... ADD COLUMN,
-        or '' (empty string) when no column is added.
+      alter_add_columns_sql(): "Add Column" — one ADD COLUMN for new columns, with NOT NULL,
+      DEFAULT, tags and comment.
     ===========================================================================#}
     {%- macro alter_add_columns_sql() -%}
         {%- set ns = namespace(items=[]) -%}
@@ -1270,17 +1016,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : alter_description_sql()
-
-      Description:
-        Redeploy stage that updates the object's comment when the node description
-        changed. A missing description counts as empty, so undefined vs '' is not a change.
-        The ALTER keyword (VIEW or TABLE) and the stage-name label come from the desired
-        materialization. Sets nsNodeVariables.metaDataChanged when the stage is emitted.
-
-      Output:
-        "Edit <Table|View> Description" stage with its ALTER ... SET COMMENT,
-        or '' (empty string) when the description is unchanged.
+      alter_description_sql(): "Edit Table|View Description" — SET COMMENT when the node
+      description changed (missing = empty).
     ===========================================================================#}
     {%- macro alter_description_sql() -%}
         {%- set desiredDescription = node.description | default('', true) -%}
@@ -1294,23 +1031,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : alter_rename_columns_sql()
-
-      Description:
-        Redeploy stages that rename table columns, keeping their data. A column is
-        renamed when a desired column has the same id as a current column but a different
-        name — matching is by id only, so it relies on stable column ids:
-          - Dimension / Fact: columns carry @id, so a rename is a true RENAME COLUMN.
-          - Work (SQL): if a column's id changes along with its name, it is not a rename —
-            the old column is dropped (alter_drop_columns_sql) and the new one added
-            (alter_add_columns_sql), so its existing data is lost.
-        One ALTER per column (Snowflake renames one column per statement), after
-        alter_modify_columns_sql(), which uses the old names. Tables only — views are
-        recreated instead. Sets nsNodeVariables.metaDataChanged when any stage is emitted.
-
-      Output:
-        One "Rename Column" stage per renamed column with its ALTER TABLE ... RENAME COLUMN,
-        or '' (empty string) when no column is renamed.
+      alter_rename_columns_sql(): "Rename Column" per column whose id is kept but name
+      changed. A Work column whose id also changed is dropped and added instead.
     ===========================================================================#}
     {%- macro alter_rename_columns_sql() -%}
         {%- for curCol in currentState.columns -%}
@@ -1325,20 +1047,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : alter_cluster_key_sql()
-
-      Description:
-        Redeploy stage that brings the table's clustering key to the desired @clusterKey
-        terms — call it after alter_add_columns_sql() and alter_rename_columns_sql(), so
-        the new key can reference added or renamed columns. Comparison ignores whitespace;
-        position renumbering that keeps the same order is not a change.
-          - desired key set, and changed or dropped early -> CLUSTER BY (<terms>)
-          - no desired key, current key exists, not already dropped -> DROP CLUSTERING KEY
-        Sets nsNodeVariables.metaDataChanged when a stage is emitted. Tables only.
-
-      Output:
-        "Recluster Table" or "Drop Cluster Key" stage with its ALTER TABLE,
-        or '' (empty string) when unchanged.
+      alter_cluster_key_sql(): "Recluster Table" with the new key, or "Drop Cluster Key"
+      when it was removed. Call after column adds/renames.
     ===========================================================================#}
     {%- macro alter_cluster_key_sql() -%}
         {%- set keyChanged = (nsNodeVariables.desiredClusterKey | map('replace', ' ', '') | list)
@@ -1359,18 +1069,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : alter_tag_sql()
-
-      Description:
-        Redeploy stages that bring the object's @tag annotations from currentState to
-        desiredState — column-level tags first (columns matched by id, then by name, using
-        the new names), then node-level tags. A changed tag is unset before it is re-set.
-        The ALTER keyword (VIEW or TABLE) and the stage-name label come from desiredState.
-        Sets nsNodeVariables.metaDataChanged when any stage is emitted.
-
-      Output:
-        Zero or more "Unset Column Tags: <column>" / "Set Column Tags: <column>" / "Unset <View|Table> Tags" /
-        "Set <View|Table> Tags" stages with their ALTER statements.
+      alter_tag_sql(): "Unset/Set Column Tags: <column>", then "Unset/Set <Table|View> Tags";
+      unset before set, only changed tags.
     ===========================================================================#}
     {%- macro alter_tag_sql() -%}
         {%- set objectPath = nsNodeVariables.alterObjectNameFullPath -%}
@@ -1426,26 +1126,9 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : alter_clone_swap_sql(alterSql)
-
-      Description:
-        Wraps a table redeploy in the base Work clone pattern. alterSql is the captured
-        output of the alter_ macros, which change nsNodeVariables.alterObjectNameFullPath
-        (the clone). When there is anything to alter, or the table is renamed or moved:
-          1. "Clone Table"  — CREATE OR REPLACE [TRANSIENT] TABLE <clone> CLONE <current>
-                              COPY GRANTS (keeps data, cluster key, tags and grants)
-          2. alterSql       — every alter, on the clone
-          3. same name and location: "Swap Cloned Table" (clone SWAP WITH current), then
-             "Delete Table" (the clone, now holding the old table)
-             renamed / moved: "Rename Table" (clone RENAME TO desired path), then
-             "Delete Table" (the original)
-        A failure in steps 1–2 leaves the live table untouched. The original is dropped
-        only after the rename succeeded. Sets nsNodeVariables.metaDataChanged when the
-        stages are emitted. Tables only.
-
-      Output:
-        The clone, alter and swap/rename stages, or '' (empty string) when alterSql is
-        empty and the path is unchanged (a metadata-only change).
+      alter_clone_swap_sql(alterSql): wraps the alters in Clone Table -> alterSql -> Swap
+      Cloned Table + Delete Table, or Rename Table + Delete Table when renamed/moved.
+      '' when there is nothing to alter and the path is unchanged.
     ===========================================================================#}
     {%- macro alter_clone_swap_sql(alterSql) -%}
         {%- set clonePath = nsNodeVariables.cloneObjectNameFullPath -%}
@@ -1479,18 +1162,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : alter_metadata_sql()
-
-      Description:
-        Redeploy fallback for tables and views: when the node changed (currentState !=
-        desiredState) but no redeploy stage changed the object (nsNodeVariables.
-        metaDataChanged is still false) — e.g. only tests, writeMode or pre/post SQL
-        changed — emits a no-op stage so the deploy still records the new state. Call it
-        last, after every alter_ macro of the redeploy path.
-
-      Output:
-        "Metadata Update-Default" stage with select 1=0, or ''
-        (empty string) when something was already altered or nothing changed.
+      alter_metadata_sql(): "Metadata Update-Default" (select 1=0) when the node changed
+      but no stage altered the object. Call last.
     ===========================================================================#}
     {%- macro alter_metadata_sql() -%}
         {%- if currentState != desiredState and not nsNodeVariables.metaDataChanged %}
@@ -1504,17 +1177,7 @@ macroString: |-
     ===========================================================================#}
 
     {#===========================================================================
-    Purpose          : Executes data quality tests associated with the node
-                      and its columns, based on the configured run order.
-                      Supports running tests either before or after data
-                      insertion, and respects the test continuation
-                      behavior on failure.
-    Input Parameters : runOrder (String)
-                      - Determines when the tests should be executed.
-                          Expected values: 'Before' or 'After'
-    Returns          : Rendered SQL statements for executing the applicable
-                      node-level and column-level data quality tests.
-                      No output is generated if tests are disabled.
+      run_tests(runOrder): node and column data quality tests for 'Before' or 'After' the load.
     ===========================================================================#}
     {%- macro run_tests(runOrder) -%}
 
@@ -1628,19 +1291,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      Macro : run_pre_post_sql(runOrder)
-
-      Description:
-        Emits the node's @preSQL or @postSQL statements, one stage per statement, in
-        the order they appear on the node. Call run_pre_post_sql('Pre') before the
-        load and run_pre_post_sql('Post') after it.
-
-      Input:
-        runOrder (String) : 'Pre' (config.preSQL) or 'Post' (config.postSQL)
-
-      Output:
-        "Pre-SQL <n>" / "Post-SQL <n>" stages with their SQL, or '' (empty string)
-        when the node has none.
+      run_pre_post_sql(runOrder): 'Pre' / 'Post' -> one "Pre-SQL <n>" / "Post-SQL <n>" stage
+      per @preSQL / @postSQL statement.
     ===========================================================================#}
     {%- macro run_pre_post_sql(runOrder) -%}
         {%- set sqlList = config.preSQL if runOrder == 'Pre' else config.postSQL -%}
@@ -1655,9 +1307,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-    Description: Resolves the zero-key literal for a column (column-level @zeroKey wins, else node-level @zeroKey by dataType, else NULL).
-    Input: col (object)
-    Output: SQL literal for the resolved zero-key value.
+      resolve_zero_key(col): zero-key literal — column @zeroKey, else node @zeroKey by
+      dataType, else NULL.
     ===========================================================================#}
     {%- macro resolve_zero_key(col) -%}
 
