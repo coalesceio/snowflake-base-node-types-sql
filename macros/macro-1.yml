@@ -1020,16 +1020,15 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      alter_description_sql(): "Edit Table|View Description" — SET COMMENT when the node
-      description changed (missing = empty).
+      alter_description_sql(): "Edit Table Description" — SET COMMENT on the clone when the
+      node description changed (missing = empty). Tables only: a view is recreated instead.
     ===========================================================================#}
     {%- macro alter_description_sql() -%}
         {%- set desiredDescription = node.description if node.description | trim | length > 0 else '' -%}
         {%- set currentDescription = currentState.node.description if currentState.node.description | trim | length > 0 else '' -%}
         {%- if currentDescription != desiredDescription %}
-            {%- set objectKind = 'VIEW' if nsNodeVariables.desiredMatType == 'view' else 'TABLE' %}
-            {{ stage('Edit ' + objectKind | title + ' Description') }}
-            ALTER {{ objectKind }} {{ nsNodeVariables.alterObjectNameFullPath }}
+            {{ stage('Edit Table Description') }}
+            ALTER TABLE {{ nsNodeVariables.alterObjectNameFullPath }}
             SET COMMENT = '{{ desiredDescription | escape }}'
             {%- set nsNodeVariables.metaDataChanged = true -%}
         {%- endif %}
