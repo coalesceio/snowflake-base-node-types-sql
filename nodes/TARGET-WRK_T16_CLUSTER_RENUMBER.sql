@@ -2,8 +2,8 @@
 @nodeType("SQLWork")
 @materializationType("table")
 SELECT
-     "NAtionKey"  AS "NATION_KEY"     @id("t16-c1") @clusterKey(10),
+     "NAtionKey"  AS "NATION_ID"      @id("t16-c1") @clusterKey(10),
      "name"       AS "NATION_NAME"    @id("t16-c2"),
-     "REGIONKEY"  AS "REGION_KEY"     @id("t16-c3") @clusterKey(20),
-     "REGIONKEY" * 10 AS "REGION_BUCKET" @id("t16-c4") @clusterKey(30)
+     "REGIONKEY" * 10 AS "REGION_BUCKET" @id("t16-c4") @clusterKey(30),
+     SUBSTR("name", 1, 2) AS "NAME_PREFIX" @id("t16-c5") @clusterKey(40)
 FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
