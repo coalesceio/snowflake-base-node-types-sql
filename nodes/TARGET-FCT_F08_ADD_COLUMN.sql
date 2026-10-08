@@ -7,5 +7,6 @@ SELECT
      "REGIONKEY" AS "REGION_KEY" @id("f08003"),
      "CommenT" AS "NATION_COMMENT" @id("f08004"),
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("f08008") @isSystemCreateDate,
-     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @id("f08009") @isSystemUpdateDate
+     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @id("f08009") @isSystemUpdateDate,
+     "N_Load_Timestamp" AS "LOAD_TS" @id("f0800a") @tag("PII", "false") @description("Added in phase 2")
 FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"

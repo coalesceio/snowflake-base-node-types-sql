@@ -2,8 +2,9 @@
 @nodeType("SQLFact")
 @materializationType("table")
 @mergeStrategy("allColumnMatch")
+@tag("OWNER", "Tanvi")
 SELECT
-     "NAtionKey" AS "NATION_KEY" @id("f26001"),
+     "NAtionKey" AS "NATION_KEY" @id("f26001") @clusterKey(1),
      "REGIONKEY" AS "REGION_KEY" @id("f26003"),
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("f26008") @isSystemCreateDate
 FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"

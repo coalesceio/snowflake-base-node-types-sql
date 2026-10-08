@@ -4,8 +4,6 @@
 SELECT
      "NAtionKey" AS "NATION_KEY" @id("f09001") @isBusinessKey,
      "name" AS "NATION_NAME" @id("f09002"),
-     "REGIONKEY" AS "REGION_KEY" @id("f09003"),
-     "CommenT" AS "NATION_COMMENT" @id("f09004"),
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("f09008") @isSystemCreateDate,
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @id("f09009") @isSystemUpdateDate
 FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"

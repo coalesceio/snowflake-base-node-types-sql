@@ -1,6 +1,7 @@
 @id("d5a70000-0000-4000-8000-000000000206")
 @nodeType("SQLFact")
 @materializationType("table")
+@description("F06: moved and described")
 SELECT
      "NAtionKey" AS "NATION_KEY" @id("f06001") @isBusinessKey,
      "name" AS "NATION_NAME" @id("f06002"),

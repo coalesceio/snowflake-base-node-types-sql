@@ -4,7 +4,7 @@
 @mergeStrategy("upsert")
 SELECT
      "NAtionKey" AS "NATION_KEY" @id("f21001") @isBusinessKey,
-     "name" AS "NATION_NAME" @id("f21002"),
+     "name" AS "COUNTRY_NAME" @id("f21002"),
      "REGIONKEY" AS "REGION_KEY" @id("f21003"),
      "CommenT" AS "NATION_COMMENT" @id("f21004")
 FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"

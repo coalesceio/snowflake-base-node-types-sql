@@ -1,8 +1,8 @@
 @id("d5a70000-0000-4000-8000-000000000217")
 @nodeType("SQLFact")
 @materializationType("table")
-@tag("Cost_Centre", "FIN")
-@tag("OWNER", "Tanvi")
+@tag("Cost_Centre", "HR")
+@tag("PII", "true")
 SELECT
      "NAtionKey" AS "NATION_KEY" @id("f17001") @isBusinessKey,
      "name" AS "NATION_NAME" @id("f17002"),

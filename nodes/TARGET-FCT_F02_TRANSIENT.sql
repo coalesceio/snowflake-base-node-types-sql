@@ -3,7 +3,7 @@
 @materializationType("transient table")
 SELECT
      "NAtionKey" AS "NATION_KEY" @id("f02001") @isBusinessKey,
-     "name" AS "NATION_NAME" @id("f02002"),
+     CAST("name" AS VARCHAR(50)) AS "NATION_NAME" @id("f02002") @description("F02: widened and described"),
      "REGIONKEY" AS "REGION_KEY" @id("f02003"),
      "CommenT" AS "NATION_COMMENT" @id("f02004"),
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("f02008") @isSystemCreateDate,

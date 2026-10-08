@@ -1,10 +1,10 @@
 @id("d5a70000-0000-4000-8000-000000000207")
 @nodeType("SQLFact")
 @materializationType("table")
-@description("F07: original")
+@description("F07: changed description")
 SELECT
      "NAtionKey" AS "NATION_KEY" @id("f07001") @isBusinessKey,
-     "name" AS "NATION_NAME" @id("f07002"),
+     "name" AS "NATION_NAME" @id("f07002") @description("Changed column description"),
      "REGIONKEY" AS "REGION_KEY" @id("f07003"),
      "CommenT" AS "NATION_COMMENT" @id("f07004"),
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("f07008") @isSystemCreateDate,

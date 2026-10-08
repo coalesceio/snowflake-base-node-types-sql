@@ -1,6 +1,6 @@
 @id("d5a70000-0000-4000-8000-000000000204")
 @nodeType("SQLFact")
-@materializationType("table")
+@materializationType("transient table")
 SELECT
      "NAtionKey" AS "NATION_KEY" @id("f04001") @isBusinessKey,
      "name" AS "NATION_NAME" @id("f04002"),
