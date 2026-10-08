@@ -27,6 +27,8 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 | `@tests` | ✅ | ✅ | ✅ |
 | `@preSQL` | ✅ | ✅ | ✅ |
 | `@postSQL` | ✅ | ✅ | ✅ |
+| `@tag` (node-level) | ✅ | ➖ | ➖ |
+| `@materializationType` | table / transient table / view | table / view | table / view |
 | Target Load | INSERT (OVERWRITE) | (TRUNCATE) MERGE | (TRUNCATE) MERGE/INSERT |
 
 ### Column Annotations Matrix
@@ -44,6 +46,8 @@ A side-by-side view of which annotations each node type supports, so it's easy t
 | `@isSystemCreateDate` | ➖ | ✅ | ✅ |
 | `@isSystemUpdateDate` | ➖ | ✅ | ✅ |
 | `@isSystemEndDate` | ➖ | ✅  | ➖ |
+| `@tag` (column-level) | ✅ | ➖ | ➖ |
+| `@clusterKey` | ✅ | ➖ | ➖ |
 | all column tests | ✅ | ✅ | ✅ |
 
 > See [Column-Level Data Quality Tests](#column-level-data-quality-tests) for the shared quality-test annotations in the last row.
@@ -79,8 +83,9 @@ The Work Node type has three configuration groups:
 | `@id(id)` ***(reserved)*** | Unique identifier for the node.<br/>Static and auto-generated when the node is created — not meant to be edited. |
 | `@nodeType(type)` ***(reserved)*** | Identifies the node's type.<br/>Set automatically based on the node type chosen when the node is created.|
 | `@description(text)` ***(reserved)*** | Node-level description.<br/>Can be edited via this annotation or in the node description field below the node name in the UI.<br/>Example: `@description("Table description")` |
-| `@materializationType(type)` ***(reserved)*** | table/view.<br/>Value is strictly case-sensitive — must be lowercase `table` or `view`.<br/>*Not specified in the SQL editor → defaults to **table**.*<br/>Example: `@materializationType("view")` |
+| `@materializationType(type)` ***(reserved)*** | table/view/transient table.<br/>Use lowercase `table`, `transient table` or `view` — case and extra spaces are ignored (`"Table "` reads as `table`); any other value stops the deploy and the run with an **Unsupported Materialization Type** check.<br/>*Not specified in the SQL editor → defaults to **table**.*<br/>Example: `@materializationType("view")` |
 | `@deployDisabled` ***(reserved)*** | Excludes this node from deployment. |
+| `@tag(tagName, tagValue, location?)` | ***(repeatable)*** Applies a Snowflake tag to this table/view.<br/>**tagName** — name of the tag (must already exist in Snowflake). Case-sensitive: `PII` and `pii` are different tags.<br/>**tagValue** — value to assign to the tag.<br/>**location** — *(optional)* storage location the tag lives in; defaults to this node's own location.<br/>**Prerequisite:** Tags must first be created in Snowflake before they can be used in Coalesce.<br/>Repeat the annotation to apply several **different** tags. A duplicate — the same tag (same name and location) applied twice, even with a different value — is not allowed and stops the deploy with a **Duplicate Tags Found** check.<br/>✅ `@tag("PII", "true")` `@tag("OWNER", "DATA_TEAM")` — two different tags<br/>❌ `@tag("PII", "true")` `@tag("PII", "false")` — the same tag twice<br/>Example: `@tag("PII", "true")` `@tag("COST_CENTRE", "FIN", "GOVERNANCE")` |
 | `@writeMode("truncateInsert \| append")` | **truncateInsert** — replaces the table's contents entirely via a single `INSERT OVERWRITE INTO` statement (atomic — no separate truncate step). <br/>**append** — inserts the new rows via `INSERT INTO`, alongside whatever is already there.<br/>*Not specified in the SQL editor → defaults to **truncateInsert**.*<br/>**Note:** Ignored on Views.<br/>Example: `@writeMode("append")` |
 | `@disableTests`**²** | Controls whether configured tests are skipped.<br/>*Specified in the SQL editor → all node- and column-level tests are skipped.*<br/>*Not specified in the SQL editor → tests run normally.*<br/>To turn tests back on, remove the annotation. Useful while developing a node — iterate on the SQL first, then re-enable once the logic is settled.<br/>Example: `@disableTests` |
 | `@tests(querySQL, continueOnFailure?, runOrder?)`**²** | ***(repeatable)*** Node-level data quality test.<br/>Runs `querySQL` against the target; fails if it returns any records.<br/>Skipped entirely when **@disableTests** is set.<br/>[Refer to Node-Level Tests for more details.](#node-level-tests--tests)<br/>Example: `@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")` |
@@ -99,6 +104,8 @@ The Work Node type has three configuration groups:
 | `@description(<text>)` ***(reserved)*** | Adds column description.<br/>Example: `@description("timestamp column")` |
 | `@defaultValue(<value>)` ***(reserved)*** | Adds default value.<br/>Quote to match the column's data type - <br/>number: `defaultValue("<num>")`<br/>string: `defaultValue("'<string>'")`<br/>**Note:** Ignored on Views.<br/>Example: `@defaultValue("20")` `@defaultValue("'NA'")` |
 | `@inHash("<hashName>", <hashOrder>)`**¹** | ***(repeatable)*** Marks a column as an input to a generated hash key.<br/>**hashName** — columns sharing the same value are grouped together into the same hash.<br/>**hashOrder** — this column's position within that group.<br/>Call `get_hash("<hashName>")` elsewhere in the SELECT to produce the hash column from the marked columns.<br/>[Refer to Hash Columns for more details.](#hash-columns--get_hash)<br/>Example:<br/>`<col_name> AS <col_name> @inHash("GH_COL", 1),`<br/>`{{ get_hash('GH_COL') }}::STRING AS "GH_COL"`|
+| `@tag(tagName, tagValue, location?)` | ***(repeatable)*** Applies a Snowflake tag to this column.<br/>**tagName** — name of the tag (must already exist in Snowflake). Case-sensitive: `PII` and `pii` are different tags.<br/>**tagValue** — value to assign to the tag.<br/>**location** — *(optional)* storage location the tag lives in; defaults to this node's own location.<br/>**Prerequisite:** Tags must first be created in Snowflake before they can be used in Coalesce.<br/>Repeat the annotation to apply several **different** tags to the column. A duplicate — the same tag (same name and location) applied twice on the column, even with a different value — is not allowed and stops the deploy with a **Duplicate Tags Found** check.<br/>✅ `@tag("PII", "true")` `@tag("OWNER", "DATA_TEAM")` — two different tags<br/>❌ `@tag("PII", "true")` `@tag("PII", "false")` — the same tag twice<br/>Example: `@tag("PII", "true")` |
+| `@clusterKey(position, expression?)` | ***(repeatable)*** Marks a column as part of the table's clustering key, in the order given by **position** (lowest first).<br/>Leave out **expression** to cluster on the column as-is, or add one to cluster on a transformed value instead.<br/>**Note:** Ignored on Views.<br/>Example: `@clusterKey(1)` `@clusterKey(2, "trunc(\"REGION_KEY\", -5)")` |
 
 
 🚦 The full set of column-level data quality tests (`@not_null`, `@uniqueness`, `@empty`, `@accepted_values`, `@rejected_values`, `@min_max`, `@min_value`, `@max_value`, `@freshness`, `@relative_time`) applies to Work columns exactly as described in [Column-Level Data Quality Tests](#column-level-data-quality-tests).
@@ -107,62 +114,80 @@ The Work Node type has three configuration groups:
 
 ### Work Deployment
 
-#### Work Initial Deployment
-
-When deployed for the first time into an Environment the Work Node of materialization type table will execute the below stage:
+Every deployment of a Work node first runs these checks, which stop the deployment before any change in Snowflake:
 
 | **Stage** | **Description** |
 |-----------|----------------|
-| **Create Work Table** | This will execute a CREATE OR REPLACE statement and create a table in the target Environment |
-| **Create Work View** | This will execute a CREATE OR REPLACE statement and create a view in the target Environment |
+| **Unsupported Materialization Type: \<node\>** | `@materializationType` is not `table`, `transient table` or `view` |
+| **Duplicate Tags Found: \<node or column\>** | A duplicate tag: the same tag (same name and location) applied more than once on the node or on one column. Repeating `@tag` for different tags is fine. |
+
+#### Work Initial Deployment
+
+When deployed for the first time into an Environment, the Work Node executes one of these stages, depending on its materialization type:
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Create table** | Executes a CREATE OR REPLACE TABLE statement, with column and table tags, comments and the cluster key |
+| **Create transient table** | Same as above, as a TRANSIENT TABLE |
+| **Create view** | Executes a CREATE OR REPLACE VIEW statement, with column and view tags and comments |
 
 #### Work Redeployment
 
-After the Work Node with materialization type table has been deployed for the first time into a target Environment, subsequent deployments may result in either altering the Work Table or recreating the Work table.
-
-#### Altering the Work Tables
-
-A few types of column or table changes will result in an ALTER statement to modify the Work Table in the target Environment, whether these changes are made individually or all together:
-
-* Changing table names
-* Dropping existing columns
-* Altering column data types
-* Adding new columns
-
-The following stages are executed:
+After the Work Node has been deployed for the first time into a target Environment, subsequent deployments either alter the existing object, recreate it, or only record a metadata update when nothing in the object changed (for example tests, `@writeMode`, `@preSQL`/`@postSQL`, a transform or join on a table, or a data type change that leaves a view's SQL unchanged):
 
 | **Stage** | **Description** |
 |-----------|----------------|
-| **Clone Table** | Creates an internal table |
-| **Rename Table\| Alter Column \| Delete Column \| Add Column \| Edit table description** | Alter table statement is executed to perform the alter operation |
-| **Swap Cloned Table** | Upon successful completion of all updates, the clone replaces the main table ensuring that no data is lost |
-| **Delete Table** | Drops the internal table |
+| **Metadata Update-Default** | The node changed, but nothing in Snowflake needs to change |
 
-> **Note:** Renaming a column results in the existing column being dropped and a new column being created. This operation may lead to data loss and should be performed with caution.
+#### Altering the Work Tables
+
+Changes to columns, the table description, the cluster key, tags, or the table name or location alter the Work Table, whether made individually or all together. The changes are made on an internal clone of the table, so a failure leaves the live table untouched.
+
+The following stages are executed, in this order (each one only when needed):
+
+| **Stage** | **Description** |
+|-----------|----------------|
+| **Clone Table** | Creates an internal clone of the table (`<table>_COALESCE_INTERNAL_TABLE`), with its data, cluster key, tags and grants |
+| **Warning: Cluster Key Change** | Non-failing message when a clustered column is renamed or dropped (see note below) |
+| **Drop Cluster Key** | Drops the cluster key when a clustered column is renamed |
+| **Alter Column** | Changes data types, nullability, column descriptions and defaults, in one statement |
+| **Add Column** | Adds new columns, with their tags and comments |
+| **Rename Column** | Renames a column whose `@id` is unchanged, one stage per column |
+| **Recluster Table \| Drop Cluster Key** | Applies the new cluster key, or drops it when no `@clusterKey` remains |
+| **Delete Column** | Drops removed columns |
+| **Edit Table Description** | Updates the table comment |
+| **Unset Column Tags: \<column\> \| Set Column Tags: \<column\>** | Removes and sets column tags; a changed tag value is only a set |
+| **Unset Table Tags \| Set Table Tags** | Removes and sets table tags; a changed tag value is only a set |
+| **Swap Cloned Table** | Swaps the altered clone with the live table |
+| **Rename Table** | Instead of the swap, when the table is renamed or moved: the clone is renamed to the new name/location |
+| **Delete Table** | Drops the internal clone after a swap, or the original table after a rename |
+
+> **Note:** A column is renamed only when its `@id` stays the same. If the `@id` changes too, the existing column is dropped and a new column is created, which loses its data — give columns a stable `@id` to rename them safely.
 
 > **Note — clustered columns:** Snowflake does not allow renaming or dropping a column while it is part of the cluster key, so these are handled on the clone, starting with a non-failing **Warning: Cluster Key Change** stage that lists the renamed and dropped clustered columns and the new key:
 > * **Renaming a clustered column** (same `@id`) — the cluster key is dropped, the column is renamed, and the table is reclustered with the new name.
 > * **Dropping a clustered column** — the table is reclustered on the remaining `@clusterKey` columns (or the cluster key is dropped when none remain), and then the column is dropped.
 
+> **Note:** Snowflake only allows widening a column's data type (for example `VARCHAR(25)` → `VARCHAR(100)`) and only sequence values for `SET DEFAULT`. Other data type or default changes fail on the clone with Snowflake's error, leaving the live table untouched.
+
 #### Recreating the Work Tables
 
-If the materialization type is changed from Table to View, then the following stages are executed:
+If the materialization type changes (table ↔ view, or table ↔ transient table), the existing object is dropped and recreated:
 
 | **Stage** | **Description** |
 |-----------|----------------|
-| **Delete Table** | Drops the existing table |
-| **Create View** | Recreates the node as a view |
+| **Drop table \| Drop transient table \| Drop view** | Drops the existing object |
+| **Create table \| Create transient table \| Create view** | Recreates the node with the new materialization type |
 
-#### Recreating the Work Views
+#### Altering and Recreating the Work Views
 
-The subsequent deployment of the Work Node of materialization type view with changes in view definition, adding table description or renaming view results in deleting the existing view and recreating the view.
-
-The following stages are executed:
+A view is changed in place only when its tags change; any other change to the view's SQL (columns, transforms, joins, descriptions) recreates it:
 
 | **Stage** | **Description** |
 |-----------|----------------|
-| **Delete View** | Removes existing view |
-| **Create View** | Creates new view with updated definition |
+| **Unset Column Tags \| Set Column Tags \| Unset View Tags \| Set View Tags** | Only tags changed: the view is altered in place |
+| **Create view** | The view definition changed: CREATE OR REPLACE VIEW with the new definition |
+| **Drop view** + **Create view** | The view is renamed or moved: the old view is dropped and the new one created |
 
 ### Removing a Work Node
 
@@ -172,16 +197,16 @@ This is executed in two stages:
 
 | **Stage** | **Description** |
 |-----------|----------------|
-| **Delete Table** | Coalesce Internal table is dropped |
-| **Delete Table** | Target table in Snowflake is dropped |
+| **Delete Table** | Drops the internal clone, if one was left behind by a failed deployment |
+| **Drop table** | Drops the target table in Snowflake |
 
-If a Work Node of materialization type view is deleted from a Workspace, that Workspace is committed to Git and that commit deployed to a higher-level Environment, then the WorkView in the target Environment will be dropped.
+If a Work Node of materialization type view is deleted from a Workspace, that Workspace is committed to Git and that commit deployed to a higher-level Environment, then the Work View in the target Environment will be dropped.
 
 The stage executed:
 
 | **Stage** | **Description** |
 |-----------|----------------|
-| **Delete View** | Drops the existing Work view from the target Environment |
+| **Drop view** | Drops the existing Work view from the target Environment |
 
 ---
 
