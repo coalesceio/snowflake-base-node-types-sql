@@ -140,9 +140,9 @@ The following stages are executed:
 
 > **Note:** Renaming a column results in the existing column being dropped and a new column being created. This operation may lead to data loss and should be performed with caution.
 
-> **Note — clustered columns:** Snowflake does not allow renaming or dropping a column while it is part of the cluster key, so these are handled on the clone:
+> **Note — clustered columns:** Snowflake does not allow renaming or dropping a column while it is part of the cluster key, so these are handled on the clone, starting with a non-failing **Warning: Cluster Key Change** stage that lists the renamed and dropped clustered columns and the new key:
 > * **Renaming a clustered column** (same `@id`) — the cluster key is dropped, the column is renamed, and the table is reclustered with the new name.
-> * **Dropping a clustered column** — a **Warning: Clustered Column Dropped** stage names the column, the table is reclustered on the remaining `@clusterKey` columns (or the cluster key is dropped when none remain), and then the column is dropped.
+> * **Dropping a clustered column** — the table is reclustered on the remaining `@clusterKey` columns (or the cluster key is dropped when none remain), and then the column is dropped.
 
 #### Recreating the Work Tables
 

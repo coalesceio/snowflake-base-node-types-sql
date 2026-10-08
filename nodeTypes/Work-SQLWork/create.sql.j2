@@ -80,7 +80,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
             {# Every alter runs on the clone (nsNodeVariables.alterObjectNameFullPath) #}
             {%- set alterSql %}
 
-                {# Cluster key: drop it first only if a clustered column is renamed #}
+                {# Cluster key: warning when clustered columns are renamed/dropped; drop the key first only for a rename #}
                 {{ alter_drop_cluster_key_sql() }}
 
                 {# Alter Column: data type, nullability, description, default (old column names) #}

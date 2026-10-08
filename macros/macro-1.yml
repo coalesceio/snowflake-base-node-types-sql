@@ -852,12 +852,38 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      alter_drop_cluster_key_sql(): "Drop Cluster Key" before a clustered column is renamed
-      (Snowflake 003320). Call first; alter_cluster_key_sql() re-applies it. A dropped
-      clustered column needs no early drop: the recluster runs before Delete Column.
+      alter_drop_cluster_key_sql(): when a clustered column is renamed or dropped, first a
+      non-failing "Warning: Cluster Key Change" stage describing it; then "Drop Cluster Key"
+      only for a rename (Snowflake 003320). Call first; alter_cluster_key_sql() re-applies
+      the key before Delete Column, so a dropped clustered column needs no early drop.
     ===========================================================================#}
     {%- macro alter_drop_cluster_key_sql() -%}
-        {%- if nsNodeVariables.currentClusterKeyColumns | select('in', nsNodeVariables.renamedColumns) | list | length > 0 %}
+        {%- set ns = namespace(renamed=[], dropped=[]) -%}
+        {%- for curCol in currentState.columns if ('"' + curCol.name + '"') in nsNodeVariables.currentClusterKeyColumns -%}
+            {%- if ('"' + curCol.name + '"') in nsNodeVariables.droppedColumns -%}
+                {%- set ns.dropped = ns.dropped + [curCol.name] -%}
+            {%- elif ('"' + curCol.name + '"') in nsNodeVariables.renamedColumns -%}
+                {%- set ns.renamed = ns.renamed + [curCol.name ~ ' -> ' ~ (columns | selectattr('id', 'equalto', curCol.id) | first).name] -%}
+            {%- endif -%}
+        {%- endfor -%}
+
+        {%- if ns.renamed or ns.dropped %}
+            {{ test_stage('Warning: Cluster Key Change', true) }}
+            {%- if ns.renamed %}
+            -- Renamed clustered column: {{ ns.renamed | join(', ') }}. Snowflake cannot rename a column in the cluster key, so the cluster key is dropped first and re-applied after the rename.
+            {%- endif %}
+            {%- if ns.dropped %}
+            -- Dropped clustered column: {{ ns.dropped | join(', ') }}.
+            {%- endif %}
+            {%- if nsNodeVariables.desiredClusterKey | length > 0 %}
+            -- The table is reclustered on ({{ nsNodeVariables.desiredClusterKey | join(', ') }}){{ ' before the column is dropped' if ns.dropped }}.
+            {%- else %}
+            -- No clustered columns remain, so the cluster key is dropped.
+            {%- endif %}
+            SELECT 1 AS MESSAGE
+        {%- endif %}
+
+        {%- if ns.renamed %}
             {{ stage('Drop Cluster Key') }}
             ALTER TABLE {{ nsNodeVariables.alterObjectNameFullPath }}
             DROP CLUSTERING KEY
@@ -966,27 +992,12 @@ macroString: |-
     {#===========================================================================
       alter_cluster_key_sql(): "Recluster Table" with the new key, or "Drop Cluster Key"
       when it was removed. Call after column adds/renames and before Delete Column, so a
-      dropped clustered column has left the key; that case first gets a non-failing
-      "Warning: Clustered Column Dropped" stage.
+      dropped clustered column has left the key.
     ===========================================================================#}
     {%- macro alter_cluster_key_sql() -%}
         {#- Whitespace-insensitive, so trunc(a,-5) vs trunc(a, -5) is not a change #}
         {%- set keyChanged = (nsNodeVariables.desiredClusterKey | map('replace', ' ', '') | list)
                           != (nsNodeVariables.currentClusterKey | map('replace', ' ', '') | list) -%}
-
-        {%- set clusteredDropped = nsNodeVariables.currentClusterKeyColumns
-                                   | select('in', nsNodeVariables.droppedColumns)
-                                   | map('replace', '"', '') | list -%}
-        {%- if clusteredDropped | length > 0 %}
-            {%- set warning = (clusteredDropped | join(', ')) ~ (' was' if clusteredDropped | length == 1 else ' were')
-                              ~ ' in the cluster key and ' ~ ('is' if clusteredDropped | length == 1 else 'are') ~ ' dropped; '
-                              ~ ('the table is reclustered on (' ~ (nsNodeVariables.desiredClusterKey | join(', ')) ~ ').'
-                                 if nsNodeVariables.desiredClusterKey | length > 0
-                                 else 'no clustered columns remain, so the cluster key is dropped.') %}
-            {{ test_stage('Warning: Clustered Column Dropped', true) }}
-            -- {{ warning }}
-            SELECT 1 AS MESSAGE
-        {%- endif %}
 
         {%- if nsNodeVariables.desiredClusterKey | length > 0 and (keyChanged or nsNodeVariables.clusterKeyDropped) %}
             {{ stage('Recluster Table') }}
