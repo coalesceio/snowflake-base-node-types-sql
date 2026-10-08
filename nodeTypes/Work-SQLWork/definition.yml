@@ -167,8 +167,8 @@ metadata:
               Ex. clusterKey(2, "trunc(<col_name>, -5)")
             • Renaming a clustered column is supported: the key is dropped first and re-applied
               with the new name (needs a stable @id, otherwise it is a drop + add).
-            • Dropping a clustered column is stopped before any change, as in Snowflake: remove
-              its @clusterKey and deploy first, then remove the column and deploy again.
+            • Dropping a clustered column is supported: the table is reclustered on the remaining
+              key columns (or the key is dropped) before the column is dropped, with a warning stage.
             • Ignored on views.
           allowsMultiple: true
           parameters:

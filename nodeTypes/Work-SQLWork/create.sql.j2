@@ -23,9 +23,6 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     {# Validate: the same name+location tag repeated on the same column/node is not allowed #}
     {{ tag_check_duplicates() }}
 
-    {# Validate: a column in the cluster key can't be dropped (remove its @clusterKey first) #}
-    {{ validate_clustered_column_drop() }}
-
     {%- if desiredMatType == 'view' %}
 
         {# Drop the current object if it was another type, or the view was renamed/moved #}
@@ -83,11 +80,8 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
             {# Every alter runs on the clone (nsNodeVariables.alterObjectNameFullPath) #}
             {%- set alterSql %}
 
-                {# Cluster key: drop it first if clustered columns are dropped or renamed #}
+                {# Cluster key: drop it first only if a clustered column is renamed #}
                 {{ alter_drop_cluster_key_sql() }}
-
-                {# Delete Column #}
-                {{ alter_drop_columns_sql() }}
 
                 {# Alter Column: data type, nullability, description, default (old column names) #}
                 {{ alter_modify_columns_sql() }}
@@ -95,14 +89,17 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                 {# Add Column #}
                 {{ alter_add_columns_sql() }}
 
-                {# Edit Table Description #}
-                {{ alter_description_sql() }}
-
                 {# Rename Column (matched by id; a Work column whose id changed is dropped + added instead) #}
                 {{ alter_rename_columns_sql() }}
 
-                {# Cluster key: apply the new key (after column adds/renames, so it can reference them) #}
+                {# Cluster key: new key after adds/renames, before Delete Column so dropped columns have left it #}
                 {{ alter_cluster_key_sql() }}
+
+                {# Delete Column #}
+                {{ alter_drop_columns_sql() }}
+
+                {# Edit Table Description #}
+                {{ alter_description_sql() }}
 
                 {# Column- and node-level tag changes (unset before set) #}
                 {{ alter_tag_sql() }}
