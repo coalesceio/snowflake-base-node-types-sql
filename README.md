@@ -68,44 +68,42 @@ The Work Node type has three configuration groups:
 
 #### Work General Options
 
-<img width="622" height="307" alt="image" src="https://github.com/user-attachments/assets/6c4e70ce-a7b0-4feb-af74-9be64b64002b" />
-
 | **Property** | **Description** |
 |----------|-------------|
 | **Storage Location** | Storage Location where the Work table or view will be created |
 
 ### Work Node Annotations
 
-<img width="793" height="612" alt="image" src="https://github.com/user-attachments/assets/db09c345-979b-4b4e-a628-19451e4435d3" />
+| **Annotation** | **Summary** |
+|---|---|
+| [`@id(id)`](#id-node) ***(reserved)*** | Unique identifier for the node. |
+| [`@nodeType(type)`](#nodetype) ***(reserved)*** | Identifies the node's type. |
+| [`@description(text)`](#description-node) ***(reserved)*** | Node-level description. |
+| [`@materializationType(type)`](#materializationtype) ***(reserved)*** | Table, transient table or view |
+| [`@deployDisabled`](#deploydisabled) ***(reserved)*** | Excludes this node from deployment. |
+| [`@tag(name, value, storageLocation?)`](#tag-node) ***(repeatable)*** | Applies a Snowflake tag to this table/view. |
+| [`@writeMode("truncateInsert \| append")`](#writemode) | How each run writes to the target: truncateInsert or append |
+| [`@disableTests`](#disabletests) **²** | Controls whether configured tests are skipped. |
+| [`@tests(querySQL, continueOnFailure?, runOrder?)`](#tests) **²** ***(repeatable)*** | Node-level data quality test. |
+| [`@preSQL(querySQL)`](#presql) ***(repeatable)*** | SQL statement to execute `before` the data load operation. |
+| [`@postSQL(querySQL)`](#postsql) ***(repeatable)*** | SQL statement to execute `after` the data load operation. |
 
-| **Property** | **Description** |
-|---------|-------------|
-| `@id(id)` ***(reserved)*** | Unique identifier for the node.<br/>Static and auto-generated when the node is created — not meant to be edited. |
-| `@nodeType(type)` ***(reserved)*** | Identifies the node's type.<br/>Set automatically based on the node type chosen when the node is created.|
-| `@description(text)` ***(reserved)*** | Node-level description.<br/>Can be edited via this annotation or in the node description field below the node name in the UI.<br/>Example: `@description("Table description")` |
-| `@materializationType(type)` ***(reserved)*** | table/view/transient table.<br/>Use lowercase `table`, `transient table` or `view` — case and extra spaces are ignored (`"Table "` reads as `table`); any other value stops the deploy and the run with an **Unsupported Materialization Type** check.<br/>*Not specified in the SQL editor → defaults to **table**.*<br/>Example: `@materializationType("view")` |
-| `@deployDisabled` ***(reserved)*** | Excludes this node from deployment. |
-| `@tag(tagName, tagValue, location?)` | ***(repeatable)*** Applies a Snowflake tag to this table/view.<br/>**tagName** — name of the tag (must already exist in Snowflake). Case-sensitive: `PII` and `pii` are different tags.<br/>**tagValue** — value to assign to the tag.<br/>**location** — *(optional)* storage location the tag lives in; defaults to this node's own location.<br/>**Prerequisite:** Tags must first be created in Snowflake before they can be used in Coalesce.<br/>Repeat the annotation to apply several **different** tags. A duplicate — the same tag (same name and location) applied twice, even with a different value — is not allowed and stops the deploy with a **Duplicate Tags Found** check.<br/>✅ `@tag("PII", "true")` `@tag("OWNER", "DATA_TEAM")` — two different tags<br/>❌ `@tag("PII", "true")` `@tag("PII", "false")` — the same tag twice<br/>Example: `@tag("PII", "true")` `@tag("COST_CENTRE", "FIN", "GOVERNANCE")` |
-| `@writeMode("truncateInsert \| append")` | **truncateInsert** — replaces the table's contents entirely via a single `INSERT OVERWRITE INTO` statement (atomic — no separate truncate step). <br/>**append** — inserts the new rows via `INSERT INTO`, alongside whatever is already there.<br/>*Not specified in the SQL editor → defaults to **truncateInsert**.*<br/>**Note:** Ignored on Views.<br/>Example: `@writeMode("append")` |
-| `@disableTests`**²** | Controls whether configured tests are skipped.<br/>*Specified in the SQL editor → all node- and column-level tests are skipped.*<br/>*Not specified in the SQL editor → tests run normally.*<br/>To turn tests back on, remove the annotation. Useful while developing a node — iterate on the SQL first, then re-enable once the logic is settled.<br/>Example: `@disableTests` |
-| `@tests(querySQL, continueOnFailure?, runOrder?)`**²** | ***(repeatable)*** Node-level data quality test.<br/>Runs `querySQL` against the target; fails if it returns any records.<br/>Skipped entirely when **@disableTests** is set.<br/>[Refer to Node-Level Tests for more details.](#node-level-tests--tests)<br/>Example: `@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")` |
-| `@preSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `before` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)")` |
-| `@postSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `after` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('WRK_NATION', CURRENT_TIMESTAMP())")` |
+> Details for each annotation are in the [Annotation Reference](#annotation-reference).
 
 >**Note:** Quote style matters for **case-sensitive** identifiers when writing `@tests`, `@preSQL`, and `@postSQL` — see [Quote Style for Case-Sensitive Identifiers](#quote-style-for-case-sensitive-identifiers).
 
 ### Work Column Annotations
 
-<img width="790" height="365" alt="image" src="https://github.com/user-attachments/assets/5ee65e14-e87f-4c72-9209-3c561f0cc57f" />
+| **Annotation** | **Summary** |
+|---|---|
+| [`@notNull`](#notnull) ***(reserved)*** | Marks column as NOT NULL. |
+| [`@description(<text>)`](#description-column) ***(reserved)*** | Adds column description. |
+| [`@defaultValue(<value>)`](#defaultvalue) ***(reserved)*** | Adds default value. |
+| [`@inHash("<hashName>", <hashOrder>)`](#inhash) **¹** ***(repeatable)*** | Marks a column as an input to a generated hash key. |
+| [`@tag(name, value, storageLocation?)`](#tag-column) ***(repeatable)*** | Applies a Snowflake tag to this column. |
+| [`@clusterKey(position, expression?)`](#clusterkey) ***(repeatable)*** | Marks a column as part of the table's clustering key, in the order given by **position** (lowest first). |
 
-| **Property** | **Description** |
-|---------|-------------|
-| `@notNull` ***(reserved)*** | Marks column as NOT NULL.<br/>**Note:** Ignored on Views.<br/>Example: `@notNull` |
-| `@description(<text>)` ***(reserved)*** | Adds column description.<br/>Example: `@description("timestamp column")` |
-| `@defaultValue(<value>)` ***(reserved)*** | Adds default value.<br/>Quote to match the column's data type - <br/>number: `defaultValue("<num>")`<br/>string: `defaultValue("'<string>'")`<br/>**Note:** Ignored on Views.<br/>Example: `@defaultValue("20")` `@defaultValue("'NA'")` |
-| `@inHash("<hashName>", <hashOrder>)`**¹** | ***(repeatable)*** Marks a column as an input to a generated hash key.<br/>**hashName** — columns sharing the same value are grouped together into the same hash.<br/>**hashOrder** — this column's position within that group.<br/>Call `get_hash("<hashName>")` elsewhere in the SELECT to produce the hash column from the marked columns.<br/>[Refer to Hash Columns for more details.](#hash-columns--get_hash)<br/>Example:<br/>`<col_name> AS <col_name> @inHash("GH_COL", 1),`<br/>`{{ get_hash('GH_COL') }}::STRING AS "GH_COL"`|
-| `@tag(tagName, tagValue, location?)` | ***(repeatable)*** Applies a Snowflake tag to this column.<br/>**tagName** — name of the tag (must already exist in Snowflake). Case-sensitive: `PII` and `pii` are different tags.<br/>**tagValue** — value to assign to the tag.<br/>**location** — *(optional)* storage location the tag lives in; defaults to this node's own location.<br/>**Prerequisite:** Tags must first be created in Snowflake before they can be used in Coalesce.<br/>Repeat the annotation to apply several **different** tags to the column. A duplicate — the same tag (same name and location) applied twice on the column, even with a different value — is not allowed and stops the deploy with a **Duplicate Tags Found** check.<br/>✅ `@tag("PII", "true")` `@tag("OWNER", "DATA_TEAM")` — two different tags<br/>❌ `@tag("PII", "true")` `@tag("PII", "false")` — the same tag twice<br/>Example: `@tag("PII", "true")` |
-| `@clusterKey(position, expression?)` | ***(repeatable)*** Marks a column as part of the table's clustering key, in the order given by **position** (lowest first).<br/>Leave out **expression** to cluster on the column as-is, or add one to cluster on a transformed value instead.<br/>**Note:** Ignored on Views.<br/>Example: `@clusterKey(1)` `@clusterKey(2, "trunc(\"REGION_KEY\", -5)")` |
+> Details for each annotation are in the [Annotation Reference](#annotation-reference).
 
 
 🚦 The full set of column-level data quality tests (`@not_null`, `@uniqueness`, `@empty`, `@accepted_values`, `@rejected_values`, `@min_max`, `@min_value`, `@max_value`, `@freshness`, `@relative_time`) applies to Work columns exactly as described in [Column-Level Data Quality Tests](#column-level-data-quality-tests).
@@ -224,62 +222,265 @@ The Dimension Node type has three configuration groups:
 
 #### Dimension General Options
 
-<img width="538" height="299" alt="image" src="https://github.com/user-attachments/assets/47a6ea12-485c-4356-95dd-a17b653392b5" />
-
 | **Property** | **Description** |
 |----------|-------------|
 | **Storage Location** | Storage Location where the Dimension table or view will be created |
 
 ### Dimension Node Annotations
 
-<img width="638" height="695" alt="image" src="https://github.com/user-attachments/assets/3ce0bc6a-3294-4d2f-b41b-1e6c82280b49" />
+| **Annotation** | **Summary** |
+|---|---|
+| [`@id(id)`](#id-node) ***(reserved)*** | Unique identifier for the node. |
+| [`@nodeType(type)`](#nodetype) ***(reserved)*** | Identifies the node's type. |
+| [`@description(text)`](#description-node) ***(reserved)*** | Node-level description. |
+| [`@materializationType(type)`](#materializationtype) ***(reserved)*** | Table, transient table or view |
+| [`@deployDisabled`](#deploydisabled) ***(reserved)*** | Excludes this node from deployment. |
+| [`@tag(name, value, storageLocation?)`](#tag-node) ***(repeatable)*** | Applies a Snowflake tag to this table/view. |
+| [`@writeMode("truncateInsert \| append")`](#writemode) | How each run writes to the target: truncateInsert or append |
+| [`@mergeStrategy("upsert \| changeTracking \| lastModified")`](#mergestrategy-dimension) | Chooses how this dimension decides a row has changed, and therefore which column annotations it requires. |
+| [`@zeroKey(surrogateKeyValue?, stringValue?, timestampValue?, booleanValue?)`](#zerokey-dimension-node) | Inserts a default "zero key" record into the target — a placeholder row used to catch unresolved foreign key lookups. |
+| [`@disableTests`](#disabletests) **²** | Controls whether configured tests are skipped. |
+| [`@tests(querySQL, continueOnFailure?, runOrder?)`](#tests) **²** ***(repeatable)*** | Node-level data quality test. |
+| [`@preSQL(querySQL)`](#presql) ***(repeatable)*** | SQL statement to execute `before` the data load operation. |
+| [`@postSQL(querySQL)`](#postsql) ***(repeatable)*** | SQL statement to execute `after` the data load operation. |
 
-| **Property** | **Description** |
-|---------|-------------|
-| `@id(id)` ***(reserved)*** | Unique identifier for the node.<br/>Static and auto-generated when the node is created — not meant to be edited. |
-| `@nodeType(type)` ***(reserved)*** | Identifies the node's type.<br/>Set automatically based on the node type chosen when the node is created.|
-| `@description(text)` ***(reserved)*** | Node-level description.<br/>Can be edited via this annotation or in the node description field below the node name in the UI.<br/>Example: `@description("Table description")` |
-| `@materializationType(type)` ***(reserved)*** | table/view/transient table.<br/>Use lowercase `table`, `transient table` or `view` — case and extra spaces are ignored (`"Table "` reads as `table`); any other value stops the deploy and the run with an **Unsupported Materialization Type** check.<br/>*Not specified in the SQL editor → defaults to **table**.*<br/>Example: `@materializationType("view")` |
-| `@deployDisabled` ***(reserved)*** | Excludes this node from deployment. |
-| `@tag(tagName, tagValue, location?)` | ***(repeatable)*** Applies a Snowflake tag to this table/view.<br/>**tagName** — name of the tag (must already exist in Snowflake). Case-sensitive: `PII` and `pii` are different tags.<br/>**tagValue** — value to assign to the tag.<br/>**location** — *(optional)* storage location the tag lives in; defaults to this node's own location.<br/>**Prerequisite:** Tags must first be created in Snowflake before they can be used in Coalesce.<br/>Repeat the annotation to apply several **different** tags. A duplicate — the same tag (same name and location) applied twice, even with a different value — is not allowed and stops the deploy with a **Duplicate Tags Found** check.<br/>✅ `@tag("PII", "true")` `@tag("OWNER", "DATA_TEAM")` — two different tags<br/>❌ `@tag("PII", "true")` `@tag("PII", "false")` — the same tag twice<br/>Example: `@tag("PII", "true")` `@tag("COST_CENTRE", "FIN", "GOVERNANCE")` |
-| `@writeMode("truncateInsert \| append")` | **truncateInsert** — clears the table before loading, replacing its contents entirely.<br/>**append** — inserts the new rows via merge, alongside whatever is already there.<br/>*Not specified in the SQL editor → defaults to **append**.*<br/>**Note:** Ignored on Views.<br/>Example: `@writeMode("truncateInsert")` |
-| `@mergeStrategy("upsert \| changeTracking \| lastModified")` | Chooses how this dimension decides a row has changed, and therefore which column annotations it requires.<br/><br/>**upsert** — no change detection at all; a matched row is always updated, an unmatched row is inserted. Doesn't assert any SCD type of its own — if the upstream SELECT/CTE already implements SCD1/SCD2 logic, this strategy just merges that result through as-is. The SELECT/CTE should return one row per business key (de-duplicate upstream). System columns are optional; any that are present are written exactly as the SELECT/CTE computes them. `@lastModifiedTracking`/`@isChangeTracking` columns aren't used — if present, a warning is raised and they're ignored.<br/><br/>**changeTracking** — compares columns marked `@isChangeTracking` (or, if none are marked, every plain attribute column) to detect a change. SCD Type 2 if any column is marked `@isChangeTracking`, otherwise SCD Type 1. Doesn't use `@lastModifiedTracking` — if present, a warning is raised and it's ignored.<br/><br/>**lastModified** — compares a single `@lastModifiedTracking` timestamp column against the target's stored value. Requires exactly one column marked `@lastModifiedTracking` — a validation check flags it if none (or more than one) is present. SCD Type 1 or 2 comes from that column's own `scdType` parameter. Doesn't use `@isChangeTracking` — if present, a warning is raised and it's ignored.<br/>*Not specified in the SQL editor → defaults to **changeTracking** - SCD Type 1.*<br/><br/>The value is not case-sensitive; any other value is flagged by a validation check.<br/>Every strategy merges on the business key, so the SELECT/CTE must return exactly one row per business key, with no NULL business key — see [Duplicate or NULL Business Keys](#known-limitations) for a `Before` test that checks this.<br/>Under **changeTracking** / **lastModified** the load writes fixed system column values — see [System column values](#system-column-values).<br/>**Note:** Ignored on Views.<br/>Example: `@mergeStrategy("lastModified")` |
-| `@zeroKey(surrogateKeyValue?, stringValue?, timestampValue?, booleanValue?)` | Inserts a default "zero key" record into the target — a placeholder row used to catch unresolved foreign key lookups.<br/>**surrogateKeyValue** — value used for the zero record's surrogate key column only. Default `"0"`.<br/>Numeric columns (integer, decimal, float) always get `0`; override any column with a column-level `@zeroKey(value)`.<br/>**stringValue** — default value for string/varchar columns, pasted into the SQL verbatim — include your own quotes. Default `"'UNKNOWN'"`.<br/>**timestampValue** — default value for date/time/timestamp columns. Default `"1900-01-01 00:00:00"`.<br/>**booleanValue** — default value for boolean columns. Default `true`.<br/>*Not specified in the SQL editor → the zero record is not inserted.*<br/>**Note:** Ignored on Views.<br/>Example: `@zeroKey("0", "'UNKNOWN'", "1900-01-01 00:00:00", true)`|
-| `@disableTests`**²** | Controls whether configured tests are skipped.<br/>*Specified in the SQL editor → all node- and column-level tests are skipped.*<br/>*Not specified in the SQL editor → tests run normally.*<br/>To turn tests back on, remove the annotation. Useful while developing a node — iterate on the SQL first, then re-enable once the logic is settled.<br/>Example: `@disableTests` |
-| `@tests(querySQL, continueOnFailure?, runOrder?)`**²** | ***(repeatable)*** Node-level data quality test.<br/>Runs `querySQL` against the target; fails if it returns any records.<br/>Skipped entirely when **@disableTests** is set.<br/>[Refer to Node-Level Tests for more details.](#node-level-tests--tests)<br/>Example: `@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")`|
-| `@preSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `before` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)")` |
-| `@postSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `after` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('DIM_NATION', CURRENT_TIMESTAMP())")` |
+> Shared annotations link to the [Annotation Reference](#annotation-reference); details for the Dimension-specific ones follow.
+
+##### `@mergeStrategy` (Dimension)
+
+`@mergeStrategy("upsert | changeTracking | lastModified")`
+
+Chooses how this dimension decides a row has changed, and therefore which column annotations it requires.
+
+| **Value** | **Description** |
+|---|---|
+| `upsert` | No change detection at all; a matched row is always updated, an unmatched row is inserted. Doesn't assert any SCD type of its own — if the upstream SELECT/CTE already implements SCD1/SCD2 logic, this strategy just merges that result through as-is. The SELECT/CTE should return one row per business key (de-duplicate upstream). System columns are optional; any that are present are written exactly as the SELECT/CTE computes them. `@lastModifiedTracking`/`@isChangeTracking` columns aren't used — if present, a warning is raised and they're ignored. |
+| `changeTracking` | Compares columns marked `@isChangeTracking` (or, if none are marked, every plain attribute column) to detect a change. SCD Type 2 if any column is marked `@isChangeTracking`, otherwise SCD Type 1. Doesn't use `@lastModifiedTracking` — if present, a warning is raised and it's ignored. |
+| `lastModified` | Compares a single `@lastModifiedTracking` timestamp column against the target's stored value. Requires exactly one column marked `@lastModifiedTracking` — a validation check flags it if none (or more than one) is present. SCD Type 1 or 2 comes from that column's own `scdType` parameter. Doesn't use `@isChangeTracking` — if present, a warning is raised and it's ignored. |
+
+* *Not specified in the SQL editor → defaults to **changeTracking** - SCD Type 1.*
+* The value is not case-sensitive; any other value is flagged by a validation check.
+* Every strategy merges on the business key, so the SELECT/CTE must return exactly one row per business key, with no NULL business key — see [Duplicate or NULL Business Keys](#known-limitations) for a `Before` test that checks this.
+* Under **changeTracking** / **lastModified** the load writes fixed system column values — see [System column values](#system-column-values).
+* **Note:** Ignored on Views.
+
+**Example:**
+
+```sql
+@mergeStrategy("lastModified")
+```
+
+
+##### `@zeroKey` (Dimension node)
+
+`@zeroKey(surrogateKeyValue?, stringValue?, timestampValue?, booleanValue?)`
+
+Inserts a default "zero key" record into the target — a placeholder row used to catch unresolved foreign key lookups.
+
+| **Parameter** | **Description** |
+|---|---|
+| **surrogateKeyValue** | **(optional)** Value used for the zero record's surrogate key column only. Default `"0"`. |
+| **stringValue** | **(optional)** Default value for string/varchar columns, pasted into the SQL verbatim — include your own quotes. Default `"'UNKNOWN'"`. |
+| **timestampValue** | **(optional)** Default value for date/time/timestamp columns. Default `"1900-01-01 00:00:00"`. |
+| **booleanValue** | **(optional)** Default value for boolean columns. Default `true`. |
+
+* Numeric columns (integer, decimal, float) always get `0`; override any column with a column-level `@zeroKey(value)`.
+* *Not specified in the SQL editor → the zero record is not inserted.*
+* **Note:** Ignored on Views.
+
+**Example:**
+
+```sql
+@zeroKey("0", "'UNKNOWN'", "1900-01-01 00:00:00", true)
+```
+
 
 >**Note:** Quote style matters for **case-sensitive** identifiers when writing `@tests`, `@preSQL`, and `@postSQL` — see [Quote Style for Case-Sensitive Identifiers](#quote-style-for-case-sensitive-identifiers).
 
 ### Dimension Column Annotations
 
-<img width="790" height="365" alt="image" src="https://github.com/user-attachments/assets/5ee65e14-e87f-4c72-9209-3c561f0cc57f" />
+**Column annotations shared with Work and Fact**
 
-| **Property** | **Description** |
-|---------|-------------|
-| `@id("<value>")` | Stable column ID for lineage tracking.<br/>Required on every column — the SQL editor generates a fresh `@id("<value>")` for each column it creates, and a validation check flags any column that is missing one.<br/>Not for manual editing — value is a stable identifier generated once at creation time.<br/>**Column added later:** make sure it gets its own `@id` too. If you're editing by hand, add a new, unique 6-hex-digit `@id("<value>")` along with the column; an agent can generate one for you. Don't reuse a value already on the node — a repeated value fails the **Duplicate Column IDs** check.<br/>**Duplicate column names:** if the SELECT returns the same column name twice, Coalesce renames the extra copy (`SYSTEM_CREATE_DATE` → `SYSTEM_CREATE_DATE1`) and drops its `@id`; this is reported by the **Duplicate Column Names** check rather than as a missing ID.<br/>Example: `@id("110e75")` |
-| `@notNull` ***(reserved)*** | Marks column as NOT NULL.<br/>**Note:** Ignored on Views.<br/>Example: `@notNull` |
-| `@description(<text>)` ***(reserved)*** | Adds column description.<br/>Example: `@description("timestamp column")` |
-| `@defaultValue(<value>)` ***(reserved)*** | Adds default value.<br/>Quote to match the column's data type - <br/>number: `defaultValue("<num>")`<br/>string: `defaultValue("'<string>'")`<br/>**Note:** Ignored on Views.<br/>Example: `@defaultValue("20")` `@defaultValue("'NA'")` |
-| `@inHash("<hashName>", <hashOrder>)`**¹** | ***(repeatable)*** Marks a column as an input to a generated hash key.<br/>**hashName** — columns sharing the same value are grouped together into the same hash.<br/>**hashOrder** — this column's position within that group.<br/>Call `get_hash("<hashName>")` elsewhere in the SELECT to produce the hash column from the marked columns.<br/>[Refer to Hash Columns for more details.](#hash-columns--get_hash)<br/>Example:<br/>`<col_name> AS <col_name> @inHash("GH_COL", 1),`<br/>`{{ get_hash('GH_COL') }}::STRING AS "GH_COL"`|
-| `@tag(tagName, tagValue, location?)` | ***(repeatable)*** Applies a Snowflake tag to this column.<br/>**tagName** — name of the tag (must already exist in Snowflake). Case-sensitive: `PII` and `pii` are different tags.<br/>**tagValue** — value to assign to the tag.<br/>**location** — *(optional)* storage location the tag lives in; defaults to this node's own location.<br/>**Prerequisite:** Tags must first be created in Snowflake before they can be used in Coalesce.<br/>Repeat the annotation to apply several **different** tags to the column. A duplicate — the same tag (same name and location) applied twice on the column, even with a different value — is not allowed and stops the deploy with a **Duplicate Tags Found** check.<br/>✅ `@tag("PII", "true")` `@tag("OWNER", "DATA_TEAM")` — two different tags<br/>❌ `@tag("PII", "true")` `@tag("PII", "false")` — the same tag twice<br/>Example: `@tag("PII", "true")` |
-| `@clusterKey(position, expression?)` | ***(repeatable)*** Marks a column as part of the table's clustering key, in the order given by **position** (lowest first).<br/>Leave out **expression** to cluster on the column as-is, or add one to cluster on a transformed value instead.<br/>**Note:** Ignored on Views.<br/>Example: `@clusterKey(1)` `@clusterKey(2, "trunc(\"REGION_KEY\", -5)")` |
+| **Annotation** | **Summary** |
+|---|---|
+| [`@id("<value>")`](#id-column) | Stable column ID for lineage tracking. |
+| [`@notNull`](#notnull) ***(reserved)*** | Marks column as NOT NULL. |
+| [`@description(<text>)`](#description-column) ***(reserved)*** | Adds column description. |
+| [`@defaultValue(<value>)`](#defaultvalue) ***(reserved)*** | Adds default value. |
+| [`@inHash("<hashName>", <hashOrder>)`](#inhash) **¹** ***(repeatable)*** | Marks a column as an input to a generated hash key. |
+| [`@tag(name, value, storageLocation?)`](#tag-column) ***(repeatable)*** | Applies a Snowflake tag to this column. |
+| [`@clusterKey(position, expression?)`](#clusterkey) ***(repeatable)*** | Marks a column as part of the table's clustering key, in the order given by **position** (lowest first). |
 
-<img width="648" height="455" alt="image" src="https://github.com/user-attachments/assets/74fe3375-b1cc-4d2a-8f40-81d97b02136c" />
+> Details for each annotation are in the [Annotation Reference](#annotation-reference).
 
-| **Property** | **Description** |
-|---------|-------------|
-| `@isBusinessKey` ***(required)*** | Marks a column as part of the business key used to match existing rows during the merge.<br/>**Note:** Ignored on Views.<br/>Example: `@isBusinessKey` |
-| `@lastModifiedTracking(scdType?)` | Marks the column used to detect newer source rows for an incremental load.<br/>Datatype — DATE/TIME or any incrementing NUMERIC type.<br/>Can only be applied to one column.<br/>Must not be NULL in the source — a pre-load check flags it, since a NULL value can never compare as newer: a row loaded with a NULL tracking value is never updated again.<br/>Only this column decides a change — other columns that change without a newer tracking value are never applied, even under SCD Type 1.<br/>**scdType** — `1` overwrites the row in place, `2` expires the row and inserts a new version. *Not specified → defaults to 1.*<br/>**Note:** Ignored on Views.<br/>Example: `@lastModifiedTracking(2)` |
-| `@isChangeTracking` | Marks a column to be watched for changes that decide SCD type.<br/>Marked on any column → SCD Type 2 — a change expires the existing row and inserts a new version.<br/>Not marked on any column → SCD Type 1 — a change updates the row in place.<br/>**Note:** Ignored on Views.<br/>Example: `@isChangeTracking` |
-| `@zeroKey(value)` | Adds a custom zero key value (ghost record) to this column, overriding the node-level `@zeroKey` defaults for it.<br/>The value is pasted into the SQL verbatim, so quote it to match the column's data type.<br/>**Note:** Ignored unless `@zeroKey` is enabled at the node level, and ignored on Views.<br/>Example: `@zeroKey("'N/A'")` |
-| `@isSurrogateKey` | Marks this column as the node's surrogate key.<br/>Optional for SCD Type 1 — the merge logic joins and detects changes entirely off the business key.<br/>Recommended for SCD Type 2 — a stable surrogate key per version is the standard way to identify a versioned row, though it isn't enforced by the merge itself.<br/>Required only when the node-level `@zeroKey` is set, since the zero/ghost record is matched against the target by surrogate key value.<br/>**Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.<br/>Expected expression: `0 AS "{{NODE_NAME}}_KEY" @isSurrogateKey` |
-| `@isSystemVersion` | Marks this column as the SCD version number, incremented each time a business key gets a new version.<br/>Required for SCD Type 2 — shows which version of a row this is; each time a business key's row changes, the expired row is kept and a new row is inserted with this value incremented by 1.<br/>Optional for SCD Type 1 — new-vs-existing is detected off the business key alone, so this column can be dropped entirely; if kept, it is always written as 1 and never incremented.<br/>Optional for `upsert` — if kept, it is written exactly as the SELECT/CTE computes it.<br/>**Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.<br/>Expected expression: `1 AS "SYSTEM_VERSION" @isSystemVersion` |
-| `@isSystemCurrentFlag` | Marks this column as the SCD "is current" flag — `'Y'` on the active version of a row, overwritten to `'N'` when it's expired.<br/>Required for SCD Type 2 — used to filter the target down to each business key's one current row before comparing it against the incoming source row.<br/>Optional for SCD Type 1 — safe to omit; if kept, it is always written as `'Y'`.<br/>Optional for `upsert` — if kept, it is written exactly as the SELECT/CTE computes it (e.g. `'N'` for a row the CTE is expiring).<br/>**Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.<br/>Expected expression: `'Y' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag` |
-| `@isSystemCreateDate` | Marks this column as the timestamp a row (or, under SCD Type 2, a specific row version) was first created.<br/>Required unless `@mergeStrategy` is `upsert` — under `changeTracking`/`lastModified` it's read back from the target and preserved unchanged on every row after its initial insert. Under `upsert`, no change detection reads the target at all, so this column isn't required; if kept, it is written from the SELECT/CTE on insert and never overwritten on update.<br/>**Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.<br/>Expected expression: `CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate` |
-| `@isSystemUpdateDate` | Marks this column as the timestamp a row was last updated.<br/>Required for SCD Type 2 — read back from the target and refreshed to the current timestamp whenever a row is inserted as a new version or its prior current version is expired.<br/>Required for SCD Type 1 — recomputed to the current timestamp on every inserted or changed row, so every row change carries an audit trail of when it was last updated.<br/>Optional for `upsert` — if kept, it is written from the SELECT/CTE on every insert and update.<br/>**Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.<br/>Expected expression: `CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate` |
-| `@isSystemEndDate` | Marks this column as the SCD Type 2 expiration timestamp — a far-future sentinel while the row is current, set to the actual expiry time once superseded.<br/>Required for SCD Type 2 — this is what makes a version's active window queryable; omitting it leaves expired versions with no expiry marker.<br/>Optional for SCD Type 1 (no versioning, so nothing ever expires) — safe to omit entirely.<br/>Optional for `upsert` — if kept, it is written exactly as the SELECT/CTE computes it.<br/>**Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.<br/>Expected expression: `CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate` |
+**Dimension-specific column annotations**
+
+| **Annotation** | **Summary** |
+|---|---|
+| [`@isBusinessKey`](#isbusinesskey-dimension) ***(required)*** | Marks a column as part of the business key used to match existing rows during the merge. |
+| [`@lastModifiedTracking(scdType?)`](#lastmodifiedtracking-dimension) | Marks the column used to detect newer source rows for an incremental load. |
+| [`@isChangeTracking`](#ischangetracking-dimension) | Marks a column to be watched for changes that decide SCD type. |
+| [`@zeroKey(value)`](#zerokey-dimension-column) | Adds a custom zero key value (ghost record) to this column, overriding the node-level `@zeroKey` defaults for it. |
+| [`@isSurrogateKey`](#issurrogatekey-dimension) | Marks this column as the node's surrogate key. |
+| [`@isSystemVersion`](#issystemversion-dimension) | Marks this column as the SCD version number, incremented each time a business key gets a new version. |
+| [`@isSystemCurrentFlag`](#issystemcurrentflag-dimension) | Marks this column as the SCD "is current" flag — `'Y'` on the active version of a row, overwritten to `'N'` when it's expired. |
+| [`@isSystemCreateDate`](#issystemcreatedate-dimension) | Marks this column as the timestamp a row (or, under SCD Type 2, a specific row version) was first created. |
+| [`@isSystemUpdateDate`](#issystemupdatedate-dimension) | Marks this column as the timestamp a row was last updated. |
+| [`@isSystemEndDate`](#issystemenddate-dimension) | Marks this column as the SCD Type 2 expiration timestamp — a far-future sentinel while the row is current, set to the actual expiry time once superseded. |
+
+> Shared annotations link to the [Annotation Reference](#annotation-reference); details for the Dimension-specific ones follow.
+
+##### `@isBusinessKey` (Dimension)
+
+`@isBusinessKey` ***(required)***
+
+Marks a column as part of the business key used to match existing rows during the merge.
+
+* **Note:** Ignored on Views.
+
+**Example:**
+
+```sql
+@isBusinessKey
+```
+
+
+##### `@lastModifiedTracking` (Dimension)
+
+`@lastModifiedTracking(scdType?)`
+
+Marks the column used to detect newer source rows for an incremental load.
+
+* Datatype — DATE/TIME or any incrementing NUMERIC type.
+* Can only be applied to one column.
+* Must not be NULL in the source — a pre-load check flags it, since a NULL value can never compare as newer: a row loaded with a NULL tracking value is never updated again.
+* Only this column decides a change — other columns that change without a newer tracking value are never applied, even under SCD Type 1.
+
+| **Parameter** | **Description** |
+|---|---|
+| **scdType** | **(optional)** `1` overwrites the row in place, `2` expires the row and inserts a new version. *Not specified → defaults to 1.* |
+
+* **Note:** Ignored on Views.
+
+**Example:**
+
+```sql
+@lastModifiedTracking(2)
+```
+
+
+##### `@isChangeTracking` (Dimension)
+
+`@isChangeTracking`
+
+Marks a column to be watched for changes that decide SCD type.
+
+* Marked on any column → SCD Type 2 — a change expires the existing row and inserts a new version.
+* Not marked on any column → SCD Type 1 — a change updates the row in place.
+* **Note:** Ignored on Views.
+
+**Example:**
+
+```sql
+@isChangeTracking
+```
+
+
+##### `@zeroKey` (Dimension column)
+
+`@zeroKey(value)`
+
+Adds a custom zero key value (ghost record) to this column, overriding the node-level `@zeroKey` defaults for it.
+
+| **Parameter** | **Description** |
+|---|---|
+| **value** | Zero key value for this column, pasted into the SQL verbatim. |
+
+* The value is pasted into the SQL verbatim, so quote it to match the column's data type.
+* **Note:** Ignored unless `@zeroKey` is enabled at the node level, and ignored on Views.
+
+**Example:**
+
+```sql
+@zeroKey("'N/A'")
+```
+
+
+##### `@isSurrogateKey` (Dimension)
+
+`@isSurrogateKey`
+
+Marks this column as the node's surrogate key.
+
+* Optional for SCD Type 1 — the merge logic joins and detects changes entirely off the business key.
+* Recommended for SCD Type 2 — a stable surrogate key per version is the standard way to identify a versioned row, though it isn't enforced by the merge itself.
+* Required only when the node-level `@zeroKey` is set, since the zero/ghost record is matched against the target by surrogate key value.
+* **Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.
+* Expected expression: `0 AS "{{NODE_NAME}}_KEY" @isSurrogateKey`
+
+
+##### `@isSystemVersion` (Dimension)
+
+`@isSystemVersion`
+
+Marks this column as the SCD version number, incremented each time a business key gets a new version.
+
+* Required for SCD Type 2 — shows which version of a row this is; each time a business key's row changes, the expired row is kept and a new row is inserted with this value incremented by 1.
+* Optional for SCD Type 1 — new-vs-existing is detected off the business key alone, so this column can be dropped entirely; if kept, it is always written as 1 and never incremented.
+* Optional for `upsert` — if kept, it is written exactly as the SELECT/CTE computes it.
+* **Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.
+* Expected expression: `1 AS "SYSTEM_VERSION" @isSystemVersion`
+
+
+##### `@isSystemCurrentFlag` (Dimension)
+
+`@isSystemCurrentFlag`
+
+Marks this column as the SCD "is current" flag — `'Y'` on the active version of a row, overwritten to `'N'` when it's expired.
+
+* Required for SCD Type 2 — used to filter the target down to each business key's one current row before comparing it against the incoming source row.
+* Optional for SCD Type 1 — safe to omit; if kept, it is always written as `'Y'`.
+* Optional for `upsert` — if kept, it is written exactly as the SELECT/CTE computes it (e.g. `'N'` for a row the CTE is expiring).
+* **Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.
+* Expected expression: `'Y' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag`
+
+
+##### `@isSystemCreateDate` (Dimension)
+
+`@isSystemCreateDate`
+
+Marks this column as the timestamp a row (or, under SCD Type 2, a specific row version) was first created.
+
+* Required unless `@mergeStrategy` is `upsert` — under `changeTracking`/`lastModified` it's read back from the target and preserved unchanged on every row after its initial insert. Under `upsert`, no change detection reads the target at all, so this column isn't required; if kept, it is written from the SELECT/CTE on insert and never overwritten on update.
+* **Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.
+* Expected expression: `CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate`
+
+
+##### `@isSystemUpdateDate` (Dimension)
+
+`@isSystemUpdateDate`
+
+Marks this column as the timestamp a row was last updated.
+
+* Required for SCD Type 2 — read back from the target and refreshed to the current timestamp whenever a row is inserted as a new version or its prior current version is expired.
+* Required for SCD Type 1 — recomputed to the current timestamp on every inserted or changed row, so every row change carries an audit trail of when it was last updated.
+* Optional for `upsert` — if kept, it is written from the SELECT/CTE on every insert and update.
+* **Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.
+* Expected expression: `CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate`
+
+
+##### `@isSystemEndDate` (Dimension)
+
+`@isSystemEndDate`
+
+Marks this column as the SCD Type 2 expiration timestamp — a far-future sentinel while the row is current, set to the actual expiry time once superseded.
+
+* Required for SCD Type 2 — this is what makes a version's active window queryable; omitting it leaves expired versions with no expiry marker.
+* Optional for SCD Type 1 (no versioning, so nothing ever expires) — safe to omit entirely.
+* Optional for `upsert` — if kept, it is written exactly as the SELECT/CTE computes it.
+* **Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.
+* Expected expression: `CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate`
+
 
 🚦 The full set of column-level data quality tests (`@not_null`, `@uniqueness`, `@empty`, `@accepted_values`, `@rejected_values`, `@min_max`, `@min_value`, `@max_value`, `@freshness`, `@relative_time`) applies to Dimension columns exactly as described in [Column-Level Data Quality Tests](#column-level-data-quality-tests).
 
@@ -473,50 +674,136 @@ The Fact Node type has three configuration groups:
 
 #### Fact General Options
 
-<img width="511" height="311" alt="image" src="https://github.com/user-attachments/assets/8a8bd7d1-a705-4f5f-866b-ea53e5c9c6ef" />
-
 | **Property** | **Description** |
 |----------|-------------|
 | **Storage Location** | Storage Location where the Fact table or view will be created |
 
 ### Fact Node Annotations
 
-<img width="511" height="672" alt="image" src="https://github.com/user-attachments/assets/27b2ebed-c6f5-4598-b239-a683e5405ca9" />
+| **Annotation** | **Summary** |
+|---|---|
+| [`@id(id)`](#id-node) ***(reserved)*** | Unique identifier for the node. |
+| [`@nodeType(type)`](#nodetype) ***(reserved)*** | Identifies the node's type. |
+| [`@description(text)`](#description-node) ***(reserved)*** | Node-level description. |
+| [`@materializationType(type)`](#materializationtype) ***(reserved)*** | Table, transient table or view |
+| [`@deployDisabled`](#deploydisabled) ***(reserved)*** | Excludes this node from deployment. |
+| [`@tag(name, value, storageLocation?)`](#tag-node) ***(repeatable)*** | Applies a Snowflake tag to this table/view. |
+| [`@writeMode("truncateInsert \| append")`](#writemode) | How each run writes to the target: truncateInsert or append |
+| [`@mergeStrategy("changeTracking \| lastModified \| upsert \| allColumnMatch")`](#mergestrategy-fact) | Chooses how rows are matched against the target, and therefore which column annotations are required. |
+| [`@disableTests`](#disabletests) **²** | Controls whether configured tests are skipped. |
+| [`@tests(querySQL, continueOnFailure?, runOrder?)`](#tests) **²** ***(repeatable)*** | Node-level data quality test. |
+| [`@preSQL(querySQL)`](#presql) ***(repeatable)*** | SQL statement to execute `before` the data load operation. |
+| [`@postSQL(querySQL)`](#postsql) ***(repeatable)*** | SQL statement to execute `after` the data load operation. |
 
-| **Property** | **Description** |
-|---------|-------------|
-| `@id(id)` ***(reserved)*** | Unique identifier for the node.<br/>Static and auto-generated when the node is created — not meant to be edited. |
-| `@nodeType(type)` ***(reserved)*** | Identifies the node's type.<br/>Set automatically based on the node type chosen when the node is created.|
-| `@description(text)` ***(reserved)*** | Node-level description.<br/>Can be edited via this annotation or in the node description field below the node name in the UI.<br/>Example: `@description("Table description")` |
-| `@materializationType(type)` ***(reserved)*** | table/view/transient table.<br/>Use lowercase `table`, `transient table` or `view` — case and extra spaces are ignored (`"Table "` reads as `table`); any other value stops the deploy and the run with an **Unsupported Materialization Type** check.<br/>*Not specified in the SQL editor → defaults to **table**.*<br/>Example: `@materializationType("view")` |
-| `@deployDisabled` ***(reserved)*** | Excludes this node from deployment. |
-| `@tag(tagName, tagValue, location?)` | ***(repeatable)*** Applies a Snowflake tag to this table/view.<br/>**tagName** — name of the tag (must already exist in Snowflake). Case-sensitive: `PII` and `pii` are different tags.<br/>**tagValue** — value to assign to the tag.<br/>**location** — *(optional)* storage location the tag lives in; defaults to this node's own location.<br/>**Prerequisite:** Tags must first be created in Snowflake before they can be used in Coalesce.<br/>Repeat the annotation to apply several **different** tags. A duplicate — the same tag (same name and location) applied twice, even with a different value — is not allowed and stops the deploy with a **Duplicate Tags Found** check.<br/>✅ `@tag("PII", "true")` `@tag("OWNER", "DATA_TEAM")` — two different tags<br/>❌ `@tag("PII", "true")` `@tag("PII", "false")` — the same tag twice<br/>Example: `@tag("PII", "true")` `@tag("COST_CENTRE", "FIN", "GOVERNANCE")` |
-| `@writeMode("truncateInsert \| append")` | **truncateInsert** — clears the table before loading, replacing its contents entirely.<br/>**append** — loads the new rows alongside whatever is already there.<br/>*Not specified in the SQL editor → defaults to **append**.*<br/>**Note:** Ignored on Views.<br/>Example: `@writeMode("truncateInsert")` |
-| `@mergeStrategy("changeTracking \| lastModified \| upsert \| allColumnMatch")` | Chooses how rows are matched against the target, and therefore which column annotations are required.<br/><br/>**changeTracking** — SCD Type 1. Compares every plain attribute column against the target; a changed row is overwritten in place, a new key is inserted. Doesn't use `@lastModifiedTracking` — if present, a warning is raised and it's ignored.<br/><br/>**lastModified** — SCD Type 1. Compares a single `@lastModifiedTracking` column against the target's stored value; a newer value overwrites the row in place. Requires exactly one column marked `@lastModifiedTracking` — a validation check flags it if none (or more than one) is present.<br/><br/>**upsert** — no change detection at all; a matched row is always updated, an unmatched row is inserted. The SELECT/CTE should return one row per business key (de-duplicate upstream). System columns are optional; any that are present are written exactly as the SELECT/CTE computes them. `@lastModifiedTracking` isn't used — if present, a warning is raised and it's ignored.<br/><br/>**allColumnMatch** — treats every non-system column as the business key: a source row is inserted only if no target row matches it on all of those columns, and an existing matching row is never updated. `@isBusinessKey` isn't needed — if present, a warning is raised, it's ignored and all columns are used for the comparison. `@lastModifiedTracking` isn't used either — a warning is raised and it's ignored. System columns are optional, are left out of the comparison, and are written exactly as the SELECT/CTE computes them.<br/><br/>*Not specified in the SQL editor → defaults to **changeTracking** - SCD Type 1 when a column is marked `@isBusinessKey`, otherwise the node is loaded as a [plain insert](#fact-load-behaviour).*<br/>The value is not case-sensitive; any other value is flagged by a validation check.<br/>When set, `@mergeStrategy` always takes priority: `changeTracking`, `lastModified` and `upsert` merge on the business key, so without an `@isBusinessKey` column a validation check fails and the load stops. `allColumnMatch` needs no `@isBusinessKey`.<br/>**Note:** Ignored on Views.<br/>Example: `@mergeStrategy("allColumnMatch")` |
-| `@disableTests`**²** | Controls whether configured tests are skipped.<br/>*Specified in the SQL editor → all node- and column-level tests are skipped.*<br/>*Not specified in the SQL editor → tests run normally.*<br/>To turn tests back on, remove the annotation. Useful while developing a node — iterate on the SQL first, then re-enable once the logic is settled.<br/>Example: `@disableTests` |
-| `@tests(querySQL, continueOnFailure?, runOrder?)`**²** | ***(repeatable)*** Node-level data quality test.<br/>Runs `querySQL` against the target; fails if it returns any records.<br/>Skipped entirely when **@disableTests** is set.<br/>[Refer to Node-Level Tests for more details.](#node-level-tests--tests)<br/>Example: `@tests("SELECT 1 FROM {{ this }} GROUP BY ORDER_ID HAVING COUNT(*) > 1", false, "After")`|
-| `@preSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `before` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@preSQL("DELETE FROM {{ this }} WHERE ORDER_DATE < DATEADD(DAY, -90, CURRENT_DATE())")` |
-| `@postSQL(querySQL)` | ***(repeatable)*** SQL statement to execute `after` the data load operation.<br/>Repeat the annotation to run multiple statements, in the order they appear.<br/>**Note:** Ignored on Views.<br/>Example: `@postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('FCT_ORDERS', CURRENT_TIMESTAMP())")` |
+> Shared annotations link to the [Annotation Reference](#annotation-reference); details for the Fact-specific ones follow.
+
+##### `@mergeStrategy` (Fact)
+
+`@mergeStrategy("changeTracking | lastModified | upsert | allColumnMatch")`
+
+Chooses how rows are matched against the target, and therefore which column annotations are required.
+
+| **Value** | **Description** |
+|---|---|
+| `changeTracking` | SCD Type 1. Compares every plain attribute column against the target; a changed row is overwritten in place, a new key is inserted. Doesn't use `@lastModifiedTracking` — if present, a warning is raised and it's ignored. |
+| `lastModified` | SCD Type 1. Compares a single `@lastModifiedTracking` column against the target's stored value; a newer value overwrites the row in place. Requires exactly one column marked `@lastModifiedTracking` — a validation check flags it if none (or more than one) is present. |
+| `upsert` | No change detection at all; a matched row is always updated, an unmatched row is inserted. The SELECT/CTE should return one row per business key (de-duplicate upstream). System columns are optional; any that are present are written exactly as the SELECT/CTE computes them. `@lastModifiedTracking` isn't used — if present, a warning is raised and it's ignored. |
+| `allColumnMatch` | Treats every non-system column as the business key: a source row is inserted only if no target row matches it on all of those columns, and an existing matching row is never updated. `@isBusinessKey` isn't needed — if present, a warning is raised, it's ignored and all columns are used for the comparison. `@lastModifiedTracking` isn't used either — a warning is raised and it's ignored. System columns are optional, are left out of the comparison, and are written exactly as the SELECT/CTE computes them. |
+
+* *Not specified in the SQL editor → defaults to **changeTracking** - SCD Type 1 when a column is marked `@isBusinessKey`, otherwise the node is loaded as a [plain insert](#fact-load-behaviour).*
+* The value is not case-sensitive; any other value is flagged by a validation check.
+* When set, `@mergeStrategy` always takes priority: `changeTracking`, `lastModified` and `upsert` merge on the business key, so without an `@isBusinessKey` column a validation check fails and the load stops. `allColumnMatch` needs no `@isBusinessKey`.
+* **Note:** Ignored on Views.
+
+**Example:**
+
+```sql
+@mergeStrategy("allColumnMatch")
+```
+
 
 >**Note:** Quote style matters for **case-sensitive** identifiers when writing `@tests`, `@preSQL`, and `@postSQL` — see [Quote Style for Case-Sensitive Identifiers](#quote-style-for-case-sensitive-identifiers).
 
 ### Fact Column Annotations
 
-<img width="517" height="514" alt="image" src="https://github.com/user-attachments/assets/6933718d-6148-49d6-8145-a7d6acec465f" />
+| **Annotation** | **Summary** |
+|---|---|
+| [`@id("<value>")`](#id-column) | Stable column ID for lineage tracking. |
+| [`@notNull`](#notnull) ***(reserved)*** | Marks column as NOT NULL. |
+| [`@description(<text>)`](#description-column) ***(reserved)*** | Adds column description. |
+| [`@defaultValue(<value>)`](#defaultvalue) ***(reserved)*** | Adds default value. |
+| [`@inHash("<hashName>", <hashOrder>)`](#inhash) **¹** ***(repeatable)*** | Marks a column as an input to a generated hash key. |
+| [`@tag(name, value, storageLocation?)`](#tag-column) ***(repeatable)*** | Applies a Snowflake tag to this column. |
+| [`@clusterKey(position, expression?)`](#clusterkey) ***(repeatable)*** | Marks a column as part of the table's clustering key, in the order given by **position** (lowest first). |
+| [`@isBusinessKey`](#isbusinesskey-fact) | Marks a column as part of the business key used to match existing rows during the merge. |
+| [`@lastModifiedTracking`](#lastmodifiedtracking-fact) | Marks the column used to detect newer source rows for an incremental load (SCD Type 1). |
+| [`@isSystemCreateDate`](#issystemcreatedate-fact) | Marks this column as the timestamp a row was first created. |
+| [`@isSystemUpdateDate`](#issystemupdatedate-fact) | Marks this column as the timestamp a row was last updated. |
 
-| **Property** | **Description** |
-|---------|-------------|
-| `@id("<value>")` | Stable column ID for lineage tracking.<br/>Required on every column — the SQL editor generates a fresh `@id("<value>")` for each column it creates, and a validation check flags any column that is missing one.<br/>Not for manual editing — value is a stable identifier generated once at creation time.<br/>**Column added later:** make sure it gets its own `@id` too. If you're editing by hand, add a new, unique 6-hex-digit `@id("<value>")` along with the column; an agent can generate one for you. Don't reuse a value already on the node — a repeated value fails the **Duplicate Column IDs** check.<br/>**Duplicate column names:** if the SELECT returns the same column name twice, Coalesce renames the extra copy (`SYSTEM_CREATE_DATE` → `SYSTEM_CREATE_DATE1`) and drops its `@id`; this is reported by the **Duplicate Column Names** check rather than as a missing ID.<br/>Example: `@id("110e75")` |
-| `@notNull` ***(reserved)*** | Marks column as NOT NULL.<br/>**Note:** Ignored on Views.<br/>Example: `@notNull` |
-| `@description(<text>)` ***(reserved)*** | Adds column description.<br/>Example: `@description("timestamp column")` |
-| `@defaultValue(<value>)` ***(reserved)*** | Adds default value.<br/>Quote to match the column's data type - <br/>number: `defaultValue("<num>")`<br/>string: `defaultValue("'<string>'")`<br/>**Note:** Ignored on Views.<br/>Example: `@defaultValue("20")` `@defaultValue("'NA'")` |
-| `@inHash("<hashName>", <hashOrder>)`**¹** | ***(repeatable)*** Marks a column as an input to a generated hash key.<br/>**hashName** — columns sharing the same value are grouped together into the same hash.<br/>**hashOrder** — this column's position within that group.<br/>Call `get_hash("<hashName>")` elsewhere in the SELECT to produce the hash column from the marked columns.<br/>[Refer to Hash Columns for more details.](#hash-columns--get_hash)<br/>Example:<br/>`<col_name> AS <col_name> @inHash("GH_COL", 1),`<br/>`{{ get_hash('GH_COL') }}::STRING AS "GH_COL"`|
-| `@tag(tagName, tagValue, location?)` | ***(repeatable)*** Applies a Snowflake tag to this column.<br/>**tagName** — name of the tag (must already exist in Snowflake). Case-sensitive: `PII` and `pii` are different tags.<br/>**tagValue** — value to assign to the tag.<br/>**location** — *(optional)* storage location the tag lives in; defaults to this node's own location.<br/>**Prerequisite:** Tags must first be created in Snowflake before they can be used in Coalesce.<br/>Repeat the annotation to apply several **different** tags to the column. A duplicate — the same tag (same name and location) applied twice on the column, even with a different value — is not allowed and stops the deploy with a **Duplicate Tags Found** check.<br/>✅ `@tag("PII", "true")` `@tag("OWNER", "DATA_TEAM")` — two different tags<br/>❌ `@tag("PII", "true")` `@tag("PII", "false")` — the same tag twice<br/>Example: `@tag("PII", "true")` |
-| `@clusterKey(position, expression?)` | ***(repeatable)*** Marks a column as part of the table's clustering key, in the order given by **position** (lowest first).<br/>Leave out **expression** to cluster on the column as-is, or add one to cluster on a transformed value instead.<br/>**Note:** Ignored on Views.<br/>Example: `@clusterKey(1)` `@clusterKey(2, "trunc(\"REGION_KEY\", -5)")` |
-| `@isBusinessKey` | Marks a column as part of the business key used to match existing rows during the merge.<br/>Optional when `@mergeStrategy` isn't set — if no column is marked, there is no merge and every source row is simply inserted.<br/>Required for an explicit `changeTracking`, `lastModified` or `upsert` — without it the load stops with a validation error.<br/>Ignored under `@mergeStrategy("allColumnMatch")`, which uses every non-system column as the key (a warning is raised).<br/>**Note:** Ignored on Views.<br/>Example: `@isBusinessKey` |
-| `@lastModifiedTracking` | Marks the column used to detect newer source rows for an incremental load (SCD Type 1).<br/>Datatype — DATE/TIME or any incrementing NUMERIC type.<br/>Can only be applied to one column.<br/>Must not be NULL in the source — a pre-load check flags it, since a NULL value can never compare as newer: a row loaded with a NULL tracking value is never updated again.<br/>Only this column decides a change — other columns that change without a newer tracking value are never applied.<br/>Used only by `@mergeStrategy("lastModified")`.<br/>**Note:** Ignored on Views.<br/>Example: `@lastModifiedTracking` |
-| `@isSystemCreateDate` | Marks this column as the timestamp a row was first created.<br/>Required for `changeTracking`/`lastModified` — read back from the target and preserved unchanged on every row after its initial insert.<br/>Recommended for `allColumnMatch` and plain insert — rows are only ever inserted, so it's the record of when each row was loaded; it is written exactly as the SELECT/CTE computes it.<br/>Optional for `upsert` — if kept, it is written from the SELECT/CTE on insert and never overwritten on update.<br/>**Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.<br/>Expected expression: `CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate` |
-| `@isSystemUpdateDate` | Marks this column as the timestamp a row was last updated.<br/>Required for `changeTracking`/`lastModified` — set to the current timestamp on every inserted or changed row.<br/>Optional for `upsert`, `allColumnMatch` and plain insert — if kept, it is written exactly as the SELECT/CTE computes it.<br/>**Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.<br/>Expected expression: `CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate` |
+> Shared annotations link to the [Annotation Reference](#annotation-reference); details for the Fact-specific ones follow.
+
+##### `@isBusinessKey` (Fact)
+
+`@isBusinessKey`
+
+Marks a column as part of the business key used to match existing rows during the merge.
+
+* Optional when `@mergeStrategy` isn't set — if no column is marked, there is no merge and every source row is simply inserted.
+* Required for an explicit `changeTracking`, `lastModified` or `upsert` — without it the load stops with a validation error.
+* Ignored under `@mergeStrategy("allColumnMatch")`, which uses every non-system column as the key (a warning is raised).
+* **Note:** Ignored on Views.
+
+**Example:**
+
+```sql
+@isBusinessKey
+```
+
+
+##### `@lastModifiedTracking` (Fact)
+
+`@lastModifiedTracking`
+
+Marks the column used to detect newer source rows for an incremental load (SCD Type 1).
+
+* Datatype — DATE/TIME or any incrementing NUMERIC type.
+* Can only be applied to one column.
+* Must not be NULL in the source — a pre-load check flags it, since a NULL value can never compare as newer: a row loaded with a NULL tracking value is never updated again.
+* Only this column decides a change — other columns that change without a newer tracking value are never applied.
+* Used only by `@mergeStrategy("lastModified")`.
+* **Note:** Ignored on Views.
+
+**Example:**
+
+```sql
+@lastModifiedTracking
+```
+
+
+##### `@isSystemCreateDate` (Fact)
+
+`@isSystemCreateDate`
+
+Marks this column as the timestamp a row was first created.
+
+* Required for `changeTracking`/`lastModified` — read back from the target and preserved unchanged on every row after its initial insert.
+* Recommended for `allColumnMatch` and plain insert — rows are only ever inserted, so it's the record of when each row was loaded; it is written exactly as the SELECT/CTE computes it.
+* Optional for `upsert` — if kept, it is written from the SELECT/CTE on insert and never overwritten on update.
+* **Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.
+* Expected expression: `CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate`
+
+
+##### `@isSystemUpdateDate` (Fact)
+
+`@isSystemUpdateDate`
+
+Marks this column as the timestamp a row was last updated.
+
+* Required for `changeTracking`/`lastModified` — set to the current timestamp on every inserted or changed row.
+* Optional for `upsert`, `allColumnMatch` and plain insert — if kept, it is written exactly as the SELECT/CTE computes it.
+* **Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.
+* Expected expression: `CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate`
+
 
 🚦 The full set of column-level data quality tests (`@not_null`, `@uniqueness`, `@empty`, `@accepted_values`, `@rejected_values`, `@min_max`, `@min_value`, `@max_value`, `@freshness`, `@relative_time`) applies to Fact columns exactly as described in [Column-Level Data Quality Tests](#column-level-data-quality-tests).
 
@@ -687,6 +974,401 @@ The stage executed:
 ## Common Reference
 
 Concepts and reusable building blocks that apply across every node type in this package.
+
+### Annotation Reference
+
+Annotations shared by Work, Dimension and Fact, described once. Where a node type behaves differently, its variant is shown under its own label. Node-type-specific annotations (for example `@mergeStrategy` or the system columns) are described in each node type's section.
+
+#### Node Annotations
+
+##### `@id` (node)
+
+`@id(id)` ***(reserved)***
+
+Unique identifier for the node.
+
+| **Parameter** | **Description** |
+|---|---|
+| **id** | Unique identifier of the node — auto-generated. |
+
+* Static and auto-generated when the node is created — not meant to be edited.
+
+
+##### `@nodeType`
+
+`@nodeType(type)` ***(reserved)***
+
+Identifies the node's type.
+
+| **Parameter** | **Description** |
+|---|---|
+| **type** | The node type, e.g. `SQLWork`, `SQLDimension`, `SQLFact` — set automatically. |
+
+* Set automatically based on the node type chosen when the node is created.
+
+
+##### `@description` (node)
+
+`@description(text)` ***(reserved)***
+
+Node-level description.
+
+| **Parameter** | **Description** |
+|---|---|
+| **text** | The node description. |
+
+* Can be edited via this annotation or in the node description field below the node name in the UI.
+
+**Example:**
+
+```sql
+@description("Table description")
+```
+
+
+##### `@materializationType`
+
+`@materializationType(type)` ***(reserved)***
+
+table/view/transient table.
+
+| **Value** | **Description** |
+|---|---|
+| `table` | Permanent table (default). |
+| `transient table` | Transient table. |
+| `view` | View. |
+
+* Use lowercase `table`, `transient table` or `view` — case and extra spaces are ignored (`"Table "` reads as `table`); any other value stops the deploy and the run with an **Unsupported Materialization Type** check.
+* *Not specified in the SQL editor → defaults to **table**.*
+
+**Example:**
+
+```sql
+@materializationType("view")
+```
+
+
+##### `@deployDisabled`
+
+`@deployDisabled` ***(reserved)***
+
+Excludes this node from deployment.
+
+
+##### `@tag` (node)
+
+`@tag(name, value, storageLocation?)`
+
+***(repeatable)*** Applies a Snowflake tag to this table/view.
+
+| **Parameter** | **Description** |
+|---|---|
+| **name** | Name of the tag (must already exist in Snowflake). Case-sensitive: `PII` and `pii` are different tags. |
+| **value** | Value to assign to the tag. |
+| **storageLocation** | *(optional)* storage location the tag lives in; defaults to this node's own location. |
+
+* **Prerequisite:** Tags must first be created in Snowflake before they can be used in Coalesce.
+* Repeat the annotation to apply several **different** tags. A duplicate — the same tag (same name and location) applied twice, even with a different value — is not allowed and stops the deploy with a **Duplicate Tags Found** check.
+* ✅ `@tag("PII", "true")` `@tag("OWNER", "DATA_TEAM")` — two different tags
+* ❌ `@tag("PII", "true")` `@tag("PII", "false")` — the same tag twice
+
+**Example:**
+
+```sql
+@tag("PII", "true")
+@tag("COST_CENTRE", "FIN", "GOVERNANCE")
+```
+
+
+##### `@writeMode`
+
+`@writeMode("truncateInsert | append")`
+
+* **Note:** Ignored on Views.
+
+**Work:**
+
+| **Value** | **Description** |
+|---|---|
+| `truncateInsert` | Replaces the table's contents entirely via a single `INSERT OVERWRITE INTO` statement (atomic — no separate truncate step). |
+| `append` | Inserts the new rows via `INSERT INTO`, alongside whatever is already there. |
+
+* *Not specified in the SQL editor → defaults to **truncateInsert**.*
+
+**Example:**
+
+```sql
+@writeMode("append")
+```
+
+**Dimension:**
+
+| **Value** | **Description** |
+|---|---|
+| `truncateInsert` | Clears the table before loading, replacing its contents entirely. |
+| `append` | Inserts the new rows via merge, alongside whatever is already there. |
+
+* *Not specified in the SQL editor → defaults to **append**.*
+
+**Example:**
+
+```sql
+@writeMode("truncateInsert")
+```
+
+**Fact:**
+
+| **Value** | **Description** |
+|---|---|
+| `truncateInsert` | Clears the table before loading, replacing its contents entirely. |
+| `append` | Loads the new rows alongside whatever is already there. |
+
+* *Not specified in the SQL editor → defaults to **append**.*
+
+**Example:**
+
+```sql
+@writeMode("truncateInsert")
+```
+
+
+##### `@disableTests`
+
+`@disableTests`**²**
+
+Controls whether configured tests are skipped.
+
+* *Specified in the SQL editor → all node- and column-level tests are skipped.*
+* *Not specified in the SQL editor → tests run normally.*
+* To turn tests back on, remove the annotation. Useful while developing a node — iterate on the SQL first, then re-enable once the logic is settled.
+
+**Example:**
+
+```sql
+@disableTests
+```
+
+
+##### `@tests`
+
+`@tests(querySQL, continueOnFailure?, runOrder?)`**²**
+
+***(repeatable)*** Node-level data quality test.
+
+| **Parameter** | **Description** |
+|---|---|
+| **querySQL** | SQL statement to execute as a validation test. The test fails if the query returns any records. |
+| **continueOnFailure** | **(optional)** `true` (default) or `false`. Marks whether the run is meant to continue when the test fails. |
+| **runOrder** | **(optional)** `Before` or `After` (default). Determines whether the test is executed before or after the load operation. |
+
+* Runs `querySQL` against the target; fails if it returns any records.
+* Skipped entirely when **@disableTests** is set.
+* [Refer to Node-Level Tests for more details.](#node-level-tests--tests)
+
+**Example:**
+
+```sql
+-- Work / Dimension
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")
+-- Fact
+@tests("SELECT 1 FROM {{ this }} GROUP BY ORDER_ID HAVING COUNT(*) > 1", false, "After")
+```
+
+
+##### `@preSQL`
+
+`@preSQL(querySQL)`
+
+***(repeatable)*** SQL statement to execute `before` the data load operation.
+
+| **Parameter** | **Description** |
+|---|---|
+| **querySQL** | SQL statement to execute before the data load operation. |
+
+* Repeat the annotation to run multiple statements, in the order they appear.
+* **Note:** Ignored on Views.
+
+**Example:**
+
+```sql
+-- Work / Dimension
+@preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)")
+-- Fact
+@preSQL("DELETE FROM {{ this }} WHERE ORDER_DATE < DATEADD(DAY, -90, CURRENT_DATE())")
+```
+
+
+##### `@postSQL`
+
+`@postSQL(querySQL)`
+
+***(repeatable)*** SQL statement to execute `after` the data load operation.
+
+| **Parameter** | **Description** |
+|---|---|
+| **querySQL** | SQL statement to execute after the data load operation. |
+
+* Repeat the annotation to run multiple statements, in the order they appear.
+* **Note:** Ignored on Views.
+
+**Example:**
+
+```sql
+-- Work
+@postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('WRK_NATION', CURRENT_TIMESTAMP())")
+-- Dimension
+@postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('DIM_NATION', CURRENT_TIMESTAMP())")
+-- Fact
+@postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('FCT_ORDERS', CURRENT_TIMESTAMP())")
+```
+
+
+#### Column Annotations
+
+##### `@notNull`
+
+`@notNull` ***(reserved)***
+
+Marks column as NOT NULL.
+
+* **Note:** Ignored on Views.
+
+**Example:**
+
+```sql
+@notNull
+```
+
+
+##### `@description` (column)
+
+`@description(<text>)` ***(reserved)***
+
+Adds column description.
+
+| **Parameter** | **Description** |
+|---|---|
+| **text** | The column description. |
+
+**Example:**
+
+```sql
+@description("timestamp column")
+```
+
+
+##### `@defaultValue`
+
+`@defaultValue(<value>)` ***(reserved)***
+
+Adds default value.
+
+| **Parameter** | **Description** |
+|---|---|
+| **value** | Default value for the column — quoted to match the column's data type (see below). |
+
+* Quote to match the column's data type -
+* number: `defaultValue("<num>")`
+* string: `defaultValue("'<string>'")`
+* **Note:** Ignored on Views.
+
+**Example:**
+
+```sql
+@defaultValue("20")
+@defaultValue("'NA'")
+```
+
+
+##### `@inHash`
+
+`@inHash("<hashName>", <hashOrder>)`**¹**
+
+***(repeatable)*** Marks a column as an input to a generated hash key.
+
+| **Parameter** | **Description** |
+|---|---|
+| **hashName** | Columns sharing the same value are grouped together into the same hash. |
+| **hashOrder** | This column's position within that group. |
+
+* Call `get_hash("<hashName>")` elsewhere in the SELECT to produce the hash column from the marked columns.
+* [Refer to Hash Columns for more details.](#hash-columns--get_hash)
+
+**Example:**
+
+```sql
+<col_name> AS <col_name> @inHash("GH_COL", 1),
+{{ get_hash('GH_COL') }}::STRING AS "GH_COL"
+```
+
+
+##### `@tag` (column)
+
+`@tag(name, value, storageLocation?)`
+
+***(repeatable)*** Applies a Snowflake tag to this column.
+
+| **Parameter** | **Description** |
+|---|---|
+| **name** | Name of the tag (must already exist in Snowflake). Case-sensitive: `PII` and `pii` are different tags. |
+| **value** | Value to assign to the tag. |
+| **storageLocation** | *(optional)* storage location the tag lives in; defaults to this node's own location. |
+
+* **Prerequisite:** Tags must first be created in Snowflake before they can be used in Coalesce.
+* Repeat the annotation to apply several **different** tags to the column. A duplicate — the same tag (same name and location) applied twice on the column, even with a different value — is not allowed and stops the deploy with a **Duplicate Tags Found** check.
+* ✅ `@tag("PII", "true")` `@tag("OWNER", "DATA_TEAM")` — two different tags
+* ❌ `@tag("PII", "true")` `@tag("PII", "false")` — the same tag twice
+
+**Example:**
+
+```sql
+@tag("PII", "true")
+```
+
+
+##### `@clusterKey`
+
+`@clusterKey(position, expression?)`
+
+***(repeatable)*** Marks a column as part of the table's clustering key, in the order given by **position** (lowest first).
+
+| **Parameter** | **Description** |
+|---|---|
+| **position** | Position of this column in the clustering key (lowest first). |
+| **expression** | **(optional)** Expression to cluster on instead of the plain column, e.g. `trunc("REGION_KEY", -5)`. |
+
+* Leave out **expression** to cluster on the column as-is, or add one to cluster on a transformed value instead.
+* **Note:** Ignored on Views.
+
+**Example:**
+
+```sql
+@clusterKey(1)
+@clusterKey(2, "trunc(\"REGION_KEY\", -5)")
+```
+
+
+##### `@id` (column)
+
+`@id("<value>")`
+
+Stable column ID for lineage tracking.
+
+| **Parameter** | **Description** |
+|---|---|
+| **value** | Six hexadecimal digits, unique within the node, e.g. `110e75`. |
+
+* Required on every column — the SQL editor generates a fresh `@id("<value>")` for each column it creates, and a validation check flags any column that is missing one.
+* Not for manual editing — value is a stable identifier generated once at creation time.
+* **Column added later:** make sure it gets its own `@id` too. If you're editing by hand, add a new, unique 6-hex-digit `@id("<value>")` along with the column; an agent can generate one for you. Don't reuse a value already on the node — a repeated value fails the **Duplicate Column IDs** check.
+* **Duplicate column names:** if the SELECT returns the same column name twice, Coalesce renames the extra copy (`SYSTEM_CREATE_DATE` → `SYSTEM_CREATE_DATE1`) and drops its `@id`; this is reported by the **Duplicate Column Names** check rather than as a missing ID.
+
+**Example:**
+
+```sql
+@id("110e75")
+```
+
 
 ### Quote Style for Case-Sensitive Identifiers
 
