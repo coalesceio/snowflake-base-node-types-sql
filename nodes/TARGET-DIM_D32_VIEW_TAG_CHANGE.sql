@@ -1,10 +1,11 @@
 @id("d5a70000-0000-4000-8000-000000000132")
 @nodeType("SQLDimension")
 @materializationType("view")
-@tag("Cost_Centre", "FIN")
+@tag("Cost_Centre", "HR")
+@tag("OWNER", "Tanvi")
 SELECT
      "NAtionKey" AS "NATION_KEY" @id("d32001") @isBusinessKey,
-     "name" AS "NATION_NAME" @id("d32002") @tag("PII", "true"),
+     "name" AS "NATION_NAME" @id("d32002") @tag("PII", "false"),
      "REGIONKEY" AS "REGION_KEY" @id("d32003"),
      "CommenT" AS "NATION_COMMENT" @id("d32004"),
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("d32008") @isSystemCreateDate,

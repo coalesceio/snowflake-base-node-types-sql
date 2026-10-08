@@ -3,8 +3,8 @@
 @materializationType("table")
 SELECT
      "NAtionKey" AS "NATION_KEY" @id("d18001") @isBusinessKey,
-     "name" AS "NATION_NAME" @id("d18002") @tag("PII", "true"),
-     "REGIONKEY" AS "REGION_KEY" @id("d18003") @tag("OWNER", "Data"),
+     "name" AS "NATION_NAME" @id("d18002") @tag("PII", "false") @tag("OWNER", "Tanvi"),
+     "REGIONKEY" AS "REGION_KEY" @id("d18003"),
      "CommenT" AS "NATION_COMMENT" @id("d18004"),
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("d18008") @isSystemCreateDate,
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @id("d18009") @isSystemUpdateDate

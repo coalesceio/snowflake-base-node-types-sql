@@ -2,6 +2,7 @@
 @nodeType("SQLDimension")
 @materializationType("table")
 SELECT
+     "NAtionKey" * 100 AS "DIM_SK" @id("d2100b") @isSurrogateKey,
      "NAtionKey" AS "NATION_KEY" @id("d21001") @isBusinessKey,
      "name" AS "NATION_NAME" @id("d21002"),
      "REGIONKEY" AS "REGION_KEY" @id("d21003"),

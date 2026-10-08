@@ -2,9 +2,10 @@
 @nodeType("SQLDimension")
 @materializationType("table")
 @mergeStrategy("lastModified")
+@description("D22: description added")
 SELECT
      "NAtionKey" AS "NATION_KEY" @id("d22001") @isBusinessKey,
-     "name" AS "NATION_NAME" @id("d22002"),
+     "name" AS "NATION_NAME" @id("d22002") @description("Name, last modified"),
      "N_Load_Timestamp" AS "LOAD_TS" @id("d2200a") @lastModifiedTracking(1),
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("d22008") @isSystemCreateDate,
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @id("d22009") @isSystemUpdateDate

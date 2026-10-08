@@ -1,6 +1,6 @@
 @id("d5a70000-0000-4000-8000-000000000103")
 @nodeType("SQLDimension")
-@materializationType("table")
+@materializationType("view")
 SELECT
      "NAtionKey" AS "NATION_KEY" @id("d03001") @isBusinessKey,
      "name" AS "NATION_NAME" @id("d03002"),

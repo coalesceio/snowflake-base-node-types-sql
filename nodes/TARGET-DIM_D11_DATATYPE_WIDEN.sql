@@ -3,7 +3,7 @@
 @materializationType("table")
 SELECT
      "NAtionKey" AS "NATION_KEY" @id("d11001") @isBusinessKey,
-     CAST("name" AS VARCHAR(25)) AS "NATION_NAME" @id("d11002"),
+     CAST("name" AS VARCHAR(100)) AS "NATION_NAME" @id("d11002"),
      "REGIONKEY" AS "REGION_KEY" @id("d11003"),
      "CommenT" AS "NATION_COMMENT" @id("d11004"),
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("d11008") @isSystemCreateDate,

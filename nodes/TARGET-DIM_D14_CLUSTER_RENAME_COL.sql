@@ -2,7 +2,7 @@
 @nodeType("SQLDimension")
 @materializationType("table")
 SELECT
-     "NAtionKey" AS "NATION_KEY" @id("d14001") @isBusinessKey @clusterKey(1),
+     "NAtionKey" AS "NATION_ID" @id("d14001") @isBusinessKey @clusterKey(1),
      "name" AS "NATION_NAME" @id("d14002"),
      "REGIONKEY" AS "REGION_KEY" @id("d14003"),
      "CommenT" AS "NATION_COMMENT" @id("d14004"),

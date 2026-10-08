@@ -1,6 +1,7 @@
 @id("d5a70000-0000-4000-8000-000000000106")
 @nodeType("SQLDimension")
 @materializationType("table")
+@description("D06: moved and described")
 SELECT
      "NAtionKey" AS "NATION_KEY" @id("d06001") @isBusinessKey,
      "name" AS "NATION_NAME" @id("d06002"),

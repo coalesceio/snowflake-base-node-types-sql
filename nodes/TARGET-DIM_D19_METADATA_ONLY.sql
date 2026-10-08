@@ -1,6 +1,8 @@
 @id("d5a70000-0000-4000-8000-000000000119")
 @nodeType("SQLDimension")
 @materializationType("table")
+@mergeStrategy("changeTracking")
+@tests("SELECT 1 FROM {{ this }} WHERE 1 = 0", true, "After")
 SELECT
      "NAtionKey" AS "NATION_KEY" @id("d19001") @isBusinessKey,
      "name" AS "NATION_NAME" @id("d19002"),
