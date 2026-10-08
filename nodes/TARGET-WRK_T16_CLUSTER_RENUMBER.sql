@@ -4,5 +4,6 @@
 SELECT
      "NAtionKey"  AS "NATION_KEY"     @id("t16-c1") @clusterKey(10),
      "name"       AS "NATION_NAME"    @id("t16-c2"),
-     "REGIONKEY"  AS "REGION_KEY"     @id("t16-c3") @clusterKey(20)
+     "REGIONKEY"  AS "REGION_KEY"     @id("t16-c3") @clusterKey(20),
+     "REGIONKEY" * 10 AS "REGION_BUCKET" @id("t16-c4") @clusterKey(30)
 FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"

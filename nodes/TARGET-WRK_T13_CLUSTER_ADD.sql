@@ -5,5 +5,6 @@ SELECT
      "NAtionKey"  AS "NATION_KEY"     @id("t13-c1") @clusterKey(1),
      "name"       AS "NATION_NAME"    @id("t13-c2"),
      "REGIONKEY"  AS "REGION_KEY"     @id("t13-c3"),
-     "CommenT"    AS "NATION_COMMENT" @id("t13-c4")
+     "CommenT"    AS "NATION_COMMENT" @id("t13-c4"),
+     CURRENT_TIMESTAMP() AS "LOAD_TS"  @id("t13-c5")
 FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
