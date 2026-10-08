@@ -400,7 +400,7 @@ The following stages are executed, in this order (each one only when needed):
 | **Warning: Cluster Key Change** | Non-failing message when a clustered column is renamed or dropped (see note below) |
 | **Drop Cluster Key** | Drops the cluster key when a clustered column is renamed |
 | **Alter Column** | Changes data types, nullability, column descriptions and defaults, in one statement |
-| **Add Column** | Adds new columns, with their tags and comments (a new `@isSurrogateKey` column is added as an `identity` column) |
+| **Add Column** | Adds new columns, with their tags and comments (`@isSurrogateKey` is ignored on an added column — see [Known Limitations](#known-limitations)) |
 | **Rename Column** | Renames a column whose `@id` is unchanged, one stage per column |
 | **Recluster Table \| Drop Cluster Key** | Applies the new cluster key, or drops it when no `@clusterKey` remains |
 | **Delete Column** | Drops removed columns |
@@ -858,6 +858,9 @@ Avoid naming custom annotations after words that are reserved keywords in the pl
 
 * **Switching Between YAML and SQL Node Types**:  
 Converting an existing YAML (`.yml`) node to a SQL (`.sql`) node, or vice versa, is not supported.
+
+* **Adding `@isSurrogateKey` to a Deployed Dimension**:  
+Snowflake can only add an `identity` column to an empty table, so when a redeploy adds a new column marked `@isSurrogateKey`, Coalesce ignores `@isSurrogateKey` and adds it as a regular column. The load never writes the surrogate key (it relies on `identity`), so the column stays `NULL` for existing and new rows. To get a working surrogate key, recreate the table — for example drop it and deploy the node again — so it is created with the `identity` column. A surrogate key present from the first deployment is created as `identity` as usual.
 
 * **Changing `@nodeType` on a Deployed Node**:  
 The switch deploys as a metadata update — the existing table is kept, not rebuilt for the new type. Work/Fact → Dimension overwrites every row via the zero-key merge (no identity surrogate key), Dimension → Fact rewrites every row and its surrogate keys, and → Work appends duplicates on each run; only Work → Fact is safe. Drop and redeploy the table when changing a node's type.

@@ -938,8 +938,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      alter_add_columns_sql(): "Add Column" — one ADD COLUMN for new columns, with identity
-      (Dimension surrogate key), NOT NULL, DEFAULT, tags and comment.
+      alter_add_columns_sql(): "Add Column" — one ADD COLUMN for new columns, with NOT NULL,
+      DEFAULT, tags and comment. No identity: Snowflake only adds one to an empty table.
     ===========================================================================#}
     {%- macro alter_add_columns_sql() -%}
         {%- set ns = namespace(items=[]) -%}
@@ -957,7 +957,6 @@ macroString: |-
             ADD COLUMN
             {%- for desCol in ns.items %}
                 "{{ desCol.name }}" {{ desCol.dataType }}
-                {%- if desCol.isSurrogateKey %} identity {%- endif %}
                 {%- if desCol.nullable == false %} NOT NULL {%- endif %}
                 {%- if desCol.defaultValue %} DEFAULT {{ desCol.defaultValue }} {%- endif %}
                 {%- if desCol.tag %} WITH TAG ({{ tag_list(desCol.tag) }}) {%- endif %}
