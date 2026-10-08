@@ -140,6 +140,10 @@ The following stages are executed:
 
 > **Note:** Renaming a column results in the existing column being dropped and a new column being created. This operation may lead to data loss and should be performed with caution.
 
+> **Note — clustered columns:** Snowflake does not allow renaming or dropping a column while it is part of the cluster key, so these are handled on the clone:
+> * **Renaming a clustered column** (same `@id`) — the cluster key is dropped, the column is renamed, and the table is reclustered with the new name.
+> * **Dropping a clustered column** — a **Warning: Clustered Column Dropped** stage names the column, the table is reclustered on the remaining `@clusterKey` columns (or the cluster key is dropped when none remain), and then the column is dropped.
+
 #### Recreating the Work Tables
 
 If the materialization type is changed from Table to View, then the following stages are executed:
