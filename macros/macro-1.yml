@@ -983,9 +983,9 @@ macroString: |-
                               ~ ('the table is reclustered on (' ~ (nsNodeVariables.desiredClusterKey | join(', ')) ~ ').'
                                  if nsNodeVariables.desiredClusterKey | length > 0
                                  else 'no clustered columns remain, so the cluster key is dropped.') %}
-            {{ stage('Warning: Clustered Column Dropped') }}
+            {{ test_stage('Warning: Clustered Column Dropped', true) }}
             -- {{ warning }}
-            SELECT '{{ warning | escape }}' AS WARNING
+            SELECT 1 AS MESSAGE
         {%- endif %}
 
         {%- if nsNodeVariables.desiredClusterKey | length > 0 and (keyChanged or nsNodeVariables.clusterKeyDropped) %}
