@@ -1029,7 +1029,7 @@ macroString: |-
         {%- if currentDescription != desiredDescription %}
             {%- set objectKind = 'VIEW' if nsNodeVariables.desiredMatType == 'view' else 'TABLE' %}
             {{ stage('Edit ' + objectKind | title + ' Description') }}
-            ALTER {{ objectKind }} IF EXISTS {{ nsNodeVariables.alterObjectNameFullPath }}
+            ALTER {{ objectKind }} {{ nsNodeVariables.alterObjectNameFullPath }}
             SET COMMENT = '{{ desiredDescription | escape }}'
             {%- set nsNodeVariables.metaDataChanged = true -%}
         {%- endif %}
@@ -1042,6 +1042,8 @@ macroString: |-
     {%- macro alter_tag_sql() -%}
         {%- set objectPath = nsNodeVariables.alterObjectNameFullPath -%}
         {%- set objectKind = 'VIEW' if nsNodeVariables.desiredMatType == 'view' else 'TABLE' -%}
+        {#- A view is altered live (IF EXISTS); a table on its clone #}
+        {%- set alterKind = objectKind ~ (' IF EXISTS' if objectKind == 'VIEW' else '') -%}
 
         {#- Column-level tags #}
         {%- for curCol in currentState.columns -%}
@@ -1058,14 +1060,14 @@ macroString: |-
                 {#- Unset before set #}
                 {%- if unsetColTagClause | trim | length > 0 %}
                     {{ stage('Unset Column Tags: ' + desCol.name) }}
-                    ALTER {{ objectKind }} {{ objectPath }}
+                    ALTER {{ alterKind }} {{ objectPath }}
                     MODIFY COLUMN "{{ desCol.name }}" UNSET TAG {{ unsetColTagClause }}
                     {%- set nsNodeVariables.metaDataChanged = true -%}
                 {%- endif %}
 
                 {%- if setColTagClause | trim | length > 0 %}
                     {{ stage('Set Column Tags: ' + desCol.name) }}
-                    ALTER {{ objectKind }} {{ objectPath }}
+                    ALTER {{ alterKind }} {{ objectPath }}
                     MODIFY COLUMN "{{ desCol.name }}" SET TAG {{ setColTagClause }}
                     {%- set nsNodeVariables.metaDataChanged = true -%}
                 {%- endif %}
@@ -1079,14 +1081,14 @@ macroString: |-
         {#- Unset before set #}
         {%- if unsetTagClause | trim | length > 0 %}
             {{ stage('Unset ' + objectKind | title + ' Tags') }}
-            ALTER {{ objectKind }} {{ objectPath }}
+            ALTER {{ alterKind }} {{ objectPath }}
             UNSET TAG {{ unsetTagClause }}
             {%- set nsNodeVariables.metaDataChanged = true -%}
         {%- endif %}
 
         {%- if setTagClause | trim | length > 0 %}
             {{ stage('Set ' + objectKind | title + ' Tags') }}
-            ALTER {{ objectKind }} {{ objectPath }}
+            ALTER {{ alterKind }} {{ objectPath }}
             SET TAG {{ setTagClause }}
             {%- set nsNodeVariables.metaDataChanged = true -%}
         {%- endif %}
@@ -1111,14 +1113,14 @@ macroString: |-
 
             {%- if pathChanged %}
                 {{ stage('Rename Table') }}
-                ALTER TABLE IF EXISTS {{ clonePath }}
+                ALTER TABLE {{ clonePath }}
                 RENAME TO {{ nsNodeVariables.desObjectNameFullPath }}
 
                 {{ stage('Delete Table') }}
                 DROP TABLE IF EXISTS {{ currentPath }}
             {%- else %}
                 {{ stage('Swap Cloned Table') }}
-                ALTER TABLE IF EXISTS {{ clonePath }}
+                ALTER TABLE {{ clonePath }}
                 SWAP WITH {{ currentPath }}
 
                 {{ stage('Delete Table') }}
