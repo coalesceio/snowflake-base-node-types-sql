@@ -66,14 +66,14 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                     "{{ col.name }}" {{ col.dataType }}
                     {%- if col.nullable == false %} NOT NULL {%- endif %}
                     {%- if col.defaultValue %} DEFAULT {{ col.defaultValue }} {%- endif %}
-                    {{ tag_with_clause(col.tag) }}
+                    {%- if col.tag %} WITH TAG ({{ tag_list(col.tag) }}) {%- endif %}
                     {%- if col.description | trim | length > 0 %} COMMENT '{{ col.description | escape }}' {%- endif %}
                     {%- if not loop.last -%}, {%- endif %}
                 {%- endfor %}
             )
             {%- if desiredState.node.description | trim | length > 0 %} COMMENT = '{{ desiredState.node.description | escape }}' {%- endif %}
-            {{ get_clusterby_sql() }}
-            {{ tag_with_clause(config.tag) }}
+            {%- if nsNodeVariables.desiredClusterKey %} CLUSTER BY ({{ nsNodeVariables.desiredClusterKey | join(', ') }}) {%- endif %}
+            {%- if config.tag %} WITH TAG ({{ tag_list(config.tag) }}) {%- endif %}
 
         {%- elif currentState is defined and currentState != desiredState and currentMatType == desiredMatType %}
 

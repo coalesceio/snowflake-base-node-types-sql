@@ -11,10 +11,26 @@ metadata:
     tagColor: '#D9A438'
     description: 'A column level @id annotation is required for each column - it should be unique to the column and be six hexadecimal digits'
 
+    deployStrategy: advanced
     enableCTESupport: true
 
     annotations:
         node:
+
+        - name: materializationType
+          description: |-
+            • Controls node's materialization type — supports 𝘁𝗮𝗯𝗹𝗲, 𝘃𝗶𝗲𝘄, and 𝘁𝗿𝗮𝗻𝘀𝗶𝗲𝗻𝘁 𝘁𝗮𝗯𝗹𝗲.
+          isRequired: false
+          parameters:
+            - name: type
+              type: string
+              isRequired: true
+              default: table
+              example: transient table
+              options:
+                - table
+                - transient table
+                - view
 
         - name: writeMode
           description: |-
@@ -142,7 +158,72 @@ metadata:
             isRequired: true
             example: 'SELECT 1'
 
+        - name: tag
+          description: |-
+            • Applies a Snowflake tag to this table/view.
+            • Repeat the annotation to apply multiple tags.
+            • Tag names are case-sensitive — "PII" and "pii" are different tags.
+            • The tag's location defaults to this node's own location.
+          allowsMultiple: true
+          parameters:
+            - name: name
+              type: string
+              description: Name of the tag (must already exist in Snowflake). Case-sensitive.
+              isRequired: true
+
+            - name: value
+              type: string
+              description: Value to assign to the tag.
+              isRequired: true
+
+            - name: storageLocation
+              type: string
+              description: Storage location the tag lives in. Defaults to this node's own location.
+              isRequired: false
+
         column:
+
+        - name: tag
+          description: |-
+            • Applies a Snowflake tag to this column.
+            • Repeat the annotation to apply multiple tags.
+            • Tag names are case-sensitive — "PII" and "pii" are different tags.
+            • The tag's location defaults to this node's own location.
+          allowsMultiple: true
+          parameters:
+            - name: name
+              type: string
+              description: Name of the tag (must already exist in Snowflake). Case-sensitive.
+              isRequired: true
+
+            - name: value
+              type: string
+              description: Value to assign to the tag.
+              isRequired: true
+
+            - name: storageLocation
+              type: string
+              description: Storage location the tag lives in. Defaults to this node's own location.
+              isRequired: false
+
+        - name: clusterKey
+          description: |-
+            • Marks this column as a term in the table's CLUSTER BY key, at the given position
+            (lowest first).
+            • Pass just the position to cluster by the plain column itself, or add an expression to cluster by that instead.
+              Ex. clusterKey(1)
+              Ex. clusterKey(2, "trunc(<col_name>, -5)")
+            • Ignored on views.
+          allowsMultiple: true
+          parameters:
+            - name: position
+              type: number
+              isRequired: true
+              example: 1
+            - name: expression
+              type: string
+              isRequired: false
+              example: trunc(<col_name>, -5)
 
         - name: inHash
           description: |-

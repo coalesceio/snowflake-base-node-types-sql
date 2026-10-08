@@ -766,14 +766,12 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      tag_with_clause(tagList): WITH TAG (...) for CREATE / ADD COLUMN — every tag in
-      tagList, via tag_diff against no current tags; '' when no tags.
+      tag_list(tagList): every tag in tagList as "DB"."SCHEMA"."TAG" = 'value', ... — the
+      inside of a WITH TAG (...) clause (via tag_diff against no current tags); '' when none.
+      Usage: {%- if col.tag %} WITH TAG ({{ tag_list(col.tag) }}) {%- endif %}
     ===========================================================================#}
-    {%- macro tag_with_clause(tagList) -%}
-        {%- set items = tag_diff(tagList, [], 'set') -%}
-        {%- if items | length > 0 -%}
-            WITH TAG ({{ items }})
-        {%- endif -%}
+    {%- macro tag_list(tagList) -%}
+        {{- tag_diff(tagList, [], 'set') -}}
     {%- endmacro -%}
 
     {#===========================================================================
@@ -781,35 +779,31 @@ macroString: |-
     ===========================================================================#}
 
     {#===========================================================================
-      get_clusterby_sql(): CLUSTER BY (...) from @clusterKey for CREATE; '' when none.
-    ===========================================================================#}
-    {%- macro get_clusterby_sql() -%}
-        {#- Terms are built once in initialize_node_variables (nsNodeVariables.desiredClusterKey) #}
-        {%- if nsNodeVariables.desiredClusterKey | length > 0 -%}
-            CLUSTER BY ({{ nsNodeVariables.desiredClusterKey | join(', ') }})
-        {%- endif -%}
-    {%- endmacro -%}
-
-    {#===========================================================================
       view_definition_sql(state, withTags): view column list, comments, tags and AS SELECT
-      for a state. withTags=false is used to detect tag-only changes.
+      for a state. withTags=false is used to detect tag-only changes. Surrogate key and
+      system columns (Dimension/Fact) select CAST(NULL AS <type>).
     ===========================================================================#}
     {%- macro view_definition_sql(state, withTags=true) -%}
         (
             {%- for col in state.columns %}
                 "{{ col.name }}"
-                {%- if withTags %} {{ tag_with_clause(col.tag) }}{% endif %}
+                {%- if withTags and col.tag %} WITH TAG ({{ tag_list(col.tag) }}){% endif %}
                 {%- if col.description | trim | length > 0 %} COMMENT '{{ col.description | escape }}'{% endif %}
                 {%- if not loop.last -%}, {%- endif %}
             {%- endfor %}
         )
         {%- if state.node.description | trim | length > 0 %} COMMENT = '{{ state.node.description | escape }}'{% endif %}
-        {%- if withTags %} {{ tag_with_clause(state.config.tag) }}{% endif %}
+        {%- if withTags and state.config.tag %} WITH TAG ({{ tag_list(state.config.tag) }}){% endif %}
         AS
         {{ state.sources[0].cteString }}
         SELECT {{ state.sources[0].selectModifier | default('', true) }}
         {%- for col in state.sources[0].columns %}
+            {%- if col.isSurrogateKey or col.isSystemVersion or col.isSystemCurrentFlag
+                    or col.isSystemCreateDate or col.isSystemUpdateDate or col.isSystemEndDate %}
+            CAST(NULL AS {{ col.dataType }}) AS "{{ col.name }}"
+            {%- else %}
             {{ get_source_transform(col) }} AS "{{ col.name }}"
+            {%- endif %}
             {%- if not loop.last -%}, {%- endif %}
         {%- endfor %}
         {{ state.sources[0].join }}
@@ -944,8 +938,8 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      alter_add_columns_sql(): "Add Column" — one ADD COLUMN for new columns, with NOT NULL,
-      DEFAULT, tags and comment.
+      alter_add_columns_sql(): "Add Column" — one ADD COLUMN for new columns, with identity
+      (Dimension surrogate key), NOT NULL, DEFAULT, tags and comment.
     ===========================================================================#}
     {%- macro alter_add_columns_sql() -%}
         {%- set ns = namespace(items=[]) -%}
@@ -963,9 +957,10 @@ macroString: |-
             ADD COLUMN
             {%- for desCol in ns.items %}
                 "{{ desCol.name }}" {{ desCol.dataType }}
+                {%- if desCol.isSurrogateKey %} identity {%- endif %}
                 {%- if desCol.nullable == false %} NOT NULL {%- endif %}
                 {%- if desCol.defaultValue %} DEFAULT {{ desCol.defaultValue }} {%- endif %}
-                {{ tag_with_clause(desCol.tag) }}
+                {%- if desCol.tag %} WITH TAG ({{ tag_list(desCol.tag) }}) {%- endif %}
                 {%- if desCol.description | trim | length > 0 %} COMMENT '{{ desCol.description | escape }}'{%- endif %}
                 {%- if not loop.last -%}, {%- endif %}
             {%- endfor %}
