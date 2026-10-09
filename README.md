@@ -71,6 +71,7 @@ The Work Node type has three configuration groups:
 | **Property** | **Description** |
 |----------|-------------|
 | **Storage Location** | Storage Location where the Work table or view will be created |
+| **Node Type** | Read-only: the node type's name and ID — **Work** (`SQLWork`). Set from `@nodeType` when the node is created; the ID has a copy button. |
 
 ### Work Node Annotations
 
@@ -222,6 +223,7 @@ The Dimension Node type has three configuration groups:
 | **Property** | **Description** |
 |----------|-------------|
 | **Storage Location** | Storage Location where the Dimension table or view will be created |
+| **Node Type** | Read-only: the node type's name and ID — **Dimension** (`SQLDimension`). Set from `@nodeType` when the node is created; the ID has a copy button. |
 
 ### Dimension Node Annotations
 
@@ -601,6 +603,7 @@ The Fact Node type has three configuration groups:
 | **Property** | **Description** |
 |----------|-------------|
 | **Storage Location** | Storage Location where the Fact table or view will be created |
+| **Node Type** | Read-only: the node type's name and ID — **Fact** (`SQLFact`). Set from `@nodeType` when the node is created; the ID has a copy button. |
 
 ### Fact Node Annotations
 
@@ -1428,6 +1431,7 @@ Adding `@isSystemCreateDate` / `@isSystemUpdateDate` to a table that already hol
 
 * **Duplicate or NULL Business Keys**:  
 Every strategy merges on the business key, so the SELECT/CTE must return exactly one row per key, with no NULL key. Otherwise a duplicated key is inserted more than once on a first load and later merges fail with "Duplicate row detected during DML action", and a NULL key never matches, so that row is re-inserted on every run. De-duplicate upstream (e.g. `QUALIFY ROW_NUMBER() OVER (PARTITION BY <business key> ORDER BY <timestamp> DESC) = 1`). To check it before each load, add a `Before` node-level test — see [Duplicate or NULL Business Key Check](#duplicate-or-null-business-key-check).
+  * **NULL business key — inserted instead of updated:** Dimension and Fact expect every business key to be non-NULL. Matching uses plain equality and `NULL = NULL` is never true, so a source row with a NULL business key never matches its target row: instead of updating it, every run **inserts it again as a new row** (and an SCD2 Dimension never expires the old one). Under `allColumnMatch` the same applies to a NULL in any compared column. Filter or default NULL keys upstream, e.g. `WHERE <business key> IS NOT NULL` or `COALESCE(<business key>, '<placeholder>')`.
 
 ---
 
