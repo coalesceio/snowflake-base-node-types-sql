@@ -1,0 +1,208 @@
+fileVersion: 1
+id: 9df141fa-19a8-5ab6-b69a-2234d23b24fd
+name: FCT_PART_SUPPLY
+operation:
+  config:
+    groupByAll: false
+    orderby: false
+    selectDistinct: false
+    testsEnabled: false
+    insertStrategy: UNION ALL
+    lastModifiedComparison: false
+    truncateBefore: false
+  database: ''
+  deployEnabled: true
+  description: Part supply fact (YAML Fact)
+  isMultisource: false
+  locationName: TARGET
+  materializationType: table
+  metadata:
+    appliedNodeTests: []
+    columns:
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: c2f5e873-e1e3-5c73-ba30-e90dfc2e14e4
+        stepCounter: 9df141fa-19a8-5ab6-b69a-2234d23b24fd
+      config: {}
+      dataType: NUMBER(38,0)
+      defaultValue: ''
+      description: ''
+      name: PART_KEY
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 411cf2ac-3dab-5edf-9c47-7a885e3559a2
+          stepCounter: b0559446-218c-5d99-a967-2785d90efddf
+        transform: '"SLV_PART_SUPPLY"."PART_KEY"'
+      transform: '"SLV_PART_SUPPLY"."PART_KEY"'
+      uniqueKey: false
+      isBusinessKey: true
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: cf8ebc1c-a235-5be4-ad75-82a735bfada1
+        stepCounter: 9df141fa-19a8-5ab6-b69a-2234d23b24fd
+      config: {}
+      dataType: NUMBER(38,0)
+      defaultValue: ''
+      description: ''
+      name: SUPPLIER_KEY
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 01d859b7-84d0-52e6-9f9e-a932d50a8eef
+          stepCounter: b0559446-218c-5d99-a967-2785d90efddf
+        transform: '"SLV_PART_SUPPLY"."SUPPLIER_KEY"'
+      transform: '"SLV_PART_SUPPLY"."SUPPLIER_KEY"'
+      uniqueKey: false
+      isBusinessKey: true
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 7c27b9f0-ad89-53c2-9443-521c36c0f864
+        stepCounter: 9df141fa-19a8-5ab6-b69a-2234d23b24fd
+      config: {}
+      dataType: NUMBER(38,0)
+      defaultValue: ''
+      description: ''
+      name: AVAILABLE_QTY
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: bda68b8e-2de4-5c96-9a60-a4ac80e1f55e
+          stepCounter: b0559446-218c-5d99-a967-2785d90efddf
+        transform: '"SLV_PART_SUPPLY"."AVAILABLE_QTY"'
+      transform: '"SLV_PART_SUPPLY"."AVAILABLE_QTY"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 680b8bd6-ccf4-56bf-a814-cd6c78ce0ff6
+        stepCounter: 9df141fa-19a8-5ab6-b69a-2234d23b24fd
+      config: {}
+      dataType: NUMBER(12,2)
+      defaultValue: ''
+      description: ''
+      name: SUPPLY_COST
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 146699e2-f14c-582b-b6ee-bc14e378749c
+          stepCounter: b0559446-218c-5d99-a967-2785d90efddf
+        transform: '"SLV_PART_SUPPLY"."SUPPLY_COST"'
+      transform: '"SLV_PART_SUPPLY"."SUPPLY_COST"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 283f9df5-969f-5736-9c2e-815b3a0bec7b
+        stepCounter: 9df141fa-19a8-5ab6-b69a-2234d23b24fd
+      config: {}
+      dataType: NUMBER(38,2)
+      defaultValue: ''
+      description: ''
+      name: INVENTORY_VALUE
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 74ab4c9a-8ba6-5102-a610-796e543cd796
+          stepCounter: b0559446-218c-5d99-a967-2785d90efddf
+        transform: '"SLV_PART_SUPPLY"."INVENTORY_VALUE"'
+      transform: '"SLV_PART_SUPPLY"."INVENTORY_VALUE"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 15a0f1d2-ce71-520c-8895-60f98bde8e34
+        stepCounter: 9df141fa-19a8-5ab6-b69a-2234d23b24fd
+      config: {}
+      dataType: VARCHAR(55)
+      defaultValue: ''
+      description: ''
+      name: PART_NAME
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 01336121-918f-5600-9d53-04604b3787ba
+          stepCounter: b0559446-218c-5d99-a967-2785d90efddf
+        transform: '"SLV_PART_SUPPLY"."PART_NAME"'
+      transform: '"SLV_PART_SUPPLY"."PART_NAME"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 36421965-04bb-546b-847e-743a78f20910
+        stepCounter: 9df141fa-19a8-5ab6-b69a-2234d23b24fd
+      config: {}
+      dataType: TIMESTAMP
+      defaultValue: ''
+      description: ''
+      name: SYSTEM_CREATE_DATE
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences: []
+        transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
+      transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
+      uniqueKey: false
+      isSystemCreateDate: true
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: bbe69379-d0cc-57a9-ae27-2e1d3553b5b3
+        stepCounter: 9df141fa-19a8-5ab6-b69a-2234d23b24fd
+      config: {}
+      dataType: TIMESTAMP
+      defaultValue: ''
+      description: ''
+      name: SYSTEM_UPDATE_DATE
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences: []
+        transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
+      transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
+      uniqueKey: false
+      isSystemUpdateDate: true
+    enabledColumnTestIDs: []
+    sourceMapping:
+    - aliases: {}
+      customSQL:
+        customSQL: ''
+      dependencies:
+      - locationName: TARGET
+        nodeName: SLV_PART_SUPPLY
+      join:
+        joinCondition: FROM {{ ref('TARGET', 'SLV_PART_SUPPLY') }} "SLV_PART_SUPPLY"
+      name: FCT_PART_SUPPLY
+      noLinkRefs: []
+  name: FCT_PART_SUPPLY
+  overrideSQL: false
+  schema: ''
+  sqlType: base-node-types:::205
+  type: sql
+  version: 1
+type: Node

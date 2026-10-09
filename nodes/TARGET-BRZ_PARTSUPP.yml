@@ -1,0 +1,165 @@
+fileVersion: 1
+id: 9944a01e-bad7-5114-89fd-be55c48bf1fb
+name: BRZ_PARTSUPP
+operation:
+  config:
+    groupByAll: false
+    orderby: false
+    selectDistinct: false
+    testsEnabled: false
+    insertStrategy: INSERT
+    truncateBefore: true
+  database: ''
+  deployEnabled: true
+  description: Bronze partsupp (YAML Work)
+  isMultisource: false
+  locationName: TARGET
+  materializationType: table
+  metadata:
+    appliedNodeTests: []
+    columns:
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 88e2c8ba-b16e-56af-9f42-42ca20b16db7
+        stepCounter: 9944a01e-bad7-5114-89fd-be55c48bf1fb
+      config: {}
+      dataType: NUMBER(38,0)
+      defaultValue: ''
+      description: ''
+      name: PS_PARTKEY
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 136153db-10ef-4bfb-bfad-1d85e538f563
+          stepCounter: b958a5a4-1751-4f16-b88b-f6762c85ff7e
+        transform: '"PARTSUPP"."PS_PARTKEY"'
+      transform: '"PARTSUPP"."PS_PARTKEY"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 57af9e4e-15e9-5240-b16a-ff3b7f5139b5
+        stepCounter: 9944a01e-bad7-5114-89fd-be55c48bf1fb
+      config: {}
+      dataType: NUMBER(38,0)
+      defaultValue: ''
+      description: ''
+      name: PS_SUPPKEY
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: b1f83884-953d-4d00-9bc9-0cd27004523a
+          stepCounter: b958a5a4-1751-4f16-b88b-f6762c85ff7e
+        transform: '"PARTSUPP"."PS_SUPPKEY"'
+      transform: '"PARTSUPP"."PS_SUPPKEY"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 80ebb4f6-92a6-5170-b8b1-49bd14fd1564
+        stepCounter: 9944a01e-bad7-5114-89fd-be55c48bf1fb
+      config: {}
+      dataType: NUMBER(38,0)
+      defaultValue: ''
+      description: ''
+      name: PS_AVAILQTY
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 41a93c8a-6021-4f58-88e2-7494c8fbc12f
+          stepCounter: b958a5a4-1751-4f16-b88b-f6762c85ff7e
+        transform: '"PARTSUPP"."PS_AVAILQTY"'
+      transform: '"PARTSUPP"."PS_AVAILQTY"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: e63bf1ec-df50-55b4-9bd0-1b5112f6511e
+        stepCounter: 9944a01e-bad7-5114-89fd-be55c48bf1fb
+      config: {}
+      dataType: NUMBER(12,2)
+      defaultValue: ''
+      description: ''
+      name: PS_SUPPLYCOST
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: b8e2f800-7c8b-4afb-8426-1823257316a1
+          stepCounter: b958a5a4-1751-4f16-b88b-f6762c85ff7e
+        transform: '"PARTSUPP"."PS_SUPPLYCOST"'
+      transform: '"PARTSUPP"."PS_SUPPLYCOST"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: c2000195-ae56-5ad5-b901-ca394aaef40b
+        stepCounter: 9944a01e-bad7-5114-89fd-be55c48bf1fb
+      config: {}
+      dataType: VARCHAR(199)
+      defaultValue: ''
+      description: ''
+      name: PS_COMMENT
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 29b1fa77-b908-4c2b-9360-ffaf0836bafd
+          stepCounter: b958a5a4-1751-4f16-b88b-f6762c85ff7e
+        transform: '"PARTSUPP"."PS_COMMENT"'
+      transform: '"PARTSUPP"."PS_COMMENT"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 59095df2-44cc-55cc-8fb3-46cb589eb20a
+        stepCounter: 9944a01e-bad7-5114-89fd-be55c48bf1fb
+      config: {}
+      dataType: TIMESTAMP_NTZ(9)
+      defaultValue: ''
+      description: ''
+      name: LOAD_TS
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 0e976d23-297a-4f5f-b1cf-dd25b6fcd5d2
+          stepCounter: b958a5a4-1751-4f16-b88b-f6762c85ff7e
+        transform: '"PARTSUPP"."LOAD_TS"'
+      transform: '"PARTSUPP"."LOAD_TS"'
+      uniqueKey: false
+    enabledColumnTestIDs: []
+    sourceMapping:
+    - aliases: {}
+      customSQL:
+        customSQL: ''
+      dependencies:
+      - locationName: SRC
+        nodeName: PARTSUPP
+      join:
+        joinCondition: FROM {{ ref('SRC', 'PARTSUPP') }} "PARTSUPP"
+      name: BRZ_PARTSUPP
+      noLinkRefs: []
+  name: BRZ_PARTSUPP
+  overrideSQL: false
+  schema: ''
+  sqlType: base-node-types:::204
+  type: sql
+  version: 1
+type: Node

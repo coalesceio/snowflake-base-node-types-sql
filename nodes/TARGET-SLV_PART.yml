@@ -1,0 +1,207 @@
+fileVersion: 1
+id: bfd58448-8272-5ba5-8cfd-cd45d8dff984
+name: SLV_PART
+operation:
+  config:
+    groupByAll: false
+    orderby: false
+    selectDistinct: false
+    testsEnabled: false
+    insertStrategy: UNION
+    secureoption: false
+  database: ''
+  deployEnabled: true
+  description: Part view (YAML View over Latest Work)
+  isMultisource: false
+  locationName: TARGET
+  materializationType: view
+  metadata:
+    appliedNodeTests: []
+    columns:
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: d9eae87a-d69d-533a-9887-eba0c911b590
+        stepCounter: bfd58448-8272-5ba5-8cfd-cd45d8dff984
+      config: {}
+      dataType: NUMBER(38,0)
+      defaultValue: ''
+      description: ''
+      name: PART_KEY
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: d91b95f2-8f7e-52ce-bb2f-1f57bc609400
+          stepCounter: 8fc3ec5a-72e9-5839-ba8b-7e78a61e196f
+        transform: '"BRZ_PART"."P_PARTKEY"'
+      transform: '"BRZ_PART"."P_PARTKEY"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 88edf4ce-8d1e-58d6-9cc7-089bc0ea097f
+        stepCounter: bfd58448-8272-5ba5-8cfd-cd45d8dff984
+      config: {}
+      dataType: VARCHAR(55)
+      defaultValue: ''
+      description: ''
+      name: PART_NAME
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 0478b53f-ffb2-56f0-b715-f87ed19db8e2
+          stepCounter: 8fc3ec5a-72e9-5839-ba8b-7e78a61e196f
+        transform: '"BRZ_PART"."P_NAME"'
+      transform: '"BRZ_PART"."P_NAME"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 7cbd0d83-2bc8-5a41-a9ca-3f3826c95109
+        stepCounter: bfd58448-8272-5ba5-8cfd-cd45d8dff984
+      config: {}
+      dataType: VARCHAR(10)
+      defaultValue: ''
+      description: ''
+      name: BRAND
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 8259e370-9dc0-55b2-a846-4c4e8e918a30
+          stepCounter: 8fc3ec5a-72e9-5839-ba8b-7e78a61e196f
+        transform: '"BRZ_PART"."P_BRAND"'
+      transform: '"BRZ_PART"."P_BRAND"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: d8f865bb-3cd3-5793-b73a-2c7aee417c17
+        stepCounter: bfd58448-8272-5ba5-8cfd-cd45d8dff984
+      config: {}
+      dataType: VARCHAR(25)
+      defaultValue: ''
+      description: ''
+      name: PART_TYPE
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 78b160ee-9725-56a9-ad43-c80021af8518
+          stepCounter: 8fc3ec5a-72e9-5839-ba8b-7e78a61e196f
+        transform: '"BRZ_PART"."P_TYPE"'
+      transform: '"BRZ_PART"."P_TYPE"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: fd5c5e12-ff8c-5bee-a199-7f397fcba17b
+        stepCounter: bfd58448-8272-5ba5-8cfd-cd45d8dff984
+      config: {}
+      dataType: NUMBER(38,0)
+      defaultValue: ''
+      description: ''
+      name: PART_SIZE
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 07882e30-5327-5f45-b517-fe84a4b411ca
+          stepCounter: 8fc3ec5a-72e9-5839-ba8b-7e78a61e196f
+        transform: '"BRZ_PART"."P_SIZE"'
+      transform: '"BRZ_PART"."P_SIZE"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: e932c6e7-ea9d-5624-8fab-3c1cbc79f93e
+        stepCounter: bfd58448-8272-5ba5-8cfd-cd45d8dff984
+      config: {}
+      dataType: NUMBER(12,2)
+      defaultValue: ''
+      description: ''
+      name: RETAIL_PRICE
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: fd59fbbf-825d-5287-ac93-973574c3d8a8
+          stepCounter: 8fc3ec5a-72e9-5839-ba8b-7e78a61e196f
+        transform: '"BRZ_PART"."P_RETAILPRICE"'
+      transform: '"BRZ_PART"."P_RETAILPRICE"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: ebdefadc-1bf0-59fd-abd1-8bc13398d4e2
+        stepCounter: bfd58448-8272-5ba5-8cfd-cd45d8dff984
+      config: {}
+      dataType: TIMESTAMP_NTZ(9)
+      defaultValue: ''
+      description: ''
+      name: LOAD_TS
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 4d97c562-a243-515a-b997-c46f5e049678
+          stepCounter: 8fc3ec5a-72e9-5839-ba8b-7e78a61e196f
+        transform: '"BRZ_PART"."LOAD_TS"'
+      transform: '"BRZ_PART"."LOAD_TS"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 9dea138c-5ffc-5e2b-bdc9-a3ce31005a3f
+        stepCounter: bfd58448-8272-5ba5-8cfd-cd45d8dff984
+      config: {}
+      dataType: VARCHAR(6)
+      defaultValue: ''
+      description: ''
+      name: SIZE_BAND
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: a7289a12-19b3-5c14-a5f2-7fa7446296f3
+          stepCounter: 8fc3ec5a-72e9-5839-ba8b-7e78a61e196f
+        transform: '"BRZ_PART"."P_SIZE_BAND"'
+      transform: '"BRZ_PART"."P_SIZE_BAND"'
+      uniqueKey: false
+    enabledColumnTestIDs: []
+    sourceMapping:
+    - aliases: {}
+      customSQL:
+        customSQL: ''
+      dependencies:
+      - locationName: TARGET
+        nodeName: BRZ_PART
+      join:
+        joinCondition: FROM {{ ref('TARGET', 'BRZ_PART') }} "BRZ_PART"
+      name: SLV_PART
+      noLinkRefs: []
+  name: SLV_PART
+  overrideSQL: false
+  schema: ''
+  sqlType: base-node-types:::188
+  type: sql
+  version: 1
+type: Node

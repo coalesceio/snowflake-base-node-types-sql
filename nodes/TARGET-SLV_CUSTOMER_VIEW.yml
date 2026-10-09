@@ -1,0 +1,186 @@
+fileVersion: 1
+id: 21a43130-9f43-5bc9-9edc-b6c756489480
+name: SLV_CUSTOMER_VIEW
+operation:
+  config:
+    groupByAll: false
+    orderby: false
+    selectDistinct: false
+    testsEnabled: false
+    insertStrategy: UNION
+    secureoption: false
+  database: ''
+  deployEnabled: true
+  description: Customer view (YAML View over SQLWork)
+  isMultisource: false
+  locationName: TARGET
+  materializationType: view
+  metadata:
+    appliedNodeTests: []
+    columns:
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: fe4e9562-9538-5813-a3a6-95ce71b044ba
+        stepCounter: 21a43130-9f43-5bc9-9edc-b6c756489480
+      config: {}
+      dataType: NUMBER(38,0)
+      defaultValue: ''
+      description: ''
+      name: CUSTOMER_KEY
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: aa47ab0f-53d6-52c9-b657-957cbb53fdce
+          stepCounter: 14087bff-c550-57ed-af81-01dfb0872afb
+        transform: '"SLV_CUSTOMER"."CUSTOMER_KEY"'
+      transform: '"SLV_CUSTOMER"."CUSTOMER_KEY"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: a794d120-4f53-5c07-bbed-7e459ea443a0
+        stepCounter: 21a43130-9f43-5bc9-9edc-b6c756489480
+      config: {}
+      dataType: VARCHAR(25)
+      defaultValue: ''
+      description: ''
+      name: CUSTOMER_NAME
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: fd5bc778-8f4d-5809-b9d6-c7fdd89c33ab
+          stepCounter: 14087bff-c550-57ed-af81-01dfb0872afb
+        transform: '"SLV_CUSTOMER"."CUSTOMER_NAME"'
+      transform: '"SLV_CUSTOMER"."CUSTOMER_NAME"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 6ed0d37c-50f8-56a1-a098-f683f2f7ea24
+        stepCounter: 21a43130-9f43-5bc9-9edc-b6c756489480
+      config: {}
+      dataType: VARCHAR(15)
+      defaultValue: ''
+      description: ''
+      name: PHONE
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 1e295ea6-ca9c-5df7-8cb9-06eca10fce4b
+          stepCounter: 14087bff-c550-57ed-af81-01dfb0872afb
+        transform: '"SLV_CUSTOMER"."PHONE"'
+      transform: '"SLV_CUSTOMER"."PHONE"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 78f3b7a2-db8c-57c9-bae5-273fa3b487a8
+        stepCounter: 21a43130-9f43-5bc9-9edc-b6c756489480
+      config: {}
+      dataType: NUMBER(12,2)
+      defaultValue: ''
+      description: ''
+      name: ACCOUNT_BALANCE
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 6dc8135d-addd-5c6a-b654-6af5fb31fa7e
+          stepCounter: 14087bff-c550-57ed-af81-01dfb0872afb
+        transform: '"SLV_CUSTOMER"."ACCOUNT_BALANCE"'
+      transform: '"SLV_CUSTOMER"."ACCOUNT_BALANCE"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 37ec8dd7-ef55-53c3-811b-c93b5f3af44b
+        stepCounter: 21a43130-9f43-5bc9-9edc-b6c756489480
+      config: {}
+      dataType: VARCHAR(10)
+      defaultValue: ''
+      description: ''
+      name: MARKET_SEGMENT
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 325ce1f0-f9f0-582a-9c8d-fae12036964c
+          stepCounter: 14087bff-c550-57ed-af81-01dfb0872afb
+        transform: '"SLV_CUSTOMER"."MARKET_SEGMENT"'
+      transform: '"SLV_CUSTOMER"."MARKET_SEGMENT"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: eb1bfc5d-4b06-5eff-a65e-44c875f8e655
+        stepCounter: 21a43130-9f43-5bc9-9edc-b6c756489480
+      config: {}
+      dataType: VARCHAR(25)
+      defaultValue: ''
+      description: ''
+      name: NATION_NAME
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: ff652a57-a2b7-52f0-8fc1-166edd072781
+          stepCounter: 14087bff-c550-57ed-af81-01dfb0872afb
+        transform: '"SLV_CUSTOMER"."NATION_NAME"'
+      transform: '"SLV_CUSTOMER"."NATION_NAME"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: d1ba2bda-3775-5f19-90bf-14fb99c21420
+        stepCounter: 21a43130-9f43-5bc9-9edc-b6c756489480
+      config: {}
+      dataType: VARCHAR(25)
+      defaultValue: ''
+      description: ''
+      name: REGION_NAME
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 25794cf7-10f1-5d60-b408-05a201060049
+          stepCounter: 14087bff-c550-57ed-af81-01dfb0872afb
+        transform: '"SLV_CUSTOMER"."REGION_NAME"'
+      transform: '"SLV_CUSTOMER"."REGION_NAME"'
+      uniqueKey: false
+    enabledColumnTestIDs: []
+    sourceMapping:
+    - aliases: {}
+      customSQL:
+        customSQL: ''
+      dependencies:
+      - locationName: TARGET
+        nodeName: SLV_CUSTOMER
+      join:
+        joinCondition: FROM {{ ref('TARGET', 'SLV_CUSTOMER') }} "SLV_CUSTOMER"
+      name: SLV_CUSTOMER_VIEW
+      noLinkRefs: []
+  name: SLV_CUSTOMER_VIEW
+  overrideSQL: false
+  schema: ''
+  sqlType: base-node-types:::188
+  type: sql
+  version: 1
+type: Node

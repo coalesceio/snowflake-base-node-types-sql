@@ -1,0 +1,146 @@
+fileVersion: 1
+id: 7d144c99-76f0-5c74-975c-dca582712f74
+name: SLV_SUPPLIER
+operation:
+  config:
+    groupByAll: false
+    orderby: false
+    selectDistinct: false
+    testsEnabled: false
+    insertStrategy: INSERT
+    truncateBefore: true
+  database: ''
+  deployEnabled: true
+  description: Supplier enriched with geography (YAML Work over SQL nodes)
+  isMultisource: false
+  locationName: TARGET
+  materializationType: table
+  metadata:
+    appliedNodeTests: []
+    columns:
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 15311b7b-f8e2-5737-bfda-02fb1fcb917c
+        stepCounter: 7d144c99-76f0-5c74-975c-dca582712f74
+      config: {}
+      dataType: NUMBER(38,0)
+      defaultValue: ''
+      description: ''
+      name: SUPPLIER_KEY
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 732b7a4f-c677-5cb5-9a25-13e5ee89210f
+          stepCounter: c2f2d953-7627-51f2-9b58-464d861c8d31
+        transform: '"BRZ_SUPPLIER"."S_SUPPKEY"'
+      transform: '"BRZ_SUPPLIER"."S_SUPPKEY"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: ac5471c7-eec9-5669-9500-f61217cbbd68
+        stepCounter: 7d144c99-76f0-5c74-975c-dca582712f74
+      config: {}
+      dataType: VARCHAR(25)
+      defaultValue: ''
+      description: ''
+      name: SUPPLIER_NAME
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: fcca9b24-2852-56a6-b5a7-6286a44521ca
+          stepCounter: c2f2d953-7627-51f2-9b58-464d861c8d31
+        transform: '"BRZ_SUPPLIER"."S_NAME"'
+      transform: '"BRZ_SUPPLIER"."S_NAME"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 6f7f7fc9-7ed8-533c-a262-4febb806f31b
+        stepCounter: 7d144c99-76f0-5c74-975c-dca582712f74
+      config: {}
+      dataType: NUMBER(12,2)
+      defaultValue: ''
+      description: ''
+      name: ACCOUNT_BALANCE
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 1ac4bc43-9ad3-51b5-bc86-5c143cfa669c
+          stepCounter: c2f2d953-7627-51f2-9b58-464d861c8d31
+        transform: '"BRZ_SUPPLIER"."S_ACCTBAL"'
+      transform: '"BRZ_SUPPLIER"."S_ACCTBAL"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: eaf625cc-3124-52e9-bc6a-56ba5ec645ef
+        stepCounter: 7d144c99-76f0-5c74-975c-dca582712f74
+      config: {}
+      dataType: VARCHAR(25)
+      defaultValue: ''
+      description: ''
+      name: NATION_NAME
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 796e35b0-80dc-5875-b4a0-bc8a720e5027
+          stepCounter: 6b586750-f7f7-518a-ae0d-92fa20cf9ed8
+        transform: '"SLV_GEOGRAPHY"."NATION_NAME"'
+      transform: '"SLV_GEOGRAPHY"."NATION_NAME"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 1e2432a3-8260-5a0e-a693-08401b672eb5
+        stepCounter: 7d144c99-76f0-5c74-975c-dca582712f74
+      config: {}
+      dataType: VARCHAR(25)
+      defaultValue: ''
+      description: ''
+      name: REGION_NAME
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 4c0fcd8f-410d-5841-ba93-9489c12f448b
+          stepCounter: 6b586750-f7f7-518a-ae0d-92fa20cf9ed8
+        transform: '"SLV_GEOGRAPHY"."REGION_NAME"'
+      transform: '"SLV_GEOGRAPHY"."REGION_NAME"'
+      uniqueKey: false
+    enabledColumnTestIDs: []
+    sourceMapping:
+    - aliases: {}
+      customSQL:
+        customSQL: ''
+      dependencies:
+      - locationName: TARGET
+        nodeName: BRZ_SUPPLIER
+      - locationName: TARGET
+        nodeName: SLV_GEOGRAPHY
+      join:
+        joinCondition: "FROM {{ ref('TARGET', 'BRZ_SUPPLIER') }} \"BRZ_SUPPLIER\"\nLEFT JOIN {{ ref('TARGET', 'SLV_GEOGRAPHY') }} \"SLV_GEOGRAPHY\"\n    ON \"BRZ_SUPPLIER\".\"S_NATIONKEY\" = \"SLV_GEOGRAPHY\".\"NATION_KEY\""
+      name: SLV_SUPPLIER
+      noLinkRefs: []
+  name: SLV_SUPPLIER
+  overrideSQL: false
+  schema: ''
+  sqlType: base-node-types:::204
+  type: sql
+  version: 1
+type: Node
