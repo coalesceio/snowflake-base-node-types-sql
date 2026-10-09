@@ -1,6 +1,6 @@
 @id("d5a70000-0000-4000-8000-000000000302")
 @nodeType("SQLWork")
-@materializationType("table")
+@materializationType("  Transient TABLE")
 @description("K: every annotation, phase 2 - changed")
 @tag("Cost_Centre", "HR")
 @tag("PII", "false", "SRC")
