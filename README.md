@@ -181,7 +181,7 @@ A view is changed in place only when its tags change; any other change to the vi
 
 | **Stage** | **Description** |
 |-----------|----------------|
-| **Unset Column Tags \| Set Column Tags \| Unset View Tags \| Set View Tags** | Only tags changed: the view is altered in place |
+| **Unset Column Tags: \<column\> \| Set Column Tags: \<column\> \| Unset View Tags \| Set View Tags** | Only tags changed: the view is altered in place |
 | **Create view** | The view definition changed: CREATE OR REPLACE VIEW with the new definition |
 | **Drop view** + **Create view** | The view is renamed or moved: the old view is dropped and the new one created |
 
@@ -237,7 +237,7 @@ The Dimension Node type has three configuration groups:
 | [`@tag(name, value, storageLocation?)`](#tag-node) ***(repeatable)*** | Applies a Snowflake tag to this table/view. |
 | [`@writeMode("truncateInsert \| append")`](#writemode) | How each run writes to the target: truncateInsert or append |
 | [`@mergeStrategy("upsert \| changeTracking \| lastModified")`](#mergestrategy-dimension) | Chooses how this dimension decides a row has changed, and therefore which column annotations it requires. |
-| [`@zeroKey(surrogateKeyValue?, stringValue?, timestampValue?, booleanValue?)`](#zerokey-dimension-node) | Inserts a default "zero key" record into the target — a placeholder row used to catch unresolved foreign key lookups. |
+| [`@zeroKey(surrogateKeyValue, stringValue?, timestampValue?, booleanValue?)`](#zerokey-dimension-node) | Inserts a default "zero key" record into the target — a placeholder row used to catch unresolved foreign key lookups. |
 | [`@disableTests`](#disabletests) **²** | Controls whether configured tests are skipped. |
 | [`@tests(querySQL, continueOnFailure?, runOrder?)`](#tests) **²** ***(repeatable)*** | Node-level data quality test. |
 | [`@preSQL(querySQL)`](#presql) ***(repeatable)*** | SQL statement to execute `before` the data load operation. |
@@ -306,13 +306,13 @@ Chooses how this dimension decides a row has changed, and therefore which column
 
 ##### `@zeroKey` (Dimension node)
 
-`@zeroKey(surrogateKeyValue?, stringValue?, timestampValue?, booleanValue?)`
+`@zeroKey(surrogateKeyValue, stringValue?, timestampValue?, booleanValue?)`
 
 Inserts a default "zero key" record into the target — a placeholder row used to catch unresolved foreign key lookups.
 
 | **Parameter** | **Description** |
 |---|---|
-| **surrogateKeyValue** | **(optional)** Value used for the zero record's surrogate key column only. Default `"0"`. |
+| **surrogateKeyValue** | **(required)** Value used for the zero record's surrogate key column only. |
 | **stringValue** | **(optional)** Default value for string/varchar columns, pasted into the SQL verbatim — include your own quotes. Default `"'UNKNOWN'"`. |
 | **timestampValue** | **(optional)** Default value for date/time/timestamp columns. Default `"1900-01-01 00:00:00"`. |
 | **booleanValue** | **(optional)** Default value for boolean columns. Default `true`. |
@@ -336,6 +336,7 @@ Marks a column to be watched for changes that decide SCD type.
 
 * Marked on any column → SCD Type 2 — a change expires the existing row and inserts a new version.
 * Not marked on any column → SCD Type 1 — a change updates the row in place.
+* Under SCD Type 2, a change in a column **not** marked `@isChangeTracking` updates the current row in place — no new version is created.
 * **Note:** Ignored on Views.
 
 **Example:**
@@ -451,7 +452,7 @@ Under `changeTracking` and `lastModified` the load writes fixed values into the 
 |---|---|
 | `@isSystemVersion` | `1` on a new key; previous version + 1 on a new SCD2 version |
 | `@isSystemCurrentFlag` | `'Y'` on the current row; `'N'` on an expired SCD2 row |
-| `@isSystemCreateDate` | `CURRENT_TIMESTAMP` on first insert, then kept |
+| `@isSystemCreateDate` | `CURRENT_TIMESTAMP` on first insert and on each new SCD2 version, then kept |
 | `@isSystemUpdateDate` | `CURRENT_TIMESTAMP` whenever the row is inserted, changed, or expired as an old SCD2 version |
 | `@isSystemEndDate` | `'2999-12-31 00:00:00'` on the current row; the expiry time (one millisecond before the load) on an expired SCD2 row |
 
@@ -469,7 +470,7 @@ Every deployment of a Dimension Node first runs these checks before any change i
 |-----------|----------------|
 | **Unsupported Materialization Type: \<node\>** | `@materializationType` is not `table`, `transient table` or `view` — stops the deployment and the run |
 | **Duplicate Tags Found: \<node or column\>** | A duplicate tag: the same tag (same name and location) applied more than once on the node or on one column — stops the deployment. Repeating `@tag` for different tags is fine. |
-| **Duplicate Column Names \| Duplicate Column IDs \| Missing Column IDs \| Missing Business Key \| Invalid configuration: … \| Missing Required System Columns** | Dimension validation checks (table only), rendered only when the annotations have a problem — see [Dimension Load](#dimension-load). A required problem stops the deployment; a recommendation does not. |
+| **Duplicate Column Names \| Duplicate Column IDs \| Missing Column IDs \| Missing Business Key \| Invalid configuration: … \| Missing Required System Columns \| Surrogate Key Not Set/Using Custom Surrogate Key Logic \| Warning: Zero Key Value Too Long** | Dimension validation checks (table only), rendered only when the annotations have a problem — see [Dimension Load](#dimension-load). A required problem stops the deployment; a recommendation does not. |
 
 When deployed for the first time into an Environment, the Dimension Node executes one of these stages, depending on its materialization type:
 
@@ -496,7 +497,7 @@ Every deployment of a Dimension Node of materialization type table runs its conf
 | **Stage** | **Description** |
 |-----------|----------------|
 | **Pre Load Test `<n>`** | Node-level `@tests(..., "Before")` tests, in the order they appear. |
-| **Duplicate Column Names \| Duplicate Column IDs \| Missing Column IDs \| Missing Business Key \| Invalid configuration: … \| Missing Required System Columns** | Validation checks — rendered only when the node's annotations have a problem (the SELECT returns the same column name twice, two columns share an `@id` value, a column without `@id`, no `@isBusinessKey`, an unrecognised or conflicting `@mergeStrategy`/tracking column, or a missing system column). Each one flags the problem; see the individual annotations for what triggers it. |
+| **Duplicate Column Names \| Duplicate Column IDs \| Missing Column IDs \| Missing Business Key \| Invalid configuration: … \| Missing Required System Columns \| Surrogate Key Not Set/Using Custom Surrogate Key Logic \| Warning: Zero Key Value Too Long** | Validation checks — rendered only when the node's annotations have a problem (the SELECT returns the same column name twice, two columns share an `@id` value, a column without `@id`, no `@isBusinessKey`, an unrecognised or conflicting `@mergeStrategy`/tracking column, a missing system column, a surrogate key that is only recommended (non-failing), or a zero key string longer than its column (non-failing). Each one flags the problem; see the individual annotations for what triggers it. |
 | **Check NULL values for `<column>` column** | Pre-load check for `@mergeStrategy("lastModified")` — flags a NULL `@lastModifiedTracking` value in the source. |
 | **Pre-SQL `<n>`** | Each `@preSQL` statement, in the order they appear. |
 | **Truncate table** | Executed only when `@writeMode("truncateInsert")` is set — clears the target before the merge. |
@@ -563,7 +564,7 @@ A view is changed in place only when its tags change; any other change to the vi
 
 | **Stage** | **Description** |
 |-----------|----------------|
-| **Unset Column Tags \| Set Column Tags \| Unset View Tags \| Set View Tags** | Only tags changed: the view is altered in place |
+| **Unset Column Tags: \<column\> \| Set Column Tags: \<column\> \| Unset View Tags \| Set View Tags** | Only tags changed: the view is altered in place |
 | **Create view** | The view definition changed: CREATE OR REPLACE VIEW with the new definition |
 | **Drop view** + **Create view** | The view is renamed or moved: the old view is dropped and the new one created |
 
@@ -733,13 +734,13 @@ Every deployment of a Fact Node first runs these checks before any change in Sno
 |-----------|----------------|
 | **Unsupported Materialization Type: \<node\>** | `@materializationType` is not `table`, `transient table` or `view` — stops the deployment and the run |
 | **Duplicate Tags Found: \<node or column\>** | A duplicate tag: the same tag (same name and location) applied more than once on the node or on one column — stops the deployment. Repeating `@tag` for different tags is fine. |
-| **Duplicate Column Names \| Duplicate Column IDs \| Missing Column IDs \| Missing Business Key \| Invalid configuration: … \| Missing Required System Columns** | Fact validation checks (table only), rendered only when the annotations have a problem — see [Fact Load](#fact-load). A required problem stops the deployment; a recommendation does not. |
+| **Duplicate Column Names \| Duplicate Column IDs \| Missing Column IDs \| Invalid configuration: No Business Key \| Invalid configuration: … \| Missing Required System Columns** | Fact validation checks (table only), rendered only when the annotations have a problem — see [Fact Load](#fact-load). A required problem stops the deployment; a recommendation does not. |
 
 When deployed for the first time into an Environment, the Fact Node executes one of these stages, depending on its materialization type:
 
 | **Stage** | **Description** |
 |-----------|----------------|
-| **Create table** | Executes a CREATE OR REPLACE TABLE statement, column and table tags, comments and the cluster key |
+| **Create table** | Executes a CREATE OR REPLACE TABLE statement, with column and table tags, comments and the cluster key |
 | **Create transient table** | Same as above, as a TRANSIENT TABLE |
 | **Create view** | Executes a CREATE OR REPLACE VIEW statement, with column and view tags and comments — see [Fact View](#fact-view) |
 
@@ -764,7 +765,7 @@ Every deployment of a Fact Node of materialization type table runs its configure
 | **Check NULL values for `<column>` column** | Pre-load check for `@mergeStrategy("lastModified")` — flags a NULL `@lastModifiedTracking` value in the source. |
 | **Pre-SQL `<n>`** | Each `@preSQL` statement, in the order they appear. |
 | **Truncate table** | Executed only when `@writeMode("truncateInsert")` is set — clears the target before the load. |
-| **Load table Using Insert** | Executed when no `@mergeStrategy` is set and no column is marked `@isBusinessKey` — inserts every source row with `INSERT INTO … SELECT`. |
+| **Load table using Insert** | Executed when no `@mergeStrategy` is set and no column is marked `@isBusinessKey` — inserts every source row with `INSERT INTO … SELECT`. |
 | **Load table Using Merge - Change Tracking - SCD1** | Executed for `@mergeStrategy("changeTracking")`, and by default when no `@mergeStrategy` is set and a column is marked `@isBusinessKey` — compares every plain attribute column against the target, then updates changed rows in place and inserts new keys. |
 | **Load table Using Merge - Last Modified Comparison - SCD1** | Executed for `@mergeStrategy("lastModified")` — compares the `@lastModifiedTracking` column against the target, then updates newer rows in place and inserts new keys. |
 | **Load table Using Merge - Upsert** | Executed for `@mergeStrategy("upsert")` — every matched row is updated from the SELECT/CTE (system columns included, `@isSystemCreateDate` excepted) and every unmatched row is inserted. |
@@ -828,7 +829,7 @@ A view is changed in place only when its tags change; any other change to the vi
 
 | **Stage** | **Description** |
 |-----------|----------------|
-| **Unset Column Tags \| Set Column Tags \| Unset View Tags \| Set View Tags** | Only tags changed: the view is altered in place |
+| **Unset Column Tags: \<column\> \| Set Column Tags: \<column\> \| Unset View Tags \| Set View Tags** | Only tags changed: the view is altered in place |
 | **Create view** | The view definition changed: CREATE OR REPLACE VIEW with the new definition |
 | **Drop view** + **Create view** | The view is renamed or moved: the old view is dropped and the new one created |
 
@@ -1038,7 +1039,7 @@ Controls whether configured tests are skipped.
 
 ```sql
 -- Work / Dimension
-@preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)")
+@preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATEADD(DAY, -90, CURRENT_DATE())")
 -- Fact
 @preSQL("DELETE FROM {{ this }} WHERE ORDER_DATE < DATEADD(DAY, -90, CURRENT_DATE())")
 ```
@@ -1413,6 +1414,9 @@ Converting an existing YAML (`.yml`) node to a SQL (`.sql`) node, or vice versa,
 * **Adding `@isSurrogateKey` to a Deployed Dimension**:  
 Snowflake can only add an `identity` column to an empty table, so when a redeploy adds a new column marked `@isSurrogateKey`, Coalesce ignores `@isSurrogateKey` and adds it as a regular column. The load never writes the surrogate key (it relies on `identity`), so the column stays `NULL` for existing and new rows. To get a working surrogate key, recreate the table — for example drop it and deploy the node again — so it is created with the `identity` column. A surrogate key present from the first deployment is created as `identity` as usual.
 
+* **Adding a `NOT NULL` Column Without a Default**:  
+Snowflake can't add a `NOT NULL` column without a `DEFAULT` to a table that already holds rows, so a redeploy that adds a column with `@notNull` and no `@defaultValue` fails at the **Add Column** stage ("Non-nullable column cannot be added to non-empty table"). The failure is left visible on purpose. Add the column without `@notNull` (or with a `@defaultValue`) first, load it, then add `@notNull` in a later deployment.
+
 * **Changing `@nodeType` on a Deployed Node**:  
 The switch deploys as a metadata update — the existing table is kept, not rebuilt for the new type. Work/Fact → Dimension overwrites every row via the zero-key merge (no identity surrogate key), Dimension → Fact rewrites every row and its surrogate keys, and → Work appends duplicates on each run; only Work → Fact is safe. Drop and redeploy the table when changing a node's type.
 
@@ -1483,7 +1487,7 @@ Common ways to use the SQL nodes. The SQL patterns under Work Examples (CTEs, wi
 @tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1")
 @tests("SELECT 1 FROM {{ this }} WHERE N_REGIONKEY IS NULL", true, "Before")
 @description("Table description")
-@preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)")
+@preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATEADD(DAY, -90, CURRENT_DATE())")
 @postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('WRK_NATION', CURRENT_TIMESTAMP())")
 SELECT
     "N_NATIONKEY"                             AS "N_NATIONKEY"         @not_null @uniqueness @min_value(0) @max_value(100)  @accepted_values("1, 2, 3") @inHash("GH_COL1", 2),
@@ -1691,7 +1695,7 @@ FROM {{ ref('SRC', 'CUSTOMER') }}
 * **String** — single quotes inside double quotes; `@accepted_values` can repeat and the lists are merged.
 * **Boolean** — `true`/`false`. **Date/time** — a literal or expression, e.g. `"DATE '2000-01-01'"`, `"CURRENT_TIMESTAMP"`, `"'08:00:00'"`.
 * `@relative_time` compares two columns of the same datatype.
-* The same annotations work on a Dimension node — add an `@id("<value>")` to each column there.
+* The same annotations work on a Dimension or Fact node — add an `@id("<value>")` to each column there.
 
 ##### Node-Level Tests
 
@@ -1867,7 +1871,6 @@ LEFT JOIN "EXISTING" ON "SRC"."CUSTOMER_ID" = "EXISTING"."CUSTOMER_ID"
 * New customer — no match in `EXISTING`, so `CITY_PREV` and `CITY_CHANGED_DATE` are NULL.
 * City changed — the old city moves to `CITY_PREV` and `CITY_CHANGED_DATE` is stamped.
 * City unchanged — the stored `CITY_PREV` and `CITY_CHANGED_DATE` are kept.
-* `EXISTING` reads the node's own target table by its full name (replace `MY_DB.TARGET.DIM_CUSTOMER`), because a node can't `ref()` itself.
 * `@isSystemCreateDate` keeps its first-insert value on update; every other column is overwritten from the SELECT.
 
 #### Fact Examples
@@ -1966,7 +1969,25 @@ SELECT
 FROM {{ ref('SOURCE_DATA', 'NATION') }} "NATION"
 ```
 
-On the first deployment this creates the table with every tag and the cluster key inline (`<DB>.<SCHEMA>` is the node's own location, `<GOV_DB>.<GOV_SCHEMA>` the `GOVERNANCE` location)
+On the first deployment this creates the table with every tag and the cluster key inline (`<DB>.<SCHEMA>` is the node's own location, `<GOV_DB>.<GOV_SCHEMA>` the `GOVERNANCE` location):
+
+```sql
+CREATE OR REPLACE TABLE "<DB>"."<SCHEMA>"."WRK_NATION" (
+    "N_NATIONKEY"  NUMBER(38,0),
+    "N_NAME"       VARCHAR(25)  WITH TAG ("<DB>"."<SCHEMA>"."PII" = 'false', "<DB>"."<SCHEMA>"."OWNER" = 'DATA_TEAM'),
+    "N_REGIONKEY"  NUMBER(38,0),
+    "N_COMMENT"    VARCHAR(152) WITH TAG ("<DB>"."<SCHEMA>"."PII" = 'true')
+)
+CLUSTER BY ("N_NATIONKEY", trunc("N_REGIONKEY", -1))
+WITH TAG ("<DB>"."<SCHEMA>"."COST_CENTRE" = 'FIN', "<DB>"."<SCHEMA>"."OWNER" = 'DATA_TEAM',
+          "<GOV_DB>"."<GOV_SCHEMA>"."DATA_DOMAIN" = 'SALES')
+```
+
+* `COST_CENTRE`, `OWNER` and `PII` have no location, so they resolve to the node's own location; `DATA_DOMAIN` lives in the `GOVERNANCE` storage location.
+* `N_NAME` carries two different tags; the same tag twice on one column (or on the node) would stop the deploy with **Duplicate Tags Found**.
+* `OWNER` on the table and `OWNER` on `N_NAME` are separate tag assignments (one on the table, one on the column), so both are allowed.
+* The cluster key is ordered by position: the plain `N_NATIONKEY` column first, then the `trunc(...)` expression. Inside the expression, double quotes are doubled (`""N_REGIONKEY""`).
+* On a later deployment, changing a tag value runs only **Set Column Tags** / **Set Table Tags**, and changing the cluster key runs **Recluster Table** — see [How tag changes deploy](#tag-node) and [Altering the Work Tables](#altering-the-work-tables).
 
 ---
 

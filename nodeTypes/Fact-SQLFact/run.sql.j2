@@ -87,7 +87,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
         {# No @isBusinessKey column and no @mergeStrategy: nothing to match existing rows on, so every source row is simply inserted.
            An explicit changeTracking/lastModified/upsert without a business key is stopped by validate_fact_requirements before this runs.
            All columns (system columns included) are written exactly as the SELECT/CTE computes them. #}
-        {{ stage('Load ' + nsNodeVariables.desiredMatType + ' Using Insert') }}
+        {{ stage('Load ' + nsNodeVariables.desiredMatType + ' using Insert') }}
         INSERT INTO {{ ref_no_link(node.location.name, node.name) }}
         (
             {%- for col in columns %}

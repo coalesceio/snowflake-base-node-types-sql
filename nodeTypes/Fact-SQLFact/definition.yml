@@ -56,7 +56,7 @@ metadata:
             • Picks the change-detection method; different methods require different column annotations.
             • If not specified: a node with an isBusinessKey column defaults to changeTracking - 𝗦𝗖𝗗 𝗧𝘆𝗽𝗲 𝟭; a node with no isBusinessKey column is loaded as a plain insert.
             • The value is not case-sensitive; any other value fails the run.
-            • Every strategy needs the SELECT/CTE to return exactly one row per business key, with no NULL business key — a pre-load test can handle this.
+            • changeTracking, lastModified and upsert need the SELECT/CTE to return exactly one row per business key, with no NULL business key — a pre-load test can handle this. allColumnMatch uses no business key.
             • Always takes priority when set: changeTracking, lastModified and upsert merge on the business key, so the run fails if no column is marked isBusinessKey. allColumnMatch needs no isBusinessKey.
             • Ignored on views
 
@@ -266,7 +266,7 @@ metadata:
           description: |-
             ⚙ This is a system column.
             • Marks this column as the timestamp a row was first created.
-            • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝘂𝗻𝗹𝗲𝘀𝘀 mergeStrategy 𝗶𝘀 𝘂𝗽𝘀𝗲𝗿𝘁 or no column is marked isBusinessKey (plain insert writes it as computed).
+            • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝘂𝗻𝗹𝗲𝘀𝘀 mergeStrategy 𝗶𝘀 𝘂𝗽𝘀𝗲𝗿𝘁 or 𝗮𝗹𝗹𝗖𝗼𝗹𝘂𝗺𝗻𝗠𝗮𝘁𝗰𝗵, or no column is marked isBusinessKey (these write it as computed).
             • Value written under changeTracking/lastModified: CURRENT_TIMESTAMP on first insert, then kept unchanged.
             • The expression in the SELECT is only used to derive the column's datatype — its value is ignored under changeTracking/lastModified (upsert writes it as computed).
             • To use different values (e.g. a source-supplied timestamp), use upsert and compute them in the SELECT/CTE.
@@ -281,7 +281,7 @@ metadata:
           description: |-
             ⚙ This is a system column.
             • Marks this column as the timestamp a row was last updated.
-            • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝘂𝗻𝗹𝗲𝘀𝘀 mergeStrategy 𝗶𝘀 𝘂𝗽𝘀𝗲𝗿𝘁 or no column is marked isBusinessKey (plain insert writes it as computed) — recomputed to the current timestamp on every inserted or changed row, so every row change carries an audit trail of when it was last updated.
+            • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝘂𝗻𝗹𝗲𝘀𝘀 mergeStrategy 𝗶𝘀 𝘂𝗽𝘀𝗲𝗿𝘁 or 𝗮𝗹𝗹𝗖𝗼𝗹𝘂𝗺𝗻𝗠𝗮𝘁𝗰𝗵, or no column is marked isBusinessKey (these write it as computed) — recomputed to the current timestamp on every inserted or changed row, so every row change carries an audit trail of when it was last updated.
             • Value written under changeTracking/lastModified: CURRENT_TIMESTAMP whenever the row is inserted or changed.
             • The expression in the SELECT is only used to derive the column's datatype — its value is ignored under changeTracking/lastModified (upsert writes it as computed).
             • To use different values (e.g. a source-supplied timestamp), use upsert and compute them in the SELECT/CTE.

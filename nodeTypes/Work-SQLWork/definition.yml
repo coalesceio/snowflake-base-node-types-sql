@@ -219,10 +219,11 @@ metadata:
         - name: accepted_values
           description: |-
             🚦 Column-level data quality test.
-            • Fails on rows whose value is outside the allow list. One annotation per column — pass
-              a comma-separated list (accepted_values("0,1,2")) or any number of separate arguments
-              (accepted_values("0", "1", "2")) in that single call; every argument is itself
-              comma-splittable.
+            • Fails on rows whose value is outside the allow list.
+            • Repeatable — every occurrence on the column is merged into one list. Each call takes a comma-separated list or any number of separate arguments; every argument is itself comma-splittable.
+                accepted_values("0, 1, 2")
+                accepted_values("0", "1", "2")
+                accepted_values("0") accepted_values("1, 2")
             • Each value is pasted into the SQL verbatim, so quote it to match the column's data type
                 positive number/float/decimal/bool as "<val>" or <val>
                 negative number/float/decimal as "-<val>"
@@ -237,10 +238,11 @@ metadata:
         - name: rejected_values
           description: |-
             🚦 Column-level data quality test.
-            • Fails on rows whose value is in the deny list. One annotation per column — pass a
-            comma-separated list (rejected_values("'A','B'")) or any number of separate arguments
-            (rejected_values("'A'", "'B'", "'C'")) in that single call; every argument is itself
-            comma-splittable.        
+            • Fails on rows whose value is in the deny list.
+            • Repeatable — every occurrence on the column is merged into one list. Each call takes a comma-separated list or any number of separate arguments; every argument is itself comma-splittable.
+                rejected_values("'A', 'B'")
+                rejected_values("'A'", "'B'", "'C'")
+                rejected_values("'A'") rejected_values("'B', 'C'")
             • Each value is pasted into the SQL verbatim, so quote it to match the column's data type
                 positive number/float/decimal/bool as "<val>" or <val>
                 negative number/float/decimal as "-<val>"
@@ -256,7 +258,7 @@ metadata:
         - name: min_max
           description: |-
             🚦 Column-level data quality test.
-            • Fails on rows outside the inclusive range.
+            • Fails on rows outside the inclusive range. NULL values pass.
             • Applies to numeric and temporal (date/time related) columns only.
             • Each bound is pasted into the SQL verbatim, so quote it to match the column's data type —
                 positive number as "<num>" or <num>
@@ -279,7 +281,7 @@ metadata:
         - name: min_value
           description: |-
             🚦 Column-level data quality test.
-            • Fails on rows below the bound.
+            • Fails on rows below the bound. NULL values pass.
             • Applies to numeric and temporal (date/time related) columns only.
             • Pasted into the SQL verbatim, so quote it to match the column's data type —
                 positive number as "<num>" or <num>
@@ -297,7 +299,7 @@ metadata:
         - name: max_value
           description: |-
             🚦 Column-level data quality test.
-            • Fails on rows above the bound.
+            • Fails on rows above the bound. NULL values pass.
             • Applies to numeric and temporal (date/time related) columns only.
             • Pasted into the SQL verbatim, so quote it to match the column's data type —
                 positive number as "<num>" or <num>

@@ -124,6 +124,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
             ON
             {%- for col in columns if col.isSurrogateKey %}
+                {%- if not loop.first %} AND {%- endif %}
                 "{{ node.name }}"."{{ col.name }}" = {{ zeroKeySurrogateValue }}
             {%- endfor %}
 
