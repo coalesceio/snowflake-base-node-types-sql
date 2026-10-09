@@ -113,7 +113,7 @@ operation:
         columnCounter: 3ed9646e-6307-593a-8bba-a657202bc675
         stepCounter: cb56be4c-d6e2-53ca-9792-7904fe4ace0d
       config: {}
-      dataType: VARCHAR(152)
+      dataType: VARCHAR(200)
       defaultValue: ''
       description: ''
       name: N_COMMENT

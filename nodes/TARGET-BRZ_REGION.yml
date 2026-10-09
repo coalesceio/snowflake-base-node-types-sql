@@ -102,6 +102,27 @@ operation:
         transform: '"REGION"."LOAD_TS"'
       transform: '"REGION"."LOAD_TS"'
       uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: f5f9d3d6-c0cc-5643-a518-ce74b641bca2
+        stepCounter: fe7a095a-f53f-5bc7-8627-af900ed9a44b
+      config: {}
+      dataType: VARCHAR(25)
+      defaultValue: ''
+      description: ''
+      name: R_NAME_UPPER
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 796d1ef3-c627-48eb-ae83-d3c8d323a1e8
+          stepCounter: fc10acd2-9644-4ed6-b348-5c724b0b96bf
+        transform: UPPER("REGION"."R_NAME")
+      transform: UPPER("REGION"."R_NAME")
+      uniqueKey: false
     enabledColumnTestIDs: []
     sourceMapping:
     - aliases: {}

@@ -131,6 +131,27 @@ operation:
         values: []
       appliedColumnTests: {}
       columnReference:
+        columnCounter: 15a0f1d2-ce71-520c-8895-60f98bde8e34
+        stepCounter: 9df141fa-19a8-5ab6-b69a-2234d23b24fd
+      config: {}
+      dataType: VARCHAR(55)
+      defaultValue: ''
+      description: ''
+      name: PART_NAME
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 01336121-918f-5600-9d53-04604b3787ba
+          stepCounter: b0559446-218c-5d99-a967-2785d90efddf
+        transform: '"SLV_PART_SUPPLY"."PART_NAME"'
+      transform: '"SLV_PART_SUPPLY"."PART_NAME"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
         columnCounter: 36421965-04bb-546b-847e-743a78f20910
         stepCounter: 9df141fa-19a8-5ab6-b69a-2234d23b24fd
       config: {}

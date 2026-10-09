@@ -5,7 +5,7 @@
 SELECT
     "C"."C_CUSTKEY" AS "CUSTOMER_KEY" @id("aa47ab0f-53d6-52c9-b657-957cbb53fdce") @inHash("CUST_HASH", 1),
     "C"."C_NAME" AS "CUSTOMER_NAME" @id("fd5bc778-8f4d-5809-b9d6-c7fdd89c33ab") @inHash("CUST_HASH", 2),
-    "C"."C_ADDRESS" AS "ADDRESS" @id("0ac78ef4-c70a-5aba-8461-a6104552f41a"),
+    "C"."C_ADDRESS_LINE" AS "ADDRESS" @id("0ac78ef4-c70a-5aba-8461-a6104552f41a"),
     "C"."C_PHONE" AS "PHONE" @id("1e295ea6-ca9c-5df7-8cb9-06eca10fce4b"),
     "C"."C_ACCTBAL" AS "ACCOUNT_BALANCE" @id("6dc8135d-addd-5c6a-b654-6af5fb31fa7e"),
     "C"."C_MKTSEGMENT" AS "MARKET_SEGMENT" @id("325ce1f0-f9f0-582a-9c8d-fae12036964c") @inHash("CUST_HASH", 3),

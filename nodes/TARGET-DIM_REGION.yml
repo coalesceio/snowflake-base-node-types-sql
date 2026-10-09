@@ -110,6 +110,27 @@ operation:
         values: []
       appliedColumnTests: {}
       columnReference:
+        columnCounter: f6b477df-3842-5565-b269-97cbd64dfff1
+        stepCounter: 1a2a0987-c7c9-5ef4-8c87-c8810c0023a4
+      config: {}
+      dataType: VARCHAR(25)
+      defaultValue: ''
+      description: ''
+      name: R_NAME_UPPER
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: f5f9d3d6-c0cc-5643-a518-ce74b641bca2
+          stepCounter: fe7a095a-f53f-5bc7-8627-af900ed9a44b
+        transform: '"BRZ_REGION"."R_NAME_UPPER"'
+      transform: '"BRZ_REGION"."R_NAME_UPPER"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
         columnCounter: d142757a-8cc4-558d-8635-f2bc5c80bcf2
         stepCounter: 1a2a0987-c7c9-5ef4-8c87-c8810c0023a4
       config: {}

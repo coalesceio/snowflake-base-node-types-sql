@@ -12,6 +12,7 @@ SELECT
     "C"."MARKET_SEGMENT" AS "MARKET_SEGMENT" @id("3daa8c51-8813-5fb3-aa84-42ca10923039") @isChangeTracking @zeroKey("'N/A'"),
     "C"."NATION_NAME" AS "NATION_NAME" @id("dda91cd5-e021-563a-9f04-bded8201915d"),
     "C"."REGION_NAME" AS "REGION_NAME" @id("a7cc0fb1-fa92-5760-9a7f-853caab7b3ea"),
+    CAST(CASE WHEN "C"."ACCOUNT_BALANCE" >= 5000 THEN 'GOLD' ELSE 'STD' END AS VARCHAR(4)) AS "CUSTOMER_TIER" @id("587c6e15-64c4-5c07-9430-9f996f2bab3e"),
     1 AS "SYSTEM_VERSION" @id("a7eab717-ac16-5eeb-8be6-1d81e62218f3") @isSystemVersion,
     'Y' AS "SYSTEM_CURRENT_FLAG" @id("1272914e-e52a-57f5-a5a4-74d478e22756") @isSystemCurrentFlag,
     CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @id("b349a19a-48ec-5e2f-937e-612ce240ba6e") @isSystemEndDate,

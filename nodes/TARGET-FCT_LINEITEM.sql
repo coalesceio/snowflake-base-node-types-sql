@@ -13,7 +13,7 @@ SELECT
     "L"."NET_AMOUNT" AS "NET_AMOUNT" @id("b1d9da25-b853-510e-bef4-37587cd60707"),
     "L"."SHIP_DATE" AS "SHIP_DATE" @id("27160750-8760-53fa-add5-1f837d18fcfd") @clusterKey(1),
     "L"."SHIP_MODE" AS "SHIP_MODE" @id("57acd22f-f0f6-5235-9d3c-8e6a28c1c898"),
-    "L"."RETURN_FLAG" AS "RETURN_FLAG" @id("cdead14b-9737-5e23-887f-900be83b5bf1"),
+    "L"."GROSS_AMOUNT" AS "GROSS_AMOUNT" @id("1a050bf7-33aa-51a1-b64c-823871cb0d25"),
     "L"."LOAD_TS" AS "LOAD_TS" @id("a350f1ca-3f76-58ca-afba-b5b78ee05a92") @lastModifiedTracking,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("663842c5-ceaa-5cb1-87cd-fc0b2a7e7ae8") @isSystemCreateDate,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @id("10582264-c638-51de-9f99-64bbc0815008") @isSystemUpdateDate

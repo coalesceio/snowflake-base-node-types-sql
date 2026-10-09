@@ -36,8 +36,8 @@ operation:
       - columnReferences:
         - columnCounter: 55251b0b-0044-5e31-8faf-7816472c4770
           stepCounter: d6a663d2-b331-536c-b6fe-16b8dcbbdf14
-        transform: '"MRT_SALES_BY_REGION"."REGION_NAME"'
-      transform: '"MRT_SALES_BY_REGION"."REGION_NAME"'
+        transform: '"MRT_REGION_SALES"."REGION_NAME"'
+      transform: '"MRT_REGION_SALES"."REGION_NAME"'
       uniqueKey: false
     - acceptedValues:
         strictMatch: true
@@ -57,8 +57,8 @@ operation:
       - columnReferences:
         - columnCounter: 44bed702-1857-5299-81d2-d0629f21b505
           stepCounter: d6a663d2-b331-536c-b6fe-16b8dcbbdf14
-        transform: '"MRT_SALES_BY_REGION"."ORDER_YEAR"'
-      transform: '"MRT_SALES_BY_REGION"."ORDER_YEAR"'
+        transform: '"MRT_REGION_SALES"."ORDER_YEAR"'
+      transform: '"MRT_REGION_SALES"."ORDER_YEAR"'
       uniqueKey: false
     - acceptedValues:
         strictMatch: true
@@ -78,8 +78,8 @@ operation:
       - columnReferences:
         - columnCounter: d5d27b90-6573-5bf7-b582-28b19ce5dfe5
           stepCounter: d6a663d2-b331-536c-b6fe-16b8dcbbdf14
-        transform: '"MRT_SALES_BY_REGION"."NET_SALES"'
-      transform: '"MRT_SALES_BY_REGION"."NET_SALES"'
+        transform: '"MRT_REGION_SALES"."NET_SALES"'
+      transform: '"MRT_REGION_SALES"."NET_SALES"'
       uniqueKey: false
     enabledColumnTestIDs: []
     sourceMapping:
@@ -88,9 +88,9 @@ operation:
         customSQL: ''
       dependencies:
       - locationName: TARGET
-        nodeName: MRT_SALES_BY_REGION
+        nodeName: MRT_REGION_SALES
       join:
-        joinCondition: FROM {{ ref('TARGET', 'MRT_SALES_BY_REGION') }} "MRT_SALES_BY_REGION"
+        joinCondition: FROM {{ ref('TARGET', 'MRT_REGION_SALES') }} "MRT_REGION_SALES"
       name: MRT_REGION_VIEW
       noLinkRefs: []
   name: MRT_REGION_VIEW

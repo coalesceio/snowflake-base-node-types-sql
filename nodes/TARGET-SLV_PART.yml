@@ -165,6 +165,27 @@ operation:
         transform: '"BRZ_PART"."LOAD_TS"'
       transform: '"BRZ_PART"."LOAD_TS"'
       uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 9dea138c-5ffc-5e2b-bdc9-a3ce31005a3f
+        stepCounter: bfd58448-8272-5ba5-8cfd-cd45d8dff984
+      config: {}
+      dataType: VARCHAR(6)
+      defaultValue: ''
+      description: ''
+      name: SIZE_BAND
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: a7289a12-19b3-5c14-a5f2-7fa7446296f3
+          stepCounter: 8fc3ec5a-72e9-5839-ba8b-7e78a61e196f
+        transform: '"BRZ_PART"."P_SIZE_BAND"'
+      transform: '"BRZ_PART"."P_SIZE_BAND"'
+      uniqueKey: false
     enabledColumnTestIDs: []
     sourceMapping:
     - aliases: {}

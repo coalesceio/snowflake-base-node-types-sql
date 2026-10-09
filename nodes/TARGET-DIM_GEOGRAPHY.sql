@@ -1,9 +1,9 @@
 @id("64642d3b-42ff-5e99-a23b-812445249d08")
 @nodeType("SQLDimension")
 @materializationType("table")
-@description("Geography dimension - upsert")
+@description("Geography dimension - upsert (changed)")
 @mergeStrategy("upsert")
-@tag("Cost_Centre", "FIN")
+@tag("Cost_Centre", "OPS")
 SELECT
     "G"."NATION_KEY" AS "NATION_KEY" @id("4fc1aa13-6468-5097-a082-bed34723b280") @isBusinessKey,
     "G"."NATION_NAME" AS "NATION_NAME" @id("52413fa6-662b-5a34-84b0-1a1f9552b8aa"),
