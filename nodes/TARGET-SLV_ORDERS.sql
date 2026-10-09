@@ -1,0 +1,13 @@
+@id("a9a3c1e8-2664-551a-860e-3c3e2132841f")
+@nodeType("SQLWork")
+@materializationType("view")
+@description("Orders view (SQLWork view)")
+SELECT
+    "ORDERS"."O_ORDERKEY" AS "ORDER_KEY" @id("e385334a-809b-5e02-9094-7c2e2c54dbe4"),
+    "ORDERS"."O_CUSTKEY" AS "CUSTOMER_KEY" @id("99ba1352-7980-5151-8a7a-8b7f0d75da3c"),
+    "ORDERS"."O_ORDERSTATUS" AS "ORDER_STATUS" @id("149405d6-1526-542e-b449-a383c57b23b3"),
+    "ORDERS"."O_TOTALPRICE" AS "TOTAL_PRICE" @id("dda1d60f-a140-5d4d-9914-258bed30c8a2"),
+    "ORDERS"."O_ORDERDATE" AS "ORDER_DATE" @id("d7208d25-cea6-57ba-a314-d47837c729b4"),
+    "ORDERS"."O_ORDERPRIORITY" AS "ORDER_PRIORITY" @id("4f5d0ddb-1e58-5d0d-9034-b21c70f220b8"),
+    "ORDERS"."O_LOAD_TIMESTAMP" AS "LOAD_TS" @id("6bdc86fe-085f-52ca-a7d8-5113ffb71e21")
+FROM {{ ref('TARGET', 'BRZ_ORDERS') }} "ORDERS"

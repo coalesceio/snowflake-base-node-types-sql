@@ -1,0 +1,102 @@
+fileVersion: 1
+id: efc3f2f4-848a-5a9f-aaa5-79288df91f28
+name: MRT_REGION_VIEW
+operation:
+  config:
+    groupByAll: false
+    orderby: false
+    selectDistinct: false
+    testsEnabled: false
+    insertStrategy: UNION
+    secureoption: false
+  database: ''
+  deployEnabled: true
+  description: Region sales view (YAML View over SQLWork)
+  isMultisource: false
+  locationName: TARGET
+  materializationType: view
+  metadata:
+    appliedNodeTests: []
+    columns:
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 3ae45a2c-4915-5442-a8b7-ce786b9c46e6
+        stepCounter: efc3f2f4-848a-5a9f-aaa5-79288df91f28
+      config: {}
+      dataType: VARCHAR(25)
+      defaultValue: ''
+      description: ''
+      name: REGION_NAME
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 55251b0b-0044-5e31-8faf-7816472c4770
+          stepCounter: d6a663d2-b331-536c-b6fe-16b8dcbbdf14
+        transform: '"MRT_SALES_BY_REGION"."REGION_NAME"'
+      transform: '"MRT_SALES_BY_REGION"."REGION_NAME"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: 51a0b5f9-7d0e-5805-a788-01ed640f22be
+        stepCounter: efc3f2f4-848a-5a9f-aaa5-79288df91f28
+      config: {}
+      dataType: NUMBER(4,0)
+      defaultValue: ''
+      description: ''
+      name: ORDER_YEAR
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: 44bed702-1857-5299-81d2-d0629f21b505
+          stepCounter: d6a663d2-b331-536c-b6fe-16b8dcbbdf14
+        transform: '"MRT_SALES_BY_REGION"."ORDER_YEAR"'
+      transform: '"MRT_SALES_BY_REGION"."ORDER_YEAR"'
+      uniqueKey: false
+    - acceptedValues:
+        strictMatch: true
+        values: []
+      appliedColumnTests: {}
+      columnReference:
+        columnCounter: f23b5432-5dac-5aee-9362-b7843fbf2db3
+        stepCounter: efc3f2f4-848a-5a9f-aaa5-79288df91f28
+      config: {}
+      dataType: NUMBER(38,4)
+      defaultValue: ''
+      description: ''
+      name: NET_SALES
+      nullable: true
+      primaryKey: false
+      sourceColumnReferences:
+      - columnReferences:
+        - columnCounter: d5d27b90-6573-5bf7-b582-28b19ce5dfe5
+          stepCounter: d6a663d2-b331-536c-b6fe-16b8dcbbdf14
+        transform: '"MRT_SALES_BY_REGION"."NET_SALES"'
+      transform: '"MRT_SALES_BY_REGION"."NET_SALES"'
+      uniqueKey: false
+    enabledColumnTestIDs: []
+    sourceMapping:
+    - aliases: {}
+      customSQL:
+        customSQL: ''
+      dependencies:
+      - locationName: TARGET
+        nodeName: MRT_SALES_BY_REGION
+      join:
+        joinCondition: FROM {{ ref('TARGET', 'MRT_SALES_BY_REGION') }} "MRT_SALES_BY_REGION"
+      name: MRT_REGION_VIEW
+      noLinkRefs: []
+  name: MRT_REGION_VIEW
+  overrideSQL: false
+  schema: ''
+  sqlType: base-node-types:::188
+  type: sql
+  version: 1
+type: Node

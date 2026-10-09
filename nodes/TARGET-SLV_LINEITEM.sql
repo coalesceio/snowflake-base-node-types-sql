@@ -1,0 +1,20 @@
+@id("2f2bf765-4d41-5c56-8f91-128e0bd15c79")
+@nodeType("SQLWork")
+@materializationType("transient table")
+@description("Lineitem with net amount")
+SELECT
+    "LINEITEM"."L_ORDERKEY" AS "ORDER_KEY" @id("70c56541-6ab7-5796-9124-8b0d2959fd0b"),
+    "LINEITEM"."L_LINENUMBER" AS "LINE_NUMBER" @id("4de1fcda-b28e-5ce1-87bf-92a6f55aab50"),
+    "LINEITEM"."L_PARTKEY" AS "PART_KEY" @id("7fcab491-7992-5095-a614-3643516ce18c"),
+    "LINEITEM"."L_SUPPKEY" AS "SUPPLIER_KEY" @id("afe00bb5-b8d1-547d-ae7f-6c1aab1aea3a"),
+    "LINEITEM"."L_QUANTITY" AS "QUANTITY" @id("d11d60b9-dc57-574b-b20d-1c449d7fbcab"),
+    "LINEITEM"."L_EXTENDEDPRICE" AS "EXTENDED_PRICE" @id("cf50fb5f-8279-5b5f-b8ed-89d356ba5d06"),
+    "LINEITEM"."L_DISCOUNT" AS "DISCOUNT" @id("feba422f-75aa-5ec9-a794-433881c4c9f5"),
+    "LINEITEM"."L_TAX" AS "TAX" @id("1c017455-d018-5e27-ac94-9f92c950f51a"),
+    CAST("LINEITEM"."L_EXTENDEDPRICE" * (1 - "LINEITEM"."L_DISCOUNT") AS NUMBER(38,4)) AS "NET_AMOUNT" @id("2ff85edf-e6de-5077-aebb-689ba8fe6390"),
+    "LINEITEM"."L_RETURNFLAG" AS "RETURN_FLAG" @id("68218a34-ae12-5475-b021-2bdd74b5778a"),
+    "LINEITEM"."L_LINESTATUS" AS "LINE_STATUS" @id("a8d71175-c8be-5943-8099-7917c3efdcfb"),
+    "LINEITEM"."L_SHIPDATE" AS "SHIP_DATE" @id("cccc1fac-26e0-547f-8c55-5ebe4f82f23d"),
+    "LINEITEM"."L_SHIPMODE" AS "SHIP_MODE" @id("1a1ad4f0-9b97-520c-a96c-a64b89ce5dc4"),
+    "LINEITEM"."L_LOAD_TIMESTAMP" AS "LOAD_TS" @id("a3b77f4a-e450-563d-9d59-6f2b931151f6")
+FROM {{ ref('TARGET', 'BRZ_LINEITEM') }} "LINEITEM"
