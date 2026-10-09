@@ -1,0 +1,82 @@
+fileVersion: 1
+id: 7360d887-ebe2-4215-8096-65664ee33954
+name: STG_NATION_STAGE_RENAME
+operation:
+  config:
+    insertStrategy: INSERT
+    postSQL: ""
+    preSQL: ""
+  database: ""
+  deployEnabled: true
+  description: ""
+  isMultisource: false
+  locationName: TARGET
+  materializationType: table
+  metadata:
+    appliedNodeTests: []
+    columns:
+      - appliedColumnTests: {}
+        columnReference:
+          columnCounter: 4be146c0-072b-4b33-aed3-049cfc6812a8
+          stepCounter: 7360d887-ebe2-4215-8096-65664ee33954
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: N_NATIONKEY
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: 3d7bb4d8-9d4a-4845-b9b0-35b9f1c3db83
+                stepCounter: 8b00d860-7771-410c-97cb-908f25601e4a
+            transform: ""
+        transform: ""
+      - appliedColumnTests: {}
+        columnReference:
+          columnCounter: 641dc8a0-1d9c-4561-be2b-790f80c9a23d
+          stepCounter: 7360d887-ebe2-4215-8096-65664ee33954
+        config: {}
+        dataType: VARCHAR(25)
+        defaultValue: ""
+        description: ""
+        name: N_NAME
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: 110c9a95-2584-4477-8062-499c4b398834
+                stepCounter: 8b00d860-7771-410c-97cb-908f25601e4a
+            transform: ""
+        transform: ""
+      - appliedColumnTests: {}
+        columnReference:
+          columnCounter: 78b6eacb-ef0c-4945-8ccb-66459dd5e1cf
+          stepCounter: 7360d887-ebe2-4215-8096-65664ee33954
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: N_REGIONKEY
+        nullable: true
+        sourceColumnReferences:
+          - columnReferences:
+              - columnCounter: af433bd8-dd7b-44e6-8494-36f9b4653133
+                stepCounter: 8b00d860-7771-410c-97cb-908f25601e4a
+            transform: ""
+        transform: ""
+    enabledColumnTestIDs: []
+    sourceMapping:
+      - aliases: {}
+        dependencies:
+          - locationName: SRC
+            nodeName: NATION_TEST
+        join:
+          joinCondition: FROM {{ ref('SRC', 'NATION_TEST') }} NATION_TEST
+        name: STG_NATION_STAGE_RENAME
+        noLinkRefs: []
+  name: STG_NATION_STAGE_RENAME
+  overrideSQL: false
+  schema: ""
+  sqlType: Stage
+  type: sql
+  version: 1
+type: Node
