@@ -13,4 +13,4 @@ SELECT
      "N_LOAD_TIMESTAMP" AS "N_LOAD_TIMESTAMP" @freshness(30, "DAY") @relative_time(">", "REF_TS"),
      TO_TIMESTAMP_LTZ('2020-01-01 00:00:00') AS "REF_TS",
      {{ get_hash('GH_COL') }}::STRING AS "GH_COL"
-FROM {{ ref('SRC', 'NATION_TEST') }} "NATION_TEST"
+FROM {{ ref('SRC', 'NATION') }} "NATION_TEST"

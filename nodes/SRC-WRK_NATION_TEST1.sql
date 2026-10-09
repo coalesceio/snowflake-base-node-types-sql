@@ -4,4 +4,4 @@ SELECT
      "N_NATIONKEY" AS "N_NATIONKEY" @inHash("GH_COL", 1),
      {{ get_hash("GH_COL") }}::STRING AS "GH_COL",
      '{{ parameters.nationkey }}.{{ parameters.nationkey }}'::STRING AS "NATION"
-FROM {{ ref('SRC', 'NATION_TEST') }} "NATION_TEST"
+FROM {{ ref('SRC', 'NATION') }} "NATION_TEST"

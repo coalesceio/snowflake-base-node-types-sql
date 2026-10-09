@@ -16,4 +16,4 @@ SELECT
      "N_LOAD_TIMESTAMP" AS "FR_YEAR" @freshness(1, "YEAR"),
      "N_LOAD_TIMESTAMP" AS "FR_LARGE_INTERVAL" @freshness(100, "YEAR"),
      "N_LOAD_TIMESTAMP" AS "FR_ZERO_INTERVAL" @freshness(0, "SECOND")
-FROM {{ ref('SRC', 'NATION_TEST') }} "NATION_TEST"
+FROM {{ ref('SRC', 'NATION') }} "NATION_TEST"

@@ -68,9 +68,9 @@ operation:
       - aliases: {}
         dependencies:
           - locationName: SRC
-            nodeName: NATION_TEST
+            nodeName: NATION
         join:
-          joinCondition: FROM {{ ref('SRC', 'NATION_TEST') }} NATION_TEST
+          joinCondition: FROM {{ ref('SRC', 'NATION') }} NATION_TEST
         name: STG_NATION_STAGE_RENAME
         noLinkRefs: []
   name: STG_NATION_STAGE_RENAME

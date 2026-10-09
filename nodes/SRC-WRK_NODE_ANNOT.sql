@@ -15,5 +15,5 @@ SELECT
      "O"."ORDER_DATA" AS "ORDER_DATA",
      TO_TIMESTAMP_LTZ('2020-01-01 00:00:00') AS "REF_TS",
      {{ get_hash('GH_COL') }}::STRING AS "GH_COL"
-FROM {{ ref('SRC', 'NATION_TEST') }} "N"
+FROM {{ ref('SRC', 'NATION') }} "N"
 JOIN {{ ref('SRC', 'ORDERS_TEST') }} "O" ON MOD("O"."ORDER_ID", 25) = "N"."N_NATIONKEY"

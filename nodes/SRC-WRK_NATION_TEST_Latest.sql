@@ -36,4 +36,4 @@ SELECT DISTINCT
      CAST("N_NATIONKEY" AS NUMBER(18,4)) AS N_NATIONKEY_DECIMAL @description("DECIMAL/NUMERIC variant of N_NATIONKEY"),
 
      CAST({{ get_hash('GH_COL1') }} AS STRING) AS "GH_COL1" @description("Hash Column")
-FROM {{ ref('SRC', 'NATION_TEST') }} "NATION_TEST"
+FROM {{ ref('SRC', 'NATION') }} "NATION_TEST"
