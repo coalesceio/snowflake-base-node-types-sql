@@ -1,5 +1,6 @@
 @id("87e9ebb0-856f-43b7-b7ba-efe100a16742")
 @nodeType("Latest220:::SQLWork")
+@deployDisabled
 @description("V2 Work node demonstrating every supported annotation")
 @tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false)
 @tests("SELECT 1 FROM {{ this }} WHERE N_REGIONKEY IS NULL", true, "Before")
@@ -36,4 +37,4 @@ SELECT DISTINCT
      CAST("N_NATIONKEY" AS NUMBER(18,4)) AS N_NATIONKEY_DECIMAL @description("DECIMAL/NUMERIC variant of N_NATIONKEY"),
 
      CAST({{ get_hash('GH_COL1') }} AS STRING) AS "GH_COL1" @description("Hash Column")
-FROM {{ ref('SRC', 'Nation_Test') }} "NATION_TEST"
+FROM {{ ref('SRC', 'NATION_TEST') }} "NATION_TEST"
