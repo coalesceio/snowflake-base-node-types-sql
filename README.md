@@ -318,6 +318,7 @@ Inserts a default "zero key" record into the target — a placeholder row used t
 | **booleanValue** | **(optional)** Default value for boolean columns. Default `true`. |
 
 * Numeric columns (integer, decimal, float) always get `0`; override any column with a column-level `@zeroKey(value)`.
+* A string value longer than its column (for example `'UNKNOWN'` in a `VARCHAR(4)`) raises a non-failing **Warning: Zero Key Value Too Long** test stage that lists each such column; Snowflake then rejects the value and the **Zero Key Record** stage fails. Set a shorter value on the column with `@zeroKey("'<value>'")`, or widen the column.
 * *Not specified in the SQL editor → the zero record is not inserted.*
 * **Note:** Ignored on Views.
 
@@ -354,6 +355,7 @@ Adds a custom zero key value (ghost record) to this column, overriding the node-
 | **value** | Zero key value for this column, pasted into the SQL verbatim. |
 
 * The value is pasted into the SQL verbatim, so quote it to match the column's data type.
+* A string value longer than the column's declared length raises the non-failing **Warning: Zero Key Value Too Long** stage (see [`@zeroKey` (Dimension node)](#zerokey-dimension-node)).
 * **Note:** Ignored unless `@zeroKey` is enabled at the node level, and ignored on Views.
 
 **Example:**

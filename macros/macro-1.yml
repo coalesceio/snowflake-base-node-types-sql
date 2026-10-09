@@ -557,6 +557,38 @@ macroString: |-
                 SELECT 1
             {%- endif -%}
         {%- endif -%}
+
+        {# Zero key record: a string value longer than its column's declared length is rejected by Snowflake. Warn only. #}
+        {%- if config.zeroKey is defined and hasSurrogateKey -%}
+            {%- set zk = namespace(tooLong=[]) -%}
+            {%- set zkParams = config.zeroKey.parameters if config.zeroKey.parameters is defined else [] -%}
+            {%- for col in columns if not (col.isSurrogateKey or col.isSystemCurrentFlag or col.isSystemEndDate
+                                           or col.isSystemUpdateDate or col.isSystemCreateDate or col.isSystemVersion) -%}
+                {%- set dt = col.dataType | upper | replace(' ', '') -%}
+                {%- if dt[:3] in ('VAR', 'CHA', 'STR', 'TEX') -%}
+                    {%- set maxLen = (dt.split('(')[1].split(')')[0] | int) if '(' in dt else (1 if dt in ('CHAR', 'CHARACTER') else none) -%}
+                    {%- if col.zeroKey is defined and col.zeroKey.parameters is defined and col.zeroKey.parameters | length > 0 -%}
+                        {%- set zkValue = col.zeroKey.parameters[0] | string | trim -%}
+                    {%- else -%}
+                        {%- set zkValue = (zkParams[1] if zkParams | length > 1 else "'UNKNOWN'") | string | trim -%}
+                    {%- endif -%}
+                    {%- set zkText = zkValue[1:-1] | replace("''", "'") if (zkValue | length > 1 and zkValue[:1] == "'" and zkValue[-1:] == "'") else zkValue -%}
+                    {%- if maxLen is not none and zkText | length > maxLen -%}
+                        {%- set zk.tooLong = zk.tooLong + [col.name ~ ' ' ~ col.dataType ~ ' gets ' ~ zkValue ~ ' (' ~ zkText | length ~ ' characters)'] -%}
+                    {%- endif -%}
+                {%- endif -%}
+            {%- endfor -%}
+
+            {%- if zk.tooLong %}
+            {{ test_stage('Warning: Zero Key Value Too Long', true) }}
+            {%- for item in zk.tooLong %}
+            -- {{ item }}.
+            {%- endfor %}
+            -- Snowflake rejects a value longer than the column, so the Zero Key Record stage will fail ("String is too long and would be truncated").
+            -- Set a shorter value on the column with @zeroKey("'<value>'"), or widen the column.
+            SELECT 1 AS MESSAGE
+            {%- endif %}
+        {%- endif -%}
     {%- endmacro -%}
 
     {#===========================================================================
