@@ -9,7 +9,7 @@ operation:
     testsEnabled: true
     truncateBefore: true
   database: ""
-  deployEnabled: false
+  deployEnabled: true
   description: V2 Work node feeding a downstream V1 Stage node
   isMultisource: false
   locationName: TARGET
