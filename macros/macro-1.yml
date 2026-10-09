@@ -60,12 +60,12 @@ macroString: |-
                                                           else nsNodeVariables.cloneObjectNameFullPath -%}
       {%- endif -%}
 
-      {#- Redeploy: current columns with no desired match by id or by name are being dropped #}
+      {#- Redeploy: current columns with no desired column of the same id are being dropped
+          (a column without @id has its name as id, so renaming it drops and re-adds it) #}
       {%- if currentState is defined and currentState and desiredState is defined and desiredState -%}
         {%- for curCol in currentState.columns -%}
           {%- set idStillDesired = columns | default([]) | selectattr('id', 'equalto', curCol.id) | list -%}
-          {%- set nameStillDesired = curCol.name in (columns | default([]) | map(attribute='name') | list) -%}
-          {%- if not idStillDesired and not nameStillDesired -%}
+          {%- if not idStillDesired -%}
             {%- set nsNodeVariables.droppedColumns = nsNodeVariables.droppedColumns + ['"' + curCol.name + '"'] -%}
           {%- endif -%}
           {#- Same id, new name: the column is renamed (old name recorded) #}
@@ -927,9 +927,6 @@ macroString: |-
         {%- set ns = namespace(actions=[]) -%}
         {%- for curCol in currentState.columns -%}
             {%- set matchingCols = columns | default([]) | selectattr('id', 'equalto', curCol.id) | list -%}
-            {%- if not matchingCols -%}
-                {%- set matchingCols = columns | default([]) | selectattr('name', 'equalto', curCol.name) | list -%}
-            {%- endif -%}
 
             {%- if matchingCols -%}
                 {%- set desCol = matchingCols | first -%}
@@ -970,15 +967,14 @@ macroString: |-
     {%- endmacro -%}
 
     {#===========================================================================
-      alter_add_columns_sql(): "Add Column" — one ADD COLUMN for new columns, with NOT NULL,
+      alter_add_columns_sql(): "Add Column" — one ADD COLUMN for columns with a new id, with NOT NULL,
       DEFAULT, tags and comment. No identity: Snowflake only adds one to an empty table.
     ===========================================================================#}
     {%- macro alter_add_columns_sql() -%}
         {%- set ns = namespace(items=[]) -%}
         {%- for desCol in columns -%}
             {%- set idAlreadyCurrent = currentState.columns | default([]) | selectattr('id', 'equalto', desCol.id) | list -%}
-            {%- set nameAlreadyCurrent = desCol.name in (currentState.columns | default([]) | map(attribute='name') | list) -%}
-            {%- if not idAlreadyCurrent and not nameAlreadyCurrent -%}
+            {%- if not idAlreadyCurrent -%}
                 {%- set ns.items = ns.items + [desCol] -%}
             {%- endif -%}
         {%- endfor -%}
@@ -1001,7 +997,7 @@ macroString: |-
 
     {#===========================================================================
       alter_rename_columns_sql(): "Rename Column" per column whose id is kept but name
-      changed. A Work column whose id also changed is dropped and added instead.
+      changed. A column without @id has its name as id, so renaming it drops and re-adds it.
     ===========================================================================#}
     {%- macro alter_rename_columns_sql() -%}
         {%- for curCol in currentState.columns -%}
@@ -1079,9 +1075,6 @@ macroString: |-
         {#- Column-level tags #}
         {%- for curCol in currentState.columns -%}
             {%- set matchingCols = columns | default([]) | selectattr('id', 'equalto', curCol.id) | list -%}
-            {%- if not matchingCols -%}
-                {%- set matchingCols = columns | default([]) | selectattr('name', 'equalto', curCol.name) | list -%}
-            {%- endif -%}
 
             {%- if matchingCols -%}
                 {%- set desCol = matchingCols | first -%}
@@ -1338,7 +1331,7 @@ macroString: |-
             {%- elif col.dataType | upper == 'BOOLEAN' -%}
                 {%- set ns.zk_type = 'boolean' -%}
                 {%- set ns.zk_value = zkParams[3] if zkParams | length > 3 else true -%}
-            {%- elif col.dataType[:4] | upper in ('DATE', 'TIME', 'TIMESTAMP') -%}
+            {%- elif col.dataType[:4] | upper in ('DATE', 'TIME') -%}
                 {%- set ns.zk_type = 'datetime' -%}
                 {%- set ns.zk_value = zkParams[2] if zkParams | length > 2 else '1900-01-01 00:00:00' -%}
             {%- endif -%}

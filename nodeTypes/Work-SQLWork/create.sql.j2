@@ -89,7 +89,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
                 {# Add Column #}
                 {{ alter_add_columns_sql() }}
 
-                {# Rename Column (matched by id; a Work column whose id changed is dropped + added instead) #}
+                {# Rename Column (matched by id; a column without @id has its name as id, so it is dropped + added instead) #}
                 {{ alter_rename_columns_sql() }}
 
                 {# Cluster key: new key after adds/renames, before Delete Column so dropped columns have left it #}
