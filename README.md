@@ -1227,13 +1227,14 @@ CAST(
 | **expression** | **(optional)** Expression to cluster on instead of the plain column, e.g. `trunc("REGION_KEY", -5)`. |
 
 * Leave out **expression** to cluster on the column as-is, or add one to cluster on a transformed value instead.
+* Inside the expression, write a double quote twice (`""REGION_KEY""`) — a backslash does not escape it; see [Quote Style for Case-Sensitive Identifiers](#quote-style-for-case-sensitive-identifiers).
 * **Note:** Ignored on Views.
 
 **Example:**
 
 ```sql
 @clusterKey(1)
-@clusterKey(2, "trunc(\"REGION_KEY\", -5)")
+@clusterKey(2, "trunc(""REGION_KEY"", -5)")
 ```
 
 ##### `@lastModifiedTracking`
