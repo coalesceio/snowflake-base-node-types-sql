@@ -1,5 +1,5 @@
 @id("87e9ebb0-856f-43b7-b7ba-efe100a16742")
-@nodeType("SQLWork")
+@nodeType("Latest220:::SQLWork")
 @description("V2 Work node demonstrating every supported annotation")
 @tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false)
 @tests("SELECT 1 FROM {{ this }} WHERE N_REGIONKEY IS NULL", true, "Before")

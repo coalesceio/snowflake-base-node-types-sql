@@ -1,5 +1,5 @@
 @id("13c1928f-10fe-40d9-a8d3-bc305d026043")
-@nodeType("SQLFact")
+@nodeType("Latest220:::SQLFact")
 @mergeStrategy("allColumnMatch")
 SELECT
     COALESCE("DE"."DIM_EMPLOYEE_KEY", 0) AS "DIM_EMPLOYEE_KEY"   @id("3d965a") @not_null,

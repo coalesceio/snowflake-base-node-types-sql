@@ -1,5 +1,5 @@
 @id("7e57a000-0000-4000-8000-000000000103")
-@nodeType("SQLFact")
+@nodeType("Latest220:::SQLFact")
 @mergeStrategy("upsert")
 @writeMode("append")
 @description("Fact test: upsert merge on composite key NATION_KEY + REGION_KEY, system columns computed in the SELECT")

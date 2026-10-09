@@ -1,5 +1,5 @@
 @id("4a23c7f3-886f-4327-982e-d02415bfb865")
-@nodeType("SQLDimension")
+@nodeType("Latest220:::SQLDimension")
 @mergeStrategy("changeTracking")
 SELECT
     0                                        AS "DIM_NT_CT_SCD2_KEY"  @id("76e88f") @isSurrogateKey,

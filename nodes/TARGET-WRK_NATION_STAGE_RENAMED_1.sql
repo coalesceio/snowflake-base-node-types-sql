@@ -1,5 +1,5 @@
 @id("3fc0b050-3eb4-420f-9d1a-561ab12a10ed")
-@nodeType("SQLWork")
+@nodeType("Latest220:::SQLWork")
 @disableTests
 @description("V1 Stage -> V2 Work -> V1 Stage pipeline example")
 @writeMode("truncateInsert")

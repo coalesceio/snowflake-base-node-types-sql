@@ -1,5 +1,5 @@
 @id("5a7c2e91-4b3d-4f60-9a1e-2c8d7f0b6e34")
-@nodeType("SQLDimension")
+@nodeType("Latest220:::SQLDimension")
 @description("Nation dimension (SCD2 change tracking) built from two CTEs")
 @mergeStrategy("changeTracking")
 WITH "NATION_SRC" AS (

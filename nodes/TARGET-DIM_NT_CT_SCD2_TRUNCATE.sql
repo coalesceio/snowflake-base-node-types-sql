@@ -1,5 +1,5 @@
 @id("dc5b58d1-05d9-4c3a-a4cc-31b1d7d7b14e")
-@nodeType("SQLDimension")
+@nodeType("Latest220:::SQLDimension")
 @mergeStrategy("changeTracking")
 @writeMode("truncateInsert")
 SELECT

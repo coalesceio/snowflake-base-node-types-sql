@@ -1,5 +1,5 @@
 @id("da2f01ed-8e44-4637-936c-7c611ecebc28")
-@nodeType("SQLWork")
+@nodeType("Latest220:::SQLWork")
 SELECT
      "N_NATIONKEY" AS "N_NATIONKEY",
      "N_NAME" AS "N_NAME",

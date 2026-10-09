@@ -1,5 +1,5 @@
 @id("97c932e0-d19d-444d-a408-a386dce83364")
-@nodeType("SQLDimension")
+@nodeType("Latest220:::SQLDimension")
 @description("Gold: nation dimension - lastModified SCD1 on LOAD_TS")
 @mergeStrategy("lastModified")
 SELECT

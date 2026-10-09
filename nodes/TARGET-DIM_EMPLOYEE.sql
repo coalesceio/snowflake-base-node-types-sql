@@ -1,5 +1,5 @@
 @id("59a9fb72-4418-4bcb-b6fc-f55c66a38fe3")
-@nodeType("SQLDimension")
+@nodeType("Latest220:::SQLDimension")
 @mergeStrategy("changeTracking")
 @zeroKey("0")
 @tests("SELECT 1 FROM {{ ref('TARGET', 'WRK_EMPLOYEE') }} GROUP BY EMPLOYEE_ID HAVING COUNT(*) > 1", false, "Before")

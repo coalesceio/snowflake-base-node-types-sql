@@ -1,5 +1,5 @@
 @id("7d6a0e21-3c4b-4f8e-a1d2-000000000004")
-@nodeType("SQLDimension")
+@nodeType("Latest220:::SQLDimension")
 @description("TEST: GEOGRAPHY + GEOMETRY as plain columns, ID business key (SCD1)")
 @mergeStrategy("changeTracking")
 SELECT

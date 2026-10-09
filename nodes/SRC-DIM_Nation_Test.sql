@@ -1,5 +1,5 @@
 @id("1e527d31-c17b-477c-8220-2128fc924540")
-@nodeType("SQLDimension")
+@nodeType("Latest220:::SQLDimension")
 SELECT
     0                                        AS "DIM_Nation_Test_KEY" @id("327e7e") @isSurrogateKey,
     "NAtionKey"                              AS "NAtionKey"           @id("4273a2") @isBusinessKey,

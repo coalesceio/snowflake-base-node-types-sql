@@ -1,5 +1,5 @@
 @id("bf897c78-8d9f-4983-8d98-471589af9386")
-@nodeType("SQLWork")
+@nodeType("Latest220:::SQLWork")
 @description("Silver: customer enriched with nation via CTEs and a LEFT JOIN (SQL Work)")
 WITH "CUST" AS (
     SELECT "C"."C_CUSTKEY", "C"."C_NAME", "C"."C_NATIONKEY", "C"."C_ACCTBAL", "C"."C_MKTSEGMENT", "C"."LOAD_TS"

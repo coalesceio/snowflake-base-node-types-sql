@@ -1,5 +1,5 @@
 @id("13cfe869-27ff-43f7-a90f-fb725ce94e76")
-@nodeType("SQLWork")
+@nodeType("Latest220:::SQLWork")
 @description("Bronze: raw copy of SRC.CUSTOMER with a load timestamp")
 @writeMode("truncateInsert")
 SELECT

@@ -1,5 +1,5 @@
 @id("5cf54081-5c23-4188-a153-f6f862eefd55")
-@nodeType("SQLWork")
+@nodeType("Latest220:::SQLWork")
 WITH "ORDER_COUNTS" AS (
     SELECT
         MOD("ORDER_ID", 25) AS "NATION_KEY",

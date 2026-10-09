@@ -1,5 +1,5 @@
 @id("f54968fd-dbda-4ab9-80f2-0b0aa4dfadba")
-@nodeType("SQLFact")
+@nodeType("Latest220:::SQLFact")
 @description("Gold: daily segment snapshot - allColumnMatch, re-runs on the same day add nothing (SQL Fact)")
 @mergeStrategy("allColumnMatch")
 WITH "AGG" AS (

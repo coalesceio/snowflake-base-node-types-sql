@@ -1,5 +1,5 @@
 @id("15d51fc4-366d-4fd4-a546-e997a1226e01")
-@nodeType("SQLDimension")
+@nodeType("Latest220:::SQLDimension")
 @mergeStrategy("changeTracking")
 WITH "NATION_SRC" AS (
     SELECT "NAtionKey", "name", "REGIONKEY", "CommenT", "N_Load_Timestamp"

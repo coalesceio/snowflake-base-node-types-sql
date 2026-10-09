@@ -1,5 +1,5 @@
 @id("84deee8c-895a-4ac6-ac12-34dab0483ca7")
-@nodeType("SQLFact")
+@nodeType("Latest220:::SQLFact")
 SELECT
     "NAtionKey"                          AS "NAtionKey"          @id("2a3a6d"),
     "name"                               AS "name"               @id("c2b4a6"),

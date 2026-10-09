@@ -1,5 +1,5 @@
 @id("bef59018-6a23-4505-87b5-070ca420ff81")
-@nodeType("SQLWork")
+@nodeType("Latest220:::SQLWork")
 @disableTests
 @writeMode("append")
 @description("V2 Work node feeding a downstream V1 Stage node")

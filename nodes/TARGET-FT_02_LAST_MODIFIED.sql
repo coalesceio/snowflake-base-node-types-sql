@@ -1,5 +1,5 @@
 @id("7e57a000-0000-4000-8000-000000000102")
-@nodeType("SQLFact")
+@nodeType("Latest220:::SQLFact")
 @mergeStrategy("lastModified")
 @writeMode("append")
 @description("Fact test: lastModified merge on NATION_KEY tracking SOURCE_LOAD_TS, with node and column tests")

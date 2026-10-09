@@ -1,5 +1,5 @@
 @id("30c664f4-93ae-4113-af16-ed31e6a8295e")
-@nodeType("SQLWork")
+@nodeType("Latest220:::SQLWork")
 @description("Silver: cleaned customer - trimmed text, upper-cased segment, non-null key")
 @writeMode("truncateInsert")
 SELECT

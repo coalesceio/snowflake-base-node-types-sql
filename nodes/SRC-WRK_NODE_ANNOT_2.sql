@@ -1,5 +1,5 @@
 @id("f32805bd-f6c3-46e6-8c4d-ca618daa8ba0")
-@nodeType("SQLWork")
+@nodeType("Latest220:::SQLWork")
 @writeMode("truncateInsert")
 @disableTests("false")
 @tests("SELECT 1 FROM {{ this }} WHERE 1 = 0")

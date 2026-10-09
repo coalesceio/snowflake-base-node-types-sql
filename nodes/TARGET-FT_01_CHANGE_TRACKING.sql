@@ -1,5 +1,5 @@
 @id("7e57a000-0000-4000-8000-000000000101")
-@nodeType("SQLFact")
+@nodeType("Latest220:::SQLFact")
 @mergeStrategy("changeTracking")
 @writeMode("append")
 @description("Fact test: changeTracking (SCD Type 1) merge on NATION_KEY with node and column tests")

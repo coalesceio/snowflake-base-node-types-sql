@@ -1,5 +1,5 @@
 @id("05aa12c9-41a4-4e2c-ab09-a69543274ced")
-@nodeType("SQLDimension")
+@nodeType("Latest220:::SQLDimension")
 @description("Gold: current version of each customer (Dimension materialized as a view)")
 @materializationType("view")
 SELECT

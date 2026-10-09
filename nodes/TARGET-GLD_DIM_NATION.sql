@@ -1,5 +1,5 @@
 @id("8b0b28e2-1159-468b-ad09-5896ade465b7")
-@nodeType("SQLDimension")
+@nodeType("Latest220:::SQLDimension")
 @description("Gold: nation dimension - SCD1, overwritten in place")
 @mergeStrategy("changeTracking")
 SELECT

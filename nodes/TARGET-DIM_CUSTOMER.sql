@@ -1,5 +1,5 @@
 @id("e5c7fee8-7cfd-4f75-b194-43307534b26a")
-@nodeType("SQLDimension")
+@nodeType("Latest220:::SQLDimension")
 @description("Customer dimension (SCD Type 2): keeps a history of address, phone and market-segment changes")
 @mergeStrategy("changeTracking")
 SELECT

@@ -1,5 +1,5 @@
 @id("7e57a000-0000-4000-8000-000000000105")
-@nodeType("SQLFact")
+@nodeType("Latest220:::SQLFact")
 @writeMode("truncateInsert")
 @description("Fact test: plain insert (no merge strategy, no business key) - truncated and reloaded each run")
 @preSQL("SELECT CURRENT_TIMESTAMP AS PRE_SQL_RAN")
