@@ -2,12 +2,12 @@
 @nodeType("SQLFact")
 @materializationType("view")
 @description("K3 view")
-@tag("Cost_Centre", "FIN")
-@tag("OWNER", "Tanvi")
+@tag("Cost_Centre", "HR")
+@tag("PII", "true")
 SELECT
-     "NAtionKey" AS "NATION_KEY" @id("e30001") @isBusinessKey,
-     "name" AS "NATION_NAME" @id("e30002") @tag("PII", "true") @tag("OWNER", "Data") @description("Nation name"),
-     "REGIONKEY" AS "REGION_KEY" @id("e30003") @tag("Cost_Centre", "FIN"),
+     "NAtionKey" AS "NATION_KEY" @id("e30001") @isBusinessKey @tag("OWNER", "Keys"),
+     "name" AS "NATION_NAME" @id("e30002") @tag("PII", "false") @description("Nation name"),
+     "REGIONKEY" AS "REGION_KEY" @id("e30003"),
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("e30008") @isSystemCreateDate,
      CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @id("e30009") @isSystemUpdateDate
 FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
