@@ -9,7 +9,7 @@ operation:
     testsEnabled: false
     truncateBefore: false
   database: ""
-  deployEnabled: true
+  deployEnabled: false
   description: "Gold: nation dimension, SCD1 (YAML Dimension)"
   isMultisource: false
   locationName: TARGET

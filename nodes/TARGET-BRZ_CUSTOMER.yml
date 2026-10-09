@@ -10,7 +10,7 @@ operation:
     testsEnabled: false
     truncateBefore: true
   database: ""
-  deployEnabled: true
+  deployEnabled: false
   description: "Bronze: raw copy of SRC.CUSTOMER with a load timestamp (YAML Work)"
   isMultisource: false
   locationName: TARGET
