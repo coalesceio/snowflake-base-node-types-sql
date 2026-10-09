@@ -1,0 +1,19 @@
+config:
+  entities:
+    nodeTypes:
+      SQLDimension:
+        defaultStorageLocation: null
+        isDisabled: false
+      SQLFact:
+        defaultStorageLocation: null
+        isDisabled: false
+      SQLWork:
+        defaultStorageLocation: null
+        isDisabled: false
+  packageVariables: ""
+fileVersion: 1
+id: "@coalesce/snowflake/base-node-types-sql"
+name: Latest220
+packageID: "@coalesce/snowflake/base-node-types-sql"
+releaseID: 5251a638-180d-4abf-b3e6-3e3fd321f71a
+type: Package
