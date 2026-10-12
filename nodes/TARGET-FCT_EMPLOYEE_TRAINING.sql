@@ -5,7 +5,7 @@
 @mergeStrategy("changeTracking")
 @tests("SELECT 1 FROM {{ this }} GROUP BY EMPLOYEE_ID, TRAINING_ID, TRAINING_DATE HAVING COUNT(*) > 1", false, "After")
 SELECT
-    "ET"."EMPLOYEE_ID" AS "EMPLOYEE_ID" @id("ab9306b1-eece-47fb-a3b4-57a1ca52d212") @isBusinessKey @clusterKey(2) @description("Employee Id"),
+    "ET"."EMPLOYEE_ID" AS "EMPLOYEE_ID" @id("ab9306b1-eece-47fb-a3b4-57a1ca52d212") @isBusinessKey @clusterKey(2) @description("Employee Id") @uniqueness,
     "ET"."TRAINING_ID" AS "TRAINING_ID" @id("6fe653c2-6e85-4f43-9788-9afd4f35d91a") @isBusinessKey,
     "ET"."TRAINING_DATE" AS "TRAINING_DATE" @id("c5b3f0b4-f788-4f54-98e9-f5938faa6491") @isBusinessKey @clusterKey(1, "DATE_TRUNC('MONTH', ""TRAINING_DATE"")"),
     COALESCE("DE"."DIM_EMPLOYEE_KEY", -1) AS "DIM_EMPLOYEE_KEY" @id("620c516f-cdd2-41f2-b10d-4dc7eefec43c") @not_null,

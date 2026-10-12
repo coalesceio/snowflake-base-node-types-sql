@@ -7,7 +7,7 @@
 SELECT
     "L"."L_ORDERKEY" AS "ORDER_KEY1" @notNull,
     "L"."L_LINENUMBER" AS "LINE_NUMBER" @notNull,
-    "O"."O_CUSTKEY" AS "CUSTOMER_KEY",
+    "O"."O_CUSTKEY" AS "CUSTOMER_KEY" @empty,
     "L"."L_PARTKEY" AS "PART_KEY" @description("partkey"),
     "L"."L_SUPPKEY" AS "SUPPLIER_KEY",
     "O"."O_ORDERSTATUS" AS "ORDER_STATUS",

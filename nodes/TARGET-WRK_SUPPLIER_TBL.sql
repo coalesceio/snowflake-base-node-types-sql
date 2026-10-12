@@ -5,12 +5,13 @@
 @writeMode("truncateInsert")
 SELECT
     "S"."S_SUPPKEY" AS "SUPPLIER_KEY" @notNull @uniqueness,
-    TRIM("S"."S_NAME") AS "SUPPLIER_NAME",
+    TRIM("S"."S_NAME") AS "SUPPLIER_NAME" @empty @uniqueness ,
     TRIM("S"."S_ADDRESS") AS "ADDRESS",
     "S"."S_PHONE" AS "PHONE",
     "S"."S_ACCTBAL" AS "ACCOUNT_BALANCE",
     "S"."S_NATIONKEY" AS "NATION_KEY",
     "G"."NATION_NAME" AS "NATION_NAME",
+    
     "G"."REGION_NAME" AS "REGION_NAME"
 FROM {{ ref('SRC', 'SUPPLIER') }} "S"
 LEFT JOIN {{ ref('TARGET', 'WRK_GEOGRAPHY') }} "G"
