@@ -3,7 +3,6 @@
 @materializationType("table")
 @description("Sales star - order-grain summary fact (upsert), aggregated from order lines")
 @mergeStrategy("upsert")
-@tag("PIPELINE", "SALES_STAR")
 WITH "ORDER_TOTALS" AS (
     SELECT
         "ORDER_KEY",

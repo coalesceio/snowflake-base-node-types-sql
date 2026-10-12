@@ -4,7 +4,6 @@
 @description("Sales star - product dimension (last modified, SCD2) with zero key")
 @mergeStrategy("lastModified")
 @zeroKey("-1", "'UNKNOWN'", "1900-01-01 00:00:00", false)
-@tag("PIPELINE", "SALES_STAR")
 SELECT
     0 AS "DIM_PRODUCT_KEY" @id("595338b8-5ef5-4776-8432-66a500587374") @isSurrogateKey,
     "P"."PART_KEY" AS "PART_KEY" @id("71cfc740-0687-4b24-8ca7-4f01945a86f5") @isBusinessKey,

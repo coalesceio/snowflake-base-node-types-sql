@@ -3,7 +3,6 @@
 @materializationType("table")
 @description("Sales star - cleansed part/product with price band")
 @writeMode("truncateInsert")
-@tag("PIPELINE", "SALES_STAR")
 SELECT
     "P"."P_PARTKEY" AS "PART_KEY" @notNull @uniqueness,
     TRIM("P"."P_NAME") AS "PART_NAME",

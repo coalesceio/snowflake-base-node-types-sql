@@ -4,7 +4,6 @@
 @description("Sales star - nation/region dimension (change tracking, SCD1) with zero key")
 @mergeStrategy("changeTracking")
 @zeroKey("-1", "'UNKNOWN'", "1900-01-01 00:00:00", false)
-@tag("PIPELINE", "SALES_STAR")
 @tests("SELECT NATION_KEY FROM {{ ref('TARGET', 'WRK_GEOGRAPHY') }} GROUP BY NATION_KEY HAVING COUNT(*) > 1 OR NATION_KEY IS NULL", false, "Before")
 SELECT
     0 AS "DIM_NATION_KEY" @id("f115dbc7-738e-4304-9c1a-39f555b822be") @isSurrogateKey,

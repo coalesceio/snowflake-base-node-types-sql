@@ -3,7 +3,6 @@
 @materializationType("table")
 @description("Sales star - part/supplier inventory snapshot fact (change tracking, SCD1)")
 @mergeStrategy("changeTracking")
-@tag("PIPELINE", "SALES_STAR")
 SELECT
     "I"."PART_KEY" AS "PART_KEY" @id("765e63c7-d875-4c14-9158-af085dbc7793") @isBusinessKey,
     "I"."SUPPLIER_KEY" AS "SUPPLIER_KEY" @id("4618ea78-d45e-4a60-95d4-7dbd3c3b823e") @isBusinessKey,

@@ -3,7 +3,6 @@
 @materializationType("transient table")
 @description("Sales star - order lines (lineitem joined to order header) with derived amounts")
 @writeMode("truncateInsert")
-@tag("PIPELINE", "SALES_STAR")
 @tests("SELECT 1 FROM {{ this }} GROUP BY ORDER_KEY, LINE_NUMBER HAVING COUNT(*) > 1", false, "After")
 SELECT
     "L"."L_ORDERKEY" AS "ORDER_KEY" @notNull,

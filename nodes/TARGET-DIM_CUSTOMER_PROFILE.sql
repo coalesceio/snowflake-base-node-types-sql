@@ -4,7 +4,6 @@
 @description("Sales star - customer dimension (change tracking, SCD2 on segment and nation) with zero key")
 @mergeStrategy("changeTracking")
 @zeroKey("-1", "'UNKNOWN'", "1900-01-01 00:00:00", false)
-@tag("PIPELINE", "SALES_STAR")
 @tests("SELECT CUSTOMER_KEY FROM {{ ref('TARGET', 'WRK_CUSTOMER') }} GROUP BY CUSTOMER_KEY HAVING COUNT(*) > 1 OR CUSTOMER_KEY IS NULL", false, "Before")
 @tests("SELECT 1 FROM {{ this }} WHERE SYSTEM_CURRENT_FLAG = 'Y' GROUP BY CUSTOMER_KEY HAVING COUNT(*) > 1", false, "After")
 SELECT
@@ -12,7 +11,7 @@ SELECT
     "C"."CUSTOMER_KEY" AS "CUSTOMER_KEY" @id("2f9e654c-0fe3-4075-9bce-d02915e7ee6e") @isBusinessKey @clusterKey(1),
     "C"."CUSTOMER_NAME" AS "CUSTOMER_NAME" @id("e6f491d0-ddc2-4ffe-ae94-ecf11bfeb475"),
     "C"."ADDRESS" AS "ADDRESS" @id("c239777e-0e1b-4ecf-b886-ae76a585fb40"),
-    "C"."PHONE" AS "PHONE" @id("b57ab4b0-55c5-4788-bba4-2cade08dc7b4") @tag("PII", "true"),
+    "C"."PHONE" AS "PHONE" @id("b57ab4b0-55c5-4788-bba4-2cade08dc7b4"),
     "C"."ACCOUNT_BALANCE" AS "ACCOUNT_BALANCE" @id("09a532c8-ec8f-4293-a5d2-56b20bebab00"),
     "C"."MARKET_SEGMENT" AS "MARKET_SEGMENT" @id("3256956d-2bd8-4901-9a67-23728a29e2e1") @isChangeTracking @zeroKey("'N/A'"),
     "C"."NATION_KEY" AS "NATION_KEY" @id("916c1e58-66e0-4b9a-a364-45c4fbb974a3") @isChangeTracking @zeroKey("-1"),
@@ -26,4 +25,4 @@ SELECT
     CAST('2999-12-31 00:00:00' AS TIMESTAMP) AS "SYSTEM_END_DATE" @id("fbcfe4c0-c496-4468-b3d5-cf6c6ea06752") @isSystemEndDate,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("403d5fbb-4772-4d95-adf0-f5c4ba1b3a03") @isSystemCreateDate,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @id("5020287b-1a3b-47aa-a190-d9929d5c95fb") @isSystemUpdateDate
-FROM {{ ref('TARGET', 'WRK_CUSTOMER') }} "C"
+FROM {{ ref('TARGET', 'WRK_CUSTOMER_TBL') }} "C"

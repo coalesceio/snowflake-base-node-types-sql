@@ -3,12 +3,11 @@
 @materializationType("table")
 @description("Sales star - cleansed supplier enriched with geography")
 @writeMode("truncateInsert")
-@tag("PIPELINE", "SALES_STAR")
 SELECT
     "S"."S_SUPPKEY" AS "SUPPLIER_KEY" @notNull @uniqueness,
     TRIM("S"."S_NAME") AS "SUPPLIER_NAME",
     TRIM("S"."S_ADDRESS") AS "ADDRESS",
-    "S"."S_PHONE" AS "PHONE" @tag("PII", "true"),
+    "S"."S_PHONE" AS "PHONE",
     "S"."S_ACCTBAL" AS "ACCOUNT_BALANCE",
     "S"."S_NATIONKEY" AS "NATION_KEY",
     "G"."NATION_NAME" AS "NATION_NAME",

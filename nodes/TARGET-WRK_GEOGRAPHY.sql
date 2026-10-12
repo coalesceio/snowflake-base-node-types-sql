@@ -3,7 +3,6 @@
 @materializationType("table")
 @description("Sales star - nation joined to region (conformed geography)")
 @writeMode("truncateInsert")
-@tag("PIPELINE", "SALES_STAR")
 @tests("SELECT 1 FROM {{ this }} GROUP BY NATION_KEY HAVING COUNT(*) > 1", false, "After")
 SELECT
     "N"."N_NATIONKEY" AS "NATION_KEY" @notNull @not_null @uniqueness,

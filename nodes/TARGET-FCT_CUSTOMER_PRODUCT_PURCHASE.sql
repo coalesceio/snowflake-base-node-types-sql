@@ -3,7 +3,6 @@
 @materializationType("table")
 @description("Sales star - factless fact of which customer bought which product on which date (all column match)")
 @mergeStrategy("allColumnMatch")
-@tag("PIPELINE", "SALES_STAR")
 SELECT DISTINCT
     "S"."DIM_CUSTOMER_PROFILE_KEY" AS "DIM_CUSTOMER_PROFILE_KEY" @id("179975d3-0616-41c5-ab0e-7074e6ae5e7f"),
     "S"."DIM_PRODUCT_KEY" AS "DIM_PRODUCT_KEY" @id("504056b2-c3eb-4e07-852a-ed8c27d629ba"),

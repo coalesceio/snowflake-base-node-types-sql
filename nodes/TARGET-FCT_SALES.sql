@@ -3,7 +3,6 @@
 @materializationType("table")
 @description("Sales star - order line sales fact (last modified) keyed to customer, product and nation dimensions")
 @mergeStrategy("lastModified")
-@tag("PIPELINE", "SALES_STAR")
 @tests("SELECT 1 FROM {{ this }} GROUP BY ORDER_KEY, LINE_NUMBER HAVING COUNT(*) > 1", false, "After")
 SELECT
     "OL"."ORDER_KEY" AS "ORDER_KEY" @id("b59fb8a1-ffd5-447d-b5d2-08fda06e3ea2") @isBusinessKey,
