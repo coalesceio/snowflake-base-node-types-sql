@@ -362,7 +362,13 @@ Adds a custom zero key value (ghost record) to this column, overriding the node-
 **Example:**
 
 ```sql
-@zeroKey("'N/A'")
+@zeroKey("'N/A'")                                   -- string: quotes inside the annotation
+@zeroKey("-1")                                      -- number
+@zeroKey("0.00")                                    -- decimal
+@zeroKey("'1900-01-01'")                            -- date (or "TO_DATE('1900-01-01')")
+@zeroKey("TO_TIMESTAMP('1900-01-01 00:00:00')")     -- timestamp
+@zeroKey(false)                                     -- boolean (unquoted)
+@zeroKey("PARSE_JSON('{}')")                        -- variant
 ```
 
 ##### `@isSurrogateKey` (Dimension)
