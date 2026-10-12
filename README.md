@@ -184,6 +184,7 @@ A view is changed in place only when its tags change; any other change to the vi
 | **Unset Column Tags: \<column\> \| Set Column Tags: \<column\> \| Unset View Tags \| Set View Tags** | Only tags changed: the view is altered in place |
 | **Create view** | The view definition changed: CREATE OR REPLACE VIEW with the new definition |
 | **Drop view** + **Create view** | The view is renamed or moved: the old view is dropped and the new one created |
+| **Metadata Update-Default** | Only tests changed (`@tests`, column tests such as `@not_null`, or `@disableTests`) — they are not part of the view's SQL, so the view is not recreated or altered; only the node metadata is updated |
 
 ### Removing a Work Node
 
@@ -325,7 +326,7 @@ Inserts a default "zero key" record into the target — a placeholder row used t
 **Example:**
 
 ```sql
-@zeroKey("0", "'UNKNOWN'", "1900-01-01 00:00:00", true)
+@zeroKey(0, "'UNKNOWN'", "1900-01-01 00:00:00", true)
 ```
 
 ##### `@isChangeTracking` (Dimension)
@@ -573,6 +574,7 @@ A view is changed in place only when its tags change; any other change to the vi
 | **Unset Column Tags: \<column\> \| Set Column Tags: \<column\> \| Unset View Tags \| Set View Tags** | Only tags changed: the view is altered in place |
 | **Create view** | The view definition changed: CREATE OR REPLACE VIEW with the new definition |
 | **Drop view** + **Create view** | The view is renamed or moved: the old view is dropped and the new one created |
+| **Metadata Update-Default** | Only tests changed (`@tests`, column tests such as `@not_null`, or `@disableTests`) — they are not part of the view's SQL, so the view is not recreated or altered; only the node metadata is updated |
 
 ### Removing a Dimension Node
 
@@ -838,6 +840,7 @@ A view is changed in place only when its tags change; any other change to the vi
 | **Unset Column Tags: \<column\> \| Set Column Tags: \<column\> \| Unset View Tags \| Set View Tags** | Only tags changed: the view is altered in place |
 | **Create view** | The view definition changed: CREATE OR REPLACE VIEW with the new definition |
 | **Drop view** + **Create view** | The view is renamed or moved: the old view is dropped and the new one created |
+| **Metadata Update-Default** | Only tests changed (`@tests`, column tests such as `@not_null`, or `@disableTests`) — they are not part of the view's SQL, so the view is not recreated or altered; only the node metadata is updated |
 
 ### Removing a Fact Node
 
@@ -907,6 +910,7 @@ table/view/transient table.
 * **Prerequisite:** Tags must first be created in Snowflake before they can be used in Coalesce.
 * Repeat the annotation to apply several **different** tags. A duplicate — the same tag (same name and location) applied twice, even with a different value — is not allowed and stops the deploy with a **Duplicate Tags Found** check.
 * ✅ `@tag("PII", "true")` `@tag("OWNER", "DATA_TEAM")` — two different tags
+* ✅ `@tag("PII", "true", "TGTTAGDIR")` `@tag("PII", "true", "SRCTAGDIR")` — two different tags (same name, different storage locations)
 * ❌ `@tag("PII", "true")` `@tag("PII", "false")` — the same tag twice
 
 **Example:**
@@ -1217,6 +1221,7 @@ CAST(
 * **Prerequisite:** Tags must first be created in Snowflake before they can be used in Coalesce.
 * Repeat the annotation to apply several **different** tags to the column. A duplicate — the same tag (same name and location) applied twice on the column, even with a different value — is not allowed and stops the deploy with a **Duplicate Tags Found** check.
 * ✅ `@tag("PII", "true")` `@tag("OWNER", "DATA_TEAM")` — two different tags
+* ✅ `@tag("PII", "true", "TGTTAGDIR")` `@tag("PII", "true", "SRCTAGDIR")` — two different tags (same name, different storage locations)
 * ❌ `@tag("PII", "true")` `@tag("PII", "false")` — the same tag twice
 
 **Example:**
