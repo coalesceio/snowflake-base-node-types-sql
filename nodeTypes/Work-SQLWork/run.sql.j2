@@ -11,10 +11,13 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 {# == Validate: the materialization type must be table, transient table or view == #}
 {{ validate_materialization_type() }}
 
+{# == Materialization type from the node, normalised (case and spaces): table / transient table / view == #}
+{%- set materializationType = get_materialization_type(node.materializationType) %}
+
 {# == To run data quality tests before data insertion == #}
 {{ run_tests('Before') }}
 
-{%- if nsNodeVariables.desiredMatType in ['table', 'transient table'] %}
+{%- if materializationType in ['table', 'transient table'] %}
 
     {#== Pre-SQL ==#}
     {{ run_pre_post_sql('Pre') }}
@@ -34,7 +37,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     {%- endif %}
 
 	{# == Insert data from sources into Work table  == #}
-    {{ stage('Load ' + nsNodeVariables.desiredMatType + ' using Insert') }}
+    {{ stage('Load ' + materializationType + ' using Insert') }}
     INSERT {{ insertMode }} INTO  {{ ref_no_link(node.location.name, node.name) }}
     (
         {%- for col in sources[0].columns %}
@@ -55,7 +58,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     {#== Post-SQL ==#}
     {{ run_pre_post_sql('Post') }}
 
-{%- elif nsNodeVariables.desiredMatType == 'view' %}
+{%- elif materializationType == 'view' %}
 	{{ stage('Load Skipped for View') }}
 	-- The node {{node.name}} is materialized as View. Therefore, a Load operation is not supported.
 	SELECT 1 AS INFO_MESSAGE WHERE FALSE

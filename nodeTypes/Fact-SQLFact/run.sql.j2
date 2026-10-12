@@ -10,10 +10,13 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 {# == Validate: the materialization type must be table, transient table or view == #}
 {{ validate_materialization_type() }}
 
+{# == Materialization type from the node, normalised (case and spaces): table / transient table / view == #}
+{%- set materializationType = get_materialization_type(node.materializationType) %}
+
 {# == To run data quality tests before data insertion == #}
 {{ run_tests('Before') }}
 
-{%- if nsNodeVariables.desiredMatType in ['table', 'transient table'] %}
+{%- if materializationType in ['table', 'transient table'] %}
 
     {{ validate_fact_requirements() }}
 
@@ -77,7 +80,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 
 	{# == Truncate data before data insertion  == #}
     {%- if writeMode | lower != "append" -%}
-        {{ stage('Truncate ' + nsNodeVariables.desiredMatType) }}
+        {{ stage('Truncate ' + materializationType) }}
         TRUNCATE IF EXISTS {{ ref_no_link(node.location.name, node.name) }}
     {%- endif %}
 
@@ -87,7 +90,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
         {# No @isBusinessKey column and no @mergeStrategy: nothing to match existing rows on, so every source row is simply inserted.
            An explicit changeTracking/lastModified/upsert without a business key is stopped by validate_fact_requirements before this runs.
            All columns (system columns included) are written exactly as the SELECT/CTE computes them. #}
-        {{ stage('Load ' + nsNodeVariables.desiredMatType + ' using Insert') }}
+        {{ stage('Load ' + materializationType + ' using Insert') }}
         INSERT INTO {{ ref_no_link(node.location.name, node.name) }}
         (
             {%- for col in columns %}
@@ -106,15 +109,15 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     {%- else %}
 
     {%- if isSimpleUpsert %}
-        {{ stage('Load ' + nsNodeVariables.desiredMatType + ' Using Merge - Upsert') }}
+        {{ stage('Load ' + materializationType + ' Using Merge - Upsert') }}
     {%- elif isAllColumnMatch %}
-        {{ stage('Load ' + nsNodeVariables.desiredMatType + ' Using Merge - All Column Match') }}
+        {{ stage('Load ' + materializationType + ' Using Merge - All Column Match') }}
     {%- elif lastModifiedComparison %}
         {#== Last Modified SCD ==#}
-        {{ stage('Load ' + nsNodeVariables.desiredMatType + ' Using Merge - Last Modified Comparison - SCD1') }}
+        {{ stage('Load ' + materializationType + ' Using Merge - Last Modified Comparison - SCD1') }}
     {%- else %}
         {#== Change Tracking SCD ==#}
-        {{ stage('Load ' + nsNodeVariables.desiredMatType + ' Using Merge - Change Tracking - SCD1') }}
+        {{ stage('Load ' + materializationType + ' Using Merge - Change Tracking - SCD1') }}
     {%- endif %}
 
     MERGE INTO {{ ref_no_link(node.location.name, node.name) }} "TGT"
@@ -281,7 +284,7 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     {#== Post-SQL ==#}
     {{ run_pre_post_sql('Post') }}
 
-{%- elif nsNodeVariables.desiredMatType == 'view' %}
+{%- elif materializationType == 'view' %}
 	{{ stage('Load Skipped for View') }}
 	-- The node {{node.name}} is materialized as View. Therefore, a Load operation is not supported.
 	SELECT 1 AS INFO_MESSAGE WHERE FALSE
