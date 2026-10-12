@@ -4,5 +4,8 @@ mappingDefinitions:
   GOV:
     database: ""
     schema: ""
+  TARGET2:
+    database: ""
+    schema: ""
 name: "[fact_testing_pr]"
 type: Environment

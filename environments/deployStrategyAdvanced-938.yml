@@ -10,5 +10,8 @@ mappingDefinitions:
   TARGET:
     database: TANVI_DEV
     schema: QA_PHASE2
+  TARGET2:
+    database: ""
+    schema: ""
 name: deployStrategyAdvanced
 type: Environment

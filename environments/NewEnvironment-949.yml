@@ -4,5 +4,8 @@ mappingDefinitions:
   GOV:
     database: ""
     schema: ""
+  TARGET2:
+    database: ""
+    schema: ""
 name: New Environment
 type: Environment

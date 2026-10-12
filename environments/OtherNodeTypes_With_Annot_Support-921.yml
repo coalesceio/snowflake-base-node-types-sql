@@ -10,5 +10,8 @@ mappingDefinitions:
   TARGET:
     database: TANVI_DEV
     schema: QA_PHASE
+  TARGET2:
+    database: ""
+    schema: ""
 name: OtherNodeTypes_With_Annot_Support
 type: Environment

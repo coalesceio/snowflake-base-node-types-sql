@@ -10,5 +10,8 @@ mappingDefinitions:
   TARGET:
     database: ANANDHIS_DEV
     schema: ACC_QA
+  TARGET2:
+    database: ANANDHIS_DEV
+    schema: TARGET_ACC
 name: Test_QA_sql
 type: Environment

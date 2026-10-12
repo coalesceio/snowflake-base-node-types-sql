@@ -4,5 +4,8 @@ mappingDefinitions:
   GOV:
     database: ""
     schema: ""
+  TARGET2:
+    database: ""
+    schema: ""
 name: QA-Test_2
 type: Environment
