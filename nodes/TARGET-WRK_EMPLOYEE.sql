@@ -1,6 +1,6 @@
 @id("251045c2-5d11-4f42-a6c8-0fda76f6eb20")
 @nodeType("SQLWork")
-@materializationType("table")
+@materializationType("view")
 @tag("PII", "NAME", "GOV")
 @description("Employee training - cleansed employee")
 @writeMode("truncateInsert")

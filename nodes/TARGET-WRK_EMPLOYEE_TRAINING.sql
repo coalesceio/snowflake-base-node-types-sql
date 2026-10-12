@@ -1,6 +1,6 @@
 @id("b414aae5-b0b8-4d4a-9a36-32808bcc0e9a")
 @nodeType("SQLWork")
-@materializationType("table")
+@materializationType("transient table")
 @description("Employee training - cleansed employee/training enrolments")
 @writeMode("truncateInsert")
 @tests("SELECT 1 FROM {{ this }} GROUP BY EMPLOYEE_ID, TRAINING_ID, TRAINING_DATE HAVING COUNT(*) > 1", true, "After")
