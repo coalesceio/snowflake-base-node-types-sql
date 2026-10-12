@@ -1,0 +1,111 @@
+fileVersion: 1
+id: 95bf74fd-f541-4638-b180-7c5da331ded6
+name: EMPLOYEE_TRAINING
+operation:
+  database: ""
+  deployEnabled: true
+  description: ""
+  locationName: SRC
+  metadata:
+    columns:
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: dd30af5c-4f1b-4179-b0a3-aece18fad70d
+          stepCounter: 95bf74fd-f541-4638-b180-7c5da331ded6
+        config: {}
+        dataType: VARCHAR(20)
+        defaultValue: ""
+        description: ""
+        name: EMPLOYEE_ID
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 14ba0d29-d3b4-45e1-a77e-72e628b96466
+          stepCounter: 95bf74fd-f541-4638-b180-7c5da331ded6
+        config: {}
+        dataType: VARCHAR(20)
+        defaultValue: ""
+        description: ""
+        name: TRAINING_ID
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: e079ac07-f689-4e89-87c8-61a7a9d028e7
+          stepCounter: 95bf74fd-f541-4638-b180-7c5da331ded6
+        config: {}
+        dataType: DATE
+        defaultValue: ""
+        description: ""
+        name: TRAINING_DATE
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: ba7b4f21-a64c-44be-b617-355adc053d63
+          stepCounter: 95bf74fd-f541-4638-b180-7c5da331ded6
+        config: {}
+        dataType: VARCHAR(20)
+        defaultValue: ""
+        description: ""
+        name: TRAINING_STATUS
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 9d8395fd-d3e4-4d42-a8b1-bd233e751e8f
+          stepCounter: 95bf74fd-f541-4638-b180-7c5da331ded6
+        config: {}
+        dataType: VARCHAR(50)
+        defaultValue: ""
+        description: ""
+        name: TRAINING_TYPE
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+  name: EMPLOYEE_TRAINING
+  schema: ""
+  sqlType: Source
+  type: sourceInput
+  version: 1
+type: Node

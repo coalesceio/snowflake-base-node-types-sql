@@ -1,0 +1,73 @@
+fileVersion: 1
+id: b476384b-85e7-4e51-843f-1d205460bbe5
+name: GEOSPATIAL_TABLE
+operation:
+  database: ""
+  deployEnabled: true
+  description: ""
+  locationName: SRC
+  metadata:
+    columns:
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 29e70366-fa85-4f3c-98c8-c4aed2d8a65d
+          stepCounter: b476384b-85e7-4e51-843f-1d205460bbe5
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: ID
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 43d04857-4ba0-4909-89d0-f997122e4b45
+          stepCounter: b476384b-85e7-4e51-843f-1d205460bbe5
+        config: {}
+        dataType: GEOGRAPHY
+        defaultValue: ""
+        description: ""
+        name: G
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 9627b320-8486-4723-b4e8-ac2984fd0dc2
+          stepCounter: b476384b-85e7-4e51-843f-1d205460bbe5
+        config: {}
+        dataType: VARCHAR(16777216)
+        defaultValue: ""
+        description: ""
+        name: DESCRIPTION
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+  name: GEOSPATIAL_TABLE
+  schema: ""
+  sqlType: Source
+  type: sourceInput
+  version: 1
+type: Node

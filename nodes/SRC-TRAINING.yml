@@ -1,0 +1,73 @@
+fileVersion: 1
+id: 4057aaec-5cdc-4acb-b72c-c7776003ad29
+name: TRAINING
+operation:
+  database: ""
+  deployEnabled: true
+  description: ""
+  locationName: SRC
+  metadata:
+    columns:
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: b5985804-f524-48cf-9f35-f9d100065dbb
+          stepCounter: 4057aaec-5cdc-4acb-b72c-c7776003ad29
+        config: {}
+        dataType: VARCHAR(20)
+        defaultValue: ""
+        description: ""
+        name: TRAINING_ID
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 0ec5677b-92d6-404d-b5ca-6c8f61266cc6
+          stepCounter: 4057aaec-5cdc-4acb-b72c-c7776003ad29
+        config: {}
+        dataType: VARCHAR(100)
+        defaultValue: ""
+        description: ""
+        name: TRAINING_NAME
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: ffc821c7-85f8-419e-b79e-1092e5a40b97
+          stepCounter: 4057aaec-5cdc-4acb-b72c-c7776003ad29
+        config: {}
+        dataType: VARCHAR(100)
+        defaultValue: ""
+        description: ""
+        name: TRAINER
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+  name: TRAINING
+  schema: ""
+  sqlType: Source
+  type: sourceInput
+  version: 1
+type: Node

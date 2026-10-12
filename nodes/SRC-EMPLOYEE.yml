@@ -1,0 +1,92 @@
+fileVersion: 1
+id: 424624a4-6581-4c24-8cd6-01eb2a54bd21
+name: EMPLOYEE
+operation:
+  database: ""
+  deployEnabled: true
+  description: ""
+  locationName: SRC
+  metadata:
+    columns:
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 98a2dde3-7584-46ba-a445-6bb0b899daef
+          stepCounter: 424624a4-6581-4c24-8cd6-01eb2a54bd21
+        config: {}
+        dataType: VARCHAR(20)
+        defaultValue: ""
+        description: ""
+        name: EMPLOYEE_ID
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: f02f179f-af70-47fd-8a0a-a0263a2eb5c2
+          stepCounter: 424624a4-6581-4c24-8cd6-01eb2a54bd21
+        config: {}
+        dataType: VARCHAR(100)
+        defaultValue: ""
+        description: ""
+        name: EMPLOYEE_NAME
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 07be86f0-e93f-4c56-927f-974262751150
+          stepCounter: 424624a4-6581-4c24-8cd6-01eb2a54bd21
+        config: {}
+        dataType: VARCHAR(50)
+        defaultValue: ""
+        description: ""
+        name: DEPARTMENT
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: a204dd12-bacd-497b-8f4c-4704a866626c
+          stepCounter: 424624a4-6581-4c24-8cd6-01eb2a54bd21
+        config: {}
+        dataType: VARCHAR(50)
+        defaultValue: ""
+        description: ""
+        name: LOCATION
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+  name: EMPLOYEE
+  schema: ""
+  sqlType: Source
+  type: sourceInput
+  version: 1
+type: Node
