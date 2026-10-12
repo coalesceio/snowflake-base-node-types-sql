@@ -16,4 +16,4 @@ SELECT
     "N_Load_Timestamp"                           AS "SOURCE_LOAD_TS"     @id("f10505") @max_value("CURRENT_TIMESTAMP") @relative_time("<=", "SYSTEM_CREATE_DATE"),
     {{ get_hash('GH_ROW', 'MD5', '|') }}::STRING AS "GH_ROW"             @id("f10506") @not_null @uniqueness,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP)         AS "SYSTEM_CREATE_DATE" @id("f1050e") @isSystemCreateDate @not_null @freshness(1, "HOUR")
-FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
+FROM {{ ref('SRC', 'Nation_Test_CamelCase') }} "Nation_Test_CamelCase"

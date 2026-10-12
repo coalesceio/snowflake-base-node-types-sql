@@ -11,4 +11,4 @@ SELECT
     "CommenT"                                AS "CommenT"             @description("Free-text comment") @inHash("ROW_HASH", 4),
     "N_Load_Timestamp"                       AS "N_Load_Timestamp"    @description("When the row was loaded into the source") @not_null @max_value("CURRENT_TIMESTAMP"),
     {{ get_hash('ROW_HASH') }}::STRING       AS "ROW_HASH"            @description("SHA1 hash of the nation attributes, for change comparison")
-FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
+FROM {{ ref('SRC', 'Nation_Test_CamelCase') }} "Nation_Test_CamelCase"

@@ -6,4 +6,4 @@ SELECT
      "REGIONKEY" AS "REGIONKEY",
      "CommenT" AS "CommenT",
      "N_Load_Timestamp" AS "N_Load_Timestamp"
-FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
+FROM {{ ref('SRC', 'Nation_Test_CamelCase') }} "Nation_Test_CamelCase"

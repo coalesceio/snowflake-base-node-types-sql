@@ -7,4 +7,4 @@ SELECT
     "REGIONKEY"        AS "REGION_KEY"     @id("fc480e"),
     "CommenT"          AS "NATION_COMMENT" @id("061344"),
     "N_Load_Timestamp" AS "SOURCE_LOAD_TS" @id("f3a661")
-FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
+FROM {{ ref('SRC', 'Nation_Test_CamelCase') }} "Nation_Test_CamelCase"

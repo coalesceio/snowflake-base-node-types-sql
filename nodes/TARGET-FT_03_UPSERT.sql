@@ -17,4 +17,4 @@ SELECT
     "N_Load_Timestamp"                    AS "SOURCE_LOAD_TS"     @id("f10306") @max_value("CURRENT_TIMESTAMP"),
     CAST("N_Load_Timestamp" AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("f1030e") @isSystemCreateDate @not_null @relative_time("<=", "SYSTEM_UPDATE_DATE"),
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP)  AS "SYSTEM_UPDATE_DATE" @id("f1030f") @isSystemUpdateDate @not_null @freshness(1, "DAY")
-FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
+FROM {{ ref('SRC', 'Nation_Test_CamelCase') }} "Nation_Test_CamelCase"

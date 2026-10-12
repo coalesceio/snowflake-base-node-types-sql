@@ -20,4 +20,4 @@ SELECT
     {{ get_hash('GH_NATION') }}::STRING  AS "GH_NATION"          @id("f10107") @not_null @uniqueness,
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @id("f1010e") @isSystemCreateDate @not_null @relative_time("<=", "SYSTEM_UPDATE_DATE"),
     CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @id("f1010f") @isSystemUpdateDate @not_null @freshness(1, "DAY")
-FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
+FROM {{ ref('SRC', 'Nation_Test_CamelCase') }} "Nation_Test_CamelCase"
