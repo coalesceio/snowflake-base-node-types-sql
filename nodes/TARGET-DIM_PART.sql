@@ -3,7 +3,7 @@
 @materializationType("table")
 @description("Part dimension - lastModified")
 @mergeStrategy("lastModified")
-SELECT
+SELECT DISTINCT
     CAST(0 AS NUMBER) AS "PART_SK" @isSurrogateKey @id("376b4a43-321b-51bf-9250-69bc8084ac04"),
     "P"."P_PARTKEY" AS "PART_KEY" @id("93ced19e-e825-5d56-a08b-2d8f309f53aa") @isBusinessKey,
     "P"."P_NAME" AS "PART_NAME" @id("e5ada89c-d0ab-5a72-ad1e-2b437d579a96"),
