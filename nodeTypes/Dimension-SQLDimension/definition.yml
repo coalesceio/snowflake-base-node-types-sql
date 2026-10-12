@@ -5,7 +5,7 @@ metadata:
   defaultStorageLocation: null
   error: null
   nodeMetadataSpec: |-
-    capitalized: Dimension 
+    capitalized: Dimension
     short: DIM
     plural: Dimensions
     tagColor: '#1E339A'
@@ -332,7 +332,7 @@ metadata:
             • 𝗥𝗲𝗾𝘂𝗶𝗿𝗲𝗱 𝗼𝗻𝗹𝘆 𝘄𝗵𝗲𝗻 the node-level @zeroKey is set, since the zero/ghost record is matched against the target by surrogate key value.
 
             Expected expression:
-            0 AS "{{NODE_NAME}}_KEY" @isSurrogateKey
+            0 AS "<NODE_NAME>_KEY" @isSurrogateKey    Ex. 0 AS "DIM_CUSTOMER_KEY" @isSurrogateKey
 
             Agentic creation only — manual creation adds this column automatically.
           isRequired: false

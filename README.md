@@ -382,7 +382,7 @@ Marks this column as the node's surrogate key.
 * Recommended for SCD Type 2 — a stable surrogate key per version is the standard way to identify a versioned row, though it isn't enforced by the merge itself.
 * Required only when the node-level `@zeroKey` is set, since the zero/ghost record is matched against the target by surrogate key value.
 * **Note:** Ignored on Views. Agentic creation only — manual creation adds this column automatically.
-* Expected expression: `0 AS "{{NODE_NAME}}_KEY" @isSurrogateKey`
+* Expected expression: `0 AS "<NODE_NAME>_KEY" @isSurrogateKey` — type the node name yourself, e.g. `0 AS "DIM_CUSTOMER_KEY" @isSurrogateKey`. A `{{NODE_NAME}}` placeholder is not filled in and would create a column named `_KEY`.
 
 ##### `@isSystemVersion` (Dimension)
 
