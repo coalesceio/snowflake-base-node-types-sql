@@ -20,7 +20,7 @@ WITH "ORDER_TOTALS" AS (
     GROUP BY "ORDER_KEY", "CUSTOMER_KEY", "ORDER_DATE", "ORDER_STATUS", "ORDER_PRIORITY"
 )
 SELECT
-    "T"."ORDER_KEY" AS "ORDER_KEY" @id("08bb991a-54b5-4acc-abb8-bb9a24b76926") @isBusinessKey,
+    CAST ("T"."ORDER_KEY"  AS NUMBER(38,0) ) AS "ORDER_KEY" @id("08bb991a-54b5-4acc-abb8-bb9a24b76926") @isBusinessKey,
     COALESCE("C"."DIM_CUSTOMER_PROFILE_KEY", -1) AS "DIM_CUSTOMER_PROFILE_KEY" @id("1f227fff-2457-4fbd-a57d-4ac6c8e592d0") @not_null,
     "T"."ORDER_DATE" AS "ORDER_DATE" @id("020236ea-d62c-406a-a47a-9becd69b4e57") @clusterKey(1),
     "T"."ORDER_STATUS" AS "ORDER_STATUS" @id("624035c8-d9fb-464d-9dc1-1d042bcafd94") @accepted_values("'F', 'O', 'P'") @description("Order-status"),
