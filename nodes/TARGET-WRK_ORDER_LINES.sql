@@ -1,14 +1,14 @@
 @id("ff11049c-3ee7-44ab-b84b-55fbd05650d5")
 @nodeType("SQLWork")
 @materializationType("transient table")
-@description("Sales star - order lines (lineitem joined to order header) with derived amounts")
+@description("Sales star - order lines (lineitem joined to order header) with derived amounts123")
 @writeMode("truncateInsert")
 @tests("SELECT 1 FROM {{ this }} GROUP BY ORDER_KEY, LINE_NUMBER HAVING COUNT(*) > 1", false, "After")
 SELECT
-    "L"."L_ORDERKEY" AS "ORDER_KEY" @notNull,
+    "L"."L_ORDERKEY" AS "ORDER_KEY1" @notNull,
     "L"."L_LINENUMBER" AS "LINE_NUMBER" @notNull,
     "O"."O_CUSTKEY" AS "CUSTOMER_KEY",
-    "L"."L_PARTKEY" AS "PART_KEY",
+    "L"."L_PARTKEY" AS "PART_KEY" @description("partkey"),
     "L"."L_SUPPKEY" AS "SUPPLIER_KEY",
     "O"."O_ORDERSTATUS" AS "ORDER_STATUS",
     "O"."O_ORDERPRIORITY" AS "ORDER_PRIORITY",
@@ -16,7 +16,6 @@ SELECT
     "L"."L_SHIPDATE" AS "SHIP_DATE" @clusterKey(1),
     "L"."L_COMMITDATE" AS "COMMIT_DATE",
     "L"."L_RECEIPTDATE" AS "RECEIPT_DATE" @relative_time(">=", "SHIP_DATE"),
-    "L"."L_SHIPMODE" AS "SHIP_MODE",
     "L"."L_RETURNFLAG" AS "RETURN_FLAG" @accepted_values("'A', 'N', 'R'"),
     "L"."L_LINESTATUS" AS "LINE_STATUS" @accepted_values("'F', 'O'"),
     "L"."L_QUANTITY" AS "QUANTITY" @min_value("0"),
