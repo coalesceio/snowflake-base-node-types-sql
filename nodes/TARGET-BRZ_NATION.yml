@@ -34,10 +34,10 @@ operation:
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: a487d975-d666-4306-91f0-6893d9987231
-                stepCounter: 1610aab1-7820-4366-b317-87606f480f7f
-            transform: "\"Nation_Test\".\"NAtionKey\""
-        transform: "\"Nation_Test\".\"NAtionKey\""
+              - columnCounter: b9ff8190-fb29-4b19-8767-5cb8ff780d4b
+                stepCounter: fd361abf-27bd-41a9-923b-b6574c427611
+            transform: "\"Nation_Test_CamelCase\".\"NAtionKey\""
+        transform: "\"Nation_Test_CamelCase\".\"NAtionKey\""
         uniqueKey: false
       - acceptedValues:
           strictMatch: true
@@ -55,10 +55,10 @@ operation:
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: def546ac-625e-47bb-a977-ef8eecce28a5
-                stepCounter: 1610aab1-7820-4366-b317-87606f480f7f
-            transform: "\"Nation_Test\".\"name\""
-        transform: "\"Nation_Test\".\"name\""
+              - columnCounter: 3db4d6fc-9da6-4153-b987-05678543d412
+                stepCounter: fd361abf-27bd-41a9-923b-b6574c427611
+            transform: "\"Nation_Test_CamelCase\".\"name\""
+        transform: "\"Nation_Test_CamelCase\".\"name\""
         uniqueKey: false
       - acceptedValues:
           strictMatch: true
@@ -76,10 +76,10 @@ operation:
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: bf7327c1-083b-469b-bfec-91508c7eab26
-                stepCounter: 1610aab1-7820-4366-b317-87606f480f7f
-            transform: "\"Nation_Test\".\"REGIONKEY\""
-        transform: "\"Nation_Test\".\"REGIONKEY\""
+              - columnCounter: 4a4aa2bf-f058-477a-80c4-4bb18f2bf6df
+                stepCounter: fd361abf-27bd-41a9-923b-b6574c427611
+            transform: "\"Nation_Test_CamelCase\".\"REGIONKEY\""
+        transform: "\"Nation_Test_CamelCase\".\"REGIONKEY\""
         uniqueKey: false
       - acceptedValues:
           strictMatch: true
@@ -97,10 +97,10 @@ operation:
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: 5325c202-4ae8-454f-a6c2-f83966273a15
-                stepCounter: 1610aab1-7820-4366-b317-87606f480f7f
-            transform: "\"Nation_Test\".\"CommenT\""
-        transform: "\"Nation_Test\".\"CommenT\""
+              - columnCounter: 3b23d2ca-e8a8-43e2-9543-39758b641275
+                stepCounter: fd361abf-27bd-41a9-923b-b6574c427611
+            transform: "\"Nation_Test_CamelCase\".\"CommenT\""
+        transform: "\"Nation_Test_CamelCase\".\"CommenT\""
         uniqueKey: false
       - acceptedValues:
           strictMatch: true
@@ -118,10 +118,10 @@ operation:
         primaryKey: false
         sourceColumnReferences:
           - columnReferences:
-              - columnCounter: 4d1c468c-4bf7-443a-9e0c-6994f9e48961
-                stepCounter: 1610aab1-7820-4366-b317-87606f480f7f
-            transform: "\"Nation_Test\".\"N_Load_Timestamp\""
-        transform: "\"Nation_Test\".\"N_Load_Timestamp\""
+              - columnCounter: 55ebe0e3-07e7-4dc1-91e6-e323bceb8a53
+                stepCounter: fd361abf-27bd-41a9-923b-b6574c427611
+            transform: "\"Nation_Test_CamelCase\".\"N_Load_Timestamp\""
+        transform: "\"Nation_Test_CamelCase\".\"N_Load_Timestamp\""
         uniqueKey: false
     enabledColumnTestIDs: []
     sourceMapping:
@@ -130,15 +130,15 @@ operation:
           customSQL: ""
         dependencies:
           - locationName: SRC
-            nodeName: Nation_Test
+            nodeName: Nation_Test_CamelCase
         join:
-          joinCondition: FROM {{ ref('SRC', 'Nation_Test') }} "Nation_Test"
+          joinCondition: FROM {{ ref('SRC', 'Nation_Test_CamelCase') }} "Nation_Test_CamelCase"
         name: BRZ_NATION
         noLinkRefs: []
   name: BRZ_NATION
   overrideSQL: false
   schema: ""
-  sqlType: base-node-types:::204
+  sqlType: Stage
   type: sql
   version: 1
 type: Node

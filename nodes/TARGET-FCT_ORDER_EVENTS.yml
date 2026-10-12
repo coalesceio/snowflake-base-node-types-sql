@@ -157,7 +157,7 @@ operation:
   name: FCT_ORDER_EVENTS
   overrideSQL: false
   schema: ""
-  sqlType: base-node-types:::248
+  sqlType: Fact
   type: sql
   version: 1
 type: Node

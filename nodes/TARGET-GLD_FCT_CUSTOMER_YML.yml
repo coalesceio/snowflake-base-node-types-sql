@@ -138,7 +138,7 @@ operation:
   name: GLD_FCT_CUSTOMER_YML
   overrideSQL: false
   schema: ""
-  sqlType: base-node-types:::205
+  sqlType: Fact
   type: sql
   version: 1
 type: Node

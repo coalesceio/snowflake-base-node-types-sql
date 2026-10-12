@@ -33,11 +33,9 @@ operation:
         nullable: true
         primaryKey: false
         sourceColumnReferences:
-          - columnReferences:
-              - columnCounter: aa47ab0f-53d6-52c9-b657-957cbb53fdce
-                stepCounter: 14087bff-c550-57ed-af81-01dfb0872afb
-            transform: "\"SLV_CUSTOMER\".\"CUSTOMER_KEY\""
-        transform: "\"SLV_CUSTOMER\".\"CUSTOMER_KEY\""
+          - columnReferences: []
+            transform: "\"SLV_CUSTOMER\".\"C_CUSTKEY\""
+        transform: "\"SLV_CUSTOMER\".\"C_CUSTKEY\""
         uniqueKey: false
       - acceptedValues:
           strictMatch: true
@@ -54,11 +52,9 @@ operation:
         nullable: true
         primaryKey: false
         sourceColumnReferences:
-          - columnReferences:
-              - columnCounter: fd5bc778-8f4d-5809-b9d6-c7fdd89c33ab
-                stepCounter: 14087bff-c550-57ed-af81-01dfb0872afb
-            transform: "\"SLV_CUSTOMER\".\"CUSTOMER_NAME\""
-        transform: "\"SLV_CUSTOMER\".\"CUSTOMER_NAME\""
+          - columnReferences: []
+            transform: "\"SLV_CUSTOMER\".\"C_NAME\""
+        transform: "\"SLV_CUSTOMER\".\"C_NAME\""
         uniqueKey: false
       - acceptedValues:
           strictMatch: true
@@ -75,11 +71,9 @@ operation:
         nullable: true
         primaryKey: false
         sourceColumnReferences:
-          - columnReferences:
-              - columnCounter: 1e295ea6-ca9c-5df7-8cb9-06eca10fce4b
-                stepCounter: 14087bff-c550-57ed-af81-01dfb0872afb
-            transform: "\"SLV_CUSTOMER\".\"PHONE\""
-        transform: "\"SLV_CUSTOMER\".\"PHONE\""
+          - columnReferences: []
+            transform: "\"SLV_CUSTOMER\".\"C_PHONE\""
+        transform: "\"SLV_CUSTOMER\".\"C_PHONE\""
         uniqueKey: false
       - acceptedValues:
           strictMatch: true
@@ -96,11 +90,9 @@ operation:
         nullable: true
         primaryKey: false
         sourceColumnReferences:
-          - columnReferences:
-              - columnCounter: 6dc8135d-addd-5c6a-b654-6af5fb31fa7e
-                stepCounter: 14087bff-c550-57ed-af81-01dfb0872afb
-            transform: "\"SLV_CUSTOMER\".\"ACCOUNT_BALANCE\""
-        transform: "\"SLV_CUSTOMER\".\"ACCOUNT_BALANCE\""
+          - columnReferences: []
+            transform: "\"SLV_CUSTOMER\".\"C_ACCTBAL\""
+        transform: "\"SLV_CUSTOMER\".\"C_ACCTBAL\""
         uniqueKey: false
       - acceptedValues:
           strictMatch: true
@@ -117,11 +109,9 @@ operation:
         nullable: true
         primaryKey: false
         sourceColumnReferences:
-          - columnReferences:
-              - columnCounter: 325ce1f0-f9f0-582a-9c8d-fae12036964c
-                stepCounter: 14087bff-c550-57ed-af81-01dfb0872afb
-            transform: "\"SLV_CUSTOMER\".\"MARKET_SEGMENT\""
-        transform: "\"SLV_CUSTOMER\".\"MARKET_SEGMENT\""
+          - columnReferences: []
+            transform: "\"SLV_CUSTOMER\".\"C_MKTSEGMENT\""
+        transform: "\"SLV_CUSTOMER\".\"C_MKTSEGMENT\""
         uniqueKey: false
       - acceptedValues:
           strictMatch: true
@@ -138,11 +128,9 @@ operation:
         nullable: true
         primaryKey: false
         sourceColumnReferences:
-          - columnReferences:
-              - columnCounter: ff652a57-a2b7-52f0-8fc1-166edd072781
-                stepCounter: 14087bff-c550-57ed-af81-01dfb0872afb
-            transform: "\"SLV_CUSTOMER\".\"NATION_NAME\""
-        transform: "\"SLV_CUSTOMER\".\"NATION_NAME\""
+          - columnReferences: []
+            transform: "\"SLV_GEOGRAPHY\".\"NATION_NAME\""
+        transform: "\"SLV_GEOGRAPHY\".\"NATION_NAME\""
         uniqueKey: false
       - acceptedValues:
           strictMatch: true
@@ -159,11 +147,9 @@ operation:
         nullable: true
         primaryKey: false
         sourceColumnReferences:
-          - columnReferences:
-              - columnCounter: 25794cf7-10f1-5d60-b408-05a201060049
-                stepCounter: 14087bff-c550-57ed-af81-01dfb0872afb
-            transform: "\"SLV_CUSTOMER\".\"REGION_NAME\""
-        transform: "\"SLV_CUSTOMER\".\"REGION_NAME\""
+          - columnReferences: []
+            transform: "\"SLV_GEOGRAPHY\".\"REGION_NAME\""
+        transform: "\"SLV_GEOGRAPHY\".\"REGION_NAME\""
         uniqueKey: false
     enabledColumnTestIDs: []
     sourceMapping:
@@ -173,14 +159,19 @@ operation:
         dependencies:
           - locationName: TARGET
             nodeName: SLV_CUSTOMER
+          - locationName: TARGET
+            nodeName: SLV_GEOGRAPHY
         join:
-          joinCondition: FROM {{ ref('TARGET', 'SLV_CUSTOMER') }} "SLV_CUSTOMER"
+          joinCondition: |-
+            FROM {{ ref('TARGET', 'SLV_CUSTOMER') }} "SLV_CUSTOMER"
+            LEFT JOIN {{ ref('TARGET', 'SLV_GEOGRAPHY') }} "SLV_GEOGRAPHY"
+              ON "SLV_CUSTOMER"."C_NATIONKEY" = "SLV_GEOGRAPHY"."NATION_KEY"
         name: SLV_CUSTOMER_VIEW
         noLinkRefs: []
   name: SLV_CUSTOMER_VIEW
   overrideSQL: false
   schema: ""
-  sqlType: base-node-types:::188
+  sqlType: View
   type: sql
   version: 1
 type: Node

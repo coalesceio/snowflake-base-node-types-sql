@@ -136,7 +136,7 @@ operation:
   name: SLV_NATION
   overrideSQL: false
   schema: ""
-  sqlType: base-node-types:::188
+  sqlType: View
   type: sql
   version: 1
 type: Node

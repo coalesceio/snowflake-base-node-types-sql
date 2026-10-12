@@ -202,7 +202,7 @@ operation:
   name: FCT_PART_SUPPLY
   overrideSQL: false
   schema: ""
-  sqlType: base-node-types:::205
+  sqlType: Fact
   type: sql
   version: 1
 type: Node

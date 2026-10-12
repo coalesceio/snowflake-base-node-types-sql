@@ -246,7 +246,7 @@ operation:
   name: SLV_CUSTOMER_NATION
   overrideSQL: false
   schema: ""
-  sqlType: base-node-types:::204
+  sqlType: Stage
   type: sql
   version: 1
 type: Node

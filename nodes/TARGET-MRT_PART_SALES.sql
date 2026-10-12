@@ -1,5 +1,5 @@
 @id("ce01a398-6b55-520f-9ec4-567e1295a266")
-@nodeType("Latest:::707")
+@nodeType("SQLWork")
 @materializationType("table")
 @description("Sales by brand and type (Latest Work V2)")
 SELECT

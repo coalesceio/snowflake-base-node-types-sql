@@ -1,5 +1,5 @@
 @id("8fc3ec5a-72e9-5839-ba8b-7e78a61e196f")
-@nodeType("Latest:::707")
+@nodeType("SQLWork")
 @materializationType("table")
 @description("Bronze part (Latest Work V2)")
 SELECT

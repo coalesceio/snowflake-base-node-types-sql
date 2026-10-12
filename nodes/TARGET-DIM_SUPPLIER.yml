@@ -283,7 +283,7 @@ operation:
   name: DIM_SUPPLIER
   overrideSQL: false
   schema: ""
-  sqlType: base-node-types:::194
+  sqlType: Dimension
   type: sql
   version: 1
 type: Node

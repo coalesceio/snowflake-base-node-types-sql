@@ -75,7 +75,7 @@ operation:
   name: MRT_ORDER_EVENTS_SUMMARY
   overrideSQL: false
   schema: ""
-  sqlType: base-node-types:::204
+  sqlType: Stage
   type: sql
   version: 1
 type: Node

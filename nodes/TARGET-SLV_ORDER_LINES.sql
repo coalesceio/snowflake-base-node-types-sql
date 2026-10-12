@@ -1,5 +1,5 @@
 @id("7f6b2998-ad85-5ff6-9790-ce088fb43065")
-@nodeType("Latest:::707")
+@nodeType("SQLWork")
 @materializationType("table")
 @description("Order lines (Latest Work V2)")
 SELECT

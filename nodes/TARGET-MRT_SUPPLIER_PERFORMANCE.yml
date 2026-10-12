@@ -144,7 +144,7 @@ operation:
   name: MRT_SUPPLIER_PERFORMANCE
   overrideSQL: false
   schema: ""
-  sqlType: base-node-types:::204
+  sqlType: Stage
   type: sql
   version: 1
 type: Node
