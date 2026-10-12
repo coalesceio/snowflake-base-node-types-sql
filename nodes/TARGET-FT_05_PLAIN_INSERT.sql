@@ -5,8 +5,8 @@
 @preSQL("SELECT CURRENT_TIMESTAMP AS PRE_SQL_RAN")
 @postSQL("SELECT COUNT(*) AS POST_SQL_ROWS FROM {{ this }}")
 @postSQL("SELECT MIN(""SYSTEM_CREATE_DATE"") AS FIRST_LOAD, MAX(""SYSTEM_CREATE_DATE"") AS LAST_LOAD FROM {{ this }}")
-@tests("SELECT 1 FROM (SELECT COUNT(*) AS C FROM {{ ref('SRC', 'Nation_Test') }}) WHERE C = 0", false, "Before")
-@tests("SELECT 1 FROM (SELECT COUNT(*) AS C FROM {{ this }}) WHERE C <> (SELECT COUNT(*) FROM {{ ref('SRC', 'Nation_Test') }})")
+@tests("SELECT 1 FROM (SELECT COUNT(*) AS C FROM {{ ref('SRC', 'Nation_Test_CamelCase') }}) WHERE C = 0", false, "Before")
+@tests("SELECT 1 FROM (SELECT COUNT(*) AS C FROM {{ this }}) WHERE C <> (SELECT COUNT(*) FROM {{ ref('SRC', 'Nation_Test_CamelCase') }})")
 @tests("SELECT 1 FROM {{ this }} WHERE ""NATION_LABEL"" NOT LIKE ""NATION_NAME"" || '%'", true, "After")
 SELECT
     "NAtionKey"                                  AS "NATION_KEY"         @id("f10501") @not_null @uniqueness @min_value("0") @max_value("24"),

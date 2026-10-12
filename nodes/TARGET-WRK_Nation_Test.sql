@@ -2,8 +2,8 @@
 @nodeType("SQLWork")
 @description("Staging copy of Nation_Test with data quality checks and a row hash")
 @writeMode("truncateInsert")
-@tests("SELECT 1 FROM {{ ref('SRC', 'Nation_Test') }} HAVING COUNT(*) = 0", false, "Before")
-@tests("SELECT 1 FROM {{ this }} HAVING COUNT(*) <> (SELECT COUNT(*) FROM {{ ref('SRC', 'Nation_Test') }})")
+@tests("SELECT 1 FROM {{ ref('SRC', 'Nation_Test_CamelCase') }} HAVING COUNT(*) = 0", false, "Before")
+@tests("SELECT 1 FROM {{ this }} HAVING COUNT(*) <> (SELECT COUNT(*) FROM {{ ref('SRC', 'Nation_Test_CamelCase') }})")
 SELECT
     "NAtionKey"                              AS "NAtionKey"           @description("Nation identifier") @not_null @uniqueness @min_value(1) @inHash("ROW_HASH", 1),
     "name"                                   AS "name"                @description("Nation name") @not_null @empty @inHash("ROW_HASH", 2),

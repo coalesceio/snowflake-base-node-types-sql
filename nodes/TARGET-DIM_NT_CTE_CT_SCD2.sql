@@ -3,7 +3,7 @@
 @mergeStrategy("changeTracking")
 WITH "NATION_SRC" AS (
     SELECT "NAtionKey", "name", "REGIONKEY", "CommenT", "N_Load_Timestamp"
-    FROM {{ ref('SRC', 'Nation_Test') }}
+    FROM {{ ref('SRC', 'Nation_Test_CamelCase') }}
 )
 SELECT
     0                                        AS "DIM_NT_CTE_CT_SCD2_KEY" @id("338cff") @isSurrogateKey,

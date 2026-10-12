@@ -4,7 +4,7 @@
 @mergeStrategy("changeTracking")
 WITH "NATION_SRC" AS (
     SELECT "NAtionKey", "name", "REGIONKEY", "CommenT", "N_Load_Timestamp"
-    FROM {{ ref('SRC', 'Nation_Test') }}
+    FROM {{ ref('SRC', 'Nation_Test_CamelCase') }}
 ),
 "NATION_CLEAN" AS (
     SELECT "NAtionKey", UPPER(TRIM("name")) AS "NATION_NAME", "REGIONKEY", "CommenT", "N_Load_Timestamp"

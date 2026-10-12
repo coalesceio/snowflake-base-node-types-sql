@@ -4,12 +4,12 @@
 @writeMode("append")
 @description("Fact test: changeTracking (SCD Type 1) merge on NATION_KEY with node and column tests")
 @preSQL("SELECT CURRENT_TIMESTAMP AS PRE_SQL_RAN")
-@preSQL("SELECT COUNT(*) AS SOURCE_ROWS FROM {{ ref('SRC', 'Nation_Test') }}")
+@preSQL("SELECT COUNT(*) AS SOURCE_ROWS FROM {{ ref('SRC', 'Nation_Test_CamelCase') }}")
 @postSQL("SELECT COUNT(*) AS POST_SQL_ROWS FROM {{ this }}")
-@tests("SELECT 1 FROM {{ ref('SRC', 'Nation_Test') }} WHERE ""NAtionKey"" IS NULL", true, "Before")
-@tests("SELECT 1 FROM {{ ref('SRC', 'Nation_Test') }} GROUP BY ""NAtionKey"" HAVING COUNT(*) > 1", false, "Before")
+@tests("SELECT 1 FROM {{ ref('SRC', 'Nation_Test_CamelCase') }} WHERE ""NAtionKey"" IS NULL", true, "Before")
+@tests("SELECT 1 FROM {{ ref('SRC', 'Nation_Test_CamelCase') }} GROUP BY ""NAtionKey"" HAVING COUNT(*) > 1", false, "Before")
 @tests("SELECT 1 FROM {{ this }} GROUP BY ""NATION_KEY"" HAVING COUNT(*) > 1", true, "After")
-@tests("SELECT 1 FROM (SELECT COUNT(*) AS C FROM {{ this }}) WHERE C <> (SELECT COUNT(*) FROM {{ ref('SRC', 'Nation_Test') }})")
+@tests("SELECT 1 FROM (SELECT COUNT(*) AS C FROM {{ this }}) WHERE C <> (SELECT COUNT(*) FROM {{ ref('SRC', 'Nation_Test_CamelCase') }})")
 SELECT
     "NAtionKey"                          AS "NATION_KEY"         @id("f10101") @isBusinessKey @not_null @uniqueness @min_max("0", "24") @inHash("GH_NATION", 1),
     "name"                               AS "NATION_NAME"        @id("f10102") @not_null @empty @rejected_values("'UNKNOWN', 'N/A'") @inHash("GH_NATION", 2),

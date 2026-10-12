@@ -3,10 +3,10 @@
 @mergeStrategy("allColumnMatch")
 @writeMode("append")
 @description("Fact test: allColumnMatch factless fact - nation/region coverage, insert-only on full-row match")
-@preSQL("SELECT COUNT(DISTINCT ""REGIONKEY"") AS SOURCE_REGIONS FROM {{ ref('SRC', 'Nation_Test') }}")
+@preSQL("SELECT COUNT(DISTINCT ""REGIONKEY"") AS SOURCE_REGIONS FROM {{ ref('SRC', 'Nation_Test_CamelCase') }}")
 @postSQL("SELECT COUNT(*) AS POST_SQL_ROWS FROM {{ this }}")
 @tests("SELECT 1 FROM {{ this }} GROUP BY ""NATION_KEY"", ""REGION_KEY"", ""GH_COVERAGE"" HAVING COUNT(*) > 1")
-@tests("SELECT 1 FROM {{ ref('SRC', 'Nation_Test') }} s WHERE NOT EXISTS (SELECT 1 FROM {{ this }} t WHERE t.""NATION_KEY"" = s.""NAtionKey"")", true, "After")
+@tests("SELECT 1 FROM {{ ref('SRC', 'Nation_Test_CamelCase') }} s WHERE NOT EXISTS (SELECT 1 FROM {{ this }} t WHERE t.""NATION_KEY"" = s.""NAtionKey"")", true, "After")
 SELECT
     "NAtionKey"                                     AS "NATION_KEY"         @id("f10401") @not_null @uniqueness @min_max("0", "24") @inHash("GH_COVERAGE", 1),
     "REGIONKEY"                                     AS "REGION_KEY"         @id("f10402") @not_null @accepted_values("0, 1, 2, 3, 4") @inHash("GH_COVERAGE", 2),

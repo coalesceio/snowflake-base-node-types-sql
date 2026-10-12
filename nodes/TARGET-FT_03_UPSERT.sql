@@ -5,7 +5,7 @@
 @description("Fact test: upsert merge on composite key NATION_KEY + REGION_KEY, system columns computed in the SELECT")
 @preSQL("SELECT CURRENT_TIMESTAMP AS PRE_SQL_RAN")
 @postSQL("SELECT ""REGION_KEY"", COUNT(*) AS NATIONS FROM {{ this }} GROUP BY ""REGION_KEY""")
-@tests("SELECT 1 FROM {{ ref('SRC', 'Nation_Test') }} GROUP BY ""NAtionKey"", ""REGIONKEY"" HAVING COUNT(*) > 1", false, "Before")
+@tests("SELECT 1 FROM {{ ref('SRC', 'Nation_Test_CamelCase') }} GROUP BY ""NAtionKey"", ""REGIONKEY"" HAVING COUNT(*) > 1", false, "Before")
 @tests("SELECT 1 FROM {{ this }} GROUP BY ""NATION_KEY"", ""REGION_KEY"" HAVING COUNT(*) > 1")
 @tests("SELECT 1 FROM {{ this }} WHERE ""NATION_NAME"" <> UPPER(""NATION_NAME"")", true, "After")
 SELECT
