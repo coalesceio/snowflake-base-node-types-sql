@@ -16,3 +16,4 @@ FROM {{ ref('TARGET', 'WRK_INVENTORY') }} "I"
 LEFT JOIN {{ ref('TARGET', 'DIM_PRODUCT') }} "P"
     ON "I"."PART_KEY" = "P"."PART_KEY"
     AND "P"."SYSTEM_CURRENT_FLAG" = 'Y'
+WHERE I."PART_KEY" > {{parameters.id}} 
