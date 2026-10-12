@@ -4,7 +4,7 @@
 @description("Sales star - part/supplier inventory position")
 SELECT
     "PS"."PS_PARTKEY" AS "PART_KEY",
-    "PS"."PS_SUPPKEY" AS "SUPPLIER_KEY",
+    "PS"."PS_SUPPKEY" AS "SUPPLIER_KEY" @tag("PII", "NAME", "GOV"),
     "PS"."PS_AVAILQTY" AS "AVAILABLE_QTY" @min_value("0"),
     "PS"."PS_SUPPLYCOST" AS "SUPPLY_COST",
     CAST("PS"."PS_AVAILQTY" * "PS"."PS_SUPPLYCOST" AS NUMBER(18,2)) AS "INVENTORY_VALUE"

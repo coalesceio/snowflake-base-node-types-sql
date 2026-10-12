@@ -6,9 +6,9 @@
 @zeroKey("-1", "'UNKNOWN'", "1900-01-01 00:00:00", false)
 SELECT
     0 AS "DIM_PRODUCT_KEY" @id("595338b8-5ef5-4776-8432-66a500587374") @isSurrogateKey,
-    "P"."PART_KEY" AS "PART_KEY" @id("71cfc740-0687-4b24-8ca7-4f01945a86f5") @isBusinessKey,
+    "P"."PART_KEY" AS "PART_KEY" @id("71cfc740-0687-4b24-8ca7-4f01945a86f5") @isBusinessKey @clusterKey(1),
     "P"."PART_NAME" AS "PART_NAME" @id("1dc71c71-bf4f-478f-bbba-a5cd1f083193"),
-    "P"."MANUFACTURER" AS "MANUFACTURER" @id("3f5211b1-ba13-4287-9c1d-a45a9e8b5367"),
+    "P"."MANUFACTURER" AS "MANUFACTURER" @id("3f5211b1-ba13-4287-9c1d-a45a9e8b5367") @tag("PII", "NAME", "GOV"),
     "P"."BRAND" AS "BRAND" @id("0e08721f-d789-4a2a-a4f6-63835fab71fd"),
     "P"."PART_TYPE" AS "PART_TYPE" @id("ba82e438-168d-49c3-9b80-902848092731"),
     "P"."PART_SIZE" AS "PART_SIZE" @id("979be419-b0f2-44f7-af28-4e4cc9d2052b"),

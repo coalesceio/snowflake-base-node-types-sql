@@ -1,6 +1,9 @@
 fileVersion: 1
 id: "948"
 mappingDefinitions:
+  GOV:
+    database: ANANDHIS_DEV
+    schema: GOVERNANCE
   SRC:
     database: ANANDHIS_DEV
     schema: SOURCE_DATA

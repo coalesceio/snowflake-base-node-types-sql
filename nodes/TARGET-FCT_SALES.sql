@@ -5,10 +5,10 @@
 @mergeStrategy("lastModified")
 @tests("SELECT 1 FROM {{ this }} GROUP BY ORDER_KEY, LINE_NUMBER HAVING COUNT(*) > 1", false, "After")
 SELECT
-    "OL"."ORDER_KEY" AS "ORDER_KEY" @id("b59fb8a1-ffd5-447d-b5d2-08fda06e3ea2") @isBusinessKey,
+    CAST("OL"."ORDER_KEY" AS NUMBER(38,0) ) AS "ORDER_KEY" @id("b59fb8a1-ffd5-447d-b5d2-08fda06e3ea2") @isBusinessKey,
     "OL"."LINE_NUMBER" AS "LINE_NUMBER" @id("41a87cc0-07d3-4dc2-b1b9-65e82fff8fa1") @isBusinessKey,
     COALESCE("C"."DIM_CUSTOMER_PROFILE_KEY", -1) AS "DIM_CUSTOMER_PROFILE_KEY" @id("530cbc72-a0c2-4871-aeb7-1cea289e3870") @not_null,
-    COALESCE("P"."DIM_PRODUCT_KEY", -1) AS "DIM_PRODUCT_KEY" @id("ec58ad34-0473-4abe-ba13-1930b76c10db") @not_null,
+    COALESCE("P"."DIM_PRODUCT_KEY", -1) AS "DIM_PRODUCT_KEY" @id("ec58ad34-0473-4abe-ba13-1930b76c10db")  @not_null,
     COALESCE("N"."DIM_NATION_KEY", -1) AS "DIM_NATION_KEY" @id("c917d282-18cf-4620-8bb6-504d7c90552d") @not_null,
     "OL"."SUPPLIER_KEY" AS "SUPPLIER_KEY" @id("3b9038b4-f157-4f6c-8056-b78f69ac9d18"),
     "OL"."ORDER_DATE" AS "ORDER_DATE" @id("b14ad53c-fe14-4f35-a5ae-e198ddffa0c5"),

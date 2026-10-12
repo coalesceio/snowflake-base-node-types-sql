@@ -1,6 +1,9 @@
 fileVersion: 1
 id: "938"
 mappingDefinitions:
+  GOV:
+    database: ""
+    schema: ""
   SRC:
     database: TANVI_DEV
     schema: SOURCE

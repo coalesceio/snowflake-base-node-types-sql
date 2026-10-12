@@ -1,5 +1,8 @@
 fileVersion: 1
 id: "949"
-mappingDefinitions: {}
+mappingDefinitions:
+  GOV:
+    database: ""
+    schema: ""
 name: New Environment
 type: Environment

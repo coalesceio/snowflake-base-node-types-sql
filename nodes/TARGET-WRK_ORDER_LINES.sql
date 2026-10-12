@@ -13,7 +13,6 @@ SELECT
     "O"."O_ORDERSTATUS" AS "ORDER_STATUS",
     "O"."O_ORDERPRIORITY" AS "ORDER_PRIORITY",
     "O"."O_ORDERDATE" AS "ORDER_DATE",
-    "L"."L_SHIPDATE" AS "SHIP_DATE" @clusterKey(1),
     "L"."L_COMMITDATE" AS "COMMIT_DATE",
     "L"."L_RECEIPTDATE" AS "RECEIPT_DATE" @relative_time(">=", "SHIP_DATE"),
     "L"."L_RETURNFLAG" AS "RETURN_FLAG" @accepted_values("'A', 'N', 'R'"),
