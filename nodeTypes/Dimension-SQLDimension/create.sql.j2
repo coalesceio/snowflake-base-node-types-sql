@@ -8,49 +8,118 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
 {# == Node Type Description    : This node creates dimension table or view  == #}
 {#---------------------------------------------------------------------------------------------#}
 
-{%- if node.materializationType == 'table' %}
+{#- nsNodeVariables (object paths, metaDataChanged) is created and initialized in the shared macros #}
 
-    {{ validate_dimension_requirements(true) }}
+{#- Desired/current materialization type, normalized ("Table " = "table"), including "transient table".
+    Empty string when the state is absent (first deploy has no currentState; delete has no desiredState). #}
+{%- set desiredMatType = nsNodeVariables.desiredMatType %}
+{%- set currentMatType = nsNodeVariables.currentMatType %}
 
-    {# CreateSQL for Table #}
-    {{ stage('Create ' + node.materializationType ) }}
-	CREATE OR REPLACE {{ node.materializationType }} {{ ref_no_link(node.location.name, node.name) }}
-	(
-		{%- for col in columns %}
-			"{{ col.name }}" {{ col.dataType }}
-            {%- if col.isSurrogateKey %} identity {%- endif %}
-			{%- if col.nullable == false %} NOT NULL {%- endif %}
-			{%- if col.defaultValue %} DEFAULT {{ col.defaultValue }} {%- endif %}
-			{%- if col.description | trim | length > 0 %} COMMENT '{{ col.description | escape }}' {%- endif %}
-			{%- if not loop.last -%}, {%- endif %}
-		{%- endfor %}
-	)
-	{%- if node.description | trim | length > 0 %} COMMENT = '{{ node.description | escape }}' {%- endif %}
+{%- if desiredState %}
 
-{%- elif node.materializationType == 'view' %}
+    {# Validate: the materialization type must be table, transient table or view #}
+    {{ validate_materialization_type() }}
 
-    {# CreateSQL for View #}
-    {{ stage('Create ' + node.materializationType ) }}
-    CREATE OR REPLACE {{ node.materializationType }} {{ ref_no_link(node.location.name, node.name) }}
-    (
-        {%- for col in columns %}
-            "{{ col.name }}"
-            {%- if col.description | trim | length > 0 %} COMMENT '{{ col.description | escape }}' {%- endif %}
-            {%- if not loop.last -%}, {%- endif %}
-        {%- endfor %}
-    )
-    {%- if node.description | length > 0 %} COMMENT = '{{ node.description | escape }}' {%- endif %}
-    AS
-    {{ sources[0].cteString }}
-    SELECT {{ sources[0].selectModifier | default('', true) }}
-    {%- for col in sources[0].columns %}
-        {%- if col.isSurrogateKey or col.isSystemVersion or col.isSystemCurrentFlag or col.isSystemCreateDate or col.isSystemUpdateDate or col.isSystemEndDate %}
-            CAST(NULL AS {{ col.dataType }})
-        {%- else %}
-            {{ get_source_transform(col) }}
+    {# Validate: the same name+location tag repeated on the same column/node is not allowed #}
+    {{ tag_check_duplicates() }}
+
+    {%- if desiredMatType == 'view' %}
+
+        {# Drop the current object if it was another type, or the view was renamed/moved #}
+        {{ object_drop_sql() }}
+
+        {# Did anything other than tags change? Render the view definition for both states
+           without tags and compare: equal output means only tags (or nothing in the DDL) changed #}
+        {%- set viewDefinitionChanged = currentState is not defined
+                or (currentState != desiredState
+                    and view_definition_sql(currentState, false) != view_definition_sql(desiredState, false)) %}
+
+        {# CreateSQL for View #}
+        {%- if currentState is not defined
+                or currentMatType != desiredMatType
+                or nsNodeVariables.curObjectNameFullPath != nsNodeVariables.desObjectNameFullPath
+                or viewDefinitionChanged %}
+            {{ stage('Create ' + desiredMatType) }}
+            CREATE OR REPLACE {{ desiredMatType }} {{ nsNodeVariables.desObjectNameFullPath }}
+            {{ view_definition_sql(desiredState) }}
+
+        {%- elif currentState != desiredState %}
+
+            {# Definition unchanged: alter tags only (unset before set), else record a metadata-only change #}
+            {{ alter_tag_sql() }}
+            {{ alter_metadata_sql() }}
+
         {%- endif %}
-        AS "{{ col.name }}"
-        {%- if not loop.last -%}, {%- endif %}
-    {%- endfor %}
-    {{ sources[0].join }}
+
+    {%- elif desiredMatType in ['table', 'transient table'] %}
+
+        {# Validate the Dimension's annotations (hard fail: CREATE does not fail a test stage on row count) #}
+        {{ validate_dimension_requirements(true) }}
+
+        {# Drop the current object if it was another type (a table rename/move is cloned to the new path) #}
+        {{ object_drop_sql() }}
+
+        {%- if currentState is not defined or currentMatType != desiredMatType %}
+
+            {# CreateSQL for Table #}
+            {{ stage('Create ' + desiredMatType) }}
+            CREATE OR REPLACE {{ desiredMatType }} {{ nsNodeVariables.desObjectNameFullPath }}
+            (
+                {%- for col in columns %}
+                    "{{ col.name }}" {{ col.dataType }}
+                    {%- if col.isSurrogateKey %} identity {%- endif %}
+                    {%- if col.nullable == false %} NOT NULL {%- endif %}
+                    {%- if col.defaultValue %} DEFAULT {{ col.defaultValue }} {%- endif %}
+                    {%- if col.tag %} WITH TAG ({{ tag_list(col.tag) }}) {%- endif %}
+                    {%- if col.description | trim | length > 0 %} COMMENT '{{ col.description | escape }}' {%- endif %}
+                    {%- if not loop.last -%}, {%- endif %}
+                {%- endfor %}
+            )
+            {%- if desiredState.node.description | trim | length > 0 %} COMMENT = '{{ desiredState.node.description | escape }}' {%- endif %}
+            {%- if nsNodeVariables.desiredClusterKey %} CLUSTER BY ({{ nsNodeVariables.desiredClusterKey | join(', ') }}) {%- endif %}
+            {%- if config.tag %} WITH TAG ({{ tag_list(config.tag) }}) {%- endif %}
+
+        {%- elif currentState is defined and currentState != desiredState and currentMatType == desiredMatType %}
+
+            {# Every alter runs on the clone (nsNodeVariables.alterObjectNameFullPath) #}
+            {%- set alterSql %}
+
+                {# Cluster key: warning when clustered columns are renamed/dropped; drop the key first only for a rename #}
+                {{ alter_drop_cluster_key_sql() }}
+
+                {# Alter Column: data type, nullability, description, default (old column names) #}
+                {{ alter_modify_columns_sql() }}
+
+                {# Add Column #}
+                {{ alter_add_columns_sql() }}
+
+                {# Rename Column (matched by @id) #}
+                {{ alter_rename_columns_sql() }}
+
+                {# Cluster key: new key after adds/renames, before Delete Column so dropped columns have left it #}
+                {{ alter_cluster_key_sql() }}
+
+                {# Delete Column #}
+                {{ alter_drop_columns_sql() }}
+
+                {# Edit Table Description #}
+                {{ alter_description_sql() }}
+
+                {# Column- and node-level tag changes (unset before set) #}
+                {{ alter_tag_sql() }}
+
+            {%- endset %}
+
+            {# Clone Table -> alters -> Swap Cloned Table (or Rename Table when renamed/moved) -> Delete Table #}
+            {{ alter_clone_swap_sql(alterSql) }}
+
+            {# Nothing above altered the table: record a metadata-only change #}
+            {{ alter_metadata_sql() }}
+        {%- endif %}
+    {%- endif %}
+{%- elif currentState is defined and desiredState is not defined %}
+
+    {# Node deleted: drop the current object #}
+    {{ object_drop_sql() }}
+
 {%- endif %}

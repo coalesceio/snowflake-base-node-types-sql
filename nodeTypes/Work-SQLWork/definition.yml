@@ -10,10 +10,49 @@ metadata:
     plural: Works
     tagColor: '#2EB67D'
 
+    deployStrategy: advanced
     enableCTESupport: true
 
     annotations:
         node:
+
+        - name: materializationType
+          description: |-
+            • Controls node's materialization type — supports 𝘁𝗮𝗯𝗹𝗲, 𝘃𝗶𝗲𝘄, and 𝘁𝗿𝗮𝗻𝘀𝗶𝗲𝗻𝘁 𝘁𝗮𝗯𝗹𝗲.
+          isRequired: false
+          parameters:
+            - name: type
+              type: string
+              isRequired: true
+              default: table
+              example: transient table
+              options:
+                - table
+                - transient table
+                - view
+
+        - name: tag
+          description: |-
+            • Applies a Snowflake tag to this table/view.
+            • Repeat the annotation to apply multiple tags.
+            • Tag names are case-sensitive — "PII" and "pii" are different tags.
+            • The tag's location defaults to this node's own location.
+          allowsMultiple: true
+          parameters:
+            - name: name
+              type: string
+              description: Name of the tag (must already exist in Snowflake). Case-sensitive.
+              isRequired: true
+
+            - name: value
+              type: string
+              description: Value to assign to the tag.
+              isRequired: true
+
+            - name: storageLocation
+              type: string
+              description: Storage location the tag lives in. Defaults to this node's own location.
+              isRequired: false
 
         - name: writeMode
           description: |-
@@ -44,7 +83,7 @@ metadata:
           description: |-
             • 🚦Node-level data quality test.
             • Runs the given 𝗾𝘂𝗲𝗿𝘆𝗦𝗤𝗟 against the target and fails the test if it returns any records — write the query so it selects only the rows that violate your condition.
-            Skipped entirely when 𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗧𝗲𝘀𝘁𝘀 is set.
+            • Skipped entirely when 𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗧𝗲𝘀𝘁𝘀 is set.
           allowsMultiple: true
           parameters:
             - name: querySQL
@@ -96,6 +135,48 @@ metadata:
 
         column:
 
+        - name: tag
+          description: |-
+            • Applies a Snowflake tag to this column.
+            • Repeat the annotation to apply multiple tags.
+            • Tag names are case-sensitive — "PII" and "pii" are different tags.
+            • The tag's location defaults to this node's own location.
+          allowsMultiple: true
+          parameters:
+            - name: name
+              type: string
+              description: Name of the tag (must already exist in Snowflake). Case-sensitive.
+              isRequired: true
+
+            - name: value
+              type: string
+              description: Value to assign to the tag.
+              isRequired: true
+
+            - name: storageLocation
+              type: string
+              description: Storage location the tag lives in. Defaults to this node's own location.
+              isRequired: false
+
+        - name: clusterKey
+          description: |-
+            • Marks this column as a term in the table's CLUSTER BY key, at the given position
+            (lowest first).
+            • Pass just the position to cluster by the plain column itself, or add an expression to cluster by that instead.
+              Ex. clusterKey(1)
+              Ex. clusterKey(2, "trunc(<col_name>, -5)")
+            • Ignored on views.
+          allowsMultiple: true
+          parameters:
+            - name: position
+              type: number
+              isRequired: true
+              example: 1
+            - name: expression
+              type: string
+              isRequired: false
+              example: trunc(<col_name>, -5)
+
         - name: inHash
           description: |-
                 • Marks a column as an input to a generated hash key, grouped by 𝗵𝗮𝘀𝗵𝗡𝗮𝗺𝗲 and ordered within that group by 𝗵𝗮𝘀𝗵𝗢𝗿𝗱𝗲𝗿.
@@ -138,10 +219,11 @@ metadata:
         - name: accepted_values
           description: |-
             🚦 Column-level data quality test.
-            • Fails on rows whose value is outside the allow list. One annotation per column — pass
-              a comma-separated list (accepted_values("0,1,2")) or any number of separate arguments
-              (accepted_values("0", "1", "2")) in that single call; every argument is itself
-              comma-splittable.
+            • Fails on rows whose value is outside the allow list.
+            • Repeatable — every occurrence on the column is merged into one list. Each call takes a comma-separated list or any number of separate arguments; every argument is itself comma-splittable.
+                accepted_values("0, 1, 2")
+                accepted_values("0", "1", "2")
+                accepted_values("0") accepted_values("1, 2")
             • Each value is pasted into the SQL verbatim, so quote it to match the column's data type
                 positive number/float/decimal/bool as "<val>" or <val>
                 negative number/float/decimal as "-<val>"
@@ -156,10 +238,11 @@ metadata:
         - name: rejected_values
           description: |-
             🚦 Column-level data quality test.
-            • Fails on rows whose value is in the deny list. One annotation per column — pass a
-            comma-separated list (rejected_values("'A','B'")) or any number of separate arguments
-            (rejected_values("'A'", "'B'", "'C'")) in that single call; every argument is itself
-            comma-splittable.        
+            • Fails on rows whose value is in the deny list.
+            • Repeatable — every occurrence on the column is merged into one list. Each call takes a comma-separated list or any number of separate arguments; every argument is itself comma-splittable.
+                rejected_values("'A', 'B'")
+                rejected_values("'A'", "'B'", "'C'")
+                rejected_values("'A'") rejected_values("'B', 'C'")
             • Each value is pasted into the SQL verbatim, so quote it to match the column's data type
                 positive number/float/decimal/bool as "<val>" or <val>
                 negative number/float/decimal as "-<val>"
@@ -175,7 +258,7 @@ metadata:
         - name: min_max
           description: |-
             🚦 Column-level data quality test.
-            • Fails on rows outside the inclusive range.
+            • Fails on rows outside the inclusive range. NULL values pass.
             • Applies to numeric and temporal (date/time related) columns only.
             • Each bound is pasted into the SQL verbatim, so quote it to match the column's data type —
                 positive number as "<num>" or <num>
@@ -198,7 +281,7 @@ metadata:
         - name: min_value
           description: |-
             🚦 Column-level data quality test.
-            • Fails on rows below the bound.
+            • Fails on rows below the bound. NULL values pass.
             • Applies to numeric and temporal (date/time related) columns only.
             • Pasted into the SQL verbatim, so quote it to match the column's data type —
                 positive number as "<num>" or <num>
@@ -216,7 +299,7 @@ metadata:
         - name: max_value
           description: |-
             🚦 Column-level data quality test.
-            • Fails on rows above the bound.
+            • Fails on rows above the bound. NULL values pass.
             • Applies to numeric and temporal (date/time related) columns only.
             • Pasted into the SQL verbatim, so quote it to match the column's data type —
                 positive number as "<num>" or <num>

@@ -1,774 +1,1368 @@
 fileVersion: 1
 id: "1"
 macroString: |-
-  {# ========================================================================
-  Purpose          : Executes data quality tests associated with the node
-                      and its columns, based on the configured run order.
-                      Supports running tests either before or after data
-                      insertion, and respects the test continuation
-                      behavior on failure.
-  Input Parameters : runOrder (String)
-                      - Determines when the tests should be executed.
-                          Expected values: 'Before' or 'After'
-  Returns          : Rendered SQL statements for executing the applicable
-                      node-level and column-level data quality tests.
-                      No output is generated if tests are disabled.
-  ========================================================================= #}
-    {%- macro run_tests(runOrder) -%}
+  {#===========================================================================
+    SECTION 1: Shared setup (keep first: the aliases and nsNodeVariables are set up before any template code runs)
+  ===========================================================================#}
 
-        {%- set columnContinueOnFailure = true -%}
+  {#===========================================================================
+    Aliases for advanced-strategy node types: columns, storageLocations, config,
+    sources, node and parameters point at desiredState.
+  ===========================================================================#}
+  {%- if desiredState -%}
+      {%- set columns = desiredState.columns -%}
+      {%- set storageLocations = desiredState.storageLocations -%}
+      {%- set config = desiredState.config -%}
+      {%- set sources = desiredState.sources -%}
+      {%- set node = desiredState.node -%}
+      {%- set parameters = desiredState.parameters -%}
+  {%- endif -%}
 
-        {%- if get_boolean_config("disableTests") != "true" -%}
-            {%- if runOrder == "After" -%}
-                {%- for col in columns -%}
-                    {%- set colName = '"' + col.name + '"' -%}
-                    {%- set target = ref(node.location.name, node.name) -%}
-                    {%- if col.not_null is defined -%}
-                        {{ test_stage(col.name + ': not_null', columnContinueOnFailure) }}
-                        SELECT {{ colName }}
-                        FROM {{ target }}
-                        WHERE {{ colName }} IS NULL
-                    {%- endif -%}
-                    {%- if col.uniqueness is defined -%}
-                        {{ test_stage(col.name + ': uniqueness', columnContinueOnFailure) }}
-                        SELECT {{ colName }}
-                        FROM {{ target }}
-                        GROUP BY {{ colName }}
-                        HAVING COUNT(*) > 1
-                    {%- endif -%}
-                    {%- if col.empty is defined -%}
-                        {{ test_stage(col.name + ': empty', columnContinueOnFailure) }}
-                        SELECT {{ colName }}
-                        FROM {{ target }}
-                        WHERE {{ colName }} IS NOT NULL AND TRIM({{ colName }}) = ''
-                    {%- endif -%}
-                    {%- set nsAccepted = namespace(values=[]) -%}
-                      {%- for v in col.accepted_values | default([]) -%}
-                          {%- for p in v.parameters | default([]) -%}
-                              {%- for val in (p | string).split(',') -%}
-                                  {%- set nsAccepted.values = nsAccepted.values + [val.strip()] -%}
-                              {%- endfor -%}
-                          {%- endfor -%}
-                      {%- endfor -%}
-                      {%- if nsAccepted.values | length > 0 -%}
-                          {{ test_stage(col.name + ': accepted_values', columnContinueOnFailure) }}
-                          SELECT {{ colName }}
-                          FROM {{ target }}
-                          WHERE {{ colName }} IS NOT NULL
-                          AND {{ colName }} NOT IN ({{ nsAccepted.values | join(', ') }})
+  {#===========================================================================
+    get_materialization_type(value): normalizes @materializationType — lower case,
+    spaces trimmed/collapsed ('  Transient  TABLE' -> 'transient table'); '' when missing.
+    Kept here because initialize_node_variables() uses it.
+  ===========================================================================#}
+  {%- macro get_materialization_type(value) -%}
+      {{- (value | default('', true) | string).split() | join(' ') | lower -}}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    initialize_node_variables(nsNodeVariables): fills nsNodeVariables from
+    desiredState / currentState. Called once, right below.
+  ===========================================================================#}
+  {%- macro initialize_node_variables(nsNodeVariables) -%}
+
+    {#- Normalized materialization types. The run template has neither state, only node. #}
+    {%- if currentState is defined and currentState -%}
+      {%- set nsNodeVariables.currentMatType = get_materialization_type(currentState.node.materializationType) -%}
+    {%- endif -%}
+    {%- if desiredState is defined and desiredState -%}
+      {%- set nsNodeVariables.desiredMatType = get_materialization_type(desiredState.node.materializationType) -%}
+    {%- elif currentState is not defined and node is defined and node -%}
+      {%- set nsNodeVariables.desiredMatType = get_materialization_type(node.materializationType) -%}
+    {%- endif -%}
+
+    {%- if currentState is defined and currentState -%}
+      {%- set nsNodeVariables.curObjectNameFullPath = ref_no_link(currentState.node.location.name, currentState.node.name) -%}
+      {%- set nsNodeVariables.cloneObjectNameFullPath = ref_no_link(currentState.node.location.name, currentState.node.name + '_COALESCE_INTERNAL_TABLE') -%}
+
+    {%- endif -%}
+
+    {%- if desiredState is defined and desiredState -%}
+      {%- set nsNodeVariables.desObjectNameFullPath = ref_no_link(node.location.name, node.name) -%}
+    {%- endif -%}
+
+    {#- Redeploy: tables are altered on the clone (swapped in afterwards), views in place #}
+    {%- if currentState is defined and currentState and desiredState is defined and desiredState -%}
+      {%- set nsNodeVariables.alterObjectNameFullPath = nsNodeVariables.desObjectNameFullPath
+                                                        if nsNodeVariables.desiredMatType == 'view'
+                                                        else nsNodeVariables.cloneObjectNameFullPath -%}
+    {%- endif -%}
+
+    {#- Redeploy: current columns with no desired column of the same id are being dropped
+        (a column without @id has its name as id, so renaming it drops and re-adds it) #}
+    {%- if currentState is defined and currentState and desiredState is defined and desiredState -%}
+      {%- for curCol in currentState.columns -%}
+        {%- set idStillDesired = columns | default([]) | selectattr('id', 'equalto', curCol.id) | list -%}
+        {%- if not idStillDesired -%}
+          {%- set nsNodeVariables.droppedColumns = nsNodeVariables.droppedColumns + ['"' + curCol.name + '"'] -%}
+        {%- endif -%}
+        {#- Same id, new name: the column is renamed (old name recorded) #}
+        {%- if idStillDesired and (idStillDesired | first).name != curCol.name -%}
+          {%- set nsNodeVariables.renamedColumns = nsNodeVariables.renamedColumns + ['"' + curCol.name + '"'] -%}
+        {%- endif -%}
+      {%- endfor -%}
+    {%- endif -%}
+
+    {#- Cluster key terms from @clusterKey(<position>, "<expression>"), ordered by position.
+        A term is the expression, or the quoted column name when none is given. #}
+    {%- set nsCluster = namespace(desired=[], current=[]) -%}
+    {%- if desiredState is defined and desiredState -%}
+      {%- for col in columns -%}
+        {%- for cluster in col.clusterKey | default([]) -%}
+          {%- set nsCluster.desired = nsCluster.desired + [{"position": cluster.parameters[0] | int,
+                                                             "term": cluster.parameters[1] | default('"' + col.name + '"', true)}] -%}
+        {%- endfor -%}
+      {%- endfor -%}
+      {%- set nsNodeVariables.desiredClusterKey = nsCluster.desired | sort(attribute='position') | map(attribute='term') | list -%}
+    {%- endif -%}
+    {%- if currentState is defined and currentState -%}
+      {%- for col in currentState.columns -%}
+        {%- for cluster in col.clusterKey | default([]) -%}
+          {%- set nsCluster.current = nsCluster.current + [{"position": cluster.parameters[0] | int,
+                                                             "term": cluster.parameters[1] | default('"' + col.name + '"', true)}] -%}
+        {%- endfor -%}
+        {%- if col.clusterKey | default([]) | length > 0 -%}
+          {%- set nsNodeVariables.currentClusterKeyColumns = nsNodeVariables.currentClusterKeyColumns + ['"' + col.name + '"'] -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- set nsNodeVariables.currentClusterKey = nsCluster.current | sort(attribute='position') | map(attribute='term') | list -%}
+    {%- endif -%}
+
+  {%- endmacro -%}
+
+  {#===========================================================================
+    nsNodeVariables: shared per-render state for the templates and alter_ macros
+      desiredMatType / currentMatType       normalized type, '' when absent
+                                            (desired falls back to node in run)
+      des/curObjectNameFullPath             "DB"."SCHEMA"."NAME"
+      cloneObjectNameFullPath               <current name>_COALESCE_INTERNAL_TABLE
+      alterObjectNameFullPath               what alter_ macros change: clone (table) / view
+      droppedColumns / renamedColumns       quoted current column names
+      desired/currentClusterKey             CLUSTER BY terms, by position
+      currentClusterKeyColumns              current columns with @clusterKey
+      clusterKeyDropped / metaDataChanged   set by the redeploy macros
+  ===========================================================================#}
+  {%- set nsNodeVariables = namespace(desiredMatType = "",
+                                      currentMatType = "",
+                                      desObjectNameFullPath = "",
+                                      curObjectNameFullPath = "",
+                                      cloneObjectNameFullPath = "",
+                                      alterObjectNameFullPath = "",
+                                      droppedColumns = [],
+                                      renamedColumns = [],
+                                      desiredClusterKey = [],
+                                      currentClusterKey = [],
+                                      currentClusterKeyColumns = [],
+                                      clusterKeyDropped = false,
+                                      metaDataChanged = false) -%}
+  {{- initialize_node_variables(nsNodeVariables) -}}
+
+  {#===========================================================================
+    SECTION 2: General helpers
+  ===========================================================================#}
+
+  {#===========================================================================
+    get_boolean_config(flag): 'true' / 'false' for @flag, @flag(true) or @flag(false);
+    '' when absent. Usage: get_boolean_config('truncateBefore') | trim | lower == 'true'
+  ===========================================================================#}
+  {%- macro get_boolean_config(flag) -%}
+      {%- if config[flag] is defined -%}
+          {%- if config[flag] is boolean -%}
+              {{- config[flag] | trim | lower -}}
+          {%- elif config[flag].parameters is defined and config[flag].parameters|length > 0 -%}
+              {{- config[flag].parameters[0] | trim | lower -}}
+          {%- endif -%}
+      {%- endif -%}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    drop_materialization(materialization): DROP keyword for a type, e.g. 'TABLE IF EXISTS'.
+  ===========================================================================#}
+  {% macro drop_materialization(materialization) %}
+      {%- if materialization | lower in ['table', 'transient table','temporary table', 'hybrid table'] -%}
+          TABLE IF EXISTS
+      {%- elif materialization | lower in ['view', 'secure view', 'run view', 'cortex search service'] -%}
+          VIEW IF EXISTS
+      {%- elif materialization | lower in ['dynamic table','transient dynamic table', 'dynamic iceberg table'] -%}
+          DYNAMIC TABLE IF EXISTS
+      {%- elif materialization | lower == 'materialized view' -%}
+          MATERIALIZED VIEW IF EXISTS
+      {%- elif materialization | lower == 'external table' -%}
+          EXTERNAL TABLE IF EXISTS
+      {%- elif materialization | lower == 'iceberg table' -%}
+          ICEBERG TABLE IF EXISTS
+      {%- elif materialization | lower == 'interactive table' -%}
+          INTERACTIVE TABLE IF EXISTS
+      {%- elif materialization | lower == 'stream' -%}
+          STREAM IF EXISTS
+      {%- else -%}
+          TABLE IF EXISTS
+      {%- endif %}
+  {% endmacro %}
+
+  {#===========================================================================
+    get_hash(hash_name, algo, delimiter): hash of the columns tagged @inHash(hash_name),
+    in position order; NULL when no column is in the group.
+  ===========================================================================#}
+  {%- macro get_hash(hash_name, algo='SHA1', delimiter='||') -%}
+
+      {%- set cols = namespace(items=[]) -%}
+      {%- set algo_upper = algo | upper -%}
+
+      {# Collect columns participating in this hash #}
+      {%- for col in sources[0].columns -%}
+
+          {%- if col.inHash is defined -%}
+              {%- for p in col.inHash -%}
+                  {%- set position = p.parameters[1] | int -%}
+                  {%- set hash = p.parameters[0] -%}
+
+                  {%- if hash == hash_name -%}
+                      {%- set cols.items = cols.items + [{
+                          "position": position,
+                          "column": get_source_transform(col)
+                      }] -%}
+                  {%- endif -%}
+              {%- endfor -%}
+          {%- endif -%}
+      {%- endfor -%}
+
+      {%- if cols.items | length == 0 -%}
+          NULL
+      {%- else -%}
+          {%- set sorted_cols = cols.items | sort(attribute='position') -%}
+          {# Define algo wrappers #}
+          {%- set algo_start = algo_upper + '(' -%}
+          {%- set algo_end = ')' -%}
+
+          {%- if algo_upper == 'SHA256' -%}
+              {%- set algo_start = 'SHA2(' -%}
+              {%- set algo_end = ', 256)' -%}
+          {%- endif -%}
+
+          CAST(
+              {{ algo_start }}
+                  {%- for c in sorted_cols -%}
+                      NVL(CAST({{ c.column }} AS VARCHAR), 'null')
+                      {%- if not loop.last %}
+                          || {%- if delimiter != '' %} '{{ delimiter }}' || {% endif -%}
                       {%- endif -%}
-                      {%- set nsRejected = namespace(values=[]) -%}
-                      {%- for v in col.rejected_values | default([]) -%}
-                          {%- for p in v.parameters | default([]) -%}
-                              {%- for val in (p | string).split(',') -%}
-                                  {%- set nsRejected.values = nsRejected.values + [val.strip()] -%}
-                              {%- endfor -%}
-                          {%- endfor -%}
-                      {%- endfor -%}
-                      {%- if nsRejected.values | length > 0 -%}
-                          {{ test_stage(col.name + ': rejected_values', columnContinueOnFailure) }}
-                          SELECT {{ colName }}
-                          FROM {{ target }}
-                          WHERE {{ colName }} IN ({{ nsRejected.values | join(', ') }})
-                      {%- endif -%}
-                    {%- if col.min_max is defined and col.min_max.parameters is defined -%}
-                        {{ test_stage(col.name + ': min_max', columnContinueOnFailure) }}
+                  {%- endfor -%}
+              {{ algo_end }}
+          AS STRING)
+      {%- endif -%}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    safe_compare(src_expr, tgt_expr, data_type): datatype-aware "values differ" condition.
+  ===========================================================================#}
+  {%- macro safe_compare(src_expr, tgt_expr, data_type) -%}
+
+      {%- set dt = data_type | upper -%}
+
+      {%- if 'GEOGRAPHY' in dt or 'GEOMETRY' in dt -%}
+          ST_ASWKB({{ src_expr }}) IS DISTINCT FROM ST_ASWKB({{ tgt_expr }})
+      {%- else -%}
+          {{ src_expr }} IS DISTINCT FROM {{ tgt_expr }}
+      {%- endif -%}
+
+  {%- endmacro -%}
+
+  {#===========================================================================
+    safe_equals(left_expr, right_expr, data_type): datatype-aware equality for business keys
+    (GEOGRAPHY/GEOMETRY compared on WKB). NULL never matches.
+  ===========================================================================#}
+  {%- macro safe_equals(left_expr, right_expr, data_type) -%}
+
+      {%- set dt = data_type | upper -%}
+
+      {%- if 'GEOGRAPHY' in dt or 'GEOMETRY' in dt -%}
+          ST_ASWKB({{ left_expr }}) = ST_ASWKB({{ right_expr }})
+      {%- else -%}
+          {{ left_expr }} = {{ right_expr }}
+      {%- endif -%}
+
+  {%- endmacro -%}
+
+  {#===========================================================================
+    SECTION 3: Validation (create/run checks that stop the node)
+  ===========================================================================#}
+
+  {#===========================================================================
+    fail_sql(hardFail): SELECT 1/0 (hardFail, default) or SELECT 1. CREATE does not fail a
+    test stage on row count, so checks that must stop a create use the hard fail.
+  ===========================================================================#}
+  {%- macro fail_sql(hardFail=true) -%}
+      {%- if hardFail -%}
+          SELECT 1/0
+      {%- else -%}
+          SELECT 1
+      {%- endif -%}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    validate_materialization_type(allowedTypes): failing "Unsupported Materialization Type"
+    check when the normalized type is not allowed. Call first in create and run.
+  ===========================================================================#}
+  {%- macro validate_materialization_type(allowedTypes=['table', 'transient table', 'view']) -%}
+      {%- if nsNodeVariables.desiredMatType not in allowedTypes %}
+          {{ test_stage('Unsupported Materialization Type: ' + node.name, false) }}
+          -- '{{ node.materializationType | default('', true) }}' is not supported on {{ node.name }}; use one of: {{ allowedTypes | join(', ') }}
+          {{ fail_sql() }}
+      {%- endif %}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    validate_column_ids(hardFail): every column needs its own @id; reports duplicate
+    names and repeated ids. Used by the Dimension and Fact validators.
+  ===========================================================================#}
+  {%- macro validate_column_ids(hardFail=false) -%}
+      {# A column without a real @id has id equal to its name. When the SELECT repeats a column name, Coalesce renames the extra copy by appending a number (SYSTEM_CREATE_DATE -> SYSTEM_CREATE_DATE1) and drops its @id, so it lands here too — report that as a duplicate name rather than a missing ID. #}
+      {%- set idCheck = namespace(missing=[], duplicates=[]) -%}
+      {%- for col in columns if col.id == col.name -%}
+          {%- set dup = namespace(of=none) -%}
+          {%- for other in columns if other.name != col.name and col.name[:other.name | length] == other.name -%}
+              {%- set suffix = col.name[other.name | length:] -%}
+              {%- if (suffix | int(0)) > 0 and (suffix | int) | string == suffix -%}
+                  {%- set dup.of = other.name -%}
+              {%- endif -%}
+          {%- endfor -%}
+          {%- if dup.of is not none -%}
+              {%- set idCheck.duplicates = idCheck.duplicates + [{"of": dup.of, "renamed": col.name}] -%}
+          {%- else -%}
+              {%- set idCheck.missing = idCheck.missing + [col.name] -%}
+          {%- endif -%}
+      {%- endfor -%}
+
+      {%- if idCheck.duplicates | length > 0 %}
+          {%- set described = namespace(items=[]) -%}
+          {%- for d in idCheck.duplicates -%}
+              {%- set described.items = described.items + ["'" ~ d.of ~ "' (extra copy renamed to " ~ d.renamed ~ ")"] -%}
+          {%- endfor -%}
+          {# A deliberate alias like REGIONKEY1 without an @id is indistinguishable from a renamed copy, so the message covers both. #}
+          {%- set renamed = idCheck.duplicates | map(attribute='renamed') | list -%}
+          {%- if renamed | length > 1 -%}
+              {%- set aliasHint = "If " ~ (renamed | join(', ')) ~ ' are deliberate aliases rather than copies, add a unique @id("<6 hex digits>") to each of them instead.' -%}
+          {%- else -%}
+              {%- set aliasHint = "If " ~ renamed[0] ~ ' is a deliberate alias rather than a copy, add a unique @id("<6 hex digits>") to it instead.' -%}
+          {%- endif -%}
+          {%- set reason = "Duplicate column name: " ~ (described.items | join(', ')) ~ ". The SELECT returns more than one column with the same name — remove the extra column or give it a different alias. " ~ aliasHint %}
+          {{ test_stage("Duplicate Column Names", false) }}
+          -- {{ reason }}
+          {{ fail_sql(hardFail) }}
+      {%- endif -%}
+
+      {# Two columns given the same @id value (exact string match). #}
+      {%- set idDup = namespace(items=[]) -%}
+      {%- for col in columns if col.id != col.name -%}
+          {%- set sharing = columns | selectattr("id", "equalto", col.id) | map(attribute="name") | list -%}
+          {%- set entry = "@id(\"" ~ col.id ~ "\") on " ~ (sharing | join(', ')) -%}
+          {%- if sharing | length > 1 and entry not in idDup.items -%}
+              {%- set idDup.items = idDup.items + [entry] -%}
+          {%- endif -%}
+      {%- endfor -%}
+      {%- if idDup.items | length > 0 %}
+          {%- set reason = "Duplicate column ID: " ~ (idDup.items | join('; ')) ~ '. Each column needs its own unique @id("<6 hex digits>") — change the repeated ID on all but one of them.' %}
+          {{ test_stage("Duplicate Column IDs", false) }}
+          -- {{ reason }}
+          {{ fail_sql(hardFail) }}
+      {%- endif -%}
+
+      {%- if idCheck.missing | length > 0 %}
+          {%- set reason = "These columns have no real system-generated ID (id equals the column name): " ~ (idCheck.missing | join(', ')) ~ '. Add a unique @id("<6 hex digits>") annotation to each of them.' %}
+          {{ test_stage("Missing Column IDs", false) }}
+          -- {{ reason }}
+          {{ fail_sql(hardFail) }}
+      {%- endif -%}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    validate_dimension_requirements(hardFail): Dimension checks (column ids, business key,
+    mergeStrategy, system columns). hardFail = true from create.
+  ===========================================================================#}
+  {%- macro validate_dimension_requirements(hardFail=false) -%}
+
+      {# Every Dimension column must carry its own @id annotation. #}
+      {{ validate_column_ids(hardFail) }}
+
+      {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) -%}
+      {%- if not hasBusinessKey %}
+          {%- set reason = "Mark at least one column with @isBusinessKey to identify the dimension's natural/business key for SCD matching." %}
+          {{ test_stage("Missing Business Key", false) }}
+          -- {{ reason }}
+          {{ fail_sql(hardFail) }}
+      {%- endif -%}
+
+      {%- set lastModifiedCount = columns | selectattr("lastModifiedTracking") | list | length -%}
+      {%- set changeTrackingCount = columns | selectattr("isChangeTracking") | list | length -%}
+
+      {%- set mergeStrategyExplicit = config.mergeStrategy is defined and config.mergeStrategy.parameters is defined and config.mergeStrategy.parameters | length > 0 -%}
+      {%- if mergeStrategyExplicit -%}
+          {# Matched case-insensitively (must match run.sql.j2). #}
+          {%- set mergeStrategyRaw = config.mergeStrategy.parameters[0] | string | trim -%}
+          {%- set mergeStrategy = mergeStrategyRaw | lower -%}
+      {%- else -%}
+          {# No @mergeStrategy given — always default to changeTracking, regardless of which tracking columns are present. #}
+          {%- set mergeStrategy = 'changetracking' -%}
+      {%- endif -%}
+      {%- set isSimpleUpsert = mergeStrategy == 'upsert' -%}
+      {%- set isLastModifiedStrategy = mergeStrategy == 'lastmodified' -%}
+      {%- set isChangeTrackingStrategy = mergeStrategy == 'changetracking' %}
+
+      {# An unrecognised strategy would otherwise fall through to change tracking without any warning. #}
+      {%- if not (isSimpleUpsert or isLastModifiedStrategy or isChangeTrackingStrategy) %}
+          {%- set reason = '@mergeStrategy("' ~ mergeStrategyRaw ~ '") is not a recognised strategy. Use "changeTracking", "lastModified" or "upsert".' %}
+          {{ test_stage('Invalid configuration: mergeStrategy', false) }}
+          -- {{ reason }}
+          {{ fail_sql(hardFail) }}
+      {%- endif -%}
+
+      {# These cross-checks only apply when @mergeStrategy is set explicitly, since an inferred strategy can't conflict with itself. #}
+      {%- if mergeStrategyExplicit and isSimpleUpsert and (lastModifiedCount > 0 or changeTrackingCount > 0) %}
+          {{ test_stage('Invalid configuration: mergeStrategy', true) }}
+          -- @mergeStrategy("upsert") performs no change detection, so @isChangeTracking/@lastModifiedTracking columns are never read. Remove them, or switch mergeStrategy to "changeTracking"/"lastModified" to use them.
+          SELECT 1
+      {%- endif -%}
+
+      {%- if isChangeTrackingStrategy and lastModifiedCount > 0 %}
+          {{ test_stage('Invalid configuration: mergeStrategy', true) }}
+          -- @mergeStrategy("changeTracking") does not use @lastModifiedTracking — that column would be silently ignored. Remove it, or switch mergeStrategy to "lastModified".
+          SELECT 1
+      {%- endif -%}
+
+      {%- if isLastModifiedStrategy and lastModifiedCount == 0 %}
+          {%- set reason = '@mergeStrategy("lastModified") requires exactly one column marked @lastModifiedTracking(<scdType>); none was found.' %}
+          {{ test_stage('Invalid configuration: mergeStrategy', false) }}
+          -- {{ reason }}
+          {{ fail_sql(hardFail) }}
+      {%- endif %}
+
+      {# Only check "at most one @lastModifiedTracking column" once lastModified is the strategy in effect. #}
+      {%- if isLastModifiedStrategy and lastModifiedCount > 1 %}
+          {%- set reason = "@lastModifiedTracking may be applied to at most one column, but " ~ lastModifiedCount ~ " columns were marked. Remove the annotation from all but one column." %}
+          {{ test_stage('Invalid configuration: Last Modified Column', false) }}
+          -- {{ reason }}
+          {{ fail_sql(hardFail) }}
+      {%- endif -%}
+
+      {%- if isLastModifiedStrategy and changeTrackingCount > 0 %}
+          {{ test_stage('Invalid configuration: mergeStrategy', true) }}
+          -- @mergeStrategy("lastModified") does not use @isChangeTracking — those columns would be silently ignored (the last-modified comparison takes priority). Remove them, or switch mergeStrategy to "changeTracking" to use them.
+          SELECT 1
+      {%- endif -%}
+
+      {%- set lastModifiedComparison = isLastModifiedStrategy and lastModifiedCount > 0 -%}
+      {%- if hasBusinessKey -%}
+          {%- if lastModifiedComparison %}
+              {# More than one @lastModifiedTracking column is already flagged above — treat it as inconclusive (plain SCD1) until that's fixed. #}
+              {%- if lastModifiedCount == 1 -%}
+                  {%- set lastModifiedCol = columns | selectattr("lastModifiedTracking") | first %}
+                  {# A bare @lastModifiedTracking (no scdType) comes through as `true`, not a mapping — guard for that and default scdType to 1. #}
+                  {%- set lastModifiedTrackingParams = lastModifiedCol.lastModifiedTracking.parameters if (lastModifiedCol.lastModifiedTracking is mapping and lastModifiedCol.lastModifiedTracking.parameters is defined) else [] -%}
+                  {%- set scdType = lastModifiedTrackingParams[0] | default(1, true) | string -%}
+                  {%- if scdType not in ('1', '2') %}
+                      {%- set reason = '@lastModifiedTracking\'s scdType parameter only accepts 1 or 2, but "' ~ scdType ~ '" was given on column ' ~ lastModifiedCol.name ~ '. Mention @lastModifiedTracking(scdType) explicitly — @lastModifiedTracking(1) to overwrite in place, or @lastModifiedTracking(2) to version the row.' %}
+                      {{ test_stage('Invalid configuration: lastModifiedTracking scdType', false) }}
+                      -- {{ reason }}
+                      {{ fail_sql(hardFail) }}
+                  {%- endif -%}
+                  {%- set type2Dimension = scdType == '2' -%}
+              {%- else -%}
+                  {%- set type2Dimension = false -%}
+              {%- endif -%}
+          {%- else -%}
+              {%- set type2Dimension = changeTrackingCount > 0 -%}
+          {%- endif -%}
+      {%- else -%}
+          {%- set type2Dimension = false -%}
+      {%- endif -%}
+      {%- if isSimpleUpsert %}
+          {# @upsert always forces plain SCD1, no matter what @lastModifiedTracking/@isChangeTracking say. #}
+          {%- set type2Dimension = false -%}
+      {%- endif %}
+
+      {# Collect every missing/misconfigured system column here so one run reports them all together instead of one at a time. #}
+      {%- set missingSystemColumns = namespace(items=[]) %}
+
+      {# @isSurrogateKey is normally optional (a customer may manage their own, e.g. SEQ.NEXTVAL) — required when @zeroKey needs one to match against, recommended for SCD Type 2. #}
+      {%- set hasSurrogateKey = columns | selectattr("isSurrogateKey") | list | length > 0 -%}
+      {%- if config.zeroKey is defined and not hasSurrogateKey -%}
+          {%- set missingSystemColumns.items = missingSystemColumns.items + [{
+              'required': true,
+              'annotation': '@isSurrogateKey',
+              'example': none,
+              'reason': '@zeroKey requires a surrogate key column to match the zero record against; none was found on this node.'
+          }] -%}
+      {%- elif type2Dimension and not hasSurrogateKey -%}
+          {%- set missingSystemColumns.items = missingSystemColumns.items + [{
+              'required': false,
+              'annotation': '@isSurrogateKey',
+              'example': '0 AS "' ~ node.name ~ '_KEY" @isSurrogateKey',
+              'reason': 'Recommended for SCD Type 2, to give tables a stable per-version join key. Ignore this warning if you are managing your own surrogate key logic (e.g. a sequence NEXTVAL) instead of using @isSurrogateKey.'
+          }] -%}
+      {%- endif -%}
+
+      {%- set hasSystemCreateDate = columns | selectattr("isSystemCreateDate") | list | length > 0 -%}
+      {%- if not isSimpleUpsert and not hasSystemCreateDate -%}
+          {%- set missingSystemColumns.items = missingSystemColumns.items + [{
+              'required': true,
+              'annotation': '@isSystemCreateDate',
+              'example': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate',
+              'reason': 'Required because @mergeStrategy("changeTracking"/"lastModified") does change detection against the existing target row: SYSTEM_CREATE_DATE is carried through unchanged from that row into CHANGE_DETECTION so its original insert timestamp is preserved on every update, and only stamped with CURRENT_TIMESTAMP the one time a business key is first inserted.'
+          }] -%}
+      {%- endif %}
+
+      {# SYSTEM_UPDATE_DATE is required for both SCD Type 1 and Type 2. #}
+      {%- set hasSystemUpdateDate = columns | selectattr("isSystemUpdateDate") | list | length > 0 -%}
+      {%- if not isSimpleUpsert and not hasSystemUpdateDate -%}
+          {%- if type2Dimension -%}
+              {%- set missingSystemColumns.items = missingSystemColumns.items + [{
+                  'required': true,
+                  'annotation': '@isSystemUpdateDate',
+                  'example': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate',
+                  'reason': 'Required because this is an SCD Type 2 dimension: SYSTEM_UPDATE_DATE is carried through from the current target row into CHANGE_DETECTION/MERGE_ROWS so it can be stamped with CURRENT_TIMESTAMP whenever a new or changed version is inserted, marking when that version became active.'
+              }] -%}
+          {%- else -%}
+              {%- set missingSystemColumns.items = missingSystemColumns.items + [{
+                  'required': true,
+                  'annotation': '@isSystemUpdateDate',
+                  'example': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate',
+                  'reason': 'Required for SCD Type 1: without it there\'s no way to tell when a row\'s attributes were last changed — SYSTEM_CREATE_DATE is set once and never touched again.'
+              }] -%}
+          {%- endif -%}
+      {%- endif -%}
+
+      {# The remaining system columns are only required for SCD Type 2. #}
+      {%- if type2Dimension -%}
+          {%- set hasSystemVersion = columns | selectattr("isSystemVersion") | list | length > 0 -%}
+          {%- if not hasSystemVersion -%}
+              {%- set missingSystemColumns.items = missingSystemColumns.items + [{
+                  'required': true,
+                  'annotation': '@isSystemVersion',
+                  'example': '1 AS "SYSTEM_VERSION" @isSystemVersion',
+                  'reason': 'Required because this is an SCD Type 2 dimension (a versioned last-modified column, or an @isChangeTracking column, was found): SYSTEM_VERSION is what distinguishes successive versions of the same business key, and it\'s what the outer MERGE\'s ON clause uses (alongside the business key) to target the exact row version being expired or matched.'
+              }] -%}
+          {%- endif -%}
+
+          {%- set hasSystemCurrentFlag = columns | selectattr("isSystemCurrentFlag") | list | length > 0 -%}
+          {%- if not hasSystemCurrentFlag -%}
+              {%- set missingSystemColumns.items = missingSystemColumns.items + [{
+                  'required': true,
+                  'annotation': '@isSystemCurrentFlag',
+                  'example': '\'Y\' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag',
+                  'reason': 'Required because this is an SCD Type 2 dimension: the CHANGE_DETECTION CTE filters TARGET_CURRENT down to WHERE SYSTEM_CURRENT_FLAG = \'Y\' to find the one active row per business key to compare the incoming source row against — without it there\'s no way to tell which of possibly several historical versions is the current one.'
+              }] -%}
+          {%- endif -%}
+
+          {%- set hasSystemEndDate = columns | selectattr("isSystemEndDate") | list | length > 0 -%}
+          {%- if not hasSystemEndDate -%}
+              {%- set missingSystemColumns.items = missingSystemColumns.items + [{
+                  'required': true,
+                  'annotation': '@isSystemEndDate',
+                  'example': 'CAST(\'2999-12-31 00:00:00\' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate',
+                  'reason': 'Required because this is an SCD Type 2 dimension: SYSTEM_END_DATE is what gets set to the expiry timestamp when a changed row\'s prior version is expired, and to the far-future sentinel on every newly inserted current version — without it there\'s no way to bound how long each historical version was active.'
+              }] -%}
+          {%- endif -%}
+      {%- endif -%}
+
+      {%- if missingSystemColumns.items | length > 0 -%}
+          {%- set anyRequired = missingSystemColumns.items | selectattr('required') | list | length > 0 %}
+          {# If @isSurrogateKey is the only thing flagged, use a neutral heading since it may just be a custom surrogate key setup. #}
+          {%- set onlySurrogateKeyFlagged = missingSystemColumns.items | length == 1 and missingSystemColumns.items[0].annotation == '@isSurrogateKey' and not missingSystemColumns.items[0].required -%}
+          {%- set stageName = 'Surrogate Key Not Set/Using Custom Surrogate Key Logic' if onlySurrogateKeyFlagged else 'Missing Required System Columns' %}
+          {{ test_stage(stageName, not anyRequired) }}
+          {%- for item in missingSystemColumns.items %}
+          -- {{ loop.index }}. [{{ 'REQUIRED' if item.required else 'RECOMMENDED' }}] {{ item.annotation }}
+          {%- if item.example %}
+          --    Example: {{ item.example }}
+          {%- endif %}
+          --    Reason: {{ item.reason }}
+          {%- endfor %}
+          {# Only hard-fail if a REQUIRED item is present; recommendations-only stays non-blocking. #}
+          {%- if hardFail and anyRequired -%}
+              {{ fail_sql(hardFail) }}
+          {%- else -%}
+              SELECT 1
+          {%- endif -%}
+      {%- endif -%}
+
+      {# Zero key record: a string value longer than its column's declared length is rejected by Snowflake. Warn only. #}
+      {%- if config.zeroKey is defined and hasSurrogateKey -%}
+          {%- set zk = namespace(tooLong=[]) -%}
+          {%- set zkParams = config.zeroKey.parameters if config.zeroKey.parameters is defined else [] -%}
+          {%- for col in columns if not (col.isSurrogateKey or col.isSystemCurrentFlag or col.isSystemEndDate
+                                         or col.isSystemUpdateDate or col.isSystemCreateDate or col.isSystemVersion) -%}
+              {%- set dt = col.dataType | upper | replace(' ', '') -%}
+              {%- if dt[:3] in ('VAR', 'CHA', 'STR', 'TEX') -%}
+                  {%- set maxLen = (dt.split('(')[1].split(')')[0] | int) if '(' in dt else (1 if dt in ('CHAR', 'CHARACTER') else none) -%}
+                  {%- if col.zeroKey is defined and col.zeroKey.parameters is defined and col.zeroKey.parameters | length > 0 -%}
+                      {%- set zkValue = col.zeroKey.parameters[0] | string | trim -%}
+                  {%- else -%}
+                      {%- set zkValue = (zkParams[1] if zkParams | length > 1 else "'UNKNOWN'") | string | trim -%}
+                  {%- endif -%}
+                  {%- set zkText = zkValue[1:-1] | replace("''", "'") if (zkValue | length > 1 and zkValue[:1] == "'" and zkValue[-1:] == "'") else zkValue -%}
+                  {%- if maxLen is not none and zkText | length > maxLen -%}
+                      {%- set zk.tooLong = zk.tooLong + [col.name ~ ' ' ~ col.dataType ~ ' gets ' ~ zkValue ~ ' (' ~ zkText | length ~ ' characters)'] -%}
+                  {%- endif -%}
+              {%- endif -%}
+          {%- endfor -%}
+
+          {%- if zk.tooLong %}
+          {{ test_stage('Warning: Zero Key Value Too Long', true) }}
+          {%- for item in zk.tooLong %}
+          -- {{ item }}.
+          {%- endfor %}
+          -- Snowflake rejects a value longer than the column, so the Zero Key Record stage will fail ("String is too long and would be truncated").
+          -- Set a shorter value on the column with @zeroKey("'<value>'"), or widen the column.
+          SELECT 1 AS MESSAGE
+          {%- endif %}
+      {%- endif -%}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    validate_fact_requirements(hardFail): Fact checks (column ids, mergeStrategy, system
+    columns). hardFail = true from create.
+  ===========================================================================#}
+  {%- macro validate_fact_requirements(hardFail=false) -%}
+
+      {# Every Fact column must carry its own @id annotation. #}
+      {{ validate_column_ids(hardFail) }}
+
+      {# No @isBusinessKey column is valid for a Fact — it's loaded as a plain insert, so the mergeStrategy/tracking/system-column checks below don't apply. #}
+      {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) -%}
+
+      {%- set lastModifiedCount = columns | selectattr("lastModifiedTracking") | list | length -%}
+
+      {%- set mergeStrategyExplicit = config.mergeStrategy is defined and config.mergeStrategy.parameters is defined and config.mergeStrategy.parameters | length > 0 -%}
+      {%- if mergeStrategyExplicit -%}
+          {# Matched case-insensitively (must match run.sql.j2). #}
+          {%- set mergeStrategyRaw = config.mergeStrategy.parameters[0] | string | trim -%}
+          {%- set mergeStrategy = mergeStrategyRaw | lower -%}
+      {%- else -%}
+          {# No @mergeStrategy given — always default to changeTracking, regardless of which tracking columns are present. #}
+          {%- set mergeStrategy = 'changetracking' -%}
+      {%- endif -%}
+      {%- set isSimpleUpsert = mergeStrategy == 'upsert' -%}
+      {%- set isLastModifiedStrategy = mergeStrategy == 'lastmodified' -%}
+      {%- set isChangeTrackingStrategy = mergeStrategy == 'changetracking' -%}
+      {%- set isAllColumnMatch = mergeStrategy == 'allcolumnmatch' %}
+
+      {# An unrecognised strategy would otherwise fall through to change tracking without any warning. #}
+      {%- if not (isSimpleUpsert or isLastModifiedStrategy or isChangeTrackingStrategy or isAllColumnMatch) %}
+          {%- set reason = '@mergeStrategy("' ~ mergeStrategyRaw ~ '") is not a recognised strategy. Use "changeTracking", "lastModified", "upsert" or "allColumnMatch".' %}
+          {{ test_stage('Invalid configuration: mergeStrategy', false) }}
+          -- {{ reason }}
+          {{ fail_sql(hardFail) }}
+      {%- endif -%}
+
+      {# @mergeStrategy always takes priority. An explicit changeTracking/lastModified/upsert merges on the business key, so a missing @isBusinessKey stops the load.
+         Not for allColumnMatch, which needs no @isBusinessKey — every column is the match key. An unrecognised value is already flagged above. #}
+      {%- if not hasBusinessKey and mergeStrategyExplicit and (isSimpleUpsert or isLastModifiedStrategy or isChangeTrackingStrategy) %}
+          {%- set reason = '@mergeStrategy("' ~ mergeStrategyRaw ~ '") merges on the business key, but no column is marked @isBusinessKey. Mark the business key column(s) with @isBusinessKey, or remove @mergeStrategy to load the node as a plain insert.' %}
+          {{ test_stage('Invalid configuration: No Business Key', false) }}
+          -- {{ reason }}
+          {{ fail_sql(hardFail) }}
+      {%- endif -%}
+
+      {# No @mergeStrategy and no business key = plain insert, so @lastModifiedTracking is never read. Warn only — the insert still runs. #}
+      {%- if not hasBusinessKey and not mergeStrategyExplicit and lastModifiedCount > 0 %}
+          {{ test_stage('Invalid configuration: No Business Key', true) }}
+          -- No @mergeStrategy and no column marked @isBusinessKey, so this node is loaded as a plain insert — @lastModifiedTracking will be ignored. Mark the business key column(s) with @isBusinessKey and set @mergeStrategy("lastModified") to use it, or remove the annotation.
+          SELECT 1
+      {%- endif -%}
+
+      {# allColumnMatch matches on every non-system column, so @isBusinessKey / @lastModifiedTracking are never read. Warn only — the merge still runs. #}
+      {%- if isAllColumnMatch and hasBusinessKey %}
+          {{ test_stage('Invalid configuration: mergeStrategy', true) }}
+          -- @mergeStrategy("allColumnMatch") matches on every non-system column, so @isBusinessKey is ignored — all columns are used as the business key for comparison. Remove @isBusinessKey, or switch mergeStrategy to use it.
+          SELECT 1
+      {%- endif -%}
+
+      {%- if isAllColumnMatch and lastModifiedCount > 0 %}
+          {{ test_stage('Invalid configuration: mergeStrategy', true) }}
+          -- @mergeStrategy("allColumnMatch") performs no change detection, so @lastModifiedTracking columns are never read. Remove them, or switch mergeStrategy to "lastModified" to use them.
+          SELECT 1
+      {%- endif -%}
+
+      {# These cross-checks only apply when @mergeStrategy is set explicitly, since an inferred strategy can't conflict with itself. #}
+      {%- if hasBusinessKey and mergeStrategyExplicit and isSimpleUpsert and lastModifiedCount > 0 %}
+          {{ test_stage('Invalid configuration: mergeStrategy', true) }}
+          -- @mergeStrategy("upsert") performs no change detection, so @lastModifiedTracking columns are never read. Remove them, or switch mergeStrategy to "lastModified" to use them.
+          SELECT 1
+      {%- endif -%}
+
+      {%- if hasBusinessKey and isChangeTrackingStrategy and lastModifiedCount > 0 %}
+          {{ test_stage('Invalid configuration: mergeStrategy', true) }}
+          -- @mergeStrategy("changeTracking") does not use @lastModifiedTracking — that column would be silently ignored. Remove it, or switch mergeStrategy to "lastModified".
+          SELECT 1
+      {%- endif -%}
+
+      {%- if hasBusinessKey and isLastModifiedStrategy and lastModifiedCount == 0 %}
+          {%- set reason = '@mergeStrategy("lastModified") requires exactly one column marked @lastModifiedTracking; none was found.' %}
+          {{ test_stage('Invalid configuration: mergeStrategy', false) }}
+          -- {{ reason }}
+          {{ fail_sql(hardFail) }}
+      {%- endif %}
+
+      {# Only check "at most one @lastModifiedTracking column" once lastModified is the strategy in effect. #}
+      {%- if hasBusinessKey and isLastModifiedStrategy and lastModifiedCount > 1 %}
+          {%- set reason = "@lastModifiedTracking may be applied to at most one column, but " ~ lastModifiedCount ~ " columns were marked. Remove the annotation from all but one column." %}
+          {{ test_stage('Invalid configuration: Last Modified Column', false) }}
+          -- {{ reason }}
+          {{ fail_sql(hardFail) }}
+      {%- endif -%}
+
+      {# Collect every missing/misconfigured system column here so one run reports them all together instead of one at a time. #}
+      {%- set missingSystemColumns = namespace(items=[]) %}
+
+      {%- set hasSystemCreateDate = columns | selectattr("isSystemCreateDate") | list | length > 0 -%}
+      {%- if hasBusinessKey and not isSimpleUpsert and not isAllColumnMatch and not hasSystemCreateDate -%}
+          {%- set missingSystemColumns.items = missingSystemColumns.items + [{
+              'required': true,
+              'annotation': '@isSystemCreateDate',
+              'example': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate',
+              'reason': 'Required because @mergeStrategy("changeTracking"/"lastModified") does change detection against the existing target row: SYSTEM_CREATE_DATE is carried through unchanged from that row into CHANGE_DETECTION so its original insert timestamp is preserved on every update, and only stamped with CURRENT_TIMESTAMP the one time a business key is first inserted.'
+          }] -%}
+      {%- endif %}
+
+      {%- set hasSystemUpdateDate = columns | selectattr("isSystemUpdateDate") | list | length > 0 -%}
+      {%- if hasBusinessKey and not isSimpleUpsert and not isAllColumnMatch and not hasSystemUpdateDate -%}
+          {%- set missingSystemColumns.items = missingSystemColumns.items + [{
+              'required': true,
+              'annotation': '@isSystemUpdateDate',
+              'example': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate',
+              'reason': 'Required for SCD Type 1: without it there\'s no way to tell when a row\'s attributes were last changed — SYSTEM_CREATE_DATE is set once and never touched again.'
+          }] -%}
+      {%- endif -%}
+
+      {%- if missingSystemColumns.items | length > 0 -%}
+          {%- set anyRequired = missingSystemColumns.items | selectattr('required') | list | length > 0 %}
+          {{ test_stage('Missing Required System Columns', not anyRequired) }}
+          {%- for item in missingSystemColumns.items %}
+          -- {{ loop.index }}. [{{ 'REQUIRED' if item.required else 'RECOMMENDED' }}] {{ item.annotation }}
+          {%- if item.example %}
+          --    Example: {{ item.example }}
+          {%- endif %}
+          --    Reason: {{ item.reason }}
+          {%- endfor %}
+          {# Only hard-fail if a REQUIRED item is present; recommendations-only stays non-blocking. #}
+          {%- if hardFail and anyRequired -%}
+              {{ fail_sql(hardFail) }}
+          {%- else -%}
+              SELECT 1
+          {%- endif -%}
+      {%- endif -%}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    SECTION 4: Tags (@tag annotations)
+  ===========================================================================#}
+
+  {#===========================================================================
+    tag_check_duplicates(): failing "Duplicate Tags Found: <node|column>" check for the
+    node and each column with a repeated tag (same name + location). Call at the start
+    of create, before any DDL.
+  ===========================================================================#}
+  {%- macro tag_check_duplicates() -%}
+      {%- for owner in [{"name": node.name, "tag": config.tag}] + (columns | list) -%}
+          {%- set ns = namespace(entries=[], dupes=[]) -%}
+          {%- for t in owner.tag | default([]) -%}
+              {%- set ns.entries = ns.entries + [{"key": t.parameters[0] + '|' + (t.parameters[2] | default(node.location.name, true)),
+                                                  "name": t.parameters[0]}] -%}
+          {%- endfor -%}
+          {%- for e in ns.entries -%}
+              {%- if (ns.entries | selectattr('key', 'equalto', e.key) | list | length) > 1 and e.name not in ns.dupes -%}
+                  {%- set ns.dupes = ns.dupes + [e.name] -%}
+              {%- endif -%}
+          {%- endfor -%}
+
+          {%- if ns.dupes | length > 0 %}
+              {{ test_stage('Duplicate Tags Found: ' + owner.name, false) }}
+              -- {{ ns.dupes | join(', ') }} is applied multiple times on {{ owner.name }}
+              {{ fail_sql() }}
+          {%- endif %}
+      {%- endfor -%}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    tag_diff(desiredTagList, currentTagList, mode): 'set' -> new tags and new values as
+    "DB"."SCHEMA"."TAG" = 'value', 'unset' -> removed tags (name/location gone; a value
+    change is only a set); '' when nothing differs. Location defaults to the node's own;
+    names are case-sensitive and qualified with ref_no_link (no lineage edge).
+  ===========================================================================#}
+  {%- macro tag_diff(desiredTagList, currentTagList, mode) -%}
+      {%- set ns = namespace(desired=[], current=[], items=[]) -%}
+      {%- for t in desiredTagList | default([]) -%}
+          {%- set ns.desired = ns.desired + [{"name": t.parameters[0], "value": t.parameters[1] | string, "location": t.parameters[2] | default(node.location.name, true)}] -%}
+      {%- endfor -%}
+      {%- for t in currentTagList | default([]) -%}
+          {%- set ns.current = ns.current + [{"name": t.parameters[0], "value": t.parameters[1] | string, "location": t.parameters[2] | default(currentState.node.location.name, true)}] -%}
+      {%- endfor -%}
+
+      {%- if mode == 'set' -%}
+          {%- for dt in ns.desired -%}
+              {%- set unchanged = ns.current
+                                | selectattr('name', 'equalto', dt.name)
+                                | selectattr('value', 'equalto', dt.value)
+                                | selectattr('location', 'equalto', dt.location)
+                                | list -%}
+              {%- if not unchanged -%}
+                  {%- set ns.items = ns.items + [ref_no_link(dt.location, dt.name) + " = '" + (dt.value | escape) + "'"] -%}
+              {%- endif -%}
+          {%- endfor -%}
+      {%- else -%}
+          {#- A tag still present with a new value is not unset: SET TAG overwrites the value #}
+          {%- for ct in ns.current -%}
+              {%- set stillTagged = ns.desired
+                                | selectattr('name', 'equalto', ct.name)
+                                | selectattr('location', 'equalto', ct.location)
+                                | list -%}
+              {%- if not stillTagged -%}
+                  {%- set ns.items = ns.items + [ref_no_link(ct.location, ct.name)] -%}
+              {%- endif -%}
+          {%- endfor -%}
+      {%- endif -%}
+      {{- ns.items | join(', ') -}}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    tag_list(tagList): every tag in tagList as "DB"."SCHEMA"."TAG" = 'value', ... — the
+    inside of a WITH TAG (...) clause (via tag_diff against no current tags); '' when none.
+    Usage: {%- if col.tag %} WITH TAG ({{ tag_list(col.tag) }}) {%- endif %}
+  ===========================================================================#}
+  {%- macro tag_list(tagList) -%}
+      {{- tag_diff(tagList, [], 'set') -}}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    SECTION 5: Create helpers (first deploy / recreate)
+  ===========================================================================#}
+
+  {#===========================================================================
+    view_definition_sql(state, withTags): view column list, comments, tags and AS SELECT
+    for a state. withTags=false is used to detect tag-only changes. Surrogate key and
+    system columns (Dimension/Fact) select CAST(NULL AS <type>).
+  ===========================================================================#}
+  {%- macro view_definition_sql(state, withTags=true) -%}
+      (
+          {%- for col in state.columns %}
+              "{{ col.name }}"
+              {%- if withTags and col.tag %} WITH TAG ({{ tag_list(col.tag) }}){% endif %}
+              {%- if col.description | trim | length > 0 %} COMMENT '{{ col.description | escape }}'{% endif %}
+              {%- if not loop.last -%}, {%- endif %}
+          {%- endfor %}
+      )
+      {%- if state.node.description | trim | length > 0 %} COMMENT = '{{ state.node.description | escape }}'{% endif %}
+      {%- if withTags and state.config.tag %} WITH TAG ({{ tag_list(state.config.tag) }}){% endif %}
+      AS
+      {{ state.sources[0].cteString }}
+      SELECT {{ state.sources[0].selectModifier | default('', true) }}
+      {%- for col in state.sources[0].columns %}
+          {%- if col.isSurrogateKey or col.isSystemVersion or col.isSystemCurrentFlag
+                  or col.isSystemCreateDate or col.isSystemUpdateDate or col.isSystemEndDate %}
+          CAST(NULL AS {{ col.dataType }}) AS "{{ col.name }}"
+          {%- else %}
+          {{ get_source_transform(col) }} AS "{{ col.name }}"
+          {%- endif %}
+          {%- if not loop.last -%}, {%- endif %}
+      {%- endfor %}
+      {{ state.sources[0].join }}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    SECTION 6: Redeploy (advanced deploy strategy), in the order the stages run
+  ===========================================================================#}
+
+  {#===========================================================================
+    Table redeploy (base Work clone pattern): Clone Table -> alter_ stages on the clone
+    -> Swap Cloned Table (or Rename Table when renamed/moved) -> Delete Table.
+    Views are altered in place (tags) or recreated.
+  ===========================================================================#}
+
+  {#===========================================================================
+    object_drop_sql(): "Drop <type>" when the node is deleted, the type changed or a view
+    moved/renamed. A deleted table also drops its leftover clone ("Delete Table").
+  ===========================================================================#}
+  {%- macro object_drop_sql() -%}
+      {%- if currentState is defined and currentState -%}
+          {%- set currentMatType = nsNodeVariables.currentMatType -%}
+          {%- set nodeDeleted = desiredState is not defined or not desiredState -%}
+          {%- set dropCurrent = nodeDeleted
+                                or currentMatType != nsNodeVariables.desiredMatType
+                                or (nsNodeVariables.desiredMatType == 'view'
+                                    and nsNodeVariables.curObjectNameFullPath != nsNodeVariables.desObjectNameFullPath) -%}
+
+          {%- if nodeDeleted and currentMatType != 'view' %}
+              {{ stage('Delete Table') }}
+              DROP TABLE IF EXISTS {{ nsNodeVariables.cloneObjectNameFullPath }}
+          {%- endif %}
+
+          {%- if dropCurrent %}
+              {{ stage('Drop ' + currentMatType) }}
+              DROP {{ drop_materialization(currentMatType) }} {{ nsNodeVariables.curObjectNameFullPath }}
+              {%- set nsNodeVariables.metaDataChanged = true -%}
+          {%- endif %}
+      {%- endif -%}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    alter_drop_cluster_key_sql(): when a clustered column is renamed or dropped, first a
+    non-failing "Warning: Cluster Key Change" stage describing it; then "Drop Cluster Key"
+    only for a rename (Snowflake 003320). Call first; alter_cluster_key_sql() re-applies
+    the key before Delete Column, so a dropped clustered column needs no early drop.
+  ===========================================================================#}
+  {%- macro alter_drop_cluster_key_sql() -%}
+      {%- set ns = namespace(renamed=[], dropped=[]) -%}
+      {%- for curCol in currentState.columns if ('"' + curCol.name + '"') in nsNodeVariables.currentClusterKeyColumns -%}
+          {%- if ('"' + curCol.name + '"') in nsNodeVariables.droppedColumns -%}
+              {%- set ns.dropped = ns.dropped + [curCol.name] -%}
+          {%- elif ('"' + curCol.name + '"') in nsNodeVariables.renamedColumns -%}
+              {%- set ns.renamed = ns.renamed + [curCol.name ~ ' -> ' ~ (columns | selectattr('id', 'equalto', curCol.id) | first).name] -%}
+          {%- endif -%}
+      {%- endfor -%}
+
+      {%- if ns.renamed or ns.dropped %}
+          {{ test_stage('Warning: Cluster Key Change', true) }}
+          {%- if ns.renamed %}
+          -- Renamed clustered column: {{ ns.renamed | join(', ') }}. Snowflake cannot rename a column in the cluster key, so the cluster key is dropped first and re-applied after the rename.
+          {%- endif %}
+          {%- if ns.dropped %}
+          -- Dropped clustered column: {{ ns.dropped | join(', ') }}.
+          {%- endif %}
+          {%- if nsNodeVariables.desiredClusterKey | length > 0 %}
+          -- The table is reclustered on ({{ nsNodeVariables.desiredClusterKey | join(', ') }}){{ ' before the column is dropped' if ns.dropped }}.
+          {%- else %}
+          -- No clustered columns remain, so the cluster key is dropped.
+          {%- endif %}
+          SELECT 1 AS MESSAGE
+      {%- endif %}
+
+      {%- if ns.renamed %}
+          {{ stage('Drop Cluster Key') }}
+          ALTER TABLE {{ nsNodeVariables.alterObjectNameFullPath }}
+          DROP CLUSTERING KEY
+          {%- set nsNodeVariables.clusterKeyDropped = true -%}
+          {%- set nsNodeVariables.metaDataChanged = true -%}
+      {%- endif %}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    alter_modify_columns_sql(): "Alter Column" — one ALTER ( ... ) with every data type,
+    nullability, description and default change, using the old column names.
+    Call before alter_rename_columns_sql().
+  ===========================================================================#}
+  {%- macro alter_modify_columns_sql() -%}
+      {%- set ns = namespace(actions=[]) -%}
+      {%- for curCol in currentState.columns -%}
+          {%- set matchingCols = columns | default([]) | selectattr('id', 'equalto', curCol.id) | list -%}
+
+          {%- if matchingCols -%}
+              {%- set desCol = matchingCols | first -%}
+              {%- set colName = '"' + curCol.name + '"' -%}
+              {%- set currentNotNull = curCol.nullable == false -%}
+              {%- set currentDefaultValue = curCol.defaultValue if curCol.defaultValue else none -%}
+              {%- set currentDescription = curCol.description if curCol.description | trim | length > 0 else '' -%}
+              {%- set desiredNotNull = desCol.nullable == false -%}
+              {%- set desiredDefaultValue = desCol.defaultValue if desCol.defaultValue else none -%}
+              {%- set desiredDescription = desCol.description if desCol.description | trim | length > 0 else '' -%}
+
+              {#- Collect an action per changed attribute #}
+              {%- if (curCol.dataType | upper | replace(' ', '')) != (desCol.dataType | upper | replace(' ', '')) -%}
+                  {%- set ns.actions = ns.actions + [colName ~ ' SET DATA TYPE ' ~ desCol.dataType] -%}
+              {%- endif -%}
+              {%- if currentNotNull != desiredNotNull -%}
+                  {%- set ns.actions = ns.actions + [colName ~ (' SET NOT NULL' if desiredNotNull else ' DROP NOT NULL')] -%}
+              {%- endif -%}
+              {%- if currentDescription != desiredDescription -%}
+                  {%- set ns.actions = ns.actions + [colName ~ " COMMENT '" ~ (desiredDescription | escape) ~ "'"] -%}
+              {%- endif -%}
+              {%- if currentDefaultValue != desiredDefaultValue -%}
+                  {%- if desiredDefaultValue == none -%}
+                      {%- set ns.actions = ns.actions + [colName ~ ' DROP DEFAULT'] -%}
+                  {%- else -%}
+                      {%- set ns.actions = ns.actions + [colName ~ ' SET DEFAULT ' ~ desiredDefaultValue] -%}
+                  {%- endif -%}
+              {%- endif -%}
+          {%- endif -%}
+      {%- endfor -%}
+
+      {%- if ns.actions | length > 0 %}
+          {{ stage('Alter Column') }}
+          ALTER TABLE {{ nsNodeVariables.alterObjectNameFullPath }}
+          ALTER ( {{ ns.actions | join(', ') }} )
+          {%- set nsNodeVariables.metaDataChanged = true -%}
+      {%- endif %}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    alter_add_columns_sql(): "Add Column" — one ADD COLUMN for columns with a new id, with NOT NULL,
+    DEFAULT, tags and comment. No identity: Snowflake only adds one to an empty table.
+  ===========================================================================#}
+  {%- macro alter_add_columns_sql() -%}
+      {%- set ns = namespace(items=[]) -%}
+      {%- for desCol in columns -%}
+          {%- set idAlreadyCurrent = currentState.columns | default([]) | selectattr('id', 'equalto', desCol.id) | list -%}
+          {%- if not idAlreadyCurrent -%}
+              {%- set ns.items = ns.items + [desCol] -%}
+          {%- endif -%}
+      {%- endfor -%}
+
+      {%- if ns.items | length > 0 %}
+          {{ stage('Add Column') }}
+          ALTER TABLE {{ nsNodeVariables.alterObjectNameFullPath }}
+          ADD COLUMN
+          {%- for desCol in ns.items %}
+              "{{ desCol.name }}" {{ desCol.dataType }}
+              {%- if desCol.nullable == false %} NOT NULL {%- endif %}
+              {%- if desCol.defaultValue %} DEFAULT {{ desCol.defaultValue }} {%- endif %}
+              {%- if desCol.tag %} WITH TAG ({{ tag_list(desCol.tag) }}) {%- endif %}
+              {%- if desCol.description | trim | length > 0 %} COMMENT '{{ desCol.description | escape }}'{%- endif %}
+              {%- if not loop.last -%}, {%- endif %}
+          {%- endfor %}
+          {%- set nsNodeVariables.metaDataChanged = true -%}
+      {%- endif %}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    alter_rename_columns_sql(): "Rename Column" per column whose id is kept but name
+    changed. A column without @id has its name as id, so renaming it drops and re-adds it.
+  ===========================================================================#}
+  {%- macro alter_rename_columns_sql() -%}
+      {%- for curCol in currentState.columns -%}
+          {%- set idMatches = columns | default([]) | selectattr('id', 'equalto', curCol.id) | list -%}
+          {%- if idMatches and (idMatches | first).name != curCol.name %}
+              {{ stage('Rename Column') }}
+              ALTER TABLE {{ nsNodeVariables.alterObjectNameFullPath }}
+              RENAME COLUMN "{{ curCol.name }}" TO "{{ (idMatches | first).name }}"
+              {%- set nsNodeVariables.metaDataChanged = true -%}
+          {%- endif %}
+      {%- endfor -%}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    alter_cluster_key_sql(): "Recluster Table" with the new key, or "Drop Cluster Key"
+    when it was removed. Call after column adds/renames and before Delete Column, so a
+    dropped clustered column has left the key.
+  ===========================================================================#}
+  {%- macro alter_cluster_key_sql() -%}
+      {#- Whitespace-insensitive, so trunc(a,-5) vs trunc(a, -5) is not a change #}
+      {%- set keyChanged = (nsNodeVariables.desiredClusterKey | map('replace', ' ', '') | list)
+                        != (nsNodeVariables.currentClusterKey | map('replace', ' ', '') | list) -%}
+
+      {%- if nsNodeVariables.desiredClusterKey | length > 0 and (keyChanged or nsNodeVariables.clusterKeyDropped) %}
+          {{ stage('Recluster Table') }}
+          ALTER TABLE {{ nsNodeVariables.alterObjectNameFullPath }}
+          CLUSTER BY ({{ nsNodeVariables.desiredClusterKey | join(', ') }})
+          {%- set nsNodeVariables.metaDataChanged = true -%}
+      {%- elif nsNodeVariables.desiredClusterKey | length == 0 and nsNodeVariables.currentClusterKey | length > 0
+              and not nsNodeVariables.clusterKeyDropped %}
+          {{ stage('Drop Cluster Key') }}
+          ALTER TABLE {{ nsNodeVariables.alterObjectNameFullPath }}
+          DROP CLUSTERING KEY
+          {%- set nsNodeVariables.metaDataChanged = true -%}
+      {%- endif %}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    alter_drop_columns_sql(): "Delete Column" — one ALTER ... DROP for removed columns.
+  ===========================================================================#}
+  {%- macro alter_drop_columns_sql() -%}
+      {%- if nsNodeVariables.droppedColumns | length > 0 %}
+          {{ stage('Delete Column') }}
+          ALTER TABLE {{ nsNodeVariables.alterObjectNameFullPath }}
+          DROP {{ nsNodeVariables.droppedColumns | join(', ') }}
+          {%- set nsNodeVariables.metaDataChanged = true -%}
+      {%- endif %}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    alter_description_sql(): "Edit Table Description" — SET COMMENT on the clone when the
+    node description changed (missing = empty). Tables only: a view is recreated instead.
+  ===========================================================================#}
+  {%- macro alter_description_sql() -%}
+      {%- set desiredDescription = node.description if node.description | trim | length > 0 else '' -%}
+      {%- set currentDescription = currentState.node.description if currentState.node.description | trim | length > 0 else '' -%}
+      {%- if currentDescription != desiredDescription %}
+          {{ stage('Edit Table Description') }}
+          ALTER TABLE {{ nsNodeVariables.alterObjectNameFullPath }}
+          SET COMMENT = '{{ desiredDescription | escape }}'
+          {%- set nsNodeVariables.metaDataChanged = true -%}
+      {%- endif %}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    alter_tag_sql(): "Unset/Set Column Tags: <column>", then "Unset/Set <Table|View> Tags";
+    only changed tags; removed tags are unset before new tags/values are set.
+  ===========================================================================#}
+  {%- macro alter_tag_sql() -%}
+      {%- set objectPath = nsNodeVariables.alterObjectNameFullPath -%}
+      {%- set objectKind = 'VIEW' if nsNodeVariables.desiredMatType == 'view' else 'TABLE' -%}
+      {#- A view is altered live (IF EXISTS); a table on its clone #}
+      {%- set alterKind = objectKind ~ (' IF EXISTS' if objectKind == 'VIEW' else '') -%}
+
+      {#- Column-level tags #}
+      {%- for curCol in currentState.columns -%}
+          {%- set matchingCols = columns | default([]) | selectattr('id', 'equalto', curCol.id) | list -%}
+
+          {%- if matchingCols -%}
+              {%- set desCol = matchingCols | first -%}
+              {%- set setColTagClause = tag_diff(desCol.tag, curCol.tag, 'set') -%}
+              {%- set unsetColTagClause = tag_diff(desCol.tag, curCol.tag, 'unset') -%}
+
+              {#- Unset before set #}
+              {%- if unsetColTagClause | trim | length > 0 %}
+                  {{ stage('Unset Column Tags: ' + desCol.name) }}
+                  ALTER {{ alterKind }} {{ objectPath }}
+                  MODIFY COLUMN "{{ desCol.name }}" UNSET TAG {{ unsetColTagClause }}
+                  {%- set nsNodeVariables.metaDataChanged = true -%}
+              {%- endif %}
+
+              {%- if setColTagClause | trim | length > 0 %}
+                  {{ stage('Set Column Tags: ' + desCol.name) }}
+                  ALTER {{ alterKind }} {{ objectPath }}
+                  MODIFY COLUMN "{{ desCol.name }}" SET TAG {{ setColTagClause }}
+                  {%- set nsNodeVariables.metaDataChanged = true -%}
+              {%- endif %}
+          {%- endif -%}
+      {%- endfor -%}
+
+      {#- Node-level tags #}
+      {%- set setTagClause = tag_diff(config.tag, currentState.config.tag, 'set') -%}
+      {%- set unsetTagClause = tag_diff(config.tag, currentState.config.tag, 'unset') -%}
+
+      {#- Unset before set #}
+      {%- if unsetTagClause | trim | length > 0 %}
+          {{ stage('Unset ' + objectKind | title + ' Tags') }}
+          ALTER {{ alterKind }} {{ objectPath }}
+          UNSET TAG {{ unsetTagClause }}
+          {%- set nsNodeVariables.metaDataChanged = true -%}
+      {%- endif %}
+
+      {%- if setTagClause | trim | length > 0 %}
+          {{ stage('Set ' + objectKind | title + ' Tags') }}
+          ALTER {{ alterKind }} {{ objectPath }}
+          SET TAG {{ setTagClause }}
+          {%- set nsNodeVariables.metaDataChanged = true -%}
+      {%- endif %}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    alter_clone_swap_sql(alterSql): wraps the alters in Clone Table -> alterSql -> Swap
+    Cloned Table + Delete Table, or Rename Table + Delete Table when renamed/moved.
+    '' when there is nothing to alter and the path is unchanged.
+  ===========================================================================#}
+  {%- macro alter_clone_swap_sql(alterSql) -%}
+      {%- set clonePath = nsNodeVariables.cloneObjectNameFullPath -%}
+      {%- set currentPath = nsNodeVariables.curObjectNameFullPath -%}
+      {%- set pathChanged = currentPath != nsNodeVariables.desObjectNameFullPath -%}
+
+      {%- if alterSql | trim | length > 0 or pathChanged %}
+          {{ stage('Clone Table') }}
+          CREATE OR REPLACE {{ nsNodeVariables.currentMatType | upper }} {{ clonePath }}
+          CLONE {{ currentPath }} COPY GRANTS
+
+          {{ alterSql }}
+
+          {%- if pathChanged %}
+              {{ stage('Rename Table') }}
+              ALTER TABLE {{ clonePath }}
+              RENAME TO {{ nsNodeVariables.desObjectNameFullPath }}
+
+              {{ stage('Delete Table') }}
+              DROP TABLE IF EXISTS {{ currentPath }}
+          {%- else %}
+              {{ stage('Swap Cloned Table') }}
+              ALTER TABLE {{ clonePath }}
+              SWAP WITH {{ currentPath }}
+
+              {{ stage('Delete Table') }}
+              DROP TABLE IF EXISTS {{ clonePath }}
+          {%- endif %}
+          {%- set nsNodeVariables.metaDataChanged = true -%}
+      {%- endif %}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    alter_metadata_sql(): "Metadata Update-Default" (select 1=0) when the node changed
+    but no stage altered the object. Call last.
+  ===========================================================================#}
+  {%- macro alter_metadata_sql() -%}
+      {%- if currentState != desiredState and not nsNodeVariables.metaDataChanged %}
+          {{ stage('Metadata Update-Default') }}
+          select 1=0
+      {%- endif %}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    SECTION 7: Run (data load)
+  ===========================================================================#}
+
+  {#===========================================================================
+    run_tests(runOrder): node and column data quality tests for 'Before' or 'After' the load.
+  ===========================================================================#}
+  {%- macro run_tests(runOrder) -%}
+
+      {%- set columnContinueOnFailure = true -%}
+
+      {%- if get_boolean_config("disableTests") != "true" -%}
+          {%- if runOrder == "After" -%}
+              {%- for col in columns -%}
+                  {%- set colName = '"' + col.name + '"' -%}
+                  {%- set target = ref(node.location.name, node.name) -%}
+                  {%- if col.not_null is defined -%}
+                      {{ test_stage(col.name + ': not_null', columnContinueOnFailure) }}
+                      SELECT {{ colName }}
+                      FROM {{ target }}
+                      WHERE {{ colName }} IS NULL
+                  {%- endif -%}
+                  {%- if col.uniqueness is defined -%}
+                      {{ test_stage(col.name + ': uniqueness', columnContinueOnFailure) }}
+                      SELECT {{ colName }}
+                      FROM {{ target }}
+                      GROUP BY {{ colName }}
+                      HAVING COUNT(*) > 1
+                  {%- endif -%}
+                  {%- if col.empty is defined -%}
+                      {{ test_stage(col.name + ': empty', columnContinueOnFailure) }}
+                      SELECT {{ colName }}
+                      FROM {{ target }}
+                      WHERE {{ colName }} IS NOT NULL AND TRIM({{ colName }}) = ''
+                  {%- endif -%}
+                  {%- set nsAccepted = namespace(values=[]) -%}
+                    {%- for v in col.accepted_values | default([]) -%}
+                        {%- for p in v.parameters | default([]) -%}
+                            {%- for val in (p | string).split(',') -%}
+                                {%- set nsAccepted.values = nsAccepted.values + [val.strip()] -%}
+                            {%- endfor -%}
+                        {%- endfor -%}
+                    {%- endfor -%}
+                    {%- if nsAccepted.values | length > 0 -%}
+                        {{ test_stage(col.name + ': accepted_values', columnContinueOnFailure) }}
                         SELECT {{ colName }}
                         FROM {{ target }}
                         WHERE {{ colName }} IS NOT NULL
-                        AND ({{ colName }} < {{ col.min_max.parameters[0] }} OR {{ colName }} > {{ col.min_max.parameters[1] }})
+                        AND {{ colName }} NOT IN ({{ nsAccepted.values | join(', ') }})
                     {%- endif -%}
-                    {%- if col.min_value is defined and col.min_value.parameters is defined -%}
-                        {{ test_stage(col.name + ': min_value', columnContinueOnFailure) }}
-                        SELECT {{ colName }}
-                        FROM {{ target }}
-                        WHERE {{ colName }} IS NOT NULL AND {{ colName }} < {{ col.min_value.parameters[0] }}
-                    {%- endif -%}
-                    {%- if col.max_value is defined and col.max_value.parameters is defined -%}
-                        {{ test_stage(col.name + ': max_value', columnContinueOnFailure) }}
-                        SELECT {{ colName }}
-                        FROM {{ target }}
-                        WHERE {{ colName }} IS NOT NULL AND {{ colName }} > {{ col.max_value.parameters[0] }}
-                    {%- endif -%}
-                    {%- if col.freshness is defined and col.freshness.parameters is defined -%}
-                        {{ test_stage(col.name + ': freshness', columnContinueOnFailure) }}
-                        SELECT MAX(CAST({{ colName }} AS DATETIME)) AS "LATEST_VALUE"
-                        FROM {{ target }}
-                        HAVING MAX(CAST({{ colName }} AS DATETIME)) IS NULL
-                            OR MAX(CAST({{ colName }} AS DATETIME)) < DATEADD({{ col.freshness.parameters[1] | default('DAY', true) }}, -{{ col.freshness.parameters[0] }}, CURRENT_TIMESTAMP())
-                    {%- endif -%}
-                    {%- if col.relative_time is defined and col.relative_time.parameters is defined -%}
-                        {%- set other = '"' + col.relative_time.parameters[1] + '"' -%}
-                        {{ test_stage(col.name + ': relative_time', columnContinueOnFailure) }}
-                        SELECT {{ colName }}, {{ other }}
-                        FROM {{ target }}
-                        WHERE {{ colName }} IS NOT NULL AND {{ other }} IS NOT NULL
-                        AND NOT ({{ colName }} {{ col.relative_time.parameters[0] }} {{ other }})
-                    {%- endif -%}
-                {%- endfor -%}
-            {%- endif -%}
-
-            {%- set ns = namespace(cnt=0) -%}
-            {%- for test in config.tests | default([]) -%}
-                {%- if test is mapping and test.parameters is defined -%}
-                    {%- if test.parameters[2] | default("After") == runOrder -%}
-                        {%- set ns.cnt = ns.cnt + 1 -%}
-                        {{ test_stage(
-                            ('Pre Load Test ' if runOrder == 'Before' else 'Post Load Test ') ~ ns.cnt,
-                            test.parameters[1] | default(true)
-                        ) }}
-                        {{ test.parameters[0] }}
-                    {%- endif -%}
-                {%- endif -%}
-            {%- endfor -%}
-
-        {%- endif -%}
-    {%- endmacro -%}
-
-  {#===================================================================================================
-  Description:
-  Generates a deterministic hash value by combining and hashing all column values associated with the given `hash_name` using the `@inHash` annotation.
-
-  Input: `hash_name` (string) - The hash group identifier used in `@inHash("<hash_name>")` to group columns for hashing.
-
-  Output: - Returns a SQL expression of type `STRING`:
-          - A SHA1 hash of concatenated column values  
-          - Returns `NULL` if no columns are mapped to the given hash group
-  ====================================================================================================#}
-    {%- macro get_hash(hash_name, algo='SHA1', delimiter='||') -%}
-
-        {%- set cols = namespace(items=[]) -%}
-        {%- set algo_upper = algo | upper -%}
-
-        {# Collect columns participating in this hash #}
-        {%- for col in sources[0].columns -%}
-
-            {%- if col.inHash is defined -%}
-                {%- for p in col.inHash -%}
-                    {%- set position = p.parameters[1] | int -%}
-                    {%- set hash = p.parameters[0] -%}
-
-                    {%- if hash == hash_name -%}
-                        {%- set cols.items = cols.items + [{
-                            "position": position,
-                            "column": get_source_transform(col)
-                        }] -%}
-                    {%- endif -%}
-                {%- endfor -%}
-            {%- endif -%}
-        {%- endfor -%}
-
-        {%- if cols.items | length == 0 -%}
-            NULL
-        {%- else -%}
-            {%- set sorted_cols = cols.items | sort(attribute='position') -%}
-            {# Define algo wrappers #}
-            {%- set algo_start = algo_upper + '(' -%}
-            {%- set algo_end = ')' -%}
-
-            {%- if algo_upper == 'SHA256' -%}
-                {%- set algo_start = 'SHA2(' -%}
-                {%- set algo_end = ', 256)' -%}
-            {%- endif -%}
-
-            CAST(
-                {{ algo_start }}
-                    {%- for c in sorted_cols -%}
-                        NVL(CAST({{ c.column }} AS VARCHAR), 'null')
-                        {%- if not loop.last %}
-                            || {%- if delimiter != '' %} '{{ delimiter }}' || {% endif -%}
-                        {%- endif -%}
+                    {%- set nsRejected = namespace(values=[]) -%}
+                    {%- for v in col.rejected_values | default([]) -%}
+                        {%- for p in v.parameters | default([]) -%}
+                            {%- for val in (p | string).split(',') -%}
+                                {%- set nsRejected.values = nsRejected.values + [val.strip()] -%}
+                            {%- endfor -%}
+                        {%- endfor -%}
                     {%- endfor -%}
-                {{ algo_end }}
-            AS STRING)
-        {%- endif -%}
-    {%- endmacro -%}
+                    {%- if nsRejected.values | length > 0 -%}
+                        {{ test_stage(col.name + ': rejected_values', columnContinueOnFailure) }}
+                        SELECT {{ colName }}
+                        FROM {{ target }}
+                        WHERE {{ colName }} IN ({{ nsRejected.values | join(', ') }})
+                    {%- endif -%}
+                  {%- if col.min_max is defined and col.min_max.parameters is defined -%}
+                      {{ test_stage(col.name + ': min_max', columnContinueOnFailure) }}
+                      SELECT {{ colName }}
+                      FROM {{ target }}
+                      WHERE {{ colName }} IS NOT NULL
+                      AND ({{ colName }} < {{ col.min_max.parameters[0] }} OR {{ colName }} > {{ col.min_max.parameters[1] }})
+                  {%- endif -%}
+                  {%- if col.min_value is defined and col.min_value.parameters is defined -%}
+                      {{ test_stage(col.name + ': min_value', columnContinueOnFailure) }}
+                      SELECT {{ colName }}
+                      FROM {{ target }}
+                      WHERE {{ colName }} IS NOT NULL AND {{ colName }} < {{ col.min_value.parameters[0] }}
+                  {%- endif -%}
+                  {%- if col.max_value is defined and col.max_value.parameters is defined -%}
+                      {{ test_stage(col.name + ': max_value', columnContinueOnFailure) }}
+                      SELECT {{ colName }}
+                      FROM {{ target }}
+                      WHERE {{ colName }} IS NOT NULL AND {{ colName }} > {{ col.max_value.parameters[0] }}
+                  {%- endif -%}
+                  {%- if col.freshness is defined and col.freshness.parameters is defined -%}
+                      {{ test_stage(col.name + ': freshness', columnContinueOnFailure) }}
+                      SELECT MAX(CAST({{ colName }} AS DATETIME)) AS "LATEST_VALUE"
+                      FROM {{ target }}
+                      HAVING MAX(CAST({{ colName }} AS DATETIME)) IS NULL
+                          OR MAX(CAST({{ colName }} AS DATETIME)) < DATEADD({{ col.freshness.parameters[1] | default('DAY', true) }}, -{{ col.freshness.parameters[0] }}, CURRENT_TIMESTAMP())
+                  {%- endif -%}
+                  {%- if col.relative_time is defined and col.relative_time.parameters is defined -%}
+                      {%- set other = '"' + col.relative_time.parameters[1] + '"' -%}
+                      {{ test_stage(col.name + ': relative_time', columnContinueOnFailure) }}
+                      SELECT {{ colName }}, {{ other }}
+                      FROM {{ target }}
+                      WHERE {{ colName }} IS NOT NULL AND {{ other }} IS NOT NULL
+                      AND NOT ({{ colName }} {{ col.relative_time.parameters[0] }} {{ other }})
+                  {%- endif -%}
+              {%- endfor -%}
+          {%- endif -%}
 
-  {#===================================================================================================
-    get_boolean_config(flag)
+          {%- set ns = namespace(cnt=0) -%}
+          {%- for test in config.tests | default([]) -%}
+              {%- if test is mapping and test.parameters is defined -%}
+                  {%- if test.parameters[2] | default("After") == runOrder -%}
+                      {%- set ns.cnt = ns.cnt + 1 -%}
+                      {{ test_stage(
+                          ('Pre Load Test ' if runOrder == 'Before' else 'Post Load Test ') ~ ns.cnt,
+                          test.parameters[1] | default(true)
+                      ) }}
+                      {{ test.parameters[0] }}
+                  {%- endif -%}
+              {%- endif -%}
+          {%- endfor -%}
 
-    Description:
-      Extracts the boolean value of a configuration flag, supporting both
-      annotation formats:
-        - @flag
-        - @flag(true) / @flag(false)
-
-    Input:
-      flag: Name of the boolean configuration flag, e.g. "truncateBefore",
-            "testsEnabled", or "clusterDefined".
-
-    Examples:
-      @truncateBefore
-        -> config["truncateBefore"] = true
-        -> Output: true
-
-      @truncateBefore(true)
-        -> config["truncateBefore"] = { parameters: [true] }
-        -> Output: true
-
-      @truncateBefore(false)
-        -> config["truncateBefore"] = { parameters: [false] }
-        -> Output: false
-
-      No annotation
-        -> config["truncateBefore"] is not defined
-        -> Output: empty
-
-    Usage:
-      {% if get_boolean_config("truncateBefore") | trim | lower == "true" %}
-        ...
-      {% endif %}
-  ====================================================================================================#}
-    {%- macro get_boolean_config(flag) -%}
-        {%- if config[flag] is defined -%}
-            {%- if config[flag] is boolean -%}
-                {{- config[flag] | trim | lower -}}
-            {%- elif config[flag].parameters is defined and config[flag].parameters|length > 0 -%}
-                {{- config[flag].parameters[0] | trim | lower -}}
-            {%- endif -%}
-        {%- endif -%}
-    {%- endmacro -%}
+      {%- endif -%}
+  {%- endmacro -%}
 
   {#===========================================================================
-    Description: Resolves the zero-key literal for a column (column-level @zeroKey wins, else node-level @zeroKey by dataType, else NULL).
-    Input: col (object)
-    Output: SQL literal for the resolved zero-key value.
+    run_pre_post_sql(runOrder): 'Pre' / 'Post' -> one "Pre-SQL <n>" / "Post-SQL <n>" stage
+    per @preSQL / @postSQL statement.
   ===========================================================================#}
-    {%- macro resolve_zero_key(col) -%}
+  {%- macro run_pre_post_sql(runOrder) -%}
+      {%- set sqlList = config.preSQL if runOrder == 'Pre' else config.postSQL -%}
+      {%- set ns = namespace(cnt=0) %}
+      {%- for sql in sqlList | default([], true) %}
+          {%- if sql is mapping and sql.parameters is defined %}
+              {%- set ns.cnt = ns.cnt + 1 %}
+              {{ stage(runOrder ~ '-SQL ' ~ ns.cnt) }}
+              {{ sql.parameters[0] }}
+          {%- endif %}
+      {%- endfor %}
+  {%- endmacro -%}
 
-        {%- set ns = namespace(zk_type=none, zk_value=none) -%}
+  {#===========================================================================
+    resolve_zero_key(col): zero-key literal — column @zeroKey, else node @zeroKey by
+    dataType, else NULL.
+  ===========================================================================#}
+  {%- macro resolve_zero_key(col) -%}
 
-        {# Column-level zeroKey #}
-        {%- if col.zeroKey is defined
-            and col.zeroKey.parameters is defined
-            and col.zeroKey.parameters | trim | length > 0 -%}
+      {%- set ns = namespace(zk_type=none, zk_value=none) -%}
 
-            {%- set ns.zk_value = col.zeroKey.parameters[0] -%}
+      {# Column-level zeroKey #}
+      {%- if col.zeroKey is defined
+          and col.zeroKey.parameters is defined
+          and col.zeroKey.parameters | trim | length > 0 -%}
 
-        {# Node-level zeroKey, matched by column dataType #}
-        {%- else -%}
-            {%- set zkParams = config.zeroKey.parameters if (config.zeroKey is defined and config.zeroKey.parameters is defined) else [] -%}
-            {%- if col.dataType | upper == 'VARIANT' -%}
-                {%- set ns.zk_type = 'variant' -%}
-                {%- set ns.zk_value = none -%}
-            {%- elif col.dataType[:3] | upper in ('VAR', 'CHA', 'STR', 'TEX') -%}
-                {%- set ns.zk_type = 'string' -%}
-                {%- set ns.zk_value = zkParams[1] if zkParams | length > 1 else "'UNKNOWN'" -%}
-            {# Every numeric type (NUMBER/NUMERIC/DECIMAL, INT/INTEGER/BIGINT/SMALLINT/TINYINT/BYTEINT, FLOAT/DOUBLE/REAL) always gets 0 —
-               the node-level surrogateKeyValue applies to the surrogate key column only; override per column with @zeroKey(value). #}
-            {%- elif col.dataType[:3] | upper in ('NUM', 'INT', 'DEC', 'FLO', 'DOU', 'REA', 'BIG', 'SMA', 'TIN', 'BYT') -%}
-                {%- set ns.zk_type = 'numeric' -%}
-                {%- set ns.zk_value = 0 -%}
-            {%- elif col.dataType | upper == 'BOOLEAN' -%}
-                {%- set ns.zk_type = 'boolean' -%}
-                {%- set ns.zk_value = zkParams[3] if zkParams | length > 3 else true -%}
-            {%- elif col.dataType[:4] | upper in ('DATE', 'TIME', 'TIMESTAMP') -%}
-                {%- set ns.zk_type = 'datetime' -%}
-                {%- set ns.zk_value = zkParams[2] if zkParams | length > 2 else '1900-01-01 00:00:00' -%}
-            {%- endif -%}
-        {%- endif -%}
+          {%- set ns.zk_value = col.zeroKey.parameters[0] -%}
 
-        {# Format the resolved value #}
-        {%- if ns.zk_type == 'numeric' -%}
-            {{ ns.zk_value }}
-        {%- elif ns.zk_type == 'variant' -%}
-            PARSE_JSON('null')
-        {%- elif ns.zk_value is not none -%}
-            {%- if ns.zk_type == 'boolean' -%}
-                {{ ns.zk_value | upper }}
+      {# Node-level zeroKey, matched by column dataType #}
+      {%- else -%}
+          {%- set zkParams = config.zeroKey.parameters if (config.zeroKey is defined and config.zeroKey.parameters is defined) else [] -%}
+          {%- if col.dataType | upper == 'VARIANT' -%}
+              {%- set ns.zk_type = 'variant' -%}
+              {%- set ns.zk_value = none -%}
+          {%- elif col.dataType[:3] | upper in ('VAR', 'CHA', 'STR', 'TEX') -%}
+              {%- set ns.zk_type = 'string' -%}
+              {%- set ns.zk_value = zkParams[1] if zkParams | length > 1 else "'UNKNOWN'" -%}
+          {# Every numeric type (NUMBER/NUMERIC/DECIMAL, INT/INTEGER/BIGINT/SMALLINT/TINYINT/BYTEINT, FLOAT/DOUBLE/REAL) always gets 0 —
+             the node-level surrogateKeyValue applies to the surrogate key column only; override per column with @zeroKey(value). #}
+          {%- elif col.dataType[:3] | upper in ('NUM', 'INT', 'DEC', 'FLO', 'DOU', 'REA', 'BIG', 'SMA', 'TIN', 'BYT') -%}
+              {%- set ns.zk_type = 'numeric' -%}
+              {%- set ns.zk_value = 0 -%}
+          {%- elif col.dataType | upper == 'BOOLEAN' -%}
+              {%- set ns.zk_type = 'boolean' -%}
+              {%- set ns.zk_value = zkParams[3] if zkParams | length > 3 else true -%}
+          {%- elif col.dataType[:4] | upper in ('DATE', 'TIME') -%}
+              {%- set ns.zk_type = 'datetime' -%}
+              {%- set ns.zk_value = zkParams[2] if zkParams | length > 2 else '1900-01-01 00:00:00' -%}
+          {%- endif -%}
+      {%- endif -%}
 
-            {%- elif ns.zk_type == 'datetime' -%}
-                TO_TIMESTAMP('{{ ns.zk_value }}')
+      {# Format the resolved value #}
+      {%- if ns.zk_type == 'numeric' -%}
+          {{ ns.zk_value }}
+      {%- elif ns.zk_type == 'variant' -%}
+          PARSE_JSON('null')
+      {%- elif ns.zk_value is not none -%}
+          {%- if ns.zk_type == 'boolean' -%}
+              {{ ns.zk_value | upper }}
 
-            {%- elif ns.zk_type == 'string' -%}
-                {# Node-level default: pasted verbatim, same as the column-level override — supply your own quotes in the annotation, e.g. "'UNKNOWN'". #}
-                {{ ns.zk_value }}
+          {%- elif ns.zk_type == 'datetime' -%}
+              TO_TIMESTAMP('{{ ns.zk_value }}')
 
-            {%- else -%}
-                {# Column-level @zeroKey override: pasted verbatim, exactly as the user wrote it — #}
-                {# they supply their own quotes for a string, or a full expression like CAST(...). #}
-                {{ ns.zk_value }}
-            {%- endif -%}
+          {%- elif ns.zk_type == 'string' -%}
+              {# Node-level default: pasted verbatim, same as the column-level override — supply your own quotes in the annotation, e.g. "'UNKNOWN'". #}
+              {{ ns.zk_value }}
 
-        {%- else -%}
-            NULL
-        {%- endif -%}
+          {%- else -%}
+              {# Column-level @zeroKey override: pasted verbatim, exactly as the user wrote it — #}
+              {# they supply their own quotes for a string, or a full expression like CAST(...). #}
+              {{ ns.zk_value }}
+          {%- endif -%}
 
-    {%- endmacro -%}
+      {%- else -%}
+          NULL
+      {%- endif -%}
 
-    {#===========================================================================
-    Description: Builds a datatype-aware condition that's TRUE when the source and target values differ.
-    Input: src_expr (string), tgt_expr (string), data_type (string)
-    Output: SQL boolean condition.
-    ===========================================================================#}
-    {%- macro safe_compare(src_expr, tgt_expr, data_type) -%}
-
-        {%- set dt = data_type | upper -%}
-
-        {%- if 'GEOGRAPHY' in dt or 'GEOMETRY' in dt -%}
-            ST_ASWKB({{ src_expr }}) IS DISTINCT FROM ST_ASWKB({{ tgt_expr }})
-        {%- else -%}
-            {{ src_expr }} IS DISTINCT FROM {{ tgt_expr }}
-        {%- endif -%}
-
-    {%- endmacro -%}
-
-    {#===========================================================================
-    Description: Builds a datatype-aware equality condition for matching business keys. GEOGRAPHY/GEOMETRY can't be compared with =, so they're compared on their WKB binary form (exact match, still an equi-join).
-    Input: left_expr (string), right_expr (string), data_type (string)
-    Output: SQL boolean condition. NULL never matches, same as =.
-    ===========================================================================#}
-    {%- macro safe_equals(left_expr, right_expr, data_type) -%}
-
-        {%- set dt = data_type | upper -%}
-
-        {%- if 'GEOGRAPHY' in dt or 'GEOMETRY' in dt -%}
-            ST_ASWKB({{ left_expr }}) = ST_ASWKB({{ right_expr }})
-        {%- else -%}
-            {{ left_expr }} = {{ right_expr }}
-        {%- endif -%}
-
-    {%- endmacro -%}
-
-    {#===========================================================================
-    Description: Checks that every column carries its own @id annotation, reporting duplicate column names and repeated @id values separately. Shared by validate_dimension_requirements and validate_fact_requirements.
-    Input: hardFail (boolean, default false) — passed through from the calling validator.
-    Output: Rendered test_stage(...) + SELECT statements for every check that fails.
-    ===========================================================================#}
-    {%- macro validate_column_ids(hardFail=false) -%}
-        {# A column without a real @id has id equal to its name. When the SELECT repeats a column name, Coalesce renames the extra copy by appending a number (SYSTEM_CREATE_DATE -> SYSTEM_CREATE_DATE1) and drops its @id, so it lands here too — report that as a duplicate name rather than a missing ID. #}
-        {%- set idCheck = namespace(missing=[], duplicates=[]) -%}
-        {%- for col in columns if col.id == col.name -%}
-            {%- set dup = namespace(of=none) -%}
-            {%- for other in columns if other.name != col.name and col.name[:other.name | length] == other.name -%}
-                {%- set suffix = col.name[other.name | length:] -%}
-                {%- if (suffix | int(0)) > 0 and (suffix | int) | string == suffix -%}
-                    {%- set dup.of = other.name -%}
-                {%- endif -%}
-            {%- endfor -%}
-            {%- if dup.of is not none -%}
-                {%- set idCheck.duplicates = idCheck.duplicates + [{"of": dup.of, "renamed": col.name}] -%}
-            {%- else -%}
-                {%- set idCheck.missing = idCheck.missing + [col.name] -%}
-            {%- endif -%}
-        {%- endfor -%}
-
-        {%- if idCheck.duplicates | length > 0 %}
-            {%- set described = namespace(items=[]) -%}
-            {%- for d in idCheck.duplicates -%}
-                {%- set described.items = described.items + ["'" ~ d.of ~ "' (extra copy renamed to " ~ d.renamed ~ ")"] -%}
-            {%- endfor -%}
-            {# A deliberate alias like REGIONKEY1 without an @id is indistinguishable from a renamed copy, so the message covers both. #}
-            {%- set renamed = idCheck.duplicates | map(attribute='renamed') | list -%}
-            {%- if renamed | length > 1 -%}
-                {%- set aliasHint = "If " ~ (renamed | join(', ')) ~ ' are deliberate aliases rather than copies, add a unique @id("<6 hex digits>") to each of them instead.' -%}
-            {%- else -%}
-                {%- set aliasHint = "If " ~ renamed[0] ~ ' is a deliberate alias rather than a copy, add a unique @id("<6 hex digits>") to it instead.' -%}
-            {%- endif -%}
-            {%- set reason = "Duplicate column name: " ~ (described.items | join(', ')) ~ ". The SELECT returns more than one column with the same name — remove the extra column or give it a different alias. " ~ aliasHint %}
-            {{ test_stage("Duplicate Column Names", false) }}
-            -- {{ reason }}
-            {%- if hardFail %}
-            SELECT 1/0
-            {%- else %}
-            SELECT 1
-            {%- endif -%}
-        {%- endif -%}
-
-        {# Two columns given the same @id value (exact string match). #}
-        {%- set idDup = namespace(items=[]) -%}
-        {%- for col in columns if col.id != col.name -%}
-            {%- set sharing = columns | selectattr("id", "equalto", col.id) | map(attribute="name") | list -%}
-            {%- set entry = "@id(\"" ~ col.id ~ "\") on " ~ (sharing | join(', ')) -%}
-            {%- if sharing | length > 1 and entry not in idDup.items -%}
-                {%- set idDup.items = idDup.items + [entry] -%}
-            {%- endif -%}
-        {%- endfor -%}
-        {%- if idDup.items | length > 0 %}
-            {%- set reason = "Duplicate column ID: " ~ (idDup.items | join('; ')) ~ '. Each column needs its own unique @id("<6 hex digits>") — change the repeated ID on all but one of them.' %}
-            {{ test_stage("Duplicate Column IDs", false) }}
-            -- {{ reason }}
-            {%- if hardFail %}
-            SELECT 1/0
-            {%- else %}
-            SELECT 1
-            {%- endif -%}
-        {%- endif -%}
-
-        {%- if idCheck.missing | length > 0 %}
-            {%- set reason = "These columns have no real system-generated ID (id equals the column name): " ~ (idCheck.missing | join(', ')) ~ '. Add a unique @id("<6 hex digits>") annotation to each of them.' %}
-            {{ test_stage("Missing Column IDs", false) }}
-            -- {{ reason }}
-            {%- if hardFail %}
-            SELECT 1/0
-            {%- else %}
-            SELECT 1
-            {%- endif -%}
-        {%- endif -%}
-    {%- endmacro -%}
-
-    {#===========================================================================
-    Description: Validates a Dimension node's annotations (column IDs, business key, mergeStrategy, required system columns). Shared by create.sql.j2 and run.sql.j2.
-    Input: hardFail (boolean, default false) — set true from create.sql.j2 so a failed check raises a real SQL error, since CREATE (unlike RUN) doesn't fail on row count alone.
-    Output: Rendered test_stage(...) + SELECT statements for every check that fails.
-    ===========================================================================#}
-    {%- macro validate_dimension_requirements(hardFail=false) -%}
-        {# CREATE doesn't fail on row count like RUN does, so hardFail forces a real SQL error instead. #}
-        {%- macro fail_select(reason) -%}
-            {%- if hardFail -%}
-                SELECT 1/0
-            {%- else -%}
-                SELECT 1
-            {%- endif -%}
-        {%- endmacro -%}
-
-        {# Every Dimension column must carry its own @id annotation. #}
-        {{ validate_column_ids(hardFail) }}
-
-        {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) -%}
-        {%- if not hasBusinessKey %}
-            {%- set reason = "Mark at least one column with @isBusinessKey to identify the dimension's natural/business key for SCD matching." %}
-            {{ test_stage("Missing Business Key", false) }}
-            -- {{ reason }}
-            {{ fail_select(reason) }}
-        {%- endif -%}
-
-        {%- set lastModifiedCount = columns | selectattr("lastModifiedTracking") | list | length -%}
-        {%- set changeTrackingCount = columns | selectattr("isChangeTracking") | list | length -%}
-
-        {%- set mergeStrategyExplicit = config.mergeStrategy is defined and config.mergeStrategy.parameters is defined and config.mergeStrategy.parameters | length > 0 -%}
-        {%- if mergeStrategyExplicit -%}
-            {# Matched case-insensitively (must match run.sql.j2). #}
-            {%- set mergeStrategyRaw = config.mergeStrategy.parameters[0] | string | trim -%}
-            {%- set mergeStrategy = mergeStrategyRaw | lower -%}
-        {%- else -%}
-            {# No @mergeStrategy given — always default to changeTracking, regardless of which tracking columns are present. #}
-            {%- set mergeStrategy = 'changetracking' -%}
-        {%- endif -%}
-        {%- set isSimpleUpsert = mergeStrategy == 'upsert' -%}
-        {%- set isLastModifiedStrategy = mergeStrategy == 'lastmodified' -%}
-        {%- set isChangeTrackingStrategy = mergeStrategy == 'changetracking' %}
-
-        {# An unrecognised strategy would otherwise fall through to change tracking without any warning. #}
-        {%- if not (isSimpleUpsert or isLastModifiedStrategy or isChangeTrackingStrategy) %}
-            {%- set reason = '@mergeStrategy("' ~ mergeStrategyRaw ~ '") is not a recognised strategy. Use "changeTracking", "lastModified" or "upsert".' %}
-            {{ test_stage('Invalid configuration: mergeStrategy', false) }}
-            -- {{ reason }}
-            {{ fail_select(reason) }}
-        {%- endif -%}
-
-        {# These cross-checks only apply when @mergeStrategy is set explicitly, since an inferred strategy can't conflict with itself. #}
-        {%- if mergeStrategyExplicit and isSimpleUpsert and (lastModifiedCount > 0 or changeTrackingCount > 0) %}
-            {{ test_stage('Invalid configuration: mergeStrategy', true) }}
-            -- @mergeStrategy("upsert") performs no change detection, so @isChangeTracking/@lastModifiedTracking columns are never read. Remove them, or switch mergeStrategy to "changeTracking"/"lastModified" to use them.
-            SELECT 1
-        {%- endif -%}
-
-        {%- if isChangeTrackingStrategy and lastModifiedCount > 0 %}
-            {{ test_stage('Invalid configuration: mergeStrategy', true) }}
-            -- @mergeStrategy("changeTracking") does not use @lastModifiedTracking — that column would be silently ignored. Remove it, or switch mergeStrategy to "lastModified".
-            SELECT 1
-        {%- endif -%}
-
-        {%- if isLastModifiedStrategy and lastModifiedCount == 0 %}
-            {%- set reason = '@mergeStrategy("lastModified") requires exactly one column marked @lastModifiedTracking(<scdType>); none was found.' %}
-            {{ test_stage('Invalid configuration: mergeStrategy', false) }}
-            -- {{ reason }}
-            {{ fail_select(reason) }}
-        {%- endif %}
-
-        {# Only check "at most one @lastModifiedTracking column" once lastModified is the strategy in effect. #}
-        {%- if isLastModifiedStrategy and lastModifiedCount > 1 %}
-            {%- set reason = "@lastModifiedTracking may be applied to at most one column, but " ~ lastModifiedCount ~ " columns were marked. Remove the annotation from all but one column." %}
-            {{ test_stage('Invalid configuration: Last Modified Column', false) }}
-            -- {{ reason }}
-            {{ fail_select(reason) }}
-        {%- endif -%}
-
-        {%- if isLastModifiedStrategy and changeTrackingCount > 0 %}
-            {{ test_stage('Invalid configuration: mergeStrategy', true) }}
-            -- @mergeStrategy("lastModified") does not use @isChangeTracking — those columns would be silently ignored (the last-modified comparison takes priority). Remove them, or switch mergeStrategy to "changeTracking" to use them.
-            SELECT 1
-        {%- endif -%}
-
-        {%- set lastModifiedComparison = isLastModifiedStrategy and lastModifiedCount > 0 -%}
-        {%- if hasBusinessKey -%}
-            {%- if lastModifiedComparison %}
-                {# More than one @lastModifiedTracking column is already flagged above — treat it as inconclusive (plain SCD1) until that's fixed. #}
-                {%- if lastModifiedCount == 1 -%}
-                    {%- set lastModifiedCol = columns | selectattr("lastModifiedTracking") | first %}
-                    {# A bare @lastModifiedTracking (no scdType) comes through as `true`, not a mapping — guard for that and default scdType to 1. #}
-                    {%- set lastModifiedTrackingParams = lastModifiedCol.lastModifiedTracking.parameters if (lastModifiedCol.lastModifiedTracking is mapping and lastModifiedCol.lastModifiedTracking.parameters is defined) else [] -%}
-                    {%- set scdType = lastModifiedTrackingParams[0] | default(1, true) | string -%}
-                    {%- if scdType not in ('1', '2') %}
-                        {%- set reason = '@lastModifiedTracking\'s scdType parameter only accepts 1 or 2, but "' ~ scdType ~ '" was given on column ' ~ lastModifiedCol.name ~ '. Mention @lastModifiedTracking(scdType) explicitly — @lastModifiedTracking(1) to overwrite in place, or @lastModifiedTracking(2) to version the row.' %}
-                        {{ test_stage('Invalid configuration: lastModifiedTracking scdType', false) }}
-                        -- {{ reason }}
-                        {{ fail_select(reason) }}
-                    {%- endif -%}
-                    {%- set type2Dimension = scdType == '2' -%}
-                {%- else -%}
-                    {%- set type2Dimension = false -%}
-                {%- endif -%}
-            {%- else -%}
-                {%- set type2Dimension = changeTrackingCount > 0 -%}
-            {%- endif -%}
-        {%- else -%}
-            {%- set type2Dimension = false -%}
-        {%- endif -%}
-        {%- if isSimpleUpsert %}
-            {# @upsert always forces plain SCD1, no matter what @lastModifiedTracking/@isChangeTracking say. #}
-            {%- set type2Dimension = false -%}
-        {%- endif %}
-
-        {# Collect every missing/misconfigured system column here so one run reports them all together instead of one at a time. #}
-        {%- set missingSystemColumns = namespace(items=[]) %}
-
-        {# @isSurrogateKey is normally optional (a customer may manage their own, e.g. SEQ.NEXTVAL) — required when @zeroKey needs one to match against, recommended for SCD Type 2. #}
-        {%- set hasSurrogateKey = columns | selectattr("isSurrogateKey") | list | length > 0 -%}
-        {%- if config.zeroKey is defined and not hasSurrogateKey -%}
-            {%- set missingSystemColumns.items = missingSystemColumns.items + [{
-                'required': true,
-                'annotation': '@isSurrogateKey',
-                'example': none,
-                'reason': '@zeroKey requires a surrogate key column to match the zero record against; none was found on this node.'
-            }] -%}
-        {%- elif type2Dimension and not hasSurrogateKey -%}
-            {%- set missingSystemColumns.items = missingSystemColumns.items + [{
-                'required': false,
-                'annotation': '@isSurrogateKey',
-                'example': '0 AS "' ~ node.name ~ '_KEY" @isSurrogateKey',
-                'reason': 'Recommended for SCD Type 2, to give tables a stable per-version join key. Ignore this warning if you are managing your own surrogate key logic (e.g. a sequence NEXTVAL) instead of using @isSurrogateKey.'
-            }] -%}
-        {%- endif -%}
-
-        {%- set hasSystemCreateDate = columns | selectattr("isSystemCreateDate") | list | length > 0 -%}
-        {%- if not isSimpleUpsert and not hasSystemCreateDate -%}
-            {%- set missingSystemColumns.items = missingSystemColumns.items + [{
-                'required': true,
-                'annotation': '@isSystemCreateDate',
-                'example': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate',
-                'reason': 'Required because @mergeStrategy("changeTracking"/"lastModified") does change detection against the existing target row: SYSTEM_CREATE_DATE is carried through unchanged from that row into CHANGE_DETECTION so its original insert timestamp is preserved on every update, and only stamped with CURRENT_TIMESTAMP the one time a business key is first inserted.'
-            }] -%}
-        {%- endif %}
-
-        {# SYSTEM_UPDATE_DATE is required for both SCD Type 1 and Type 2. #}
-        {%- set hasSystemUpdateDate = columns | selectattr("isSystemUpdateDate") | list | length > 0 -%}
-        {%- if not isSimpleUpsert and not hasSystemUpdateDate -%}
-            {%- if type2Dimension -%}
-                {%- set missingSystemColumns.items = missingSystemColumns.items + [{
-                    'required': true,
-                    'annotation': '@isSystemUpdateDate',
-                    'example': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate',
-                    'reason': 'Required because this is an SCD Type 2 dimension: SYSTEM_UPDATE_DATE is carried through from the current target row into CHANGE_DETECTION/MERGE_ROWS so it can be stamped with CURRENT_TIMESTAMP whenever a new or changed version is inserted, marking when that version became active.'
-                }] -%}
-            {%- else -%}
-                {%- set missingSystemColumns.items = missingSystemColumns.items + [{
-                    'required': true,
-                    'annotation': '@isSystemUpdateDate',
-                    'example': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate',
-                    'reason': 'Required for SCD Type 1: without it there\'s no way to tell when a row\'s attributes were last changed — SYSTEM_CREATE_DATE is set once and never touched again.'
-                }] -%}
-            {%- endif -%}
-        {%- endif -%}
-
-        {# The remaining system columns are only required for SCD Type 2. #}
-        {%- if type2Dimension -%}
-            {%- set hasSystemVersion = columns | selectattr("isSystemVersion") | list | length > 0 -%}
-            {%- if not hasSystemVersion -%}
-                {%- set missingSystemColumns.items = missingSystemColumns.items + [{
-                    'required': true,
-                    'annotation': '@isSystemVersion',
-                    'example': '1 AS "SYSTEM_VERSION" @isSystemVersion',
-                    'reason': 'Required because this is an SCD Type 2 dimension (a versioned last-modified column, or an @isChangeTracking column, was found): SYSTEM_VERSION is what distinguishes successive versions of the same business key, and it\'s what the outer MERGE\'s ON clause uses (alongside the business key) to target the exact row version being expired or matched.'
-                }] -%}
-            {%- endif -%}
-
-            {%- set hasSystemCurrentFlag = columns | selectattr("isSystemCurrentFlag") | list | length > 0 -%}
-            {%- if not hasSystemCurrentFlag -%}
-                {%- set missingSystemColumns.items = missingSystemColumns.items + [{
-                    'required': true,
-                    'annotation': '@isSystemCurrentFlag',
-                    'example': '\'Y\' AS "SYSTEM_CURRENT_FLAG" @isSystemCurrentFlag',
-                    'reason': 'Required because this is an SCD Type 2 dimension: the CHANGE_DETECTION CTE filters TARGET_CURRENT down to WHERE SYSTEM_CURRENT_FLAG = \'Y\' to find the one active row per business key to compare the incoming source row against — without it there\'s no way to tell which of possibly several historical versions is the current one.'
-                }] -%}
-            {%- endif -%}
-
-            {%- set hasSystemEndDate = columns | selectattr("isSystemEndDate") | list | length > 0 -%}
-            {%- if not hasSystemEndDate -%}
-                {%- set missingSystemColumns.items = missingSystemColumns.items + [{
-                    'required': true,
-                    'annotation': '@isSystemEndDate',
-                    'example': 'CAST(\'2999-12-31 00:00:00\' AS TIMESTAMP) AS "SYSTEM_END_DATE" @isSystemEndDate',
-                    'reason': 'Required because this is an SCD Type 2 dimension: SYSTEM_END_DATE is what gets set to the expiry timestamp when a changed row\'s prior version is expired, and to the far-future sentinel on every newly inserted current version — without it there\'s no way to bound how long each historical version was active.'
-                }] -%}
-            {%- endif -%}
-        {%- endif -%}
-
-        {%- if missingSystemColumns.items | length > 0 -%}
-            {%- set anyRequired = missingSystemColumns.items | selectattr('required') | list | length > 0 %}
-            {# If @isSurrogateKey is the only thing flagged, use a neutral heading since it may just be a custom surrogate key setup. #}
-            {%- set onlySurrogateKeyFlagged = missingSystemColumns.items | length == 1 and missingSystemColumns.items[0].annotation == '@isSurrogateKey' and not missingSystemColumns.items[0].required -%}
-            {%- set stageName = 'Surrogate Key Not Set/Using Custom Surrogate Key Logic' if onlySurrogateKeyFlagged else 'Missing Required System Columns' %}
-            {{ test_stage(stageName, not anyRequired) }}
-            {%- for item in missingSystemColumns.items %}
-            -- {{ loop.index }}. [{{ 'REQUIRED' if item.required else 'RECOMMENDED' }}] {{ item.annotation }}
-            {%- if item.example %}
-            --    Example: {{ item.example }}
-            {%- endif %}
-            --    Reason: {{ item.reason }}
-            {%- endfor %}
-            {# Only hard-fail if a REQUIRED item is present; recommendations-only stays non-blocking. #}
-            {%- if hardFail and anyRequired -%}
-                {{ fail_select("Missing required system column(s): " ~ (missingSystemColumns.items | selectattr('required') | map(attribute='annotation') | join(', ')) ~ ". See the comments above for details.") }}
-            {%- else -%}
-                SELECT 1
-            {%- endif -%}
-        {%- endif -%}
-    {%- endmacro -%}
-
-    {#===========================================================================
-    Description: Validates a Fact node's annotations (column IDs, mergeStrategy, required system columns). Shared by create.sql.j2 and run.sql.j2.
-    Input: hardFail (boolean, default false) — set true from create.sql.j2 so a failed check raises a real SQL error, since CREATE (unlike RUN) doesn't fail on row count alone.
-    Output: Rendered test_stage(...) + SELECT statements for every check that fails.
-    ===========================================================================#}
-    {%- macro validate_fact_requirements(hardFail=false) -%}
-        {# CREATE doesn't fail on row count like RUN does, so hardFail forces a real SQL error instead. #}
-        {%- macro fail_select(reason) -%}
-            {%- if hardFail -%}
-                SELECT 1/0
-            {%- else -%}
-                SELECT 1
-            {%- endif -%}
-        {%- endmacro -%}
-
-        {# Every Fact column must carry its own @id annotation. #}
-        {{ validate_column_ids(hardFail) }}
-
-        {# No @isBusinessKey column is valid for a Fact — it's loaded as a plain insert, so the mergeStrategy/tracking/system-column checks below don't apply. #}
-        {%- set hasBusinessKey = columns | selectattr("isBusinessKey") | list | length > 0 | default(false) -%}
-
-        {%- set lastModifiedCount = columns | selectattr("lastModifiedTracking") | list | length -%}
-
-        {%- set mergeStrategyExplicit = config.mergeStrategy is defined and config.mergeStrategy.parameters is defined and config.mergeStrategy.parameters | length > 0 -%}
-        {%- if mergeStrategyExplicit -%}
-            {# Matched case-insensitively (must match run.sql.j2). #}
-            {%- set mergeStrategyRaw = config.mergeStrategy.parameters[0] | string | trim -%}
-            {%- set mergeStrategy = mergeStrategyRaw | lower -%}
-        {%- else -%}
-            {# No @mergeStrategy given — always default to changeTracking, regardless of which tracking columns are present. #}
-            {%- set mergeStrategy = 'changetracking' -%}
-        {%- endif -%}
-        {%- set isSimpleUpsert = mergeStrategy == 'upsert' -%}
-        {%- set isLastModifiedStrategy = mergeStrategy == 'lastmodified' -%}
-        {%- set isChangeTrackingStrategy = mergeStrategy == 'changetracking' -%}
-        {%- set isAllColumnMatch = mergeStrategy == 'allcolumnmatch' %}
-
-        {# An unrecognised strategy would otherwise fall through to change tracking without any warning. #}
-        {%- if not (isSimpleUpsert or isLastModifiedStrategy or isChangeTrackingStrategy or isAllColumnMatch) %}
-            {%- set reason = '@mergeStrategy("' ~ mergeStrategyRaw ~ '") is not a recognised strategy. Use "changeTracking", "lastModified", "upsert" or "allColumnMatch".' %}
-            {{ test_stage('Invalid configuration: mergeStrategy', false) }}
-            -- {{ reason }}
-            {{ fail_select(reason) }}
-        {%- endif -%}
-
-        {# @mergeStrategy always takes priority. An explicit changeTracking/lastModified/upsert merges on the business key, so a missing @isBusinessKey stops the load.
-           Not for allColumnMatch, which needs no @isBusinessKey — every column is the match key. An unrecognised value is already flagged above. #}
-        {%- if not hasBusinessKey and mergeStrategyExplicit and (isSimpleUpsert or isLastModifiedStrategy or isChangeTrackingStrategy) %}
-            {%- set reason = '@mergeStrategy("' ~ mergeStrategyRaw ~ '") merges on the business key, but no column is marked @isBusinessKey. Mark the business key column(s) with @isBusinessKey, or remove @mergeStrategy to load the node as a plain insert.' %}
-            {{ test_stage('Invalid configuration: No Business Key', false) }}
-            -- {{ reason }}
-            {{ fail_select(reason) }}
-        {%- endif -%}
-
-        {# No @mergeStrategy and no business key = plain insert, so @lastModifiedTracking is never read. Warn only — the insert still runs. #}
-        {%- if not hasBusinessKey and not mergeStrategyExplicit and lastModifiedCount > 0 %}
-            {{ test_stage('Invalid configuration: No Business Key', true) }}
-            -- No @mergeStrategy and no column marked @isBusinessKey, so this node is loaded as a plain insert — @lastModifiedTracking will be ignored. Mark the business key column(s) with @isBusinessKey and set @mergeStrategy("lastModified") to use it, or remove the annotation.
-            SELECT 1
-        {%- endif -%}
-
-        {# allColumnMatch matches on every non-system column, so @isBusinessKey / @lastModifiedTracking are never read. Warn only — the merge still runs. #}
-        {%- if isAllColumnMatch and hasBusinessKey %}
-            {{ test_stage('Invalid configuration: mergeStrategy', true) }}
-            -- @mergeStrategy("allColumnMatch") matches on every non-system column, so @isBusinessKey is ignored — all columns are used as the business key for comparison. Remove @isBusinessKey, or switch mergeStrategy to use it.
-            SELECT 1
-        {%- endif -%}
-
-        {%- if isAllColumnMatch and lastModifiedCount > 0 %}
-            {{ test_stage('Invalid configuration: mergeStrategy', true) }}
-            -- @mergeStrategy("allColumnMatch") performs no change detection, so @lastModifiedTracking columns are never read. Remove them, or switch mergeStrategy to "lastModified" to use them.
-            SELECT 1
-        {%- endif -%}
-
-        {# These cross-checks only apply when @mergeStrategy is set explicitly, since an inferred strategy can't conflict with itself. #}
-        {%- if hasBusinessKey and mergeStrategyExplicit and isSimpleUpsert and lastModifiedCount > 0 %}
-            {{ test_stage('Invalid configuration: mergeStrategy', true) }}
-            -- @mergeStrategy("upsert") performs no change detection, so @lastModifiedTracking columns are never read. Remove them, or switch mergeStrategy to "lastModified" to use them.
-            SELECT 1
-        {%- endif -%}
-
-        {%- if hasBusinessKey and isChangeTrackingStrategy and lastModifiedCount > 0 %}
-            {{ test_stage('Invalid configuration: mergeStrategy', true) }}
-            -- @mergeStrategy("changeTracking") does not use @lastModifiedTracking — that column would be silently ignored. Remove it, or switch mergeStrategy to "lastModified".
-            SELECT 1
-        {%- endif -%}
-
-        {%- if hasBusinessKey and isLastModifiedStrategy and lastModifiedCount == 0 %}
-            {%- set reason = '@mergeStrategy("lastModified") requires exactly one column marked @lastModifiedTracking; none was found.' %}
-            {{ test_stage('Invalid configuration: mergeStrategy', false) }}
-            -- {{ reason }}
-            {{ fail_select(reason) }}
-        {%- endif %}
-
-        {# Only check "at most one @lastModifiedTracking column" once lastModified is the strategy in effect. #}
-        {%- if hasBusinessKey and isLastModifiedStrategy and lastModifiedCount > 1 %}
-            {%- set reason = "@lastModifiedTracking may be applied to at most one column, but " ~ lastModifiedCount ~ " columns were marked. Remove the annotation from all but one column." %}
-            {{ test_stage('Invalid configuration: Last Modified Column', false) }}
-            -- {{ reason }}
-            {{ fail_select(reason) }}
-        {%- endif -%}
-
-        {# Collect every missing/misconfigured system column here so one run reports them all together instead of one at a time. #}
-        {%- set missingSystemColumns = namespace(items=[]) %}
-
-        {%- set hasSystemCreateDate = columns | selectattr("isSystemCreateDate") | list | length > 0 -%}
-        {%- if hasBusinessKey and not isSimpleUpsert and not isAllColumnMatch and not hasSystemCreateDate -%}
-            {%- set missingSystemColumns.items = missingSystemColumns.items + [{
-                'required': true,
-                'annotation': '@isSystemCreateDate',
-                'example': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_CREATE_DATE" @isSystemCreateDate',
-                'reason': 'Required because @mergeStrategy("changeTracking"/"lastModified") does change detection against the existing target row: SYSTEM_CREATE_DATE is carried through unchanged from that row into CHANGE_DETECTION so its original insert timestamp is preserved on every update, and only stamped with CURRENT_TIMESTAMP the one time a business key is first inserted.'
-            }] -%}
-        {%- endif %}
-
-        {%- set hasSystemUpdateDate = columns | selectattr("isSystemUpdateDate") | list | length > 0 -%}
-        {%- if hasBusinessKey and not isSimpleUpsert and not isAllColumnMatch and not hasSystemUpdateDate -%}
-            {%- set missingSystemColumns.items = missingSystemColumns.items + [{
-                'required': true,
-                'annotation': '@isSystemUpdateDate',
-                'example': 'CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS "SYSTEM_UPDATE_DATE" @isSystemUpdateDate',
-                'reason': 'Required for SCD Type 1: without it there\'s no way to tell when a row\'s attributes were last changed — SYSTEM_CREATE_DATE is set once and never touched again.'
-            }] -%}
-        {%- endif -%}
-
-        {%- if missingSystemColumns.items | length > 0 -%}
-            {%- set anyRequired = missingSystemColumns.items | selectattr('required') | list | length > 0 %}
-            {{ test_stage('Missing Required System Columns', not anyRequired) }}
-            {%- for item in missingSystemColumns.items %}
-            -- {{ loop.index }}. [{{ 'REQUIRED' if item.required else 'RECOMMENDED' }}] {{ item.annotation }}
-            {%- if item.example %}
-            --    Example: {{ item.example }}
-            {%- endif %}
-            --    Reason: {{ item.reason }}
-            {%- endfor %}
-            {# Only hard-fail if a REQUIRED item is present; recommendations-only stays non-blocking. #}
-            {%- if hardFail and anyRequired -%}
-                {{ fail_select("Missing required system column(s): " ~ (missingSystemColumns.items | selectattr('required') | map(attribute='annotation') | join(', ')) ~ ". See the comments above for details.") }}
-            {%- else -%}
-                SELECT 1
-            {%- endif -%}
-        {%- endif -%}
-    {%- endmacro -%}
+  {%- endmacro -%}
 name: macro
 type: Macro

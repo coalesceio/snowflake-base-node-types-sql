@@ -1,0 +1,111 @@
+fileVersion: 1
+id: fd361abf-27bd-41a9-923b-b6574c427611
+name: Nation_Test_CamelCase
+operation:
+  database: ""
+  deployEnabled: true
+  description: ""
+  locationName: SRC
+  metadata:
+    columns:
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: b9ff8190-fb29-4b19-8767-5cb8ff780d4b
+          stepCounter: fd361abf-27bd-41a9-923b-b6574c427611
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: NAtionKey
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 3db4d6fc-9da6-4153-b987-05678543d412
+          stepCounter: fd361abf-27bd-41a9-923b-b6574c427611
+        config: {}
+        dataType: VARCHAR(25)
+        defaultValue: ""
+        description: ""
+        name: name
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 4a4aa2bf-f058-477a-80c4-4bb18f2bf6df
+          stepCounter: fd361abf-27bd-41a9-923b-b6574c427611
+        config: {}
+        dataType: NUMBER(38,0)
+        defaultValue: ""
+        description: ""
+        name: REGIONKEY
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 3b23d2ca-e8a8-43e2-9543-39758b641275
+          stepCounter: fd361abf-27bd-41a9-923b-b6574c427611
+        config: {}
+        dataType: VARCHAR(152)
+        defaultValue: ""
+        description: ""
+        name: CommenT
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+      - acceptedValues:
+          strictMatch: true
+          values: []
+        appliedColumnTests: {}
+        columnReference:
+          columnCounter: 55ebe0e3-07e7-4dc1-91e6-e323bceb8a53
+          stepCounter: fd361abf-27bd-41a9-923b-b6574c427611
+        config: {}
+        dataType: TIMESTAMP_LTZ(9)
+        defaultValue: ""
+        description: ""
+        name: N_Load_Timestamp
+        nullable: true
+        primaryKey: false
+        sourceColumnReferences:
+          - columnReferences: []
+            transform: ""
+        transform: ""
+        uniqueKey: false
+  name: Nation_Test_CamelCase
+  schema: ""
+  sqlType: Source
+  type: sourceInput
+  version: 1
+type: Node
