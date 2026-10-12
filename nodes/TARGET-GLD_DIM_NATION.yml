@@ -3,11 +3,29 @@ id: e8af1afb-4e79-451f-8c90-523148f04afc
 name: GLD_DIM_NATION
 operation:
   config:
+    customZeroKeyValues:
+      items:
+        - {}
+    groupByAll: false
     insertStrategy: UNION ALL
+    insertZeroKey: false
+    insertZeroKeyAdvanced: false
+    insertZeroKeyBol: "TRUE"
+    insertZeroKeyDate: 01-01-1900
+    insertZeroKeyStr: UNKNOWN
+    insertZeroKeySurrogateKey: "0"
+    insertZeroKeyTimestamp: "1900-01-01 00:00:00.000"
     lastModifiedComparison: false
+    orderby: false
+    orderbycolumn:
+      items:
+        - {}
+    postSQL: ""
+    preSQL: ""
     selectDistinct: false
     testsEnabled: false
     truncateBefore: false
+    type2Dimension: false
   database: ""
   deployEnabled: true
   description: "Gold: nation dimension, SCD1 (YAML Dimension)"
@@ -17,27 +35,19 @@ operation:
   metadata:
     appliedNodeTests: []
     columns:
-      - acceptedValues:
-          strictMatch: true
-          values: []
-        appliedColumnTests: {}
+      - appliedColumnTests: {}
         columnReference:
-          columnCounter: 6c5d571b-ae10-4a97-83e1-39515c01c1e9
+          columnCounter: 9625c0f8-7033-49f4-a0f3-7ff65fe1b599
           stepCounter: e8af1afb-4e79-451f-8c90-523148f04afc
         config: {}
         dataType: NUMBER
-        defaultValue: ""
         description: ""
         isSurrogateKey: true
-        keyColumnType: surrogateKey
         name: GLD_DIM_NATION_KEY
-        nullable: false
-        primaryKey: false
+        nullable: true
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
-        transform: ""
-        uniqueKey: false
       - acceptedValues:
           strictMatch: true
           values: []
@@ -102,132 +112,85 @@ operation:
             transform: "\"BRZ_NATION\".\"REGION_KEY\""
         transform: "\"BRZ_NATION\".\"REGION_KEY\""
         uniqueKey: false
-      - acceptedValues:
-          strictMatch: true
-          values: []
-        appliedColumnTests: {}
+      - appliedColumnTests: {}
         columnReference:
-          columnCounter: 6ee814eb-6736-4de3-89a1-5c63d9fa04fd
+          columnCounter: 36b40c6b-c1a5-4a6e-b4e3-a0a303447a22
           stepCounter: e8af1afb-4e79-451f-8c90-523148f04afc
         config: {}
         dataType: NUMBER
-        defaultValue: ""
         description: ""
         isSystemVersion: true
         name: SYSTEM_VERSION
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
-        systemColumnType: sysVersion
-        transform: ""
-        uniqueKey: false
-      - acceptedValues:
-          strictMatch: true
-          values: []
-        appliedColumnTests: {}
+      - appliedColumnTests: {}
         columnReference:
-          columnCounter: f5419e5f-9088-43dc-817e-35b11fdeb613
+          columnCounter: e8aa940e-a173-42b2-a7ef-10a158b66d0a
           stepCounter: e8af1afb-4e79-451f-8c90-523148f04afc
         config: {}
         dataType: VARCHAR
-        defaultValue: ""
         description: ""
         isSystemCurrentFlag: true
         name: SYSTEM_CURRENT_FLAG
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: ""
-        systemColumnType: sysCurrentFlag
-        transform: ""
-        uniqueKey: false
-      - acceptedValues:
-          strictMatch: true
-          values: []
-        appliedColumnTests: {}
+      - appliedColumnTests: {}
         columnReference:
-          columnCounter: b6296263-0e09-42b4-8545-98d941e7ea86
+          columnCounter: 964c5d2a-3550-4cb6-b633-d13d2202fb55
           stepCounter: e8af1afb-4e79-451f-8c90-523148f04afc
         config: {}
         dataType: TIMESTAMP
-        defaultValue: ""
         description: ""
         isSystemStartDate: true
         name: SYSTEM_START_DATE
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
-        systemColumnType: sysStartDate
-        transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
-        uniqueKey: false
-      - acceptedValues:
-          strictMatch: true
-          values: []
-        appliedColumnTests: {}
+      - appliedColumnTests: {}
         columnReference:
-          columnCounter: be4a6a95-2d2e-4c03-8d2c-24b70f128f9d
+          columnCounter: bea23777-70f5-4efc-88f7-8b21405d031c
           stepCounter: e8af1afb-4e79-451f-8c90-523148f04afc
         config: {}
         dataType: TIMESTAMP
-        defaultValue: ""
         description: ""
         isSystemEndDate: true
         name: SYSTEM_END_DATE
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: CAST('2999-12-31 00:00:00' AS TIMESTAMP)
-        systemColumnType: sysEndDate
-        transform: CAST('2999-12-31 00:00:00' AS TIMESTAMP)
-        uniqueKey: false
-      - acceptedValues:
-          strictMatch: true
-          values: []
-        appliedColumnTests: {}
+      - appliedColumnTests: {}
         columnReference:
-          columnCounter: cb9c3b74-04c0-4f3e-8f01-e5efed585746
+          columnCounter: 3e665e83-a233-452f-bdbd-9e7117e00f00
           stepCounter: e8af1afb-4e79-451f-8c90-523148f04afc
         config: {}
         dataType: TIMESTAMP
-        defaultValue: ""
         description: ""
         isSystemCreateDate: true
         name: SYSTEM_CREATE_DATE
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
-        systemColumnType: sysCreateDate
-        transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
-        uniqueKey: false
-      - acceptedValues:
-          strictMatch: true
-          values: []
-        appliedColumnTests: {}
+      - appliedColumnTests: {}
         columnReference:
-          columnCounter: 54ea95d1-0c39-4adc-86bc-7b556e66fb74
+          columnCounter: 2ed4d8a8-8320-4297-a1ec-c8413abe670e
           stepCounter: e8af1afb-4e79-451f-8c90-523148f04afc
         config: {}
         dataType: TIMESTAMP
-        defaultValue: ""
         description: ""
         isSystemUpdateDate: true
         name: SYSTEM_UPDATE_DATE
         nullable: true
-        primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
             transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
-        systemColumnType: sysUpdateDate
-        transform: CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
-        uniqueKey: false
+    cteString: ""
     enabledColumnTestIDs: []
     sourceMapping:
       - aliases: {}
@@ -243,7 +206,7 @@ operation:
   name: GLD_DIM_NATION
   overrideSQL: false
   schema: ""
-  sqlType: Dimension
+  sqlType: base-node-types:::194
   type: sql
   version: 1
 type: Node

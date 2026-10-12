@@ -3,7 +3,9 @@ id: 6b020c42-2b2b-4f35-aa09-92e9fa7281f4
 name: SLV_NATION
 operation:
   config:
+    OverrideSQLCreate: false
     groupByAll: false
+    insertStrategy: UNION
     secureoption: false
     selectDistinct: false
     testsEnabled: false
@@ -121,6 +123,7 @@ operation:
             transform: "\"BRZ_NATION\".\"SOURCE_LOAD_TS\""
         transform: "\"BRZ_NATION\".\"LOAD_TS\""
         uniqueKey: false
+    cteString: ""
     enabledColumnTestIDs: []
     sourceMapping:
       - aliases: {}
@@ -136,7 +139,7 @@ operation:
   name: SLV_NATION
   overrideSQL: false
   schema: ""
-  sqlType: View
+  sqlType: base-node-types:::188
   type: sql
   version: 1
 type: Node

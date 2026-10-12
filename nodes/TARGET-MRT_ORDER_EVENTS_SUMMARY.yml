@@ -3,9 +3,21 @@ id: 8ff4e875-8533-5025-b481-2aad0a46775e
 name: MRT_ORDER_EVENTS_SUMMARY
 operation:
   config:
+    asofColumn:
+      items:
+        - {}
+    asofJoin: true
+    asofJoinMain: false
+    asofJoinON: false
+    asofJoinUSING: false
     groupByAll: true
     insertStrategy: INSERT
     orderby: false
+    orderbycolumn:
+      items:
+        - {}
+    postSQL: ""
+    preSQL: ""
     selectDistinct: false
     testsEnabled: false
     truncateBefore: true
@@ -60,6 +72,7 @@ operation:
             transform: COUNT(*)
         transform: COUNT(*)
         uniqueKey: false
+    cteString: ""
     enabledColumnTestIDs: []
     sourceMapping:
       - aliases: {}
@@ -75,7 +88,7 @@ operation:
   name: MRT_ORDER_EVENTS_SUMMARY
   overrideSQL: false
   schema: ""
-  sqlType: Stage
+  sqlType: base-node-types:::204
   type: sql
   version: 1
 type: Node

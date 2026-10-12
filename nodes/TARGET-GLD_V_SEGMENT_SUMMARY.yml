@@ -3,7 +3,9 @@ id: 3c2345e5-eb7c-4956-aa19-8eb15f9fd676
 name: GLD_V_SEGMENT_SUMMARY
 operation:
   config:
+    OverrideSQLCreate: false
     groupByAll: false
+    insertStrategy: UNION
     secureoption: false
     selectDistinct: false
     testsEnabled: false
@@ -100,6 +102,7 @@ operation:
             transform: SUM("GLD_DIM_CUSTOMER"."C_ACCTBAL")
         transform: SUM("GLD_DIM_CUSTOMER"."C_ACCTBAL")
         uniqueKey: false
+    cteString: ""
     enabledColumnTestIDs: []
     sourceMapping:
       - aliases: {}
@@ -118,7 +121,7 @@ operation:
   name: GLD_V_SEGMENT_SUMMARY
   overrideSQL: false
   schema: ""
-  sqlType: View
+  sqlType: base-node-types:::188
   type: sql
   version: 1
 type: Node

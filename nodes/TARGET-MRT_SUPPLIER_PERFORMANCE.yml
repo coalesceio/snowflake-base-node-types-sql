@@ -3,9 +3,21 @@ id: 33862a14-c0e7-557c-9fc7-d1ba5613b3a7
 name: MRT_SUPPLIER_PERFORMANCE
 operation:
   config:
+    asofColumn:
+      items:
+        - {}
+    asofJoin: true
+    asofJoinMain: false
+    asofJoinON: false
+    asofJoinUSING: false
     groupByAll: true
     insertStrategy: INSERT
     orderby: false
+    orderbycolumn:
+      items:
+        - {}
+    postSQL: ""
+    preSQL: ""
     selectDistinct: false
     testsEnabled: false
     truncateBefore: true
@@ -123,6 +135,7 @@ operation:
             transform: SUM("FCT_PART_SUPPLY"."INVENTORY_VALUE")
         transform: SUM("FCT_PART_SUPPLY"."INVENTORY_VALUE")
         uniqueKey: false
+    cteString: ""
     enabledColumnTestIDs: []
     sourceMapping:
       - aliases: {}
@@ -144,7 +157,7 @@ operation:
   name: MRT_SUPPLIER_PERFORMANCE
   overrideSQL: false
   schema: ""
-  sqlType: Stage
+  sqlType: base-node-types:::204
   type: sql
   version: 1
 type: Node
