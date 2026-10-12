@@ -83,7 +83,7 @@ The Work Node type has three configuration groups:
 | [`@materializationType(type)`](#materializationtype) ***(reserved)*** | Table, transient table or view |
 | `@deployDisabled` ***(reserved)*** | Excludes this node from deployment. |
 | [`@tag(name, value, storageLocation?)`](#tag-node) ***(repeatable)*** | Applies a Snowflake tag to this table/view. |
-| [`@writeMode("truncateInsert \| append")`](#writemode) | How each run writes to the target: truncateInsert or append |
+| [`@writeMode("truncateInsert \| append")`](#writemode) | How each run writes to the target: truncateInsert or append<br/>*Not specified in the SQL editor → defaults to **truncateInsert**.* |
 | [`@disableTests`](#disabletests) **²** | Controls whether configured tests are skipped. |
 | [`@tests(querySQL, continueOnFailure?, runOrder?)`](#tests) **²** ***(repeatable)*** | Node-level data quality test. |
 | [`@preSQL(querySQL)`](#presql) ***(repeatable)*** | SQL statement to execute `before` the data load operation. |
@@ -236,7 +236,7 @@ The Dimension Node type has three configuration groups:
 | [`@materializationType(type)`](#materializationtype) ***(reserved)*** | Table, transient table or view |
 | `@deployDisabled` ***(reserved)*** | Excludes this node from deployment. |
 | [`@tag(name, value, storageLocation?)`](#tag-node) ***(repeatable)*** | Applies a Snowflake tag to this table/view. |
-| [`@writeMode("truncateInsert \| append")`](#writemode) | How each run writes to the target: truncateInsert or append |
+| [`@writeMode("truncateInsert \| append")`](#writemode) | How each run writes to the target: truncateInsert or append<br/>*Not specified in the SQL editor → defaults to **append**.* |
 | [`@mergeStrategy("upsert \| changeTracking \| lastModified")`](#mergestrategy-dimension) | Chooses how this dimension decides a row has changed, and therefore which column annotations it requires. |
 | [`@zeroKey(surrogateKeyValue, stringValue?, timestampValue?, booleanValue?)`](#zerokey-dimension-node) | Inserts a default "zero key" record into the target — a placeholder row used to catch unresolved foreign key lookups. |
 | [`@disableTests`](#disabletests) **²** | Controls whether configured tests are skipped. |
@@ -626,7 +626,7 @@ The Fact Node type has three configuration groups:
 | [`@materializationType(type)`](#materializationtype) ***(reserved)*** | Table, transient table or view |
 | `@deployDisabled` ***(reserved)*** | Excludes this node from deployment. |
 | [`@tag(name, value, storageLocation?)`](#tag-node) ***(repeatable)*** | Applies a Snowflake tag to this table/view. |
-| [`@writeMode("truncateInsert \| append")`](#writemode) | How each run writes to the target: truncateInsert or append |
+| [`@writeMode("truncateInsert \| append")`](#writemode) | How each run writes to the target: truncateInsert or append<br/>*Not specified in the SQL editor → defaults to **append**.* |
 | [`@mergeStrategy("changeTracking \| lastModified \| upsert \| allColumnMatch")`](#mergestrategy-fact) | Chooses how rows are matched against the target, and therefore which column annotations are required. |
 | [`@disableTests`](#disabletests) **²** | Controls whether configured tests are skipped. |
 | [`@tests(querySQL, continueOnFailure?, runOrder?)`](#tests) **²** ***(repeatable)*** | Node-level data quality test. |
@@ -1017,18 +1017,15 @@ Controls whether configured tests are skipped.
 **Example:**
 
 ```sql
--- Work / Dimension
-@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")
--- Fact
-@tests("SELECT 1 FROM {{ this }} GROUP BY ORDER_ID HAVING COUNT(*) > 1", false, "After")
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1", false, "After")  -- runs After the load, continueOnFailure=false
 ```
 
 **More examples:**
 
 ```text
-@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", true, "Before")
-@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", false)
-@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1")
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", true, "Before")  -- runs Before the load, continueOnFailure=true
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1", false)  -- runs After the load (default), continueOnFailure=false
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_COMMENT HAVING COUNT(*) > 1")  -- runs After the load (default), continueOnFailure=true (default)
 ```
 
 
@@ -1048,10 +1045,7 @@ Controls whether configured tests are skipped.
 **Example:**
 
 ```sql
--- Work / Dimension
 @preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATEADD(DAY, -90, CURRENT_DATE())")
--- Fact
-@preSQL("DELETE FROM {{ this }} WHERE ORDER_DATE < DATEADD(DAY, -90, CURRENT_DATE())")
 ```
 
 
@@ -1071,12 +1065,7 @@ Controls whether configured tests are skipped.
 **Example:**
 
 ```sql
--- Work
 @postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('WRK_NATION', CURRENT_TIMESTAMP())")
--- Dimension
-@postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('DIM_NATION', CURRENT_TIMESTAMP())")
--- Fact
-@postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('FCT_ORDERS', CURRENT_TIMESTAMP())")
 ```
 
 
@@ -1344,7 +1333,7 @@ If the column name's casing must be preserved exactly, swap the outer quotes to 
 ```
 Or keep the outer `"..."` double quotes and double each inner quote — `""` inside the annotation string becomes a single `"` in the SQL. Use this form when the SQL also needs single quotes, e.g. a `{{ ref('...', '...') }}` or a string literal:
 ```
-@tests("SELECT ""Nation_Key"" FROM {{ ref('SRC', 'NATION') }} GROUP BY ""Nation_Key"" HAVING COUNT(*) > 1", false, "Before")
+@tests("SELECT ""Nation_Key"" FROM {{ ref('SRC', 'NATION') }} GROUP BY ""Nation_Key"" HAVING COUNT(*) > 1", false, "Before")  -- runs Before the load, continueOnFailure=false
 ```
 A backslash (`\"`) does not escape a quote inside an annotation string and fails with a syntax error.
 
@@ -1495,8 +1484,8 @@ Common ways to use the SQL nodes. The SQL patterns under Work Examples (CTEs, wi
 
 ```sql
 @writeMode("append")
-@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1")
-@tests("SELECT 1 FROM {{ this }} WHERE N_REGIONKEY IS NULL", true, "Before")
+@tests("SELECT 1 FROM {{ this }} GROUP BY N_NATIONKEY HAVING COUNT(*) > 1")  -- runs After the load (default), continueOnFailure=true (default)
+@tests("SELECT 1 FROM {{ this }} WHERE N_REGIONKEY IS NULL", true, "Before")  -- runs Before the load, continueOnFailure=true
 @description("Table description")
 @preSQL("DELETE FROM {{ this }} WHERE N_LOAD_DATE < DATEADD(DAY, -90, CURRENT_DATE())")
 @postSQL("INSERT INTO {{ ref('AUDIT', 'LOAD_LOG') }} (TABLE_NAME, LOAD_TS) VALUES ('WRK_NATION', CURRENT_TIMESTAMP())")
@@ -1713,10 +1702,10 @@ FROM {{ ref('SRC', 'CUSTOMER') }}
 A node-level test fails when its query returns any rows. `Before` tests usually read the source; `After` tests read the loaded target through `{{ this }}`.
 
 ```sql
-@tests("SELECT CUSTOMER_ID FROM {{ ref('SRC', 'CUSTOMER') }} GROUP BY CUSTOMER_ID HAVING COUNT(*) > 1", false, "Before")
-@tests("SELECT 1 FROM {{ ref('SRC', 'CUSTOMER') }} HAVING COUNT(*) = 0", true, "Before")
-@tests("SELECT 1 FROM {{ this }} WHERE BALANCE < 0 AND STATUS = 'ACTIVE'")
-@tests("SELECT 1 FROM {{ this }} HAVING COUNT(*) <> (SELECT COUNT(*) FROM {{ ref('SRC', 'CUSTOMER') }})", true, "After")
+@tests("SELECT CUSTOMER_ID FROM {{ ref('SRC', 'CUSTOMER') }} GROUP BY CUSTOMER_ID HAVING COUNT(*) > 1", false, "Before")  -- runs Before the load, continueOnFailure=false
+@tests("SELECT 1 FROM {{ ref('SRC', 'CUSTOMER') }} HAVING COUNT(*) = 0", true, "Before")  -- runs Before the load, continueOnFailure=true
+@tests("SELECT 1 FROM {{ this }} WHERE BALANCE < 0 AND STATUS = 'ACTIVE'")  -- runs After the load (default), continueOnFailure=true (default)
+@tests("SELECT 1 FROM {{ this }} HAVING COUNT(*) <> (SELECT COUNT(*) FROM {{ ref('SRC', 'CUSTOMER') }})", true, "After")  -- runs After the load, continueOnFailure=true
 SELECT
     "CUSTOMER_ID"                            AS "CUSTOMER_ID",
     "BALANCE"                                AS "BALANCE",
@@ -1840,7 +1829,7 @@ Every merge strategy matches rows on the business key, so the source must return
 
 ```sql
 @mergeStrategy("changeTracking")
-@tests("SELECT N_NATIONKEY, N_NAME FROM {{ ref('SOURCE_DATA', 'NATION') }} GROUP BY N_NATIONKEY, N_NAME HAVING COUNT(*) > 1 OR N_NATIONKEY IS NULL OR N_NAME IS NULL", false, "Before")
+@tests("SELECT N_NATIONKEY, N_NAME FROM {{ ref('SOURCE_DATA', 'NATION') }} GROUP BY N_NATIONKEY, N_NAME HAVING COUNT(*) > 1 OR N_NATIONKEY IS NULL OR N_NAME IS NULL", false, "Before")  -- runs Before the load, continueOnFailure=false
 SELECT
     0                                        AS "DIM_NATION_KEY"      @id("a1b2c3") @isSurrogateKey,
     "N_NATIONKEY"                            AS "N_NATIONKEY"         @id("b2c3d4") @isBusinessKey,
