@@ -12,7 +12,7 @@ SELECT
     COALESCE("N"."DIM_NATION_KEY", -1) AS "DIM_NATION_KEY" @id("c917d282-18cf-4620-8bb6-504d7c90552d") @not_null,
     "OL"."SUPPLIER_KEY" AS "SUPPLIER_KEY" @id("3b9038b4-f157-4f6c-8056-b78f69ac9d18"),
     "OL"."ORDER_DATE" AS "ORDER_DATE" @id("b14ad53c-fe14-4f35-a5ae-e198ddffa0c5"),
-    "OL"."SHIP_DATE" AS "SHIP_DATE" @id("b168e873-5d07-4807-886e-4bca633dbc14") @clusterKey(1),
+    CAST("OL"."SHIP_DATE" AS DATE) AS "SHIP_DATE" @id("b168e873-5d07-4807-886e-4bca633dbc14") @clusterKey(1),
     "OL"."RECEIPT_DATE" AS "RECEIPT_DATE" @id("ed6b16db-a35c-400c-b303-804476160ee7"),
     CAST("OL"."SHIP_MODE" AS STRING ) AS "SHIP_MODE" @id("fec7356f-229c-4d88-b6af-3fc97d858ae4"),
     "OL"."RETURN_FLAG" AS "RETURN_FLAG" @id("9bf1f29c-3594-496d-aac4-6fd4fe7180c8"),
