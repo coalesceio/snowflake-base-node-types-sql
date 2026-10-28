@@ -6,6 +6,6 @@ mappingDefinitions:
     schema: SOURCE
   TARGET:
     database: TANVI_DEV
-    schema: QA_PHASE2
+    schema: QA_PHASE
 name: deployStrategyAdvanced
 type: Environment
