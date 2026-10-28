@@ -1,5 +1,11 @@
 fileVersion: 1
 id: "932"
-mappingDefinitions: {}
+mappingDefinitions:
+  SRC2:
+    database: ""
+    schema: ""
+  TARGET2:
+    database: ""
+    schema: ""
 name: "[fact_testing_pr]"
 type: Environment

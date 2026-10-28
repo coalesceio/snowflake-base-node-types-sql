@@ -4,8 +4,14 @@ mappingDefinitions:
   SRC:
     database: TANVI_DEV
     schema: SOURCE
+  SRC2:
+    database: ""
+    schema: ""
   TARGET:
     database: TANVI_DEV
     schema: QA
+  TARGET2:
+    database: ""
+    schema: ""
 name: SQLWork_NewVersion_Test
 type: Environment

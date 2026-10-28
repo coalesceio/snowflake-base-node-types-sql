@@ -1,5 +1,5 @@
 fileVersion: 1
-id: fd361abf-27bd-41a9-923b-b6574c427611
+id: 4850cc46-7941-4165-9a1f-4029970f5efe
 name: Nation_Test_CamelCase
 operation:
   database: ""
@@ -13,14 +13,14 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: b9ff8190-fb29-4b19-8767-5cb8ff780d4b
-          stepCounter: fd361abf-27bd-41a9-923b-b6574c427611
+          columnCounter: 09c35d5d-86a5-47d8-a40b-f06397339025
+          stepCounter: 4850cc46-7941-4165-9a1f-4029970f5efe
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
         description: ""
         name: NAtionKey
-        nullable: true
+        nullable: false
         primaryKey: false
         sourceColumnReferences:
           - columnReferences: []
@@ -32,8 +32,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 3db4d6fc-9da6-4153-b987-05678543d412
-          stepCounter: fd361abf-27bd-41a9-923b-b6574c427611
+          columnCounter: acd4a07c-0e4c-49e4-a58f-98f0f79a1751
+          stepCounter: 4850cc46-7941-4165-9a1f-4029970f5efe
         config: {}
         dataType: VARCHAR(25)
         defaultValue: ""
@@ -51,8 +51,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 4a4aa2bf-f058-477a-80c4-4bb18f2bf6df
-          stepCounter: fd361abf-27bd-41a9-923b-b6574c427611
+          columnCounter: 8a55c4cb-4acb-49e6-89b6-f5d5cb2c633f
+          stepCounter: 4850cc46-7941-4165-9a1f-4029970f5efe
         config: {}
         dataType: NUMBER(38,0)
         defaultValue: ""
@@ -70,8 +70,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 3b23d2ca-e8a8-43e2-9543-39758b641275
-          stepCounter: fd361abf-27bd-41a9-923b-b6574c427611
+          columnCounter: e8ecfd35-8b45-467c-b746-3b5877e22db0
+          stepCounter: 4850cc46-7941-4165-9a1f-4029970f5efe
         config: {}
         dataType: VARCHAR(152)
         defaultValue: ""
@@ -89,8 +89,8 @@ operation:
           values: []
         appliedColumnTests: {}
         columnReference:
-          columnCounter: 55ebe0e3-07e7-4dc1-91e6-e323bceb8a53
-          stepCounter: fd361abf-27bd-41a9-923b-b6574c427611
+          columnCounter: f2412b0a-3550-4255-b57b-0a548f8a09d4
+          stepCounter: 4850cc46-7941-4165-9a1f-4029970f5efe
         config: {}
         dataType: TIMESTAMP_LTZ(9)
         defaultValue: ""

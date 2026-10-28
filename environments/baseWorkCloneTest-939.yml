@@ -1,5 +1,11 @@
 fileVersion: 1
 id: "939"
-mappingDefinitions: {}
+mappingDefinitions:
+  SRC2:
+    database: ""
+    schema: ""
+  TARGET2:
+    database: ""
+    schema: ""
 name: baseWorkCloneTest
 type: Environment

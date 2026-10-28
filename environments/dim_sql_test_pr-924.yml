@@ -1,5 +1,11 @@
 fileVersion: 1
 id: "924"
-mappingDefinitions: {}
+mappingDefinitions:
+  SRC2:
+    database: ""
+    schema: ""
+  TARGET2:
+    database: ""
+    schema: ""
 name: "[dim_sql_test_pr]"
 type: Environment

@@ -1,0 +1,17 @@
+fileVersion: 1
+id: "969"
+mappingDefinitions:
+  SRC:
+    database: TANVI_DEV
+    schema: SOURCE
+  SRC2:
+    database: TANVI_DEV
+    schema: QA
+  TARGET:
+    database: TANVI_DEV
+    schema: QA_PHASE
+  TARGET2:
+    database: TANVI_DEV
+    schema: QA_PHASE2
+name: StorageIssueFix
+type: Environment
