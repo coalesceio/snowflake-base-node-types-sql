@@ -3,9 +3,9 @@ id: "938"
 mappingDefinitions:
   SRC:
     database: TANVI_DEV
-    schema: SOURCE
+    schema: QA_PHASE
   TARGET:
     database: TANVI_DEV
-    schema: QA_PHASE
+    schema: QA_PHASE2
 name: deployStrategyAdvanced
 type: Environment
