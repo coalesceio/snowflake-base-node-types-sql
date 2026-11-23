@@ -1364,5 +1364,141 @@ macroString: |-
       {%- endif -%}
 
   {%- endmacro -%}
+
+  {#===========================================================================
+    SECTION 8: SQL View node (View-SQLView). New, view-only macros; nothing above is changed.
+  ===========================================================================#}
+
+  {#===========================================================================
+    sqlview_flag(state, flag): true when @flag, @flag(true) or @flag("true") is set on the
+    state's node (absent or @flag(false) -> false). Works on currentState or desiredState.
+  ===========================================================================#}
+  {%- macro sqlview_flag(state, flag) -%}
+      {%- set value = state.config[flag] if state and state.config is defined and state.config[flag] is defined else none -%}
+      {%- if value is none -%}
+          false
+      {%- elif value is boolean -%}
+          {{- value | lower -}}
+      {%- elif value is mapping and value.parameters is defined and value.parameters | length > 0 -%}
+          {{- 'false' if (value.parameters[0] | string | trim | lower) == 'false' else 'true' -}}
+      {%- else -%}
+          true
+      {%- endif -%}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    sqlview_core_sql(state): the part of a view that can only change by recreating it —
+    column list, CTE, SELECT (DISTINCT, transforms, FROM/JOIN) and COPY GRANTS.
+    Comments, tags, SECURE and CHANGE_TRACKING are left out: they are altered in place.
+  ===========================================================================#}
+  {%- macro sqlview_core_sql(state) -%}
+      ( {%- for col in state.columns %}"{{ col.name }}"{%- if not loop.last -%}, {%- endif %}{%- endfor %} )
+      {%- if sqlview_flag(state, 'copyGrants') | trim == 'true' %} COPY GRANTS{% endif %}
+      AS
+      {{ state.sources[0].cteString }}
+      SELECT {{ state.sources[0].selectModifier | default('', true) }}
+      {%- for col in state.sources[0].columns %}
+          {{ get_source_transform(col) }} AS "{{ col.name }}"
+          {%- if not loop.last -%}, {%- endif %}
+      {%- endfor %}
+      {{ state.sources[0].join }}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    sqlview_create_sql(state, objectPath): "Create View" — full CREATE OR REPLACE [SECURE]
+    VIEW with column comments/tags, CHANGE_TRACKING, COPY GRANTS, COMMENT and WITH TAG.
+  ===========================================================================#}
+  {%- macro sqlview_create_sql(state, objectPath) -%}
+      {{ stage('Create View') }}
+      CREATE OR REPLACE {% if sqlview_flag(state, 'secure') | trim == 'true' %}SECURE {% endif %}VIEW {{ objectPath }}
+      (
+          {%- for col in state.columns %}
+              "{{ col.name }}"
+              {%- if col.tag %} WITH TAG ({{ tag_list(col.tag) }}){% endif %}
+              {%- if col.description | trim | length > 0 %} COMMENT '{{ col.description | escape }}'{% endif %}
+              {%- if not loop.last -%}, {%- endif %}
+          {%- endfor %}
+      )
+      {%- if sqlview_flag(state, 'changeTracking') | trim == 'true' %}
+      CHANGE_TRACKING = TRUE
+      {%- endif %}
+      {%- if sqlview_flag(state, 'copyGrants') | trim == 'true' %}
+      COPY GRANTS
+      {%- endif %}
+      {%- if state.node.description | trim | length > 0 %}
+      COMMENT = '{{ state.node.description | escape }}'
+      {%- endif %}
+      {%- if state.config.tag %}
+      WITH TAG ({{ tag_list(state.config.tag) }})
+      {%- endif %}
+      AS
+      {{ state.sources[0].cteString }}
+      SELECT {{ state.sources[0].selectModifier | default('', true) }}
+      {%- for col in state.sources[0].columns %}
+          {{ get_source_transform(col) }} AS "{{ col.name }}"
+          {%- if not loop.last -%}, {%- endif %}
+      {%- endfor %}
+      {{ state.sources[0].join }}
+      {%- set nsNodeVariables.metaDataChanged = true -%}
+  {%- endmacro -%}
+
+  {#===========================================================================
+    sqlview_alter_sql(): in-place alters on the (already renamed) view, each only when it
+    changed: view comment, column comments, SECURE, CHANGE_TRACKING, then tags via the
+    shared alter_tag_sql(). Columns are matched by id (the core is unchanged here).
+  ===========================================================================#}
+  {%- macro sqlview_alter_sql() -%}
+      {%- set viewPath = nsNodeVariables.desObjectNameFullPath -%}
+
+      {#- View comment #}
+      {%- set desiredDescription = node.description if node.description | trim | length > 0 else '' -%}
+      {%- set currentDescription = currentState.node.description if currentState.node.description | trim | length > 0 else '' -%}
+      {%- if desiredDescription != currentDescription %}
+          {{ stage('Edit View Description') }}
+          ALTER VIEW {{ viewPath }}
+          {%- if desiredDescription | length > 0 %} SET COMMENT = '{{ desiredDescription | escape }}'
+          {%- else %} UNSET COMMENT
+          {%- endif %}
+          {%- set nsNodeVariables.metaDataChanged = true -%}
+      {%- endif %}
+
+      {#- Column comments #}
+      {%- for desCol in columns -%}
+          {%- set matchingCols = currentState.columns | selectattr('id', 'equalto', desCol.id) | list -%}
+          {%- if matchingCols -%}
+              {%- set curCol = matchingCols | first -%}
+              {%- set desColDesc = desCol.description if desCol.description | trim | length > 0 else '' -%}
+              {%- set curColDesc = curCol.description if curCol.description | trim | length > 0 else '' -%}
+              {%- if desColDesc != curColDesc %}
+                  {{ stage('Edit Column Description: ' + desCol.name) }}
+                  ALTER VIEW {{ viewPath }}
+                  ALTER COLUMN "{{ desCol.name }}"
+                  {%- if desColDesc | length > 0 %} COMMENT '{{ desColDesc | escape }}'
+                  {%- else %} UNSET COMMENT
+                  {%- endif %}
+                  {%- set nsNodeVariables.metaDataChanged = true -%}
+              {%- endif %}
+          {%- endif -%}
+      {%- endfor -%}
+
+      {#- SECURE #}
+      {%- set desiredSecure = sqlview_flag(desiredState, 'secure') | trim -%}
+      {%- if desiredSecure != sqlview_flag(currentState, 'secure') | trim %}
+          {{ stage('Set View Secure' if desiredSecure == 'true' else 'Unset View Secure') }}
+          ALTER VIEW {{ viewPath }} {{ 'SET' if desiredSecure == 'true' else 'UNSET' }} SECURE
+          {%- set nsNodeVariables.metaDataChanged = true -%}
+      {%- endif %}
+
+      {#- CHANGE_TRACKING #}
+      {%- set desiredTracking = sqlview_flag(desiredState, 'changeTracking') | trim -%}
+      {%- if desiredTracking != sqlview_flag(currentState, 'changeTracking') | trim %}
+          {{ stage('Set View Change Tracking') }}
+          ALTER VIEW {{ viewPath }} SET CHANGE_TRACKING = {{ 'TRUE' if desiredTracking == 'true' else 'FALSE' }}
+          {%- set nsNodeVariables.metaDataChanged = true -%}
+      {%- endif %}
+
+      {#- Column- and view-level tags (unset before set) #}
+      {{ alter_tag_sql() }}
+  {%- endmacro -%}
 name: macro
 type: Macro

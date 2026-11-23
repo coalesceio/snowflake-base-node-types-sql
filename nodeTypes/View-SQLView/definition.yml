@@ -1,0 +1,332 @@
+fileVersion: 2
+id: SQLView
+isDisabled: false
+metadata:
+  defaultStorageLocation: null
+  error: null
+  nodeMetadataSpec: |-
+    capitalized: View
+    short: V
+    plural: Views
+    tagColor: '#C4C4C4'
+
+    deployStrategy: advanced
+    enableCTESupport: true
+
+    annotations:
+        node:
+
+        - name: materializationType
+          description: |-
+            • Materialization type of this node — always 𝘃𝗶𝗲𝘄.
+            • Added automatically when the node is created; keep it as @materializationType("view") so the node's metadata records a view (without it Coalesce defaults to table).
+            • Any other value fails create and run.
+          isRequired: true
+          parameters:
+            - name: type
+              type: string
+              isRequired: true
+              default: view
+              example: view
+              options:
+                - view
+
+        - name: secure
+          description: |-
+            • Creates the view as a 𝗦𝗘𝗖𝗨𝗥𝗘 𝗩𝗜𝗘𝗪 — the definition is hidden from non-owners.
+            • Adding or removing it alters the view in place (SET / UNSET SECURE).
+          isRequired: false
+
+        - name: copyGrants
+          description: |-
+            • Adds 𝗖𝗢𝗣𝗬 𝗚𝗥𝗔𝗡𝗧𝗦 so privileges on the existing view are kept when it is recreated.
+            • Not set by default. Part of the view definition: adding or removing it recreates the view.
+          isRequired: false
+
+        - name: changeTracking
+          description: |-
+            • Sets 𝗖𝗛𝗔𝗡𝗚𝗘_𝗧𝗥𝗔𝗖𝗞𝗜𝗡𝗚 = 𝗧𝗥𝗨𝗘 on the view (needed for streams on the view).
+            • Adding or removing it alters the view in place.
+          isRequired: false
+
+        - name: tag
+          description: |-
+            • Applies a Snowflake tag to this view.
+            • Repeat the annotation to apply multiple tags.
+            • Tag names are case-sensitive — "PII" and "pii" are different tags.
+            • The tag's location defaults to this node's own location.
+          allowsMultiple: true
+          parameters:
+            - name: name
+              type: string
+              description: Name of the tag (must already exist in Snowflake). Case-sensitive.
+              isRequired: true
+
+            - name: value
+              type: string
+              description: Value to assign to the tag.
+              isRequired: true
+
+            - name: storageLocation
+              type: string
+              description: Storage location the tag lives in. Defaults to this node's own location.
+              isRequired: false
+
+        - name: disableTests
+          description: |-
+            • Controls whether configured tests are skipped.
+            • Useful while developing a node — skip node-level and column-level tests without deleting them, so you can iterate on the SQL first and turn tests back on once the logic is settled.
+          isRequired: false
+
+        - name: tests
+          description: |-
+            • 🚦Node-level data quality test.
+            • Runs the given 𝗾𝘂𝗲𝗿𝘆𝗦𝗤𝗟 against the view and fails the test if it returns any records — write the query so it selects only the rows that violate your condition.
+            • Skipped entirely when 𝗱𝗶𝘀𝗮𝗯𝗹𝗲𝗧𝗲𝘀𝘁𝘀 is set.
+          allowsMultiple: true
+          parameters:
+            - name: querySQL
+              type: string
+              description: SQL statement to execute as a validation test.
+              isRequired: true
+              example: 'SELECT 1'
+
+            - name: continueOnFailure
+              type: boolean
+              description: Determines whether execution continues when the test fails.
+              isRequired: false
+              default: true
+
+            - name: runOrder
+              type: string
+              description: Determines whether the test runs before or after the (skipped) load step of the run.
+              isRequired: false
+              default: After
+              options:
+                - Before
+                - After
+
+        column:
+
+        - name: tag
+          description: |-
+            • Applies a Snowflake tag to this column.
+            • Repeat the annotation to apply multiple tags.
+            • Tag names are case-sensitive — "PII" and "pii" are different tags.
+            • The tag's location defaults to this node's own location.
+          allowsMultiple: true
+          parameters:
+            - name: name
+              type: string
+              description: Name of the tag (must already exist in Snowflake). Case-sensitive.
+              isRequired: true
+
+            - name: value
+              type: string
+              description: Value to assign to the tag.
+              isRequired: true
+
+            - name: storageLocation
+              type: string
+              description: Storage location the tag lives in. Defaults to this node's own location.
+              isRequired: false
+
+        - name: inHash
+          description: |-
+                • Marks a column as an input to a generated hash key, grouped by 𝗵𝗮𝘀𝗵𝗡𝗮𝗺𝗲 and ordered within that group by 𝗵𝗮𝘀𝗵𝗢𝗿𝗱𝗲𝗿.
+                • Mark every column that should feed a given hash with the same 𝗵𝗮𝘀𝗵𝗡𝗮𝗺𝗲, then call the 𝐠𝐞𝐭_𝐡𝐚𝐬𝐡("<hashName>") macro elsewhere in the SELECT to produce the actual hash column from those marked columns.
+                • 𝗦𝗲𝗲 𝗱𝗼𝗰𝘂𝗺𝗲𝗻𝘁𝗮𝘁𝗶𝗼𝗻 𝗳𝗼𝗿 𝗱𝗲𝘁𝗮𝗶𝗹𝘀.
+          allowsMultiple: true
+          parameters:
+            - name: hashName
+              isRequired: true
+              type: string
+              description: Group hash name shared by every column feeding the same hash.
+              example: GH_COL
+
+            - name: hashOrder
+              isRequired: true
+              type: number
+              description: Position of this column within its hash group, lowest first.
+              example: 1
+
+        - name: not_null
+          description: |-
+           🚦 Column-level data quality test.
+            • Fails on rows where the column is 𝗡𝗨𝗟𝗟.
+            • Presence enables the test — remove the annotation to turn it off.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+
+        - name: uniqueness
+          description: |- 
+           🚦 Column-level data quality test.
+            • Fails when a value appears on more than one row.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+
+        - name: empty
+          description: |-
+            🚦 Column-level data quality test.
+            • Fails on rows where the column trims to the empty string;
+            • 𝗡𝗨𝗟𝗟 values pass this test and are instead caught by not_null.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+
+        - name: accepted_values
+          description: |-
+            🚦 Column-level data quality test.
+            • Fails on rows whose value is outside the allow list.
+            • Repeatable — every occurrence on the column is merged into one list. Each call takes a comma-separated list or any number of separate arguments; every argument is itself comma-splittable.
+                accepted_values("0, 1, 2")
+                accepted_values("0", "1", "2")
+                accepted_values("0") accepted_values("1, 2")
+            • Each value is pasted into the SQL verbatim, so quote it to match the column's data type
+                positive number/float/decimal/bool as "<val>" or <val>
+                negative number/float/decimal as "-<val>"
+                string as "'<val>'"
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+          parameters:
+            - name: value
+              type: string
+              isRequired: true
+          allowsMultiple: true
+
+        - name: rejected_values
+          description: |-
+            🚦 Column-level data quality test.
+            • Fails on rows whose value is in the deny list.
+            • Repeatable — every occurrence on the column is merged into one list. Each call takes a comma-separated list or any number of separate arguments; every argument is itself comma-splittable.
+                rejected_values("'A', 'B'")
+                rejected_values("'A'", "'B'", "'C'")
+                rejected_values("'A'") rejected_values("'B', 'C'")
+            • Each value is pasted into the SQL verbatim, so quote it to match the column's data type
+                positive number/float/decimal/bool as "<val>" or <val>
+                negative number/float/decimal as "-<val>"
+                string as "'<val>'"
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+          parameters:
+            - name: value
+              type: string
+              isRequired: true
+              example: "'<string>'"
+          allowsMultiple: true
+
+        - name: min_max
+          description: |-
+            🚦 Column-level data quality test.
+            • Fails on rows outside the inclusive range. NULL values pass.
+            • Applies to numeric and temporal (date/time related) columns only.
+            • Each bound is pasted into the SQL verbatim, so quote it to match the column's data type —
+                positive number as "<num>" or <num>
+                negative number as "-<num>"
+                float/decimal number as "<num>" or <num> (a trailing .0 may render as a whole number, e.g. 3.0 → 3)
+                date as "'<date/time>'" or "<date/time_expression>"
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+          parameters:
+            - name: min
+              type: string
+              description: Inclusive lower bound the column value must not fall below.
+              isRequired: true
+              example: -5
+            - name: max
+              type: string
+              description: Inclusive upper bound the column value must not exceed.
+              isRequired: true
+              example: 0
+
+        - name: min_value
+          description: |-
+            🚦 Column-level data quality test.
+            • Fails on rows below the bound. NULL values pass.
+            • Applies to numeric and temporal (date/time related) columns only.
+            • Pasted into the SQL verbatim, so quote it to match the column's data type —
+                positive number as "<num>" or <num>
+                negative number as "-<num>"
+                float/decimal number as "<num>" or <num> (a trailing .0 may render as a whole number, e.g. 3.0 → 3)
+                date as "'<date/time>'" or "<date/time_expression>"
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+          parameters:
+            - name: min
+              type: string
+              description: Inclusive lower bound the column value must not fall below.
+              isRequired: true
+              example: -5
+
+        - name: max_value
+          description: |-
+            🚦 Column-level data quality test.
+            • Fails on rows above the bound. NULL values pass.
+            • Applies to numeric and temporal (date/time related) columns only.
+            • Pasted into the SQL verbatim, so quote it to match the column's data type —
+                positive number as "<num>" or <num>
+                negative number as "-<num>"
+                float/decimal number as "<num>" or <num> (a trailing .0 may render as a whole number, e.g. 3.0 → 3)
+                date as "'<date/time>'" or "<date/time_expression>"
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+          parameters:
+            - name: max
+              type: string
+              description: Inclusive upper bound the column value must not exceed.
+              isRequired: true
+              example: 0
+
+        - name: freshness
+          description: |-
+           🚦 Column-level data quality test.
+            • Checks that the data is fresh — fails when the column's value is older than the given interval, or when the table has no rows at all.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+            𝗡𝗼𝘁𝗲: on a DATE column the value is truncated to midnight.
+          parameters:
+            - name: interval
+              description: |-
+                How far back from now the newest value is allowed to be, expressed in the unit given by 𝘂𝗻𝗶𝘁.
+              type: number
+              isRequired: true
+              example: 1
+
+            - name: unit
+              type: string
+              options: [SECOND, MINUTE, HOUR, DAY, WEEK, MONTH, YEAR]
+              default: DAY
+
+        - name: relative_time
+          description: |-
+           🚦 Column-level data quality test.
+            • Compares this column against another date/time column on the same node using the given operator.
+            • E.g. @relative_time("<=", "END_DATE") fails any row where this column's value is not less than or equal to END_DATE.
+            • A row with either side 𝗡𝗨𝗟𝗟 is left out of the check and passes.
+            • Runs 𝗔𝗳𝘁𝗲𝗿 the load and continues the run on failure.
+          parameters:
+            - name: operator
+              type: string
+              description: Comparison operator used to compare this column against the other column.
+              isRequired: true
+              options: ["<", "<=", ">", ">=", "=", "<>"]
+              example: "="
+
+            - name: column
+              type: string
+              description: Name of the other date/time column on this node to compare against.
+              isRequired: true
+              example: "<other_column>"
+
+    sqlInitializationTemplate: |-
+          {%- macro ref_raw(location_name, node_name) -%}
+            {% raw %}{{ ref('{% endraw %}{{ location_name }}{% raw %}', '{% endraw %}{{ node_name }}{% raw %}') }}{% endraw %}
+          {%- endmacro -%}
+          @materializationType("view")
+          SELECT
+          {%- for dep in sources[0].dependencies %}
+            {%- set outer = loop %}
+            {%- for col in dep.columns %}
+              "{{ dep.node.name }}"."{{ col.name }}" AS "{{ col.name }}"{% if not (outer.last and loop.last) %},{% endif %}
+            {%- endfor %}
+          {%- endfor %}
+          {% for dep in sources[0].dependencies -%}
+            {%- if loop.first -%}
+              FROM {{ ref_raw(dep.node.location.name, dep.node.name) }} "{{ dep.node.name }}"
+            {%- else %}
+              INNER JOIN {{ ref_raw(dep.node.location.name, dep.node.name) }} "{{ dep.node.name }}"
+              ON "{{ sources[0].dependencies[0].node.name }}".JOIN_COLUMN = "{{ dep.node.name }}".JOIN_COLUMN
+            {%- endif -%}
+          {%- endfor %}
+name: View
+type: NodeType

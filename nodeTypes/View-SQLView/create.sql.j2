@@ -1,0 +1,69 @@
+{#
+    Copyright (c) 2026 Coalesce. All rights reserved.
+This script and its associated documentation are confidential and proprietary to Coalesce.
+Unauthorized reproduction, distribution, or disclosure of this material is strictly prohibited.
+Coalesce permits you to copy and modify this script for the purposes of using with Coalesce but does not permit copying or modification for any other purpose.  
+#}
+{# == Node Type Name           : SQL View  == #}
+{# == Node Type Description    : Creates a Snowflake view from custom SQL; alters it in place where possible  == #}
+{#---------------------------------------------------------------------------------------------#}
+
+{#- Validate: @materializationType must be view (checked before the override below) #}
+{%- if desiredState %}
+    {{ validate_materialization_type(['view']) }}
+{%- endif %}
+
+{#- This node is always a view: point the shared nsNodeVariables at a view so the shared
+    tag macros alter the live view (not a table clone) #}
+{%- if desiredState %}
+    {%- set nsNodeVariables.desiredMatType = 'view' %}
+{%- endif %}
+{%- if currentState is defined and currentState %}
+    {%- set nsNodeVariables.currentMatType = 'view' %}
+{%- endif %}
+{%- if desiredState and currentState is defined and currentState %}
+    {%- set nsNodeVariables.alterObjectNameFullPath = nsNodeVariables.desObjectNameFullPath %}
+{%- endif %}
+
+{%- if desiredState %}
+
+    {# Validate: the same name+location tag repeated on the same column/node is not allowed #}
+    {{ tag_check_duplicates() }}
+
+    {%- if currentState is not defined or not currentState %}
+
+        {# First deploy #}
+        {{ sqlview_create_sql(desiredState, nsNodeVariables.desObjectNameFullPath) }}
+
+    {%- elif currentState != desiredState %}
+
+        {%- set pathChanged = nsNodeVariables.curObjectNameFullPath != nsNodeVariables.desObjectNameFullPath %}
+        {%- set coreChanged = sqlview_core_sql(currentState) != sqlview_core_sql(desiredState) %}
+
+        {# Renamed or moved: rename the view, keeping its grants #}
+        {%- if pathChanged %}
+            {{ stage('Rename View') }}
+            ALTER VIEW {{ nsNodeVariables.curObjectNameFullPath }}
+            RENAME TO {{ nsNodeVariables.desObjectNameFullPath }}
+            {%- set nsNodeVariables.metaDataChanged = true %}
+        {%- endif %}
+
+        {%- if coreChanged %}
+            {# SQL, columns, DISTINCT or COPY GRANTS changed: recreate with the full definition #}
+            {{ sqlview_create_sql(desiredState, nsNodeVariables.desObjectNameFullPath) }}
+        {%- else %}
+            {# Comments, SECURE, CHANGE_TRACKING and tags: alter in place #}
+            {{ sqlview_alter_sql() }}
+        {%- endif %}
+
+        {# Nothing above changed the view (e.g. only tests): record a metadata-only change #}
+        {{ alter_metadata_sql() }}
+
+    {%- endif %}
+
+{%- elif currentState is defined and currentState %}
+
+    {# Node deleted: drop the view #}
+    {{ object_drop_sql() }}
+
+{%- endif %}
