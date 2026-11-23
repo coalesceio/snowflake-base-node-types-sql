@@ -30,6 +30,9 @@ Coalesce permits you to copy and modify this script for the purposes of using wi
     {# Validate: the same name+location tag repeated on the same column/node is not allowed #}
     {{ tag_check_duplicates() }}
 
+    {# Warn (non-failing): @notNull / @defaultValue are ignored on a view #}
+    {{ sqlview_ignored_annotations_check() }}
+
     {%- if currentState is not defined or not currentState %}
 
         {# First deploy #}

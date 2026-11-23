@@ -1500,5 +1500,27 @@ macroString: |-
       {#- Column- and view-level tags (unset before set) #}
       {{ alter_tag_sql() }}
   {%- endmacro -%}
+
+  {#===========================================================================
+    sqlview_ignored_annotations_check(): non-failing "Ignored Annotations: <node>" warning
+    listing columns with @notNull or @defaultValue — reserved annotations that a view
+    cannot apply. Creation continues.
+  ===========================================================================#}
+  {%- macro sqlview_ignored_annotations_check() -%}
+      {%- set ns = namespace(items=[]) -%}
+      {%- for col in columns -%}
+          {%- if col.nullable == false -%}
+              {%- set ns.items = ns.items + [col.name + ': @notNull'] -%}
+          {%- endif -%}
+          {%- if col.defaultValue is defined and col.defaultValue | string | trim | length > 0 -%}
+              {%- set ns.items = ns.items + [col.name + ': @defaultValue'] -%}
+          {%- endif -%}
+      {%- endfor -%}
+      {%- if ns.items | length > 0 %}
+          {{ test_stage('Ignored Annotations: ' + node.name, true) }}
+          -- @notNull and @defaultValue are not supported on views and are ignored: {{ ns.items | join(', ') }}
+          {{ fail_sql(false) }}
+      {%- endif %}
+  {%- endmacro -%}
 name: macro
 type: Macro
